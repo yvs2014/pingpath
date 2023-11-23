@@ -2,14 +2,15 @@
 #define __COMMON_H
 
 #include <gtk/gtk.h>
+#include "aux.h"
 
-#define VERSION "0.1.2"
+#define VERSION "0.1.3"
 
 #define DEBUG 1
 
-#define WARN(fmt, ...) g_warning("[WARN] %s: " fmt "\n", __func__, __VA_ARGS__)
+#define WARN(fmt, ...) g_warning("%s: " fmt "\n", __func__, __VA_ARGS__)
 #ifdef DEBUG
-#define LOG(fmt, ...) g_print("[LOG] " fmt "\n", __VA_ARGS__)
+#define LOG(fmt, ...) g_print("[%s] " fmt "\n", timestampit(), __VA_ARGS__)
 #if DEBUG > 1
 #define LOG2(fmt, ...) LOG(fmt, __VA_ARGS__)
 #else
@@ -36,12 +37,12 @@ typedef struct procdata {
   GSubprocess *proc;
   bool active;      // process state
   t_ping_opts opts; // ping options
-  GString *buff;    // buffer for received strings
+  GString *out;     // buffer for received input data
+  GString *err;     // buffer for received errors
 } t_procdata;
 
 extern t_widgets widgets;
 
-//const char* PING = "/bin/ping";
 extern const int MAXTTL;
 extern const int COUNT;
 

@@ -9,14 +9,15 @@ t_widgets widgets; // aux widgets' references
 
 static void on_app_exit(GtkWidget *w, gpointer data) {
   LOG("%s", "exit");
+  free_ping_errors();
 // note: subprocesses have to be already terminated by system at this point
-// stop_proc(data, "app exit");
+// if not, then pinger_stop(data, "app exit");
 }
 
 static void activate(GtkApplication* app, gpointer user_data) {
   widgets.app = G_APPLICATION(app);
   widgets.win = gtk_application_window_new(app);
-  pingproc.opts.target = "localhost";
+  pingproc.opts.target = "localhost2";
   gtk_window_set_title(GTK_WINDOW(widgets.win), "pingpath");
   gtk_window_set_default_size(GTK_WINDOW(widgets.win), 1280, 768);
 
@@ -33,6 +34,8 @@ static void activate(GtkApplication* app, gpointer user_data) {
     pinglines[i] = gtk_label_new(NULL);
     gtk_box_append(GTK_BOX(widgets.dyn), pinglines[i]);
   }
+  errline = gtk_label_new(NULL);
+  gtk_box_append(GTK_BOX(widgets.dyn), errline);
 
 //  GtkWidget *bottom_bar = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
 //  gtk_box_append(GTK_BOX(root_box), bottom_bar);

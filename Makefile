@@ -10,13 +10,13 @@ CFLAGS += -fanalyzer
 endif
 #CFLAGS += -g
 
-SRC = $(NAME).c menu.c pinger.c
+SRC = $(NAME).c menu.c pinger.c aux.c
 
 OBJS = $(SRC:.c=.o)
 
 all: $(NAME)
 
-%.o: %.c %.h common.h
+%.o: %.c %.h common.h aux.h
 	echo CC=$(CC) $(CFLAGS)
 	$(CC) -c -o $(@F) $(CFLAGS) $<
 

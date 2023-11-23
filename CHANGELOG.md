@@ -1,3 +1,6 @@
+## 0.1.3
+- display stderr messages
+
 ## 0.1.2
 - basic ping call
 

@@ -1,3 +1,9 @@
+pingpath (0.1.3) lunar mantic; urgency=low
+
+  * display stderr messages
+
+ -- yvs <VSYakovetsky@gmail.com>  Fri, 24 Nov 2023 01:22:28 +0200
+
 pingpath (0.1.2) lunar mantic; urgency=low
 
   * basic ping call

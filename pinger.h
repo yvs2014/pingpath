@@ -9,9 +9,11 @@
 
 extern t_procdata pingproc;
 extern GtkWidget* pinglines[];
+extern GtkWidget* errline;
 
-void stop_proc(t_procdata *p, const gchar* reason);
-void start_pings(t_procdata *p, GAsyncReadyCallback reset);
-void on_output(GObject *stream, GAsyncResult *re, gpointer data);
+void pinger_start(t_procdata *p);
+void pinger_stop(t_procdata *p, const gchar* reason);
+void clear_errline(void);
+void free_ping_errors(void);
 
 #endif

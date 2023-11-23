@@ -6,8 +6,8 @@ static void on_ping_click(GSimpleAction *simple, GVariant *parameter, gpointer d
   LOG2("action: %s", g_action_get_name(G_ACTION(simple)));
   t_procdata *p = data;
   if (p && p->opts.target) {
-    if (p->active) stop_proc(p, "request");
-    else start_pings(p, on_output);
+    if (p->active) pinger_stop(p, "request");
+    else pinger_start(p);
   }
 }
 
@@ -15,7 +15,7 @@ static void on_quit_click(GSimpleAction *simple, GVariant *parameter, gpointer d
   LOG2("action: %s", g_action_get_name(G_ACTION(simple)));
   t_procdata *p = data;
   if (p) {
-    if (p->active) stop_proc(p, "quit");
+    if (p->active) pinger_stop(p, "quit");
     LOG("%s", "quit");
     if (widgets.app) g_application_quit(widgets.app);
   }
