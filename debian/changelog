@@ -1,0 +1,12 @@
+pingpath (0.1.2) lunar mantic; urgency=low
+
+  * basic ping call
+
+ -- yvs <VSYakovetsky@gmail.com>  Thu, 23 Nov 2023 23:04:59 +0200
+
+pingpath (0.1.1) mantic; urgency=low
+
+  * Initial commit
+
+ -- yvs <VSYakovetsky@gmail.com>  Thu, 23 Nov 2023 22:34:37 +0200
+

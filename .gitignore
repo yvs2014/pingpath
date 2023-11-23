@@ -1,0 +1,14 @@
+# .gitignore
+*.o
+*.a
+/.cache/
+
+/pingpath
+/pingpath.1
+.*.swp
+*~
+compile_commands.json
+*.snap
+/.flatpak-builder/
+/debs/
+**/.debhelper
