@@ -3,6 +3,7 @@
 
 #include "menu.h"
 #include "pinger.h"
+#include "parser.h"
 #include "common.h"
 
 t_widgets widgets; // aux widgets' references
@@ -17,7 +18,9 @@ static void on_app_exit(GtkWidget *w, gpointer data) {
 static void activate(GtkApplication* app, gpointer user_data) {
   widgets.app = G_APPLICATION(app);
   widgets.win = gtk_application_window_new(app);
-  pingproc.opts.target = "localhost2";
+  pingproc.opts.target = "localhost";
+//  pingproc.opts.target = "localhost2";
+//  pingproc.opts.target = "192.168.88.100";
   gtk_window_set_title(GTK_WINDOW(widgets.win), "pingpath");
   gtk_window_set_default_size(GTK_WINDOW(widgets.win), 1280, 768);
 
@@ -45,6 +48,7 @@ static void activate(GtkApplication* app, gpointer user_data) {
 }
 
 int main(int argc, char **argv) {
+  parser_init();
   GtkApplication *app = gtk_application_new("net.tools.pingpath", G_APPLICATION_DEFAULT_FLAGS);
   g_signal_connect(app, "activate", G_CALLBACK(activate), NULL);
   int rc = g_application_run(G_APPLICATION(app), argc, argv);

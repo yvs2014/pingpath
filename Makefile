@@ -3,6 +3,7 @@ NAME = pingpath
 CC ?= gcc
 PKGCONFIG = $(shell which pkg-config)
 LIBS = $(shell $(PKGCONFIG) --libs gtk4)
+LIBS += -lm
 CFLAGS = $(shell $(PKGCONFIG) --cflags gtk4)
 CFLAGS += -Wall
 ifeq ($(CC),gcc)
@@ -10,7 +11,7 @@ CFLAGS += -fanalyzer
 endif
 #CFLAGS += -g
 
-SRC = $(NAME).c menu.c pinger.c aux.c
+SRC = $(NAME).c menu.c pinger.c aux.c parser.c
 
 OBJS = $(SRC:.c=.o)
 

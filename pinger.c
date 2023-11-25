@@ -1,12 +1,12 @@
 
 #include "pinger.h"
 #include "menu.h"
+#include "parser.h"
 
-#define BUFF_SIZE 1024
 #define PING "/bin/ping"
 #define SKIPNAME PING ": "
 
-t_procdata pingproc = { .proc = NULL, .active = false, .opts = { .target = NULL, .ttl = MAXTTL, .count = COUNT}};
+t_procdata pingproc = { .proc = NULL, .active = false, .opts = { .target = NULL, .ttl = MAXTTL, .count = COUNT, .timeout = TIMEOUT}};
 GtkWidget *pinglines[MAXTTL];
 GtkWidget *errline;
 char* ping_errors[MAXTTL];
@@ -76,15 +76,22 @@ void pinger_stop(t_procdata *p, const gchar* reason) {
 }
  
 void pinger_start(t_procdata *p) {
-  if (!p) return;
+  if (!p || !p->opts.target) return;
   if (!p->out) p->out = g_string_sized_new(BUFF_SIZE);
   if (!p->err) p->err = g_string_sized_new(BUFF_SIZE);
   if (!p->out || !p->err) return;
-  char sttl[16]; snprintf(sttl, sizeof(sttl), "-t%d", p->opts.ttl);
-  char scnt[16]; snprintf(scnt, sizeof(scnt), "-c%d", p->opts.count);
+  const gchar **argv = calloc(16, sizeof(gchar*)); int argc = 0;
+  argv[argc++] = PING;
+  argv[argc++] = "-OD";
+  char sttl[16]; snprintf(sttl, sizeof(sttl), "-t%d", p->opts.ttl);     argv[argc++] = sttl;
+  char scnt[16]; snprintf(scnt, sizeof(scnt), "-c%d", p->opts.count);   argv[argc++] = scnt;
+  char sitm[16]; snprintf(sitm, sizeof(sitm), "-i%d", p->opts.timeout); argv[argc++] = sitm;
+  char sWtm[16]; snprintf(sWtm, sizeof(sitm), "-W%d", p->opts.timeout); argv[argc++] = sWtm;
+//  argv[argc++] = "-n";
+  argv[argc++] = "--";
+  argv[argc++] = p->opts.target;
   GError *err = NULL;
-  p->proc = g_subprocess_new(G_SUBPROCESS_FLAGS_STDOUT_PIPE | G_SUBPROCESS_FLAGS_STDERR_PIPE,
-    &err, PING, scnt, sttl, p->opts.target, NULL);
+  p->proc = g_subprocess_newv(argv, G_SUBPROCESS_FLAGS_STDOUT_PIPE | G_SUBPROCESS_FLAGS_STDERR_PIPE, &err);
   if (err) { WARN("create subprocess: %s", err->message); return; }
   g_subprocess_wait_check_async(p->proc, NULL, set_finish_flag, p);
   GInputStream *output = g_subprocess_get_stdout_pipe(p->proc);
@@ -104,7 +111,8 @@ void on_stdout(GObject *stream, GAsyncResult *re, gpointer data) {
   if ((sz < 0) || err) { WARN("stream read: %s", err ? err->message : ""); pinger_stop(p, "sz < 0"); return; }
   if (!sz) { pinger_stop(p, "EOF"); return; } // EOF
   snprintf(s, sizeof(obuff), "%*.*s", sz, sz, p->out->str);
-  trim_nl(s); LOG("%s", s);
+  trim_nl(s); //LOG("%s", s);
+  s = parse_input(s);
   gtk_label_set_label(GTK_LABEL(pinglines[0]), s);
   if (!gtk_widget_get_visible(pinglines[0])) gtk_widget_set_visible(pinglines[0], true);
   g_input_stream_read_async(G_INPUT_STREAM(stream), p->out->str, p->out->allocated_len,

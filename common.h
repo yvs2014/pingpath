@@ -4,7 +4,7 @@
 #include <gtk/gtk.h>
 #include "aux.h"
 
-#define VERSION "0.1.3"
+#define VERSION "0.1.4"
 
 #define DEBUG 1
 
@@ -20,6 +20,12 @@
 #define LOG(fmt, ...) {}
 #endif
 
+#define BUFF_SIZE 1024
+
+#define MAXTTL 30
+#define COUNT  5
+#define TIMEOUT 1
+
 struct procdata;
 
 typedef struct widgets { // aux widgets' references
@@ -31,6 +37,7 @@ typedef struct ping_opts {
   char *target;
   int count;
   int ttl;
+  int timeout;
 } t_ping_opts;
 
 typedef struct procdata {
@@ -42,8 +49,5 @@ typedef struct procdata {
 } t_procdata;
 
 extern t_widgets widgets;
-
-extern const int MAXTTL;
-extern const int COUNT;
 
 #endif

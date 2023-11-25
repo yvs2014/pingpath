@@ -4,9 +4,6 @@
 #include <gtk/gtk.h>
 #include "common.h"
 
-#define MAXTTL 30
-#define COUNT  10
-
 extern t_procdata pingproc;
 extern GtkWidget* pinglines[];
 extern GtkWidget* errline;
