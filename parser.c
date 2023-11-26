@@ -1,5 +1,6 @@
 
 #include "parser.h"
+#include "stat.h"
 #include "common.h"
 
 #define MAX_LINES 10
@@ -13,6 +14,7 @@
 #define REN_TS_S "tss"
 #define REN_TS_U "tsu"
 #define REN_REASON "reason"
+#define REN_INFO "info"
 
 #define PATT_TS   "^\\[(?<" REN_TS_S ">[0-9]+)(.(?<" REN_TS_U ">[0-9]+))*\\]"
 #define PATT_FROM "rom (((?<" REN_NAME ">.*) \\((?<" REN_ADDR ">.*)\\))|(?<" REN_IP ">.*))"
@@ -21,32 +23,7 @@
 #define SUCCESS 0
 #define DISCARD 1
 
-typedef bool parser_fn(GMatchInfo* match, const char *line);
-
-typedef struct ping_part_mark {
-  long ts_sec; int ts_usec;
-  int seq;
-} t_ping_part_mark;
-
-typedef struct ping_part_host {
-  gchar *name, *addr;
-} t_ping_part_host;
-
-typedef struct ping_success {
-  t_ping_part_mark mark;
-  t_ping_part_host host;
-  int ttl, time;
-} t_ping_success;
-
-typedef struct ping_discard {
-  t_ping_part_mark mark;
-  t_ping_part_host host;
-  gchar* reason;
-} t_ping_discard;
-
-typedef struct ping_timeout {
-  t_ping_part_mark mark;
-} t_ping_timeout;
+typedef bool parser_fn(int at, GMatchInfo* match, const char *line);
 
 typedef struct response_regex {
   char *pattern;
@@ -54,9 +31,10 @@ typedef struct response_regex {
   GRegex *regex;
 } t_response_regex;
 
-static bool parse_success_match(GMatchInfo* match, const char *line);
-static bool parse_discard_match(GMatchInfo* match, const char *line);
-static bool parse_timeout_match(GMatchInfo* match, const char *line);
+static bool parse_success_match(int at, GMatchInfo* match, const char *line);
+static bool parse_discard_match(int at, GMatchInfo* match, const char *line);
+static bool parse_timeout_match(int at, GMatchInfo* match, const char *line);
+static bool parse_info_match(int at, GMatchInfo* match, const char *line); // like 'success' without 'time'
 
 t_response_regex regexes[] = {
   { .parser = parse_success_match, .pattern =
@@ -65,130 +43,157 @@ t_response_regex regexes[] = {
     PATT_TS " F" PATT_FROM " " PATT_SEQ " (?<" REN_REASON ">.*)" },
   { .parser = parse_timeout_match, .pattern =
     PATT_TS " no answer yet for " PATT_SEQ },
+  { .parser = parse_info_match, .pattern =
+    PATT_TS " \\d+ bytes f" PATT_FROM ": " PATT_SEQ " ttl=(?<" REN_TTL ">\\d+) (?<" REN_INFO ">.*)" },
 };
 
 GRegex *multiline_regex;
 
-GRegex* compile_regex(const char *pattern, GRegexCompileFlags flags) {
+// aux
+//
+static GRegex* compile_regex(const char *pattern, GRegexCompileFlags flags) {
   GError *err = NULL;
   GRegex *regex = g_regex_new(pattern, flags, 0, &err);
   if (err) {
-    LOG("regex PATTERN: %s", pattern);
-    LOG("regex ERROR: %s", err->message);
+    WARN("regex PATTERN: %s", pattern);
+    WARN("regex ERROR: %s", err->message);
   }
   g_assert(regex);
   return regex;
 }
 
-void parser_init(void) {
-//  multiline_regex = compile_regex("[^\\n]+", G_REGEX_MULTILINE);
-  multiline_regex = compile_regex("\\n", G_REGEX_MULTILINE);
-  for (int i = 0; i < (sizeof(regexes) / sizeof(regexes[0])); i++)
-    regexes[i].regex = compile_regex(regexes[i].pattern, 0);
+static gchar* fetch_named_str(GMatchInfo* match, char *prop) {
+  gchar *s = g_match_info_fetch_named(match, prop);
+  gchar *val = (s && s[0]) ? g_strdup(s) : NULL;
+  g_free(s); return val;
 }
 
-static gchar* fetch_named(GMatchInfo* match, char *prop) {
-  gchar *val = g_match_info_fetch_named(match, prop);
-  if (val && !val[0]) { g_free(val); return NULL; }
-  return val;
+static int fetch_named_int(GMatchInfo* match, char *prop) {
+  gchar *s = g_match_info_fetch_named(match, prop);
+  int val = (s && s[0]) ? atoi(s) : -1;
+  g_free(s); return val;
+}
+
+static long long fetch_named_ll(GMatchInfo* match, char *prop) {
+  gchar *s = g_match_info_fetch_named(match, prop);
+  long long val = (s && s[0]) ? atoll(s) : -1;
+  g_free(s); return val;
+}
+
+static int fetch_named_rtt(GMatchInfo* match, char *prop, double max) {
+  gchar *s = g_match_info_fetch_named(match, prop);
+  double val = -1;
+  if (s && s[0]) {
+    val = g_ascii_strtod(s, NULL);
+    if ((ERANGE == errno) || (val > max)) val = -1;
+    if (val > 0) val *= 1000; // msec to usec
+  }
+  g_free(s); return (val < 0) ? -1 : floor(val);
 }
 
 static bool valid_mark(GMatchInfo* match, t_ping_part_mark *mark) {
-  gchar *s;
-  s = fetch_named(match, REN_SEQ);  mark->seq     = s ? atoi(s) : -1;
-  if (mark->seq < 0) return false;
-  s = fetch_named(match, REN_TS_S); mark->ts_sec  = s ? atol(s) : -1;
-  if (mark->ts_sec < 0) return false;
-  s = fetch_named(match, REN_TS_U); mark->ts_usec = s ? atoi(s) : 0;
+  mark->seq = fetch_named_int(match, REN_SEQ); if (mark->seq < 0) return false;
+  mark->sec = fetch_named_ll(match, REN_TS_S); if (mark->sec < 0) return false;
+  mark->usec = fetch_named_int(match, REN_TS_U); if (mark->usec < 0) mark->usec = 0;
   return true;
 }
 
 static bool valid_markhost(GMatchInfo* match, t_ping_part_mark* mark, t_ping_part_host* host,
     const char *typ, const char *line) {
-  if (!valid_mark(match, mark)) {
-    memset(mark, 0, sizeof(*mark)); LOG("wrong MARK in %s message: %s", typ, line);
-    return false;
-  }
-  gchar *s;
-  s = fetch_named(match, REN_NAME); host->name = s ? strdup(s) : NULL;
-  s = fetch_named(match, REN_ADDR); host->addr = s ? strdup(s) : NULL;
+  if (!valid_mark(match, mark)) { WARN("wrong MARK in %s message: %s", typ, line); return false; }
+  host->addr = fetch_named_str(match, REN_ADDR);
   if (!host->addr) {
-    s = fetch_named(match, REN_IP); host->addr = s ? strdup(s) : NULL;
-    if (!host->addr) {
-      if (host->name) free(host->name);
-      if (host->addr) free(host->addr);
-      memset(host, 0, sizeof(*host)); LOG("wrong HOST in %s message: %s", typ, line);
-      return false;
-    }
+    host->addr = fetch_named_str(match, REN_IP);
+    if (!host->addr) { WARN("wrong HOST in %s message: %s", typ, line); return false; }
   }
+  host->name = fetch_named_str(match, REN_NAME);
   return true;
 }
 
-static int usec_or_neg(const char *s) {
-  static const int MAX_MSEC = TIMEOUT * 1000 * 10; // 10 times more than timeout in msec
-  double val = g_ascii_strtod(s, NULL);
-  if ((ERANGE == errno) || (val < 0) || (val > MAX_MSEC)) return -1;
-  return floor(val * 1000); // msec to usec
-}
-
-static bool parse_success_match(GMatchInfo* match, const char *line) {
+static bool parse_success_match(int at, GMatchInfo* match, const char *line) {
   t_ping_success res;
   memset(&res, 0, sizeof(res));
+  res.ttl = fetch_named_int(match, REN_TTL);
+  if (res.ttl < 0) { WARN("wrong TTL in SUCCESS message: %s", line); return false; }
+  res.time = fetch_named_rtt(match, REN_TIME, TIMEOUT * 1000 * 10); // max: 10 times more than timeout in msec
+  if (res.time < 0) { WARN("wrong TIME in SUCCESS message: %s", line); return false; }
+  // after other mandatory fields to not free() if their fetch failed
   if (!valid_markhost(match, &res.mark, &res.host, "SUCCESS", line)) return false;
-  gchar *s;
-  s = fetch_named(match, REN_TTL); res.ttl = s ? atoi(s) : -1;
-  if (res.ttl < 0) { LOG("wrong TTL in SUCCESS message: %s", s); return false; }
-  s = fetch_named(match, REN_TIME); res.time = s ? usec_or_neg(s) : -1;
-  if (res.time < 0) { LOG("wrong TIME in SUCCESS message: %s", s); return false; }
-  LOG("SUCCESS: host=%s,%s ttl=%d time=%dusec", res.host.addr, res.host.name, res.ttl, res.time);
+  DEBUG("SUCCESS: host=%s,%s ttl=%d time=%dusec", res.host.addr, res.host.name, res.ttl, res.time);
+  save_success_data(at, &res);
   return true;
 }
 
-static bool parse_discard_match(GMatchInfo* match, const char *line) {
+static bool parse_discard_match(int at, GMatchInfo* match, const char *line) {
   t_ping_discard res;
   memset(&res, 0, sizeof(res));
   if (!valid_markhost(match, &res.mark, &res.host, "DISCARD", line)) return false;
-  gchar *s = fetch_named(match, REN_REASON); res.reason = s ? strdup(s) : NULL;
-  if (!res.reason) { LOG("no reason in DISCARD message: %s", s); return false; }
-  LOG("DISCARD: host=%s,%s reason=\"%s\"", res.host.addr, res.host.name, res.reason);
+  res.reason = fetch_named_str(match, REN_REASON);
+  DEBUG("DISCARD: host=%s,%s reason=\"%s\"", res.host.addr, res.host.name, res.reason);
+  save_discard_data(at, &res);
   return true;
 }
 
-static bool parse_timeout_match(GMatchInfo* match, const char *line) {
+static bool parse_timeout_match(int at, GMatchInfo* match, const char *line) {
   t_ping_timeout res;
   memset(&res, 0, sizeof(res));
-  if (!valid_mark(match, &res.mark)) {
-    memset(&res.mark, 0, sizeof(res.mark)); LOG("wrong MARK in %s message: %s", "TIMEOUT", line);
-    return false;
-  }
-  LOG("TIMEOUT: seq=%d ts=%ld.%06d", res.mark.seq, res.mark.ts_sec, res.mark.ts_usec);
+  if (!valid_mark(match, &res.mark)) { WARN("wrong MARK in %s message: %s", "TIMEOUT", line); return false; }
+  DEBUG("TIMEOUT: seq=%d ts=%lld.%06d", res.mark.seq, res.mark.sec, res.mark.usec);
+  save_timeout_data(at, &res);
   return true;
 }
 
-static bool parse_match_wrap(GRegex *re, const char *line, parser_fn *fn) {
+static bool parse_info_match(int at, GMatchInfo* match, const char *line) {
+  t_ping_info res;
+  memset(&res, 0, sizeof(res));
+  res.ttl = fetch_named_int(match, REN_TTL);
+  if (res.ttl < 0) { WARN("wrong TTL in INFO message: %s", line); return false; }
+  // after other mandatory fields to not free() if their fetch failed
+  if (!valid_markhost(match, &res.mark, &res.host, "INFO", line)) return false;
+  res.info = fetch_named_str(match, REN_INFO);
+  DEBUG("INFO: host=%s,%s ttl=%d info=\"%s\"", res.host.addr, res.host.name, res.ttl, res.info);
+  save_info_data(at, &res);
+  return true;
+}
+
+static bool parse_match_wrap(int at, GRegex *re, const char *line, parser_fn *fn) {
   GMatchInfo *match = NULL;
   bool gowith = g_regex_match(re, line, 0, &match);
   if (match) {
-    bool valid = gowith ? fn(match, line) : false;
+    bool valid = gowith ? fn(at, match, line) : false;
     g_match_info_free(match);
     return valid;
   }
   return false;
 }
 
-static void analyze_line(const char *line) {
+static bool analyze_line(int at, const char *line) { // TMP: non-void return
 //  LOG("> \"%s\"", line);
   for (int i = 0; i < (sizeof(regexes) / sizeof(regexes[0])); i++) {
-    if (parse_match_wrap(regexes[i].regex, line, regexes[i].parser)) return;
+    if (parse_match_wrap(at, regexes[i].regex, line, regexes[i].parser)) return true;
   }
-  LOG("UNKNOWN: %s", line);
+  DEBUG("UNKNOWN: %s", line);
+  return false;
 }
 
-char* parse_input(char *multiline) {
-  gchar **lines = g_regex_split(multiline_regex, multiline, 0);
-  for (gchar **s = lines; *s; s++) if ((*s)[0]) analyze_line(*s);
-  /* TMP */ gchar* last; for (gchar **s = lines; *s; s++) if ((*s)[0]) last = *s; last = strdup(last);
+// pub
+//
+void init_parser(void) {
+  multiline_regex = compile_regex("\\n", G_REGEX_MULTILINE);
+  for (int i = 0; i < (sizeof(regexes) / sizeof(regexes[0])); i++)
+    regexes[i].regex = compile_regex(regexes[i].pattern, 0);
+}
+
+char* parse_input(int at, char *input) {
+  /* TMP */ static char *tmp_debug;
+  gchar **lines = g_regex_split(multiline_regex, input, 0);
+  for (gchar **s = lines; *s; s++) if ((*s)[0]) {
+     if (analyze_line(at, *s)) {
+       /* TMP */ if (tmp_debug) g_free(tmp_debug);
+       /* TMP */ tmp_debug = g_strdup(*s);
+     }
+  }
   if (lines) g_strfreev(lines);
-  /* TMP */ return last;
+  /* TMP */ return tmp_debug;
 }
 

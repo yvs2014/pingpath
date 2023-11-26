@@ -1,7 +1,7 @@
 #ifndef __PARSER_H
 #define __PARSER_H
 
-void parser_init(void);
-char* parse_input(char *s);
+void init_parser(void);
+char* parse_input(int at, char *input);
 
 #endif

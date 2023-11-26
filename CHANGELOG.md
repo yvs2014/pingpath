@@ -1,3 +1,8 @@
+## 0.1.5
+- stat collecting
+- parsing mem manage
+- full range of pings
+
 ## 0.1.4
 - add dataline parser
 

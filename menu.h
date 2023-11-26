@@ -4,6 +4,6 @@
 #include <gtk/gtk.h>
 #include "common.h"
 
-void update_menu(t_procdata *p);
+void update_menu(void);
 
 #endif

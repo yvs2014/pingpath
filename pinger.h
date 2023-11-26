@@ -4,13 +4,17 @@
 #include <gtk/gtk.h>
 #include "common.h"
 
-extern t_procdata pingproc;
+extern t_ping_opts ping_opts;
 extern GtkWidget* pinglines[];
 extern GtkWidget* errline;
 
-void pinger_start(t_procdata *p);
-void pinger_stop(t_procdata *p, const gchar* reason);
+void init_pinger(void);
+void pinger_start(void);
+void pinger_stop(const gchar* reason);
+void stop_ping_at(int at, const gchar* reason);
 void clear_errline(void);
-void free_ping_errors(void);
+void free_ping_error_at(int at);
+void free_ping_error_from(int from);
+#define free_ping_errors() free_ping_error_from(0)
 
 #endif
