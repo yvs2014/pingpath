@@ -8,46 +8,73 @@
 #define PING "/bin/ping"
 #define SKIPNAME PING ": "
 
-t_ping_opts ping_opts = { .target = NULL, .count = COUNT, .timeout = TIMEOUT, .finish = true};
+t_ping_opts ping_opts = { .target = NULL, .count = COUNT, .timeout = TIMEOUT };
 
-t_procdata pingproc[MAXTTL];
 GtkWidget *pinglines[MAXTTL];
-gchar* ping_errors[MAXTTL];
 GtkWidget *errline;
+gchar* ping_errors[MAXTTL];
 
 void on_stdout(GObject *stream, GAsyncResult *re, gpointer data);
 void on_stderr(GObject *stream, GAsyncResult *re, gpointer data);
 
 // aux
 //
-static char* trim_nl(char *s) {
-  if (s) {
-    int l = strnlen(s, BUFF_SIZE) - 1;
-    if ((l >= 0) && (s[l] == '\n')) s[l] = 0;
+static t_procdata pingproc[MAXTTL];
+
+static gchar* last_error(void) {
+  static gchar last_error_buff[BUFF_SIZE];
+  for (int i = MAXTTL; i > 0; i--) {
+    gchar *err = ping_errors[i - 1];
+    if (err) {
+      snprintf(last_error_buff, sizeof(last_error_buff), "%s", err);
+      return last_error_buff;
+    }
   }
-  return s;
+  return NULL;
 }
 
-static void save_err_at(int n, const char *s) {
-  if (ping_errors[n]) g_free(ping_errors[n]);
-  ping_errors[n] = g_strndup(s, BUFF_SIZE);
+// related to stat-viewer
+//
+static bool pings_active(void) {
+  for (int i = 0; i < MAXTTL; i++) if (pingproc[i].active) return true;
+  return false;
 }
-
-static char* all_errs(void) {
-  static char combined_errs[1024];
-  combined_errs[0] = 0;
-  for (int i = 0, l = 0; (i < MAXTTL) && (l < BUFF_SIZE); i++)
-    if (ping_errors[i]) l += snprintf(combined_errs + l, sizeof(combined_errs) - l, "%s\n", ping_errors[i]);
-  return combined_errs;
+//
+static gboolean update_statview(gpointer data) {
+  for (int i = 0; i < MAXTTL; i++) {
+    GtkWidget* line = pinglines[i];
+    if (line) {
+      bool vis = gtk_widget_get_visible(line);
+      if (i < hops_no) {
+        const gchar* s = stat_at(i);
+        if (s) gtk_label_set_label(GTK_LABEL(line), s);
+        if (!vis) gtk_widget_set_visible(line, true);
+      } else {
+        if (vis) gtk_widget_set_visible(line, false);
+      }
+    }
+  }
+  return true;
 }
-
+//
+static void view_updater(bool reset) {
+  if (ping_opts.timer) { g_source_remove(ping_opts.timer); ping_opts.timer = 0; }
+  if (reset) ping_opts.timer = g_timeout_add(ping_opts.timeout * 1000, update_statview, NULL);
+}
+//
 static void set_finish_flag(struct _GObject *a, struct _GAsyncResult *b, gpointer data) {
   t_procdata *p = data;
   if (p) {
     if (p->active) p->active = false;
-    update_menu();
+    if (!pings_active()) {
+      update_menu();
+      view_updater(false);
+      update_statview(NULL);
+    }
   }
 }
+// EO-stat-viewer
+
 
 // public
 //
@@ -77,45 +104,61 @@ void stop_ping_at(int at, const gchar* reason) {
     GError *err = NULL;
     g_subprocess_wait(p->proc, NULL, &err);
     if (err) WARN("pid=%s: %s", id, err->message);
-    else LOG("proc[ttl=%d] finished (rc=%d)", p->ndx + 1, g_subprocess_get_status(p->proc));
+    else LOG("ping[ttl=%d] finished (rc=%d)", p->ndx + 1, g_subprocess_get_status(p->proc));
   }
-  p->active = false;
+  if (!id) {
+    set_finish_flag(NULL, NULL, p);
+    p->proc = NULL;
+  }
 }
 
 void pinger_stop(const gchar* reason) {
   for (int i = 0; i < MAXTTL; i++) stop_ping_at(i, reason);
-  free_ping_errors();
   update_menu();
+  view_updater(false);
 }
- 
-void pinger_start(void) {
-  if (ping_opts.target) for (int i = 0; i < MAXTTL; i++) {
-    t_procdata *p = &(pingproc[i]);
-    if (!p->out) p->out = g_string_sized_new(BUFF_SIZE);
-    if (!p->err) p->err = g_string_sized_new(BUFF_SIZE);
-    if (!p->out || !p->err) { WARN("%s failed", "g_string_sized_new()"); break; }
-    const gchar** argv = calloc(16, sizeof(gchar*)); int argc = 0;
-    argv[argc++] = PING;
-    argv[argc++] = "-OD";
-    char sttl[16]; snprintf(sttl, sizeof(sttl), "-t%d", i + 1);             argv[argc++] = sttl;
-    char scnt[16]; snprintf(scnt, sizeof(scnt), "-c%d", ping_opts.count);   argv[argc++] = scnt;
-    char sitm[16]; snprintf(sitm, sizeof(sitm), "-i%d", ping_opts.timeout); argv[argc++] = sitm;
-    char sWtm[16]; snprintf(sWtm, sizeof(sitm), "-W%d", ping_opts.timeout); argv[argc++] = sWtm;
+
+static bool create_pingproc(int at, t_procdata *p) {
+  if (!p->out) p->out = g_string_sized_new(BUFF_SIZE);
+  if (!p->err) p->err = g_string_sized_new(BUFF_SIZE);
+  if (!p->out || !p->err) { WARN("%s failed", "g_string_sized_new()"); return false; }
+  const gchar** argv = calloc(16, sizeof(gchar*)); int argc = 0;
+  argv[argc++] = PING;
+  argv[argc++] = "-OD";
+  char sttl[16]; snprintf(sttl, sizeof(sttl), "-t%d", at + 1);            argv[argc++] = sttl;
+  char scnt[16]; snprintf(scnt, sizeof(scnt), "-c%d", ping_opts.count);   argv[argc++] = scnt;
+  char sitm[16]; snprintf(sitm, sizeof(sitm), "-i%d", ping_opts.timeout); argv[argc++] = sitm;
+  char sWtm[16]; snprintf(sWtm, sizeof(sitm), "-W%d", ping_opts.timeout); argv[argc++] = sWtm;
 //  argv[argc++] = "-n";
-    argv[argc++] = "--";
-    argv[argc++] = ping_opts.target;
-    GError *err = NULL;
-    p->proc = g_subprocess_newv(argv, G_SUBPROCESS_FLAGS_STDOUT_PIPE | G_SUBPROCESS_FLAGS_STDERR_PIPE, &err);
-    if (err) { WARN("create subprocess: %s", err->message); break; }
-    g_subprocess_wait_check_async(p->proc, NULL, set_finish_flag, p);
-    GInputStream *output = g_subprocess_get_stdout_pipe(p->proc);
-    g_input_stream_read_async(output, p->out->str, p->out->allocated_len, G_PRIORITY_DEFAULT, NULL, on_stdout, p);
-    GInputStream *errput = g_subprocess_get_stderr_pipe(p->proc);
-    g_input_stream_read_async(errput, p->err->str, p->err->allocated_len, G_PRIORITY_DEFAULT, NULL, on_stderr, p);
-    p->active = true;
-    p->ndx = i;
-  }
+  argv[argc++] = "--";
+  argv[argc++] = ping_opts.target;
+  GError *err = NULL;
+  p->proc = g_subprocess_newv(argv, G_SUBPROCESS_FLAGS_STDOUT_PIPE | G_SUBPROCESS_FLAGS_STDERR_PIPE, &err);
+  if (err) { WARN("create subprocess: %s", err->message); return false; }
+  g_subprocess_wait_check_async(p->proc, NULL, set_finish_flag, p);
+  GInputStream *output = g_subprocess_get_stdout_pipe(p->proc);
+  g_input_stream_read_async(output, p->out->str, p->out->allocated_len, G_PRIORITY_DEFAULT, NULL, on_stdout, p);
+  GInputStream *errput = g_subprocess_get_stderr_pipe(p->proc);
+  g_input_stream_read_async(errput, p->err->str, p->err->allocated_len, G_PRIORITY_DEFAULT, NULL, on_stderr, p);
+  p->active = true;
+  p->ndx = at;
+  LOG("ping[ttl=%d] started", at + 1);
+  return p->active;
+}
+
+void pinger_start(void) {
+  if (!ping_opts.target) return;
+  ping_opts._tout_usec = ping_opts.timeout * 1000000;
+  clear_stat();
+  for (int i = 0; i < MAXTTL; i++)
+    if (!create_pingproc(i, &pingproc[i])) break;
   update_menu();
+  if (pings_active()) {
+    free_ping_errors();
+    free_stat();
+    hops_no = MAXTTL;
+    view_updater(true);
+  }
 }
 
 void on_stdout(GObject *stream, GAsyncResult *re, gpointer data) {
@@ -128,14 +171,7 @@ void on_stdout(GObject *stream, GAsyncResult *re, gpointer data) {
   if ((sz < 0) || err) { WARN("stream read: %s", err ? err->message : ""); stop_ping_at(p->ndx, "sz < 0"); return; }
   if (!sz) { stop_ping_at(p->ndx, "EOF"); return; } // EOF
   snprintf(s, sizeof(obuff), "%*.*s", sz, sz, p->out->str);
-  trim_nl(s); //LOG("%s", s);
-  s = parse_input(p->ndx, s);
-  GtkWidget* line = pinglines[p->ndx];
-  bool vis = gtk_widget_get_visible(line);
-  if (p->ndx < hops_no) {
-    gtk_label_set_label(GTK_LABEL(line), s);
-    if (!vis) gtk_widget_set_visible(line, true);
-  } else if (vis) gtk_widget_set_visible(line, false);
+  parse_input(p->ndx, s);
   g_input_stream_read_async(G_INPUT_STREAM(stream), p->out->str, p->out->allocated_len,
     G_PRIORITY_DEFAULT, NULL, on_stdout, data);
 }
@@ -151,8 +187,8 @@ void on_stderr(GObject *stream, GAsyncResult *re, gpointer data) {
   if (!sz) return; // EOF
   snprintf(s, sizeof(ebuff), "%*.*s", sz, sz, p->err->str);
   { int l = strlen(SKIPNAME); if (!strncmp(s, SKIPNAME, l)) s += l; } // skip program name
-  trim_nl(s); LOG("ERROR: %s", s);
-  save_err_at(p->ndx, s); s = all_errs(); // save error and get all together
+  s = g_strstrip(s); LOG("ERROR: %s", s);
+  UPD_STR(ping_errors[p->ndx], s); s = last_error(); // save error and display last one
   gtk_label_set_label(GTK_LABEL(errline), s);
   if (!gtk_widget_get_visible(errline)) gtk_widget_set_visible(errline, true);
   g_input_stream_read_async(G_INPUT_STREAM(stream), p->err->str, p->err->allocated_len,
@@ -165,11 +201,7 @@ void clear_errline(void) {
   free_ping_errors();
 }
 
-void free_ping_error_at(int at) {
-  if (ping_errors[at]) { g_free(ping_errors[at]); ping_errors[at] = NULL; }
-}
-
 void free_ping_error_from(int from) {
-  for (int i = from; i < MAXTTL; i++) free_ping_error_at(i);
+  for (int i = from; i < MAXTTL; i++) UPD_STR(ping_errors[i], NULL);
 }
 

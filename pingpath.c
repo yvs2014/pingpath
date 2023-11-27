@@ -12,6 +12,7 @@ t_widgets widgets; // aux widgets' references
 static void on_app_exit(GtkWidget *w, gpointer data) {
   LOG("%s", "exit");
   free_ping_errors();
+  free_stat();
 // note: subprocesses have to be already terminated by system at this point
 // if not, then pinger_stop(data, "app exit");
 }
@@ -19,11 +20,13 @@ static void on_app_exit(GtkWidget *w, gpointer data) {
 static void activate(GtkApplication* app, gpointer user_data) {
   widgets.app = G_APPLICATION(app);
   widgets.win = gtk_application_window_new(app);
-  ping_opts.target = "localhost";
+//  ping_opts.target = "localhost";
 //  ping_opts.target = "localhost2";
 //  ping_opts.target = "192.168.88.100";
-//  ping_opts.target = "google.com";
+  ping_opts.target = "google.com";
 //  ping_opts.target = "8.8.8.8";
+//  ping_opts.target = "dw.com";
+//  ping_opts.target = "yahoo.com"; // TODO: retest first several answers for extra addrnames
   gtk_window_set_title(GTK_WINDOW(widgets.win), "pingpath");
   gtk_window_set_default_size(GTK_WINDOW(widgets.win), 1280, 768);
 

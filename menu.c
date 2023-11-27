@@ -5,7 +5,7 @@
 static void on_ping_click(GSimpleAction *simple, GVariant *parameter, gpointer data) {
   DEBUG("action: %s", g_action_get_name(G_ACTION(simple)));
   if (ping_opts.target) {
-    if (ping_opts.finish) pinger_start();
+    if (!ping_opts.timer) pinger_start();
     else pinger_stop("request");
   }
 }
@@ -30,7 +30,7 @@ void update_menu(void) {
   g_menu_append_submenu(bar, "Action", G_MENU_MODEL(action_menu));
   GMenuItem *item;
   //
-  item = g_menu_item_new(ping_opts.finish ? "Start" : "Stop", "app.startstop");
+  item = g_menu_item_new(ping_opts.timer ? "Stop" : "Start", "app.startstop");
   g_menu_append_item(action_menu, item);
   item = g_menu_item_new("Quit",  "app.close");
   g_menu_append_item(action_menu, item);

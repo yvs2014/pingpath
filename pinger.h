@@ -7,6 +7,7 @@
 extern t_ping_opts ping_opts;
 extern GtkWidget* pinglines[];
 extern GtkWidget* errline;
+extern gchar* ping_errors[];
 
 void init_pinger(void);
 void pinger_start(void);

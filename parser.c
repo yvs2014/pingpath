@@ -91,14 +91,14 @@ static int fetch_named_rtt(GMatchInfo* match, char *prop, double max) {
   g_free(s); return (val < 0) ? -1 : floor(val);
 }
 
-static bool valid_mark(GMatchInfo* match, t_ping_part_mark *mark) {
+static bool valid_mark(GMatchInfo* match, t_tseq *mark) {
   mark->seq = fetch_named_int(match, REN_SEQ); if (mark->seq < 0) return false;
   mark->sec = fetch_named_ll(match, REN_TS_S); if (mark->sec < 0) return false;
   mark->usec = fetch_named_int(match, REN_TS_U); if (mark->usec < 0) mark->usec = 0;
   return true;
 }
 
-static bool valid_markhost(GMatchInfo* match, t_ping_part_mark* mark, t_ping_part_host* host,
+static bool valid_markhost(GMatchInfo* match, t_tseq* mark, t_host* host,
     const char *typ, const char *line) {
   if (!valid_mark(match, mark)) { WARN("wrong MARK in %s message: %s", typ, line); return false; }
   host->addr = fetch_named_str(match, REN_ADDR);
@@ -167,13 +167,10 @@ static bool parse_match_wrap(int at, GRegex *re, const char *line, parser_fn *fn
   return false;
 }
 
-static bool analyze_line(int at, const char *line) { // TMP: non-void return
-//  LOG("> \"%s\"", line);
-  for (int i = 0; i < (sizeof(regexes) / sizeof(regexes[0])); i++) {
-    if (parse_match_wrap(at, regexes[i].regex, line, regexes[i].parser)) return true;
-  }
+static void analyze_line(int at, const char *line) {
+  for (int i = 0; i < (sizeof(regexes) / sizeof(regexes[0])); i++)
+    if (parse_match_wrap(at, regexes[i].regex, line, regexes[i].parser)) return;
   DEBUG("UNKNOWN: %s", line);
-  return false;
 }
 
 // pub
@@ -184,16 +181,9 @@ void init_parser(void) {
     regexes[i].regex = compile_regex(regexes[i].pattern, 0);
 }
 
-char* parse_input(int at, char *input) {
-  /* TMP */ static char *tmp_debug;
+void parse_input(int at, char *input) {
   gchar **lines = g_regex_split(multiline_regex, input, 0);
-  for (gchar **s = lines; *s; s++) if ((*s)[0]) {
-     if (analyze_line(at, *s)) {
-       /* TMP */ if (tmp_debug) g_free(tmp_debug);
-       /* TMP */ tmp_debug = g_strdup(*s);
-     }
-  }
+  for (gchar **s = lines; *s; s++) if ((*s)[0]) analyze_line(at, *s);
   if (lines) g_strfreev(lines);
-  /* TMP */ return tmp_debug;
 }
 

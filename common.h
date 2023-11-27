@@ -4,10 +4,16 @@
 #include <gtk/gtk.h>
 #include "aux.h"
 
-#define VERSION "0.1.5"
+#define VERSION "0.1.6"
+
+#define MAXTTL 30
+#define COUNT  10
+#define TIMEOUT 1
+
+#define BUFF_SIZE 1024
 
 #define LOGGING 1
-#define DEBUGGING 1
+//#define DEBUGGING 1
 
 #ifdef LOGGING
 #define LOG(fmt, ...) g_print("[%s] " fmt "\n", timestampit(), __VA_ARGS__)
@@ -23,11 +29,7 @@
 
 #define WARN(fmt, ...) g_warning("%s: " fmt "\n", __func__, __VA_ARGS__)
 
-#define BUFF_SIZE 1024
-
-#define MAXTTL 30
-#define COUNT  5
-#define TIMEOUT 1
+#define UPD_STR(str, val) { g_free(str); str = g_strdup(val); }
 
 struct procdata;
 
@@ -39,7 +41,8 @@ typedef struct widgets { // aux widgets' references
 typedef struct ping_opts {
   char *target;
   int count, timeout;
-  bool finish; // no running pings
+  guint timer;        // thread ID of stat-view-area update
+  long long _tout_usec; // internal const
 } t_ping_opts;
 
 typedef struct procdata {

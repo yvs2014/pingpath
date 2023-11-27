@@ -1,3 +1,7 @@
+## 0.1.6
+- unbind statview updates and parsing (update on timer into separate thread)
+- stat-addrnames: simple array instead of slists
+
 ## 0.1.5
 - stat collecting
 - parsing mem manage

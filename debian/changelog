@@ -1,3 +1,11 @@
+pingpath (0.1.6) lunar mantic; urgency=low
+
+  * unbind statview updates and parsing (update on timer into separate thread)
+
+  * stat-addrnames: simple array instead of slists
+
+ -- yvs <VSYakovetsky@gmail.com>  Tue, 28 Nov 2023 00:01:38 +0200
+
 pingpath (0.1.5) lunar mantic; urgency=low
 
   * stat collecting
