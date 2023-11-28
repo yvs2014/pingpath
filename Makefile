@@ -11,7 +11,7 @@ CFLAGS += -fanalyzer
 endif
 #CFLAGS += -g
 
-SRC = $(NAME).c menu.c pinger.c aux.c parser.c stat.c
+SRC = $(NAME).c pinger.c aux.c parser.c stat.c appbar.c styles.c
 
 OBJS = $(SRC:.c=.o)
 

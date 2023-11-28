@@ -4,13 +4,12 @@
 #include <gtk/gtk.h>
 #include "aux.h"
 
-#define VERSION "0.1.7"
+#define APPNAME "pingpath"
+#define VERSION "0.1.8"
 
 #define MAXTTL 30
 #define COUNT  10
 #define TIMEOUT 1
-
-#define MARGIN 6
 
 #define BUFF_SIZE 1024
 

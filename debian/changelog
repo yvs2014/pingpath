@@ -1,3 +1,9 @@
+pingpath (0.1.8) lunar mantic; urgency=low
+
+  * test basic styling
+
+ -- yvs <VSYakovetsky@gmail.com>  Tue, 28 Nov 2023 10:30:24 +0200
+
 pingpath (0.1.7) lunar mantic; urgency=low
 
   * add datetime displaying

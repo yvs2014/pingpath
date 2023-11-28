@@ -1,6 +1,7 @@
 
-#include "menu.h"
+#include "appbar.h"
 #include "pinger.h"
+#include "styles.h"
 
 GtkWidget *datetime;
 
@@ -37,6 +38,7 @@ static gboolean update_datetime(gpointer data) {
 
 static void start_datetime(void) {
   widgets.datetime = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+  gtk_widget_set_name(widgets.datetime, CSS_ID_DATETIME);
   gtk_box_append(GTK_BOX(widgets.appbar), widgets.datetime);
   datetime = gtk_label_new(NULL);
   gtk_box_append(GTK_BOX(widgets.datetime), datetime);
@@ -60,7 +62,8 @@ void update_menu(void) {
   //
   g_action_map_add_action_entries(G_ACTION_MAP(widgets.app), entries, G_N_ELEMENTS(entries), NULL);
   widgets.menu = gtk_popover_menu_bar_new_from_model(G_MENU_MODEL(bar));
-  gtk_box_append(GTK_BOX(widgets.appbar), widgets.menu);
+  gtk_widget_set_name(widgets.menu, CSS_ID_MENU);
+  gtk_box_prepend(GTK_BOX(widgets.appbar), widgets.menu);
 }
 
 void init_appbar(void) {

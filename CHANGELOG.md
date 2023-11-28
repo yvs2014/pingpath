@@ -1,3 +1,6 @@
+## 0.1.8
+- test basic styling
+
 ## 0.1.7
 - add datetime displaying
 
