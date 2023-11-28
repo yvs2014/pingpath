@@ -1,3 +1,6 @@
+## 0.1.9
+- add target input field
+
 ## 0.1.8
 - test basic styling
 

@@ -1,3 +1,9 @@
+pingpath (0.1.9) lunar mantic; urgency=low
+
+  * add target input field
+
+ -- yvs <VSYakovetsky@gmail.com>  Tue, 28 Nov 2023 19:49:02 +0200
+
 pingpath (0.1.8) lunar mantic; urgency=low
 
   * test basic styling

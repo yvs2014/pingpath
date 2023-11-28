@@ -8,6 +8,8 @@
 #define PING "/bin/ping"
 #define SKIPNAME PING ": "
 
+#define free_ping_errors() free_ping_error_from(0)
+
 t_ping_opts ping_opts = { .target = NULL, .count = COUNT, .timeout = TIMEOUT };
 
 GtkWidget *pinglines[MAXTTL];
@@ -31,6 +33,10 @@ static gchar* last_error(void) {
     }
   }
   return NULL;
+}
+
+static void free_ping_error_from(int from) {
+  for (int i = from; i < MAXTTL; i++) UPD_STR(ping_errors[i], NULL);
 }
 
 // related to stat-viewer
@@ -152,13 +158,19 @@ void pinger_start(void) {
   clear_stat();
   for (int i = 0; i < MAXTTL; i++)
     if (!create_pingproc(i, &pingproc[i])) break;
-  update_menu();
   if (pings_active()) {
     free_ping_errors();
     free_stat();
     hops_no = MAXTTL;
     view_updater(true);
   }
+  update_menu();
+}
+
+void pinger_free(void) {
+  free_ping_errors();
+  free_stat();
+  g_free(ping_opts.target);
 }
 
 void on_stdout(GObject *stream, GAsyncResult *re, gpointer data) {
@@ -199,9 +211,5 @@ void clear_errline(void) {
   gtk_label_set_label(GTK_LABEL(errline), NULL);
   if (gtk_widget_get_visible(errline)) gtk_widget_set_visible(errline, false);
   free_ping_errors();
-}
-
-void free_ping_error_from(int from) {
-  for (int i = from; i < MAXTTL; i++) UPD_STR(ping_errors[i], NULL);
 }
 

@@ -14,8 +14,6 @@ void pinger_start(void);
 void pinger_stop(const gchar* reason);
 void stop_ping_at(int at, const gchar* reason);
 void clear_errline(void);
-void free_ping_error_at(int at);
-void free_ping_error_from(int from);
-#define free_ping_errors() free_ping_error_from(0)
+void pinger_free(void);
 
 #endif

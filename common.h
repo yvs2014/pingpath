@@ -5,7 +5,7 @@
 #include "aux.h"
 
 #define APPNAME "pingpath"
-#define VERSION "0.1.8"
+#define VERSION "0.1.9"
 
 #define MAXTTL 30
 #define COUNT  10
@@ -34,13 +34,8 @@
 
 struct procdata;
 
-typedef struct widgets { // aux widgets' references
-  GApplication *app;
-  GtkWidget *win, *appbar, *menu, *datetime, *stat;
-} t_widgets;
-
 typedef struct ping_opts {
-  char *target;
+  gchar *target;
   int count, timeout;
   guint timer;        // thread ID of stat-view-area update
   long long _tout_usec; // internal const
@@ -52,7 +47,5 @@ typedef struct procdata {
   GString *out, *err; // for received input data and errors
   int ndx;            // index in internal list
 } t_procdata;
-
-extern t_widgets widgets;
 
 #endif

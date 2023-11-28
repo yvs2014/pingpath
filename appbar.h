@@ -4,7 +4,7 @@
 #include <gtk/gtk.h>
 #include "common.h"
 
-void init_appbar(void);
+void init_appbar(GtkApplication *app, GtkWidget *parent);
 void update_menu(void);
 
 #endif
