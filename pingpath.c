@@ -9,7 +9,7 @@
 
 t_widgets widgets; // aux widgets' references
 
-static void on_app_exit(GtkWidget *w, gpointer data) {
+static void on_app_exit(GtkWidget *widget, gpointer unused) {
   LOG("%s", "exit");
   free_ping_errors();
   free_stat();
@@ -17,39 +17,37 @@ static void on_app_exit(GtkWidget *w, gpointer data) {
 // if not, then pinger_stop(data, "app exit");
 }
 
-static void activate(GtkApplication* app, gpointer user_data) {
+static void activate(GtkApplication* app, gpointer unused) {
   widgets.app = G_APPLICATION(app);
   widgets.win = gtk_application_window_new(app);
-//  ping_opts.target = "localhost";
+  ping_opts.target = "localhost";
 //  ping_opts.target = "localhost2";
 //  ping_opts.target = "192.168.88.100";
-  ping_opts.target = "google.com";
+//  ping_opts.target = "google.com";
 //  ping_opts.target = "8.8.8.8";
 //  ping_opts.target = "dw.com";
 //  ping_opts.target = "yahoo.com"; // TODO: retest first several answers for extra addrnames
   gtk_window_set_title(GTK_WINDOW(widgets.win), "pingpath");
   gtk_window_set_default_size(GTK_WINDOW(widgets.win), 1280, 768);
 
-  GtkWidget *root_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-  gtk_widget_set_halign(root_box, GTK_ALIGN_START);
-  gtk_widget_set_valign(root_box, GTK_ALIGN_START);
+  GtkWidget *root_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, MARGIN);
   gtk_window_set_child(GTK_WINDOW(widgets.win), root_box);
 
-  widgets.appbar = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+  widgets.appbar = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, MARGIN);
   gtk_box_append(GTK_BOX(root_box), widgets.appbar);
-  widgets.dyn = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-  gtk_box_append(GTK_BOX(root_box), widgets.dyn);
+  widgets.stat = gtk_box_new(GTK_ORIENTATION_VERTICAL, MARGIN);
+  gtk_box_append(GTK_BOX(root_box), widgets.stat);
   for (int i = 0; i < MAXTTL; i++) {
     pinglines[i] = gtk_label_new(NULL);
-    gtk_box_append(GTK_BOX(widgets.dyn), pinglines[i]);
+    gtk_box_append(GTK_BOX(widgets.stat), pinglines[i]);
   }
   errline = gtk_label_new(NULL);
-  gtk_box_append(GTK_BOX(widgets.dyn), errline);
+  gtk_box_append(GTK_BOX(widgets.stat), errline);
 
 //  GtkWidget *bottom_bar = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
 //  gtk_box_append(GTK_BOX(root_box), bottom_bar);
   g_signal_connect_swapped(widgets.win, "destroy", G_CALLBACK(on_app_exit), NULL);
-  update_menu();
+  init_appbar();
   gtk_window_present(GTK_WINDOW(widgets.win));
 }
 

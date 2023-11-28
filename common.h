@@ -4,11 +4,13 @@
 #include <gtk/gtk.h>
 #include "aux.h"
 
-#define VERSION "0.1.6"
+#define VERSION "0.1.7"
 
 #define MAXTTL 30
 #define COUNT  10
 #define TIMEOUT 1
+
+#define MARGIN 6
 
 #define BUFF_SIZE 1024
 
@@ -35,7 +37,7 @@ struct procdata;
 
 typedef struct widgets { // aux widgets' references
   GApplication *app;
-  GtkWidget *win, *appbar, *menu, *dyn;//, *label, *button_startstop;
+  GtkWidget *win, *appbar, *menu, *datetime, *stat;
 } t_widgets;
 
 typedef struct ping_opts {

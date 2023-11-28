@@ -2,28 +2,51 @@
 #include "menu.h"
 #include "pinger.h"
 
-static void on_ping_click(GSimpleAction *simple, GVariant *parameter, gpointer data) {
-  DEBUG("action: %s", g_action_get_name(G_ACTION(simple)));
-  if (ping_opts.target) {
-    if (!ping_opts.timer) pinger_start();
-    else pinger_stop("request");
-  }
-}
+GtkWidget *datetime;
 
-static void on_quit_click(GSimpleAction *simple, GVariant *parameter, gpointer data) {
-  DEBUG("action: %s", g_action_get_name(G_ACTION(simple)));
-  pinger_stop("quit");
-  LOG("%s", "quit");
-  if (widgets.app) g_application_quit(widgets.app);
-}
+static void on_ping_click(GSimpleAction*, GVariant*, gpointer data);
+static void on_quit_click(GSimpleAction*, GVariant*, gpointer data);
 
 const GActionEntry entries[] = {
   {"startstop", on_ping_click, NULL, NULL, NULL, {0,0,0}},
   {"close",     on_quit_click, NULL, NULL, NULL, {0,0,0}}
 };
 
+static void on_ping_click(GSimpleAction *action, GVariant *var, gpointer data) {
+  DEBUG("action: %s", g_action_get_name(G_ACTION(action)));
+  if (ping_opts.target) {
+    if (!ping_opts.timer) pinger_start();
+    else pinger_stop("request");
+  }
+}
+
+static void on_quit_click(GSimpleAction *action, GVariant *var, gpointer data) {
+  DEBUG("action: %s", g_action_get_name(G_ACTION(action)));
+  pinger_stop("quit");
+  LOG("%s", "quit");
+  if (widgets.app) g_application_quit(widgets.app);
+}
+
+static gboolean update_datetime(gpointer data) {
+  static char datetime_buff[32];
+  time_t now = time(NULL);
+  strftime(datetime_buff, sizeof(datetime_buff), "%F %T", localtime(&now));
+  gtk_label_set_text(GTK_LABEL(datetime), datetime_buff);
+  return true;
+}
+
+static void start_datetime(void) {
+  widgets.datetime = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+  gtk_box_append(GTK_BOX(widgets.appbar), widgets.datetime);
+  datetime = gtk_label_new(NULL);
+  gtk_box_append(GTK_BOX(widgets.datetime), datetime);
+  g_timeout_add(1000, update_datetime, NULL);
+  gtk_widget_set_visible(datetime, true);
+}
+
+// pub
+//
 void update_menu(void) {
-  if (!widgets.appbar) return;
   if (widgets.menu) gtk_box_remove(GTK_BOX(widgets.appbar), widgets.menu);
   GMenu* bar = g_menu_new();
   GMenu* action_menu = g_menu_new();
@@ -38,5 +61,16 @@ void update_menu(void) {
   g_action_map_add_action_entries(G_ACTION_MAP(widgets.app), entries, G_N_ELEMENTS(entries), NULL);
   widgets.menu = gtk_popover_menu_bar_new_from_model(G_MENU_MODEL(bar));
   gtk_box_append(GTK_BOX(widgets.appbar), widgets.menu);
+}
+
+void init_appbar(void) {
+  g_assert(widgets.appbar);
+  update_menu();
+  //
+  GtkWidget *spacer = gtk_label_new(NULL);
+  gtk_widget_set_hexpand(spacer, true);
+  gtk_box_append(GTK_BOX(widgets.appbar), spacer);
+  //
+  start_datetime();
 }
 
