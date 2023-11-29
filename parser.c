@@ -16,12 +16,14 @@
 #define REN_REASON "reason"
 #define REN_INFO "info"
 
-#define PATT_TS   "^\\[(?<" REN_TS_S ">[0-9]+)(.(?<" REN_TS_U ">[0-9]+))*\\]"
+#define PATT_TS   "^\\[(?<" REN_TS_S ">\\d+)(.(?<" REN_TS_U ">\\d+))*\\]"
 #define PATT_FROM "rom (((?<" REN_NAME ">.*) \\((?<" REN_ADDR ">.*)\\))|(?<" REN_IP ">.*))"
 #define PATT_SEQ  "icmp_seq=(?<" REN_SEQ ">\\d+)"
 
 #define SUCCESS 0
 #define DISCARD 1
+
+#define DIGIT_OR_LETTER "\\d\\pLu\\pLl"
 
 typedef bool parser_fn(int at, GMatchInfo* match, const char *line);
 
@@ -48,6 +50,8 @@ t_response_regex regexes[] = {
 };
 
 GRegex *multiline_regex;
+GRegex *hostname_char0_regex;
+GRegex *hostname_chars_regex;
 
 // aux
 //
@@ -179,6 +183,8 @@ void init_parser(void) {
   multiline_regex = compile_regex("\\n", G_REGEX_MULTILINE);
   for (int i = 0; i < (sizeof(regexes) / sizeof(regexes[0])); i++)
     regexes[i].regex = compile_regex(regexes[i].pattern, 0);
+  hostname_char0_regex = compile_regex("^[" DIGIT_OR_LETTER "]", 0);
+  hostname_chars_regex = compile_regex("^[" DIGIT_OR_LETTER ".-]+$", 0);
 }
 
 void parse_input(int at, char *input) {
@@ -186,4 +192,7 @@ void parse_input(int at, char *input) {
   for (gchar **s = lines; *s; s++) if ((*s)[0]) analyze_line(at, *s);
   if (lines) g_strfreev(lines);
 }
+
+inline bool test_hchar0(gchar *s) { return g_regex_match(hostname_char0_regex, s, 0, NULL); }
+inline bool test_hchars(gchar *s) { return g_regex_match(hostname_chars_regex, s, 0, NULL); }
 

@@ -1,16 +1,17 @@
-#ifndef __COMMON_H
-#define __COMMON_H
+#ifndef COMMON_H
+#define COMMON_H
 
 #include <gtk/gtk.h>
 #include "aux.h"
 
 #define APPNAME "pingpath"
-#define VERSION "0.1.11"
+#define VERSION "0.1.12"
 
 #define MAXTTL 30
 #define COUNT  50
 #define TIMEOUT 1
 
+#define MAXHOSTNAME 63 // in chars: must 63, should 255
 #define BUFF_SIZE 1024
 
 #define LOGGING 1

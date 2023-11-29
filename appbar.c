@@ -2,6 +2,7 @@
 #include "appbar.h"
 #include "pinger.h"
 #include "styles.h"
+#include "valid.h"
 
 typedef void (*update_menu_fn)(GMenu *menu);
 
@@ -108,9 +109,9 @@ void update_actions(void) {
 
 static void set_target(GtkWidget *widget, GtkWidget *entry) {
   g_return_if_fail(GTK_IS_EDITABLE(entry));
-  const gchar *target = gtk_editable_get_text(GTK_EDITABLE(entry));
+  gchar *target = valid_target(gtk_editable_get_text(GTK_EDITABLE(entry)));
   if (target) {
-    ping_opts.target = g_strdup(target);
+    g_free(ping_opts.target); ping_opts.target = target;
     LOG("target: %s", target);
   }
 }
@@ -119,7 +120,7 @@ static void add_target_input(void) {
  static GtkWidget *target_entry;
  if (target_entry) gtk_header_bar_remove(GTK_HEADER_BAR(appbar), target_entry);
  target_entry = gtk_entry_new();
- gtk_entry_set_max_length(GTK_ENTRY(target_entry), 80);
+ gtk_entry_set_max_length(GTK_ENTRY(target_entry), MAXHOSTNAME);
  g_signal_connect(target_entry, "activate", G_CALLBACK(set_target), target_entry);
  gtk_entry_set_placeholder_text(GTK_ENTRY(target_entry), "Enter hostname or IP address ...");
  gtk_editable_set_editable(GTK_EDITABLE(target_entry), true);

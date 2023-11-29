@@ -10,8 +10,10 @@ ifeq ($(CC),gcc)
 CFLAGS += -fanalyzer
 endif
 #CFLAGS += -g
+#CFLAGS += -Ibase
+#CFLAGS += -Iui
 
-SRC = $(NAME).c pinger.c aux.c parser.c stat.c appbar.c styles.c
+SRC = $(NAME).c pinger.c parser.c stat.c appbar.c styles.c valid.c aux.c
 
 OBJS = $(SRC:.c=.o)
 

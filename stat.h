@@ -1,5 +1,5 @@
-#ifndef __STAT_H
-#define __STAT_H
+#ifndef STAT_H
+#define STAT_H
 
 #include <gtk/gtk.h>
 

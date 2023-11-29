@@ -1,5 +1,5 @@
-#ifndef __STYLES_H
-#define __STYLES_H
+#ifndef STYLES_H
+#define STYLES_H
 
 #define MARGIN 8
 #define PAD "8px"

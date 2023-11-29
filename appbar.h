@@ -1,5 +1,5 @@
-#ifndef __APPBAR_H
-#define __APPBAR_H
+#ifndef APPBAR_H
+#define APPBAR_H
 
 #include <gtk/gtk.h>
 #include "common.h"

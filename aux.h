@@ -1,5 +1,5 @@
-#ifndef __AUX_H
-#define __AUX_H
+#ifndef AUX_H
+#define AUX_H
 
 const char *timestampit(void);
 

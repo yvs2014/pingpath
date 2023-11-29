@@ -1,5 +1,5 @@
-#ifndef __PINGER_H
-#define __PINGER_H
+#ifndef PINGER_H
+#define PINGER_H
 
 #include <gtk/gtk.h>
 #include "common.h"

@@ -1,3 +1,6 @@
+## 0.1.12
+- add target name validation
+
 ## 0.1.11
 - set menu button icons
 - add todo-template for option menu
