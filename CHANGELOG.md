@@ -1,3 +1,7 @@
+## 0.1.11
+- set menu button icons
+- add todo-template for option menu
+
 ## 0.1.10
 - move appbar into window titlebar
 

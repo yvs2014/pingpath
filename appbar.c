@@ -3,6 +3,8 @@
 #include "pinger.h"
 #include "styles.h"
 
+typedef void (*update_menu_fn)(GMenu *menu);
+
 GtkApplication *main_app;
 GtkWidget *appbar;
 
@@ -21,15 +23,22 @@ static void on_pauseresume(GSimpleAction *action, GVariant *var, gpointer data) 
   update_actions();
 }
 
-const GActionEntry entries[] = {
-  {"startstop", on_startstop, NULL, NULL, NULL},
-  {"pauseresume", on_pauseresume, NULL, NULL},
-  {"reset", NULL, NULL, NULL},
-  {"help", NULL, NULL, NULL}
+const GActionEntry action_entries[] = {
+  {"act_startstop", on_startstop, NULL, NULL, NULL},
+  {"act_pauseresume", on_pauseresume, NULL, NULL},
+  {"act_reset", NULL, NULL, NULL},
+  {"act_help", NULL, NULL, NULL}
+};
+
+const GActionEntry option_entries[] = {
+  // TODO
+  {"opt_cycle", NULL, NULL, NULL, NULL},
+  {"opt_interval", NULL, NULL, NULL, NULL},
 };
 
 static gboolean update_datetime(gpointer label) {
   static char datetime_label[32];
+  g_return_val_if_fail(GTK_IS_LABEL(label), true);
   time_t now = time(NULL);
   strftime(datetime_label, sizeof(datetime_label), "%F %T", localtime(&now));
   gtk_label_set_text(GTK_LABEL(label), datetime_label);
@@ -50,43 +59,60 @@ static void start_datetime(void) {
   g_timeout_add(1000, update_datetime, label);
 }
 
-static void update_dyn_menuitems(GMenu *menu, bool init) {
-  if (!init) {
-    g_menu_remove(menu, 0);
-    g_menu_remove(menu, 0);
-  }
-  g_menu_prepend_item(menu, g_menu_item_new(ping_opts.pause ? "Resume" : "Pause", "app.pauseresume"));
-  g_menu_prepend_item(menu, g_menu_item_new(ping_opts.timer ? "Stop" : "Start", "app.startstop"));
+static void update_dyn_actions(GMenu *menu) {
+  g_return_if_fail(G_IS_MENU(menu));
+  g_menu_remove_all(menu);
+  g_menu_append_item(menu, g_menu_item_new(ping_opts.timer ? "Stop" : "Start", "app.act_startstop"));
+  g_menu_append_item(menu, g_menu_item_new(ping_opts.pause ? "Resume" : "Pause", "app.act_pauseresume"));
+  g_menu_append_item(menu, g_menu_item_new("Reset",  "app.act_reset"));
+  g_menu_append_item(menu, g_menu_item_new("Help",  "app.act_help"));
+}
+
+static void update_dyn_options(GMenu *menu) {
+  g_return_if_fail(G_IS_MENU(menu));
+  g_menu_remove_all(menu);
+  g_menu_append_item(menu, g_menu_item_new("Cycles", "app.opt_cycle"));
+  g_menu_append_item(menu, g_menu_item_new("Interval, sec", "app.opt_interval"));
+  return;
 }
 
 // pub
 //
-void update_actions(void) {
-  static GtkWidget *action_bar;
-  static GMenu* action_menu;
-  if (action_menu) update_dyn_menuitems(action_menu, false);
+GMenu* update_menu(GMenu *menu, const char* icon, update_menu_fn update_fn) {
+  if (menu) update_fn(menu);
   else {
-    action_menu = g_menu_new();
-    g_assert(action_menu);
-    update_dyn_menuitems(action_menu, true);
-    g_menu_append_item(action_menu, g_menu_item_new("Reset",  "app.reset"));
-    g_menu_append_item(action_menu, g_menu_item_new("Help",  "app.help"));
-    GMenu* bar = g_menu_new();
-    g_assert(bar);
-    g_menu_append_submenu(bar, "Action", G_MENU_MODEL(action_menu));
-    g_action_map_add_action_entries(G_ACTION_MAP(main_app), entries, G_N_ELEMENTS(entries), main_app);
-    action_bar = gtk_popover_menu_bar_new_from_model(G_MENU_MODEL(bar));
-    g_assert(action_bar);
-    gtk_widget_set_name(action_bar, CSS_ID_MENU);
-    gtk_header_bar_pack_start(GTK_HEADER_BAR(appbar), action_bar);
+    menu = g_menu_new();
+    g_assert(menu);
+    update_fn(menu);
+    GtkWidget *button = gtk_menu_button_new();
+    gtk_menu_button_set_icon_name(GTK_MENU_BUTTON(button), icon);
+    gtk_header_bar_pack_start(GTK_HEADER_BAR(appbar), button);
+    GtkWidget *popover = gtk_popover_menu_new_from_model(G_MENU_MODEL(menu));
+    g_assert(popover);
+    gtk_menu_button_set_popover(GTK_MENU_BUTTON(button), popover);
+//    if (css_id) gtk_widget_set_name(popover, css_id);
   }
+  return menu;
+}
+
+
+void update_actions(void) {
+  static GMenu *action_menu, *option_menu;
+  if (!action_menu)
+    g_action_map_add_action_entries(G_ACTION_MAP(main_app), action_entries, G_N_ELEMENTS(action_entries), NULL);
+  if (!option_menu)
+    g_action_map_add_action_entries(G_ACTION_MAP(main_app), option_entries, G_N_ELEMENTS(option_entries), NULL);
+  action_menu = update_menu(action_menu, "open-menu-symbolic", update_dyn_actions);
+  option_menu = update_menu(option_menu, "document-properties-symbolic", update_dyn_options);
 }
 
 static void set_target(GtkWidget *widget, GtkWidget *entry) {
-  const gchar *target;
-  target = gtk_editable_get_text(GTK_EDITABLE(entry));
-  ping_opts.target = g_strdup(target);
-  LOG("target: %s", target);
+  g_return_if_fail(GTK_IS_EDITABLE(entry));
+  const gchar *target = gtk_editable_get_text(GTK_EDITABLE(entry));
+  if (target) {
+    ping_opts.target = g_strdup(target);
+    LOG("target: %s", target);
+  }
 }
 
 static void add_target_input(void) {
@@ -101,6 +127,7 @@ static void add_target_input(void) {
 }
 
 //static void add_spacer(GtkWidget *box) {
+//  g_return_if_fail(GTK_IS_BOX(box));
 //  GtkWidget *spacer = gtk_label_new(NULL);
 //  gtk_widget_set_hexpand(spacer, true);
 //  gtk_box_prepend(GTK_BOX(box), spacer);
@@ -108,6 +135,8 @@ static void add_target_input(void) {
 
 void init_appbar(GtkApplication *app, GtkWidget *win) {
   if (appbar) return;
+  g_return_if_fail(GTK_IS_APPLICATION(app));
+  g_return_if_fail(GTK_IS_WINDOW(win));
   main_app = app;
   g_assert(main_app);
   appbar = gtk_header_bar_new();

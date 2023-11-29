@@ -1,3 +1,11 @@
+pingpath (0.1.11) lunar mantic; urgency=low
+
+  * set menu button icons
+
+  * add todo-template for option menu
+
+ -- yvs <VSYakovetsky@gmail.com>  Wed, 29 Nov 2023 07:03:59 +0200
+
 pingpath (0.1.10) lunar mantic; urgency=low
 
   * move appbar into window titlebar
