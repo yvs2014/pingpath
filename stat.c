@@ -92,7 +92,7 @@ static void update_stat(int at, int rtt) {
 static int calc_rtt(int at, t_tseq *mark) {
   int rtt = ((mark->seq != (hops[at].start.seq + 1)) || (hops[at].start.seq < 0)) ? -1 :
     (mark->sec - hops[at].start.sec) * 1000000 + (mark->usec - hops[at].start.usec);
-  rtt = (rtt > ping_opts._tout_usec) ? -1 : rtt; // skip timeouted responses
+  rtt = (rtt > ping_opts.tout_usec) ? -1 : rtt; // skip timeouted responses
   return rtt;
 }
 

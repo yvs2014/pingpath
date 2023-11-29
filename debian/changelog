@@ -1,3 +1,9 @@
+pingpath (0.1.10) lunar mantic; urgency=low
+
+  * move appbar into window titlebar
+
+ -- yvs <VSYakovetsky@gmail.com>  Wed, 29 Nov 2023 03:33:57 +0200
+
 pingpath (0.1.9) lunar mantic; urgency=low
 
   * add target input field

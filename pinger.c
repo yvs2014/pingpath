@@ -47,7 +47,7 @@ static bool pings_active(void) {
 }
 //
 static gboolean update_statview(gpointer data) {
-  for (int i = 0; i < MAXTTL; i++) {
+  if (!ping_opts.pause) for (int i = 0; i < MAXTTL; i++) {
     GtkWidget* line = pinglines[i];
     if (line) {
       bool vis = gtk_widget_get_visible(line);
@@ -73,7 +73,7 @@ static void set_finish_flag(struct _GObject *a, struct _GAsyncResult *b, gpointe
   if (p) {
     if (p->active) p->active = false;
     if (!pings_active()) {
-      update_menu();
+      update_actions();
       view_updater(false);
       update_statview(NULL);
     }
@@ -120,7 +120,6 @@ void stop_ping_at(int at, const gchar* reason) {
 
 void pinger_stop(const gchar* reason) {
   for (int i = 0; i < MAXTTL; i++) stop_ping_at(i, reason);
-  update_menu();
   view_updater(false);
 }
 
@@ -154,7 +153,7 @@ static bool create_pingproc(int at, t_procdata *p) {
 
 void pinger_start(void) {
   if (!ping_opts.target) return;
-  ping_opts._tout_usec = ping_opts.timeout * 1000000;
+  ping_opts.tout_usec = ping_opts.timeout * 1000000;
   clear_stat();
   for (int i = 0; i < MAXTTL; i++)
     if (!create_pingproc(i, &pingproc[i])) break;
@@ -164,7 +163,6 @@ void pinger_start(void) {
     hops_no = MAXTTL;
     view_updater(true);
   }
-  update_menu();
 }
 
 void pinger_free(void) {

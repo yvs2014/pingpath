@@ -1,3 +1,6 @@
+## 0.1.10
+- move appbar into window titlebar
+
 ## 0.1.9
 - add target input field
 

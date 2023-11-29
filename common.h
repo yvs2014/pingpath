@@ -5,10 +5,10 @@
 #include "aux.h"
 
 #define APPNAME "pingpath"
-#define VERSION "0.1.9"
+#define VERSION "0.1.10"
 
 #define MAXTTL 30
-#define COUNT  10
+#define COUNT  50
 #define TIMEOUT 1
 
 #define BUFF_SIZE 1024
@@ -37,8 +37,9 @@ struct procdata;
 typedef struct ping_opts {
   gchar *target;
   int count, timeout;
-  guint timer;        // thread ID of stat-view-area update
-  long long _tout_usec; // internal const
+  guint timer;         // thread ID of stat-view-area updater
+  bool pause;          // state of stat-view-area updater
+  long long tout_usec; // internal const
 } t_ping_opts;
 
 typedef struct procdata {
