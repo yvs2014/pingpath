@@ -24,17 +24,29 @@ static void on_pauseresume(GSimpleAction *action, GVariant *var, gpointer data) 
   update_actions();
 }
 
+static void on_reset(GSimpleAction *action, GVariant *var, gpointer data) {
+  DEBUG("action: %s", g_action_get_name(G_ACTION(action)));
+  pinger_clear_data();
+}
+
 const GActionEntry action_entries[] = {
-  {"act_startstop", on_startstop, NULL, NULL, NULL},
-  {"act_pauseresume", on_pauseresume, NULL, NULL},
-  {"act_reset", NULL, NULL, NULL},
-  {"act_help", NULL, NULL, NULL}
+  { .name = "act_start", .activate = on_startstop },
+  { .name = "act_pause", .activate = on_pauseresume },
+  { .name = "act_reset", .activate = on_reset },
+  { .name = "act_help" }, // TODO
 };
 
-const GActionEntry option_entries[] = {
-  // TODO
-  {"opt_cycle", NULL, NULL, NULL, NULL},
-  {"opt_interval", NULL, NULL, NULL, NULL},
+const GActionEntry option_entries[] = { // TODO
+  { .name = "opt_cycle" },
+  { .name = "opt_interval" },
+  { .name = "opt_dns" },
+  { .name = "opt_hopinfo" },
+  { .name = "opt_stat" },
+  { .name = "opt_ttl" },
+  { .name = "opt_payload" },
+  { .name = "opt_qos" },
+  { .name = "opt_size" },
+  { .name = "opt_ipv" },
 };
 
 static gboolean update_datetime(gpointer label) {
@@ -63,19 +75,26 @@ static void start_datetime(void) {
 static void update_dyn_actions(GMenu *menu) {
   g_return_if_fail(G_IS_MENU(menu));
   g_menu_remove_all(menu);
-  g_menu_append_item(menu, g_menu_item_new(ping_opts.timer ? "Stop" : "Start", "app.act_startstop"));
-  g_menu_append_item(menu, g_menu_item_new(ping_opts.pause ? "Resume" : "Pause", "app.act_pauseresume"));
-  g_menu_append_item(menu, g_menu_item_new("Reset",  "app.act_reset"));
+  g_menu_append_item(menu, g_menu_item_new(ping_opts.timer ? "Stop" : "Start",   "app.act_start"));
+  g_menu_append_item(menu, g_menu_item_new(ping_opts.pause ? "Resume" : "Pause", "app.act_pause"));
+  g_menu_append_item(menu, g_menu_item_new("Reset", "app.act_reset"));
   g_menu_append_item(menu, g_menu_item_new("Help",  "app.act_help"));
 }
 
 static void update_dyn_options(GMenu *menu) {
   g_return_if_fail(G_IS_MENU(menu));
   g_menu_remove_all(menu);
-  g_menu_append_item(menu, g_menu_item_new("Cycles", "app.opt_cycle"));
+  g_menu_append_item(menu, g_menu_item_new("Cycles",        "app.opt_cycle"));
   g_menu_append_item(menu, g_menu_item_new("Interval, sec", "app.opt_interval"));
-  return;
-}
+  g_menu_append_item(menu, g_menu_item_new("DNS",           "app.opt_dns"));
+  g_menu_append_item(menu, g_menu_item_new("Hop Info",      "app.opt_hopinfo"));
+  g_menu_append_item(menu, g_menu_item_new("Statistics",    "app.opt_stat"));
+  g_menu_append_item(menu, g_menu_item_new("TTL",           "app.opt_ttl"));
+  g_menu_append_item(menu, g_menu_item_new("Payload, hex",  "app.opt_payload"));
+  g_menu_append_item(menu, g_menu_item_new("QoS",           "app.opt_qos"));
+  g_menu_append_item(menu, g_menu_item_new("Size",          "app.opt_size"));
+  g_menu_append_item(menu, g_menu_item_new("IP Version №",  "app.opt_ipv"));
+};
 
 // pub
 //

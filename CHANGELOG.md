@@ -1,3 +1,6 @@
+## 0.1.13
+- add reset handler
+
 ## 0.1.12
 - add target name validation
 

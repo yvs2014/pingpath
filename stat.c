@@ -128,7 +128,7 @@ void save_success_data(int at, t_ping_success *data) {
   if (hops_no > ttl) {
     hops_no = ttl;
     LOG("target is reached at ttl=%d", ttl);
-    stop_pings_behind(hops_no, "behind the target");
+    stop_pings_behind(hops_no, "behind target");
   }
   UPD_STR(ping_errors[at], NULL);
   UPD_STR(hops[at].info, NULL);

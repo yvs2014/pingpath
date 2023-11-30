@@ -13,7 +13,7 @@ void init_pinger(void);
 void pinger_start(void);
 void pinger_stop(const gchar* reason);
 void stop_ping_at(int at, const gchar* reason);
-void clear_errline(void);
 void pinger_free(void);
+void pinger_clear_data(void);
 
 #endif

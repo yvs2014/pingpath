@@ -8,8 +8,6 @@
 #define PING "/bin/ping"
 #define SKIPNAME PING ": "
 
-#define free_ping_errors() free_ping_error_from(0)
-
 t_ping_opts ping_opts = { .target = NULL, .count = COUNT, .timeout = TIMEOUT };
 
 GtkWidget *pinglines[MAXTTL];
@@ -37,6 +35,20 @@ static gchar* last_error(void) {
 
 static void free_ping_error_from(int from) {
   for (int i = from; i < MAXTTL; i++) UPD_STR(ping_errors[i], NULL);
+}
+
+static void clear_pinglines(void) {
+  for (int i = 0; i < MAXTTL; i++) {
+    GtkWidget *line = pinglines[i];
+    if (gtk_widget_get_visible(line)) gtk_widget_set_visible(line, false);
+    gtk_label_set_label(GTK_LABEL(line), NULL);
+  }
+}
+
+static void clear_errline(void) {
+  if (gtk_widget_get_visible(errline)) gtk_widget_set_visible(errline, false);
+  gtk_label_set_label(GTK_LABEL(errline), NULL);
+  free_ping_error_from(0);
 }
 
 // related to stat-viewer
@@ -158,17 +170,23 @@ void pinger_start(void) {
   for (int i = 0; i < MAXTTL; i++)
     if (!create_pingproc(i, &pingproc[i])) break;
   if (pings_active()) {
-    free_ping_errors();
-    free_stat();
-    hops_no = MAXTTL;
+    pinger_clear_data();
     view_updater(true);
   }
 }
 
-void pinger_free(void) {
-  free_ping_errors();
+inline void pinger_clear_data(void) {
+  free_ping_error_from(0);
+  clear_stat();
+  hops_no = MAXTTL;
+  clear_errline();
+  clear_pinglines();
+}
+
+inline void pinger_free(void) {
+  free_ping_error_from(0);
   free_stat();
-  g_free(ping_opts.target);
+  g_free(ping_opts.target); ping_opts.target = NULL;
 }
 
 void on_stdout(GObject *stream, GAsyncResult *re, gpointer data) {
@@ -203,11 +221,5 @@ void on_stderr(GObject *stream, GAsyncResult *re, gpointer data) {
   if (!gtk_widget_get_visible(errline)) gtk_widget_set_visible(errline, true);
   g_input_stream_read_async(G_INPUT_STREAM(stream), p->err->str, p->err->allocated_len,
     G_PRIORITY_DEFAULT, NULL, on_stderr, data);
-}
-
-void clear_errline(void) {
-  gtk_label_set_label(GTK_LABEL(errline), NULL);
-  if (gtk_widget_get_visible(errline)) gtk_widget_set_visible(errline, false);
-  free_ping_errors();
 }
 
