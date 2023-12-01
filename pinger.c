@@ -1,17 +1,15 @@
 
 #include "pinger.h"
 #include "parser.h"
-#include "appbar.h"
 #include "stat.h"
-#include "common.h"
+#include "ui/appbar.h"
+#include "tabs/ping.h"
 
 #define PING "/bin/ping"
 #define SKIPNAME PING ": "
 
-t_ping_opts ping_opts = { .target = NULL, .count = COUNT, .timeout = TIMEOUT };
+t_ping_opts ping_opts = { .target = NULL, .count = COUNT, .timeout = TIMEOUT, .dns = true };
 
-GtkWidget *pinglines[MAXTTL];
-GtkWidget *errline;
 gchar* ping_errors[MAXTTL];
 
 void on_stdout(GObject *stream, GAsyncResult *re, gpointer data);
@@ -33,53 +31,20 @@ static gchar* last_error(void) {
   return NULL;
 }
 
-static void free_ping_error_from(int from) {
-  for (int i = from; i < MAXTTL; i++) UPD_STR(ping_errors[i], NULL);
+void free_ping_errors(void) {
+  for (int i = 0; i < MAXTTL; i++) UPD_STR(ping_errors[i], NULL);
 }
 
-static void clear_pinglines(void) {
-  for (int i = 0; i < MAXTTL; i++) {
-    GtkWidget *line = pinglines[i];
-    if (gtk_widget_get_visible(line)) gtk_widget_set_visible(line, false);
-    gtk_label_set_label(GTK_LABEL(line), NULL);
-  }
-}
-
-static void clear_errline(void) {
-  if (gtk_widget_get_visible(errline)) gtk_widget_set_visible(errline, false);
-  gtk_label_set_label(GTK_LABEL(errline), NULL);
-  free_ping_error_from(0);
-}
-
-// related to stat-viewer
-//
 static bool pings_active(void) {
   for (int i = 0; i < MAXTTL; i++) if (pingproc[i].active) return true;
   return false;
 }
-//
-static gboolean update_statview(gpointer data) {
-  if (!ping_opts.pause) for (int i = 0; i < MAXTTL; i++) {
-    GtkWidget* line = pinglines[i];
-    if (line) {
-      bool vis = gtk_widget_get_visible(line);
-      if (i < hops_no) {
-        const gchar* s = stat_at(i);
-        if (s) gtk_label_set_label(GTK_LABEL(line), s);
-        if (!vis) gtk_widget_set_visible(line, true);
-      } else {
-        if (vis) gtk_widget_set_visible(line, false);
-      }
-    }
-  }
-  return true;
-}
-//
+
 static void view_updater(bool reset) {
   if (ping_opts.timer) { g_source_remove(ping_opts.timer); ping_opts.timer = 0; }
-  if (reset) ping_opts.timer = g_timeout_add(ping_opts.timeout * 1000, update_statview, NULL);
+  if (reset) ping_opts.timer = g_timeout_add(ping_opts.timeout * 1000, update_dynarea, NULL);
 }
-//
+
 static void set_finish_flag(struct _GObject *a, struct _GAsyncResult *b, gpointer data) {
   t_procdata *p = data;
   if (p) {
@@ -87,7 +52,7 @@ static void set_finish_flag(struct _GObject *a, struct _GAsyncResult *b, gpointe
     if (!pings_active()) {
       update_actions();
       view_updater(false);
-      update_statview(NULL);
+      update_dynarea(NULL);
     }
   }
 }
@@ -142,11 +107,11 @@ static bool create_pingproc(int at, t_procdata *p) {
   const gchar** argv = calloc(16, sizeof(gchar*)); int argc = 0;
   argv[argc++] = PING;
   argv[argc++] = "-OD";
+  if (!ping_opts.dns) argv[argc++] = "-n";
   char sttl[16]; snprintf(sttl, sizeof(sttl), "-t%d", at + 1);            argv[argc++] = sttl;
   char scnt[16]; snprintf(scnt, sizeof(scnt), "-c%d", ping_opts.count);   argv[argc++] = scnt;
   char sitm[16]; snprintf(sitm, sizeof(sitm), "-i%d", ping_opts.timeout); argv[argc++] = sitm;
   char sWtm[16]; snprintf(sWtm, sizeof(sitm), "-W%d", ping_opts.timeout); argv[argc++] = sWtm;
-//  argv[argc++] = "-n";
   argv[argc++] = "--";
   argv[argc++] = ping_opts.target;
   GError *err = NULL;
@@ -175,16 +140,15 @@ void pinger_start(void) {
   }
 }
 
-inline void pinger_clear_data(void) {
-  free_ping_error_from(0);
+void pinger_clear_data(void) {
+  free_ping_errors();
   clear_stat();
   hops_no = MAXTTL;
-  clear_errline();
-  clear_pinglines();
+  clear_dynarea();
 }
 
-inline void pinger_free(void) {
-  free_ping_error_from(0);
+void pinger_free(void) {
+  free_ping_errors();
   free_stat();
   g_free(ping_opts.target); ping_opts.target = NULL;
 }
@@ -217,8 +181,7 @@ void on_stderr(GObject *stream, GAsyncResult *re, gpointer data) {
   { int l = strlen(SKIPNAME); if (!strncmp(s, SKIPNAME, l)) s += l; } // skip program name
   s = g_strstrip(s); LOG("ERROR: %s", s);
   UPD_STR(ping_errors[p->ndx], s); s = last_error(); // save error and display last one
-  gtk_label_set_label(GTK_LABEL(errline), s);
-  if (!gtk_widget_get_visible(errline)) gtk_widget_set_visible(errline, true);
+  set_errline(s);
   g_input_stream_read_async(G_INPUT_STREAM(stream), p->err->str, p->err->allocated_len,
     G_PRIORITY_DEFAULT, NULL, on_stderr, data);
 }

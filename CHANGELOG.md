@@ -1,3 +1,6 @@
+## 0.1.14
+- add table template to viewarea
+
 ## 0.1.13
 - add reset handler
 

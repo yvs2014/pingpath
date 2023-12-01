@@ -1,7 +1,7 @@
 
 #include "appbar.h"
-#include "pinger.h"
 #include "styles.h"
+#include "pinger.h"
 #include "valid.h"
 
 typedef void (*update_menu_fn)(GMenu *menu);

@@ -1,3 +1,9 @@
+pingpath (0.1.14) lunar mantic; urgency=low
+
+  * add table template to viewarea
+
+ -- yvs <VSYakovetsky@gmail.com>  Fri, 01 Dec 2023 12:39:12 +0200
+
 pingpath (0.1.13) lunar mantic; urgency=low
 
   * add reset handler
