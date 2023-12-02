@@ -63,7 +63,7 @@ static void start_datetime(void) {
   if (datetime) return;
   datetime = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
   g_assert(datetime);
-  gtk_widget_set_name(datetime, CSS_ID_DATETIME);
+  if (css_loaded) gtk_widget_set_name(datetime, CSS_ID_DATETIME);
   gtk_header_bar_set_title_widget(GTK_HEADER_BAR(appbar), datetime);
   label = gtk_label_new(NULL);
   g_assert(label);
@@ -161,7 +161,7 @@ void init_appbar(GtkApplication *app, GtkWidget *win) {
   g_assert(main_app);
   appbar = gtk_header_bar_new();
   g_assert(appbar);
-  gtk_widget_set_name(appbar, CSS_ID_APPBAR);
+  if (css_loaded) gtk_widget_set_name(appbar, CSS_ID_APPBAR);
   gtk_window_set_titlebar(GTK_WINDOW(win), appbar);
   update_actions();
   add_target_input();

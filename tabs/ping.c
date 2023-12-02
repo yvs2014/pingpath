@@ -163,12 +163,12 @@ void set_errline(const gchar *s) {
 
 GtkWidget* init_pingtab() {
   area.tab = gtk_box_new(GTK_ORIENTATION_VERTICAL, MARGIN);                                                
-  gtk_widget_set_name(area.tab, CSS_ID_PINGTAB);
+  if (css_loaded) gtk_widget_set_name(area.tab, CSS_ID_PINGTAB);
   area.hdr = init_list_box(listbox.header, HDRLINES, true, true);
-  gtk_widget_set_name(area.hdr, CSS_ID_HDRAREA);
+  if (css_loaded) gtk_widget_set_name(area.hdr, CSS_ID_HDRAREA);
   gtk_box_append(GTK_BOX(area.tab), area.hdr);
   area.dyn = init_list_box(listbox.lines, MAXTTL, false, false);
-  gtk_widget_set_name(area.dyn, CSS_ID_DYNAREA);
+  if (css_loaded) gtk_widget_set_name(area.dyn, CSS_ID_DYNAREA);
   //
   GtkWidget *dynbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
   g_assert(dynbox);
@@ -179,8 +179,6 @@ GtkWidget* init_pingtab() {
   gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scroll), dynbox);
   gtk_widget_set_vexpand(GTK_WIDGET(scroll), true);
   gtk_box_append(GTK_BOX(area.tab), scroll);
-//gtk_widget_set_name(area.tab, CSS_IDG);
-//gtk_widget_set_name(scroll, CSS_IDG);
   return area.tab;
 }
 

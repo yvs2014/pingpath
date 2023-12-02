@@ -172,7 +172,7 @@ static bool parse_match_wrap(int at, GRegex *re, const char *line, parser_fn *fn
 }
 
 static void analyze_line(int at, const char *line) {
-  for (int i = 0; i < (sizeof(regexes) / sizeof(regexes[0])); i++)
+  for (int i = 0; i < G_N_ELEMENTS(regexes); i++)
     if (parse_match_wrap(at, regexes[i].regex, line, regexes[i].parser)) return;
   DEBUG("UNKNOWN: %s", line);
 }
@@ -181,7 +181,7 @@ static void analyze_line(int at, const char *line) {
 //
 void init_parser(void) {
   multiline_regex = compile_regex("\\n", G_REGEX_MULTILINE);
-  for (int i = 0; i < (sizeof(regexes) / sizeof(regexes[0])); i++)
+  for (int i = 0; i < G_N_ELEMENTS(regexes); i++)
     regexes[i].regex = compile_regex(regexes[i].pattern, 0);
   hostname_char0_regex = compile_regex("^[" DIGIT_OR_LETTER "]", 0);
   hostname_chars_regex = compile_regex("^[" DIGIT_OR_LETTER ".-]+$", 0);

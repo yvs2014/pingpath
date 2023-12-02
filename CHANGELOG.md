@@ -1,3 +1,6 @@
+## 0.1.15
+- check out settings on dark theme preference
+
 ## 0.1.14
 - add table template to viewarea
 

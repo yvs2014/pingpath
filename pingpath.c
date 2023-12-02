@@ -16,14 +16,14 @@ static void on_app_exit(GtkWidget *widget, gpointer unused) {
 }
 
 static void activate(GtkApplication* app, gpointer unused) {
+  init_css_styles();
   GtkWidget *win = gtk_application_window_new(app);
   gtk_window_set_default_size(GTK_WINDOW(win), 1280, 720);
-  gtk_widget_set_name(win, CSS_ID_WIN);
+  if (css_loaded) gtk_widget_set_name(win, CSS_ID_WIN);
   init_appbar(app, win);
   gtk_window_set_child(GTK_WINDOW(win), init_pingtab());
   g_signal_connect_swapped(win, "destroy", G_CALLBACK(on_app_exit), NULL);
   gtk_window_present(GTK_WINDOW(win));
-  init_styles();
 }
 
 int main(int argc, char **argv) {
