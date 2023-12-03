@@ -1,3 +1,11 @@
+pingpath (0.1.16) lunar mantic; urgency=low
+
+  * add all stat fields in view
+
+  * revamp stats a bit
+
+ -- yvs <VSYakovetsky@gmail.com>  Sun, 03 Dec 2023 09:29:56 +0200
+
 pingpath (0.1.15) lunar mantic; urgency=low
 
   * check out settings on dark theme preference

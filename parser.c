@@ -123,7 +123,7 @@ static bool parse_success_match(int at, GMatchInfo* match, const char *line) {
   if (res.time < 0) { WARN("wrong TIME in SUCCESS message: %s", line); return false; }
   // after other mandatory fields to not free() if their fetch failed
   if (!valid_markhost(match, &res.mark, &res.host, "SUCCESS", line)) return false;
-  DEBUG("SUCCESS: host=%s,%s ttl=%d time=%dusec", res.host.addr, res.host.name, res.ttl, res.time);
+  DEBUG("SUCCESS[at=%d seq=%d]: host=%s,%s ttl=%d time=%dusec", at, res.mark.seq, res.host.addr, res.host.name, res.ttl, res.time);
   save_success_data(at, &res);
   return true;
 }
@@ -133,7 +133,7 @@ static bool parse_discard_match(int at, GMatchInfo* match, const char *line) {
   memset(&res, 0, sizeof(res));
   if (!valid_markhost(match, &res.mark, &res.host, "DISCARD", line)) return false;
   res.reason = fetch_named_str(match, REN_REASON);
-  DEBUG("DISCARD: host=%s,%s reason=\"%s\"", res.host.addr, res.host.name, res.reason);
+  DEBUG("DISCARD[at=%d seq=%d]: host=%s,%s reason=\"%s\"", at, res.mark.seq, res.host.addr, res.host.name, res.reason);
   save_discard_data(at, &res);
   return true;
 }
@@ -142,7 +142,7 @@ static bool parse_timeout_match(int at, GMatchInfo* match, const char *line) {
   t_ping_timeout res;
   memset(&res, 0, sizeof(res));
   if (!valid_mark(match, &res.mark)) { WARN("wrong MARK in %s message: %s", "TIMEOUT", line); return false; }
-  DEBUG("TIMEOUT: seq=%d ts=%lld.%06d", res.mark.seq, res.mark.sec, res.mark.usec);
+  DEBUG("TIMEOUT[at=%d seq=%d]: seq=%d ts=%lld.%06d", at, res.mark.seq, res.mark.seq, res.mark.sec, res.mark.usec);
   save_timeout_data(at, &res);
   return true;
 }
@@ -155,7 +155,7 @@ static bool parse_info_match(int at, GMatchInfo* match, const char *line) {
   // after other mandatory fields to not free() if their fetch failed
   if (!valid_markhost(match, &res.mark, &res.host, "INFO", line)) return false;
   res.info = fetch_named_str(match, REN_INFO);
-  DEBUG("INFO: host=%s,%s ttl=%d info=\"%s\"", res.host.addr, res.host.name, res.ttl, res.info);
+  DEBUG("INFO[at=%d seq=%d]: host=%s,%s ttl=%d info=\"%s\"", at, res.mark.seq, res.host.addr, res.host.name, res.ttl, res.info);
   save_info_data(at, &res);
   return true;
 }
@@ -174,7 +174,7 @@ static bool parse_match_wrap(int at, GRegex *re, const char *line, parser_fn *fn
 static void analyze_line(int at, const char *line) {
   for (int i = 0; i < G_N_ELEMENTS(regexes); i++)
     if (parse_match_wrap(at, regexes[i].regex, line, regexes[i].parser)) return;
-  DEBUG("UNKNOWN: %s", line);
+  DEBUG("UNKNOWN[at=%d]: %s", at, line);
 }
 
 // pub

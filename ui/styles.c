@@ -22,6 +22,12 @@ static const gchar *css_dark_colors =
 static const gchar *css_common =
   "#" CSS_ID_PINGTAB "{padding:" PAD " " PAD2 ";}"
   "#" CSS_ID_DATETIME "{font-weight:500;}"
+// TMP
+  "#" CSS_IDR "{background-color:red;}"
+  "#" CSS_IDG "{background-color:green;}"
+  "#" CSS_IDB "{background-color:blue;}"
+  "#" CSS_IDC "{background-color:cyan;}"
+  "#" CSS_IDP "{background-color:pink;}"
 ;
 
 static GValue* get_gval(GtkSettings *gset, const char *key, GValue *val) {
@@ -57,7 +63,7 @@ void init_css_styles(void) {
     if ((prefer_dark >= 0) || theme) { // check out preferences
       if (prefer_dark || strcasestr(theme, "dark"))
         g_snprintf(css_data + l, sizeof(css_data) - l, "%s", css_dark_colors);
-      LOG("theme=%s prefer-dark=%d", theme, prefer_dark);
+//      LOG("theme=%s prefer-dark=%d", theme, prefer_dark);
     }
     g_free(theme);
   }

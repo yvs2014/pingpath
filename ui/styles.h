@@ -12,6 +12,13 @@
 #define CSS_ID_DYNAREA  "dynarea"
 #define CSS_ID_HDRAREA  "hdrarea"
 
+// TMP
+#define CSS_IDR "idr"
+#define CSS_IDG "idg"
+#define CSS_IDB "idb"
+#define CSS_IDC "idc"
+#define CSS_IDP "idp"
+
 void init_css_styles(void);
 extern int css_loaded;
 

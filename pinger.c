@@ -161,7 +161,7 @@ void on_stdout(GObject *stream, GAsyncResult *re, gpointer data) {
   GError *err = NULL;
   int sz = g_input_stream_read_finish(G_INPUT_STREAM(stream), re, &err);
   if ((sz < 0) || err) { WARN("stream read: %s", err ? err->message : ""); stop_ping_at(p->ndx, "sz < 0"); return; }
-  if (!sz) { stop_ping_at(p->ndx, "EOF"); return; } // EOF
+  if (!sz) { stop_ping_at(p->ndx, "EOF"); update_last_tx(p->ndx); return; } // EOF
   snprintf(s, sizeof(obuff), "%*.*s", sz, sz, p->out->str);
   parse_input(p->ndx, s);
   g_input_stream_read_async(G_INPUT_STREAM(stream), p->out->str, p->out->allocated_len,

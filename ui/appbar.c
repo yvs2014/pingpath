@@ -51,9 +51,9 @@ const GActionEntry option_entries[] = { // TODO
 
 static gboolean update_datetime(gpointer label) {
   static char datetime_label[32];
-  g_return_val_if_fail(GTK_IS_LABEL(label), true);
   time_t now = time(NULL);
   strftime(datetime_label, sizeof(datetime_label), "%F %T", localtime(&now));
+  g_return_val_if_fail(GTK_IS_LABEL(label), true);
   gtk_label_set_text(GTK_LABEL(label), datetime_label);
   return true;
 }
@@ -146,23 +146,15 @@ static void add_target_input(void) {
  gtk_header_bar_pack_start(GTK_HEADER_BAR(appbar), target_entry);
 }
 
-//static void add_spacer(GtkWidget *box) {
-//  g_return_if_fail(GTK_IS_BOX(box));
-//  GtkWidget *spacer = gtk_label_new(NULL);
-//  gtk_widget_set_hexpand(spacer, true);
-//  gtk_box_prepend(GTK_BOX(box), spacer);
-//}
-
 void init_appbar(GtkApplication *app, GtkWidget *win) {
   if (appbar) return;
   g_return_if_fail(GTK_IS_APPLICATION(app));
-  g_return_if_fail(GTK_IS_WINDOW(win));
   main_app = app;
   g_assert(main_app);
   appbar = gtk_header_bar_new();
   g_assert(appbar);
   if (css_loaded) gtk_widget_set_name(appbar, CSS_ID_APPBAR);
-  gtk_window_set_titlebar(GTK_WINDOW(win), appbar);
+  if (GTK_IS_WINDOW(win)) gtk_window_set_titlebar(GTK_WINDOW(win), appbar);
   update_actions();
   add_target_input();
   start_datetime();

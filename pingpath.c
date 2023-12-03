@@ -21,9 +21,11 @@ static void activate(GtkApplication* app, gpointer unused) {
   gtk_window_set_default_size(GTK_WINDOW(win), 1280, 720);
   if (css_loaded) gtk_widget_set_name(win, CSS_ID_WIN);
   init_appbar(app, win);
-  gtk_window_set_child(GTK_WINDOW(win), init_pingtab());
+  t_area *area = init_pingtab();
+  if (area->tab) gtk_window_set_child(GTK_WINDOW(win), area->tab);
   g_signal_connect_swapped(win, "destroy", G_CALLBACK(on_app_exit), NULL);
   gtk_window_present(GTK_WINDOW(win));
+  if (area->hdr) gtk_list_box_unselect_all(GTK_LIST_BOX(area->hdr));
 }
 
 int main(int argc, char **argv) {

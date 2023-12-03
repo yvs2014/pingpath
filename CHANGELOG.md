@@ -1,3 +1,7 @@
+## 0.1.16
+- add all stat fields in view
+- revamp stats a bit
+
 ## 0.1.15
 - check out settings on dark theme preference
 
