@@ -46,6 +46,7 @@ static void view_updater(bool reset) {
 }
 
 static void set_finish_flag(struct _GObject *a, struct _GAsyncResult *b, gpointer data) {
+  static gchar *nodata_mesg = "No data";
   t_procdata *p = data;
   if (p) {
     if (p->active) p->active = false;
@@ -55,11 +56,15 @@ static void set_finish_flag(struct _GObject *a, struct _GAsyncResult *b, gpointe
       update_dynarea(NULL);
     }
   }
+  if (!target_status.gotdata) {
+    bool active = false;
+    for (int i = 0; i < MAXTTL; i++) if (pingproc[i].active) { active = true; break; }
+    if (!active && (!info_mesg || (info_mesg == notyet_mesg))) set_errline(nodata_mesg);
+  }
 }
-// EO-stat-viewer
 
 
-// public
+// pub
 //
 
 void init_pinger(void) {
@@ -71,27 +76,25 @@ void init_pinger(void) {
 
 void stop_ping_at(int at, const gchar* reason) {
   t_procdata *p = &(pingproc[at]);
-  if (!p->proc) return;
-  const gchar *id = g_subprocess_get_identifier(p->proc);
-  if (id) {
-    LOG("stop[pid=%s] reason: %s", id ? id : "NA", reason);
-    g_subprocess_send_signal(p->proc, SIGTERM);
-    id = g_subprocess_get_identifier(p->proc);
-    if (id) { g_usleep(20 * 1000); id = g_subprocess_get_identifier(p->proc); } // wait a bit
+  if (p->proc) {
+    const gchar *id = g_subprocess_get_identifier(p->proc);
     if (id) {
-      g_subprocess_force_exit(p->proc);
-      g_usleep(20 * 1000);
+      LOG("stop[pid=%s] reason: %s", id ? id : "NA", reason);
+      g_subprocess_send_signal(p->proc, SIGTERM);
       id = g_subprocess_get_identifier(p->proc);
-      if (id) { WARN("Cannot stop subprocess[id=%s]", id); return; }
+      if (id) { g_usleep(20 * 1000); id = g_subprocess_get_identifier(p->proc); } // wait a bit
+      if (id) {
+        g_subprocess_force_exit(p->proc);
+        g_usleep(20 * 1000);
+        id = g_subprocess_get_identifier(p->proc);
+        if (id) { WARN("Cannot stop subprocess[id=%s]", id); return; }
+      }
+      GError *err = NULL;
+      g_subprocess_wait(p->proc, NULL, &err);
+      if (err) WARN("pid=%s: %s", id, err->message);
+      else LOG("ping[ttl=%d] finished (rc=%d)", p->ndx + 1, g_subprocess_get_status(p->proc));
     }
-    GError *err = NULL;
-    g_subprocess_wait(p->proc, NULL, &err);
-    if (err) WARN("pid=%s: %s", id, err->message);
-    else LOG("ping[ttl=%d] finished (rc=%d)", p->ndx + 1, g_subprocess_get_status(p->proc));
-  }
-  if (!id) {
-    set_finish_flag(NULL, NULL, p);
-    p->proc = NULL;
+    if (!id) { set_finish_flag(NULL, NULL, p); p->proc = NULL; }
   }
 }
 

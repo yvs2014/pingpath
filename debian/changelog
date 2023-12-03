@@ -1,3 +1,9 @@
+pingpath (0.1.17) lunar mantic; urgency=low
+
+  * various nodata/noresponse cases
+
+ -- yvs <VSYakovetsky@gmail.com>  Sun, 03 Dec 2023 13:38:09 +0200
+
 pingpath (0.1.16) lunar mantic; urgency=low
 
   * add all stat fields in view

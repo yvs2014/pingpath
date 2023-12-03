@@ -31,9 +31,10 @@ typedef struct hop {
 } t_hop;
 
 int hops_no = MAXTTL;
-t_hop hops[MAXTTL];
-int host_addr_max;
-int host_name_max;
+static t_hop hops[MAXTTL];
+static int host_addr_max;
+static int host_name_max;
+t_target_status target_status;
 
 #define ELEM_INFO_HDR "Host"
 #define ELEM_LOSS_HDR "Loss"
@@ -55,6 +56,7 @@ t_stat_elems stat_elems = { // TODO: editable from option menu
   [ELEM_AVRG] = ELEM_AVRG_HDR,
   [ELEM_JTTR] = ELEM_JTTR_HDR,
 };
+
 
 // aux
 //
@@ -145,9 +147,11 @@ static void update_stat(int at, int rtt, t_tseq *mark, int rxtx) {
   if (mark) hops[at].mark = *mark;
   if (rxtx == TX) hops[at].tout = true;
   else if (rxtx != NONE) hops[at].tout = false;
+  if (!target_status.gotdata && !hops[at].tout) { target_status.gotdata = true; set_visible_lines(at + 1); }
 }
 
 static int calc_rtt(int at, t_tseq *mark) {
+  if (!hops[at].mark.sec) return -1;
   int rtt = (mark->sec - hops[at].mark.sec) * 1000000 + (mark->usec - hops[at].mark.usec);
   rtt = (rtt > ping_opts.tout_usec) ? -1 : rtt; // skip timeouted responses
   return rtt;
@@ -218,6 +222,7 @@ static const gchar *stat_hop(int typ, t_hop *hop) {
 
 // pub
 //
+
 void init_stat(void) {
   for (int i = 0; i < MAXTTL; i++) {
     hops[i].reach = true;
@@ -225,6 +230,8 @@ void init_stat(void) {
     hops[i].avrg = hops[i].jttr = -1; // <0 unknown
   }
   host_addr_max = host_name_max = g_utf8_strlen(ELEM_INFO_HDR, MAXHOSTNAME);
+  target_status.gotdata = false;
+  target_status.reachable = false;
 }
 
 void free_stat(void) {
@@ -242,6 +249,13 @@ void clear_stat(void) {
   free_stat();
   memset(hops, 0, sizeof(hops));
   init_stat();
+  set_errline(NULL);
+}
+
+void set_nopong(const gchar *mesg) {
+  bool info = false;
+  for (int i = 0; i < hops_no; i++) if (hops[i].info) { info = true; break; }
+  if (!info) set_errline(mesg);
 }
 
 void save_success_data(int at, t_ping_success *data) {
@@ -256,6 +270,7 @@ void save_success_data(int at, t_ping_success *data) {
   }
   UPD_STR(ping_errors[at], NULL);
   UPD_STR(hops[at].info, NULL);
+  if (!target_status.reachable) target_status.reachable = true;
 }
 
 void save_discard_data(int at, t_ping_discard *data) {

@@ -12,4 +12,7 @@ void set_visible_lines(int no);
 void update_elem_width(int max, int ndx);
 void set_errline(const gchar *s);
 
+extern const gchar *info_mesg;
+extern const gchar *notyet_mesg;
+
 #endif

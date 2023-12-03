@@ -22,8 +22,11 @@ typedef struct listbox {
   GtkWidget* info;
 } t_listbox;
 
-t_area area;
-t_listbox listbox;
+static t_area area;
+static t_listbox listbox;
+
+const gchar *info_mesg;
+const gchar *notyet_mesg = "No data yet";
 
 static void align_elem_label(GtkWidget* label, int max, GtkAlign align, bool expand) {
   gtk_label_set_width_chars(GTK_LABEL(label), max);
@@ -127,15 +130,23 @@ void clear_dynarea(void) {
 }
 
 gboolean update_dynarea(gpointer data) {
+  static const gchar *nopong_mesg = "No response";
   if (!ping_opts.pause)
     for (int i = 0; i < hops_no; i++)
       for (int j = 0; j < MAX_ELEMS; j++)
         if ((j != ELEM_NO) && stat_elems[j])
           gtk_label_set_text(GTK_LABEL(listbox.lines[i].cells[j]), stat_elem(i, j));
+  { // no data display
+    bool notyet = info_mesg == notyet_mesg;
+    if (target_status.gotdata) { if (notyet) set_errline(NULL); }
+    else { if (!notyet && !info_mesg) set_errline(notyet_mesg); }
+  }
+  if (!info_mesg && !target_status.reachable) set_nopong(nopong_mesg); // no response display
   return true;
 }
 
 void set_visible_lines(int no) {
+  LOG("set upto %d visible rows", no);
   for (int i = 0; i < MAXTTL; i++) {
     bool vis = i < no;
     t_listline *line = &listbox.lines[i];
@@ -154,6 +165,7 @@ void update_elem_width(int max, int ndx) {
 }
 
 void set_errline(const gchar *s) {
+  info_mesg = s;
   gtk_label_set_label(GTK_LABEL(listbox.info), s);
   gtk_widget_set_visible(listbox.info, true);
 }
