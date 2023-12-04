@@ -16,12 +16,20 @@ static void on_app_exit(GtkWidget *widget, gpointer unused) {
 }
 
 static void activate(GtkApplication* app, gpointer unused) {
-  init_css_styles();
+  styles_init();
   GtkWidget *win = gtk_application_window_new(app);
+  g_return_if_fail(GTK_IS_WINDOW(win));
   gtk_window_set_default_size(GTK_WINDOW(win), 1280, 720);
-  if (css_loaded) gtk_widget_set_name(win, CSS_ID_WIN);
-  init_appbar(app, win);
-  t_area *area = init_pingtab();
+  if (styles_loaded) gtk_widget_set_name(win, CSS_ID_WIN);
+  if (!appbar_init(app, win)) {
+    LOG("appbar init %s", "failed");
+    g_application_quit(G_APPLICATION(app));
+  }
+  t_area *area = pingtab_init();
+  if (!area) {
+    LOG("pingtab init %s", "failed");
+    g_application_quit(G_APPLICATION(app));
+  }
   if (area->tab) gtk_window_set_child(GTK_WINDOW(win), area->tab);
   g_signal_connect_swapped(win, "destroy", G_CALLBACK(on_app_exit), NULL);
   gtk_window_present(GTK_WINDOW(win));
@@ -30,10 +38,11 @@ static void activate(GtkApplication* app, gpointer unused) {
 
 int main(int argc, char **argv) {
   GtkApplication *app = gtk_application_new("net.tools." APPNAME, G_APPLICATION_DEFAULT_FLAGS);
+  g_return_val_if_fail(GTK_IS_APPLICATION(app), -1);
   LOG("app %s", "run");
-  init_stat();
-  init_pinger();
-  init_parser();
+  stat_init();
+  pinger_init();
+  if (!parser_init()) return -1;
   g_signal_connect(app, "activate", G_CALLBACK(activate), NULL);
   int rc = g_application_run(G_APPLICATION(app), argc, argv);
   g_object_unref(app);

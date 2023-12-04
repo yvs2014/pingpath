@@ -1,3 +1,11 @@
+pingpath (0.1.18) lunar mantic; urgency=low
+
+  * add menu states
+
+  * add g_if_fail asserts at init
+
+ -- yvs <VSYakovetsky@gmail.com>  Mon, 04 Dec 2023 13:21:45 +0200
+
 pingpath (0.1.17) lunar mantic; urgency=low
 
   * various nodata/noresponse cases

@@ -41,7 +41,7 @@ static void set_elem_align(int typ, GtkWidget *label) {
       align_elem_label(label, HOPNO_MAX_CHARS, GTK_ALIGN_END, false);
       break;
     case ELEM_INFO:
-      align_elem_label(label, elem_max(typ), GTK_ALIGN_START, true);
+      align_elem_label(label, stat_elem_max(typ), GTK_ALIGN_START, true);
       break;
     case ELEM_LOSS:
     case ELEM_SENT:
@@ -50,25 +50,26 @@ static void set_elem_align(int typ, GtkWidget *label) {
     case ELEM_WRST:
     case ELEM_AVRG:
     case ELEM_JTTR:
-      align_elem_label(label, elem_max(typ), GTK_ALIGN_END, false);
+      align_elem_label(label, stat_elem_max(typ), GTK_ALIGN_END, false);
       break;
   }
   gtk_widget_set_valign(label, GTK_ALIGN_START);
 }
 
-static void init_child_elem(const t_stat_elems str, t_listline *line, bool visible) {
+static bool init_child_elem(const t_stat_elems str, t_listline *line, bool visible) {
   for (int j = 0; j < MAX_ELEMS; j++) {
     GtkWidget *elem = line->cells[j] = gtk_label_new(str[j]);
-    g_assert(elem);
+    g_return_val_if_fail(GTK_IS_LABEL(elem), false);
     set_elem_align(j, elem);
     gtk_widget_set_visible(elem, visible && str[j]);
     gtk_box_append(GTK_BOX(line->child), elem);
   }
+  return true;
 }
 
 static GtkListBoxRow* line_row_new(GtkWidget *child, bool visible) {
   GtkListBoxRow *row = GTK_LIST_BOX_ROW(gtk_list_box_row_new());
-  g_assert(row);
+  g_return_val_if_fail(GTK_IS_LIST_BOX_ROW(row), NULL);
   gtk_list_box_row_set_child(row, child);
   gtk_widget_set_visible(GTK_WIDGET(row), visible);
   gtk_widget_set_visible(child, visible);
@@ -78,16 +79,16 @@ static GtkListBoxRow* line_row_new(GtkWidget *child, bool visible) {
 static GtkWidget* init_list_box(t_listline *boxes, int boxes_len, bool vis, bool hdr) {
   static char stat_no_at_buff[MAXTTL][ELEM_BUFF_SIZE];
   GtkWidget *list = gtk_list_box_new();
-  g_assert(list);
+  g_return_val_if_fail(GTK_IS_LIST_BOX(list), NULL);
   gtk_list_box_set_show_separators(GTK_LIST_BOX(list), true);
   gtk_widget_set_halign(list, GTK_ALIGN_FILL);
   gtk_widget_set_hexpand(list, false);
   for (int i = 0; i < boxes_len; i++) {
     GtkWidget *c = boxes[i].child = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 1);
-    g_assert(c);
+    g_return_val_if_fail(GTK_IS_BOX(c), NULL);
     gtk_widget_set_visible(c, vis);
     GtkListBoxRow *row = boxes[i].row = line_row_new(c, vis);
-    g_assert(row);
+    g_return_val_if_fail(GTK_IS_LIST_BOX_ROW(row), NULL);
     gtk_list_box_row_set_activatable(row, !hdr);
     const t_stat_elems *arr;
     if (hdr) arr = &stat_elems; else {
@@ -96,7 +97,7 @@ static GtkWidget* init_list_box(t_listline *boxes, int boxes_len, bool vis, bool
       const t_stat_elems str = { [ELEM_NO] = s };
       arr = &str;
     }
-    init_child_elem(*arr, &boxes[i], vis);
+    if (!init_child_elem(*arr, &boxes[i], vis)) return NULL;
     gtk_list_box_append(GTK_LIST_BOX(list), GTK_WIDGET(row));
   }
   gtk_list_box_set_selection_mode(GTK_LIST_BOX(list), GTK_SELECTION_MULTIPLE);
@@ -106,7 +107,7 @@ static GtkWidget* init_list_box(t_listline *boxes, int boxes_len, bool vis, bool
 
 static GtkWidget* init_info(void) {
   GtkWidget *label = listbox.info = gtk_label_new(NULL);
-  g_assert(label);
+  g_return_val_if_fail(GTK_IS_LABEL(label), NULL);
   gtk_widget_set_visible(label, false);
   gtk_widget_set_halign(label, GTK_ALIGN_START);
   return label;
@@ -114,7 +115,7 @@ static GtkWidget* init_info(void) {
 
 // pub
 //
-void clear_dynarea(void) {
+void pingtab_clear(void) {
   for (int i = 0; i < MAXTTL; i++) {
     t_listline *line = &listbox.lines[i];
     gtk_widget_set_visible(GTK_WIDGET(line->row), false);
@@ -126,26 +127,26 @@ void clear_dynarea(void) {
   }
   gtk_widget_set_visible(listbox.info, false);
   gtk_label_set_label(GTK_LABEL(listbox.info), NULL);
-  free_ping_errors();
+  pinger_free_errors();
 }
 
-gboolean update_dynarea(gpointer data) {
+gboolean pingtab_update(gpointer data) {
   static const gchar *nopong_mesg = "No response";
-  if (!ping_opts.pause)
+  if (!pinger_state.pause)
     for (int i = 0; i < hops_no; i++)
       for (int j = 0; j < MAX_ELEMS; j++)
         if ((j != ELEM_NO) && stat_elems[j])
           gtk_label_set_text(GTK_LABEL(listbox.lines[i].cells[j]), stat_elem(i, j));
   { // no data display
     bool notyet = info_mesg == notyet_mesg;
-    if (target_status.gotdata) { if (notyet) set_errline(NULL); }
-    else { if (!notyet && !info_mesg) set_errline(notyet_mesg); }
+    if (pinger_state.gotdata) { if (notyet) pingtab_set_error(NULL); }
+    else { if (!notyet && !info_mesg) pingtab_set_error(notyet_mesg); }
   }
-  if (!info_mesg && !target_status.reachable) set_nopong(nopong_mesg); // no response display
+  if (!info_mesg && !pinger_state.reachable) stat_set_nopong(nopong_mesg); // no response display
   return true;
 }
 
-void set_visible_lines(int no) {
+void pingtab_set_visible(int no) {
   LOG("set upto %d visible rows", no);
   for (int i = 0; i < MAXTTL; i++) {
     bool vis = i < no;
@@ -157,35 +158,40 @@ void set_visible_lines(int no) {
   }
 }
 
-void update_elem_width(int max, int ndx) {
+void pingtab_update_width(int max, int ndx) {
   for (int i = 0; i < HDRLINES; i++)
     gtk_label_set_width_chars(GTK_LABEL(listbox.header[i].cells[ndx]), max);
   for (int i = 0; i < MAXTTL; i++)
     gtk_label_set_width_chars(GTK_LABEL(listbox.lines[i].cells[ndx]), max);
 }
 
-void set_errline(const gchar *s) {
-  info_mesg = s;
-  gtk_label_set_label(GTK_LABEL(listbox.info), s);
+void pingtab_set_error(const gchar *error) {
+  info_mesg = error;
+  gtk_label_set_label(GTK_LABEL(listbox.info), error);
   gtk_widget_set_visible(listbox.info, true);
 }
 
-t_area* init_pingtab() {
+t_area* pingtab_init() {
   area.tab = gtk_box_new(GTK_ORIENTATION_VERTICAL, MARGIN);
-  if (css_loaded) gtk_widget_set_name(area.tab, CSS_ID_PINGTAB);
+  g_return_val_if_fail(GTK_IS_BOX(area.tab), NULL);
+  if (styles_loaded) gtk_widget_set_name(area.tab, CSS_ID_PINGTAB);
   area.hdr = init_list_box(listbox.header, HDRLINES, true, true);
-  if (css_loaded) gtk_widget_set_name(area.hdr, CSS_ID_HDRAREA);
+  if (styles_loaded) gtk_widget_set_name(area.hdr, CSS_ID_HDRAREA);
   gtk_box_append(GTK_BOX(area.tab), area.hdr);
   area.dyn = init_list_box(listbox.lines, MAXTTL, false, false);
-  if (css_loaded) gtk_widget_set_name(area.dyn, CSS_ID_DYNAREA);
+  g_return_val_if_fail(GTK_IS_LIST_BOX(area.dyn), NULL);
+  if (styles_loaded) gtk_widget_set_name(area.dyn, CSS_ID_DYNAREA);
   //
-  GtkWidget *dynbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-  g_assert(dynbox);
-  gtk_box_append(GTK_BOX(dynbox), area.dyn);
-  gtk_box_append(GTK_BOX(dynbox), init_info());
+  GtkWidget *box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+  g_return_val_if_fail(GTK_IS_BOX(box), NULL);
+  gtk_box_append(GTK_BOX(box), area.dyn);
+  GtkWidget *info = init_info();
+  g_return_val_if_fail(GTK_IS_WIDGET(info), NULL);
+  gtk_box_append(GTK_BOX(box), info);
   //
   GtkWidget *scroll = gtk_scrolled_window_new();
-  gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scroll), dynbox);
+  g_return_val_if_fail(GTK_IS_SCROLLED_WINDOW(scroll), NULL);
+  gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scroll), box);
   gtk_widget_set_vexpand(GTK_WIDGET(scroll), true);
   gtk_box_append(GTK_BOX(area.tab), scroll);
   return &area;

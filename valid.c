@@ -7,8 +7,8 @@ static bool target_meet_all_conditions(gchar *s, int len, int max) {
   // rfc1123,rfc952 restrictions
   if (len > max) { LOG("Out of length limit (%d > %d)", len, max); return false; }
   if (s[len - 1] == '-') { LOG("Hostname %s", "cannot end with hyphen"); return false; }
-  if (!test_hchar0(s)) { LOG("Hostname %s", "must start with a letter or a digit"); return false; }
-  if (!test_hchars(s)) { LOG("Hostname %s", "contains not allowed characters"); return false; }
+  if (!parser_valid_char0(s)) { LOG("Hostname %s", "must start with a letter or a digit"); return false; }
+  if (!parser_valid_host(s)) { LOG("Hostname %s", "contains not allowed characters"); return false; }
   return true;
 }
 

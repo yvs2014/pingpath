@@ -5,10 +5,10 @@
 #include "aux.h"
 
 #define APPNAME "pingpath"
-#define VERSION "0.1.17"
+#define VERSION "0.1.18"
 
 #define MAXTTL 30
-#define COUNT 100
+#define COUNT 10
 #define TIMEOUT 1
 
 #define MAXHOSTNAME 63 // in chars: must 63, should 255
@@ -32,23 +32,5 @@
 #define WARN(fmt, ...) g_warning("%s: " fmt "\n", __func__, __VA_ARGS__)
 
 #define UPD_STR(str, val) { g_free(str); str = g_strdup(val); }
-
-struct procdata;
-
-typedef struct ping_opts {
-  gchar *target;
-  int count, timeout;
-  bool dns;
-  guint timer;         // thread ID of stat-view-area updater
-  bool pause;          // state of stat-view-area updater
-  long long tout_usec; // internal const
-} t_ping_opts;
-
-typedef struct procdata {
-  GSubprocess *proc;
-  bool active;        // process state
-  GString *out, *err; // for received input data and errors
-  int ndx;            // index in internal list
-} t_procdata;
 
 #endif

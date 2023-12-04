@@ -19,7 +19,7 @@
 #define CSS_IDC "idc"
 #define CSS_IDP "idp"
 
-void init_css_styles(void);
-extern int css_loaded;
+void styles_init(void);
+extern int styles_loaded;
 
 #endif

@@ -1,3 +1,7 @@
+## 0.1.18
+- add menu states
+- add g_if_fail asserts at init
+
 ## 0.1.17
 - various nodata/noresponse cases
 

@@ -4,7 +4,7 @@
 #include "styles.h"
 #include "common.h"
 
-int css_loaded;
+int styles_loaded;
 
 #define PROP_THEME "gtk-theme-name"
 #define PROP_PREFER "gtk-application-prefer-dark-theme"
@@ -50,7 +50,7 @@ static gchar* get_gset_str_by_key(GtkSettings *sets, const char *key) {
   return (val && G_VALUE_HOLDS_STRING(val)) ? g_strdup_value_contents(val) : NULL;
 }
 
-void init_css_styles(void) {
+void styles_init(void) {
   static gchar css_data[BUFF_SIZE];
   GdkDisplay *display = gdk_display_get_default();
   if (!display) { WARN("%s", "no default display"); return; }
@@ -68,11 +68,11 @@ void init_css_styles(void) {
     g_free(theme);
   }
   GtkCssProvider *css_provider = gtk_css_provider_new();
-  g_return_if_fail(GTK_CSS_PROVIDER(css_provider));
+  g_return_if_fail(GTK_IS_CSS_PROVIDER(css_provider));
   gtk_css_provider_load_from_string(css_provider, css_data);
   gtk_style_context_add_provider_for_display(display,
     GTK_STYLE_PROVIDER(css_provider), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
   g_object_unref(css_provider);
-  css_loaded = true;
+  styles_loaded = true;
 }
 

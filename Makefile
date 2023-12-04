@@ -13,7 +13,7 @@ CFLAGS += -g
 
 PKGCONFIG = $(shell which pkg-config)
 
-SRC = $(NAME).c pinger.c parser.c stat.c ui/appbar.c ui/styles.c tabs/ping.c valid.c aux.c
+SRC = $(NAME).c pinger.c parser.c stat.c ui/appbar.c ui/menu.c ui/styles.c tabs/ping.c valid.c aux.c
 OBJS = $(SRC:.c=.o)
 
 all: $(NAME)

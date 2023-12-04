@@ -124,7 +124,7 @@ static bool parse_success_match(int at, GMatchInfo* match, const char *line) {
   // after other mandatory fields to not free() if their fetch failed
   if (!valid_markhost(match, &res.mark, &res.host, "SUCCESS", line)) return false;
   DEBUG("SUCCESS[at=%d seq=%d]: host=%s,%s ttl=%d time=%dusec", at, res.mark.seq, res.host.addr, res.host.name, res.ttl, res.time);
-  save_success_data(at, &res);
+  stat_save_success(at, &res);
   return true;
 }
 
@@ -134,7 +134,7 @@ static bool parse_discard_match(int at, GMatchInfo* match, const char *line) {
   if (!valid_markhost(match, &res.mark, &res.host, "DISCARD", line)) return false;
   res.reason = fetch_named_str(match, REN_REASON);
   DEBUG("DISCARD[at=%d seq=%d]: host=%s,%s reason=\"%s\"", at, res.mark.seq, res.host.addr, res.host.name, res.reason);
-  save_discard_data(at, &res);
+  stat_save_discard(at, &res);
   return true;
 }
 
@@ -143,7 +143,7 @@ static bool parse_timeout_match(int at, GMatchInfo* match, const char *line) {
   memset(&res, 0, sizeof(res));
   if (!valid_mark(match, &res.mark)) { WARN("wrong MARK in %s message: %s", "TIMEOUT", line); return false; }
   DEBUG("TIMEOUT[at=%d seq=%d]: seq=%d ts=%lld.%06d", at, res.mark.seq, res.mark.seq, res.mark.sec, res.mark.usec);
-  save_timeout_data(at, &res);
+  stat_save_timeout(at, &res);
   return true;
 }
 
@@ -156,7 +156,7 @@ static bool parse_info_match(int at, GMatchInfo* match, const char *line) {
   if (!valid_markhost(match, &res.mark, &res.host, "INFO", line)) return false;
   res.info = fetch_named_str(match, REN_INFO);
   DEBUG("INFO[at=%d seq=%d]: host=%s,%s ttl=%d info=\"%s\"", at, res.mark.seq, res.host.addr, res.host.name, res.ttl, res.info);
-  save_info_data(at, &res);
+  stat_save_info(at, &res);
   return true;
 }
 
@@ -179,20 +179,24 @@ static void analyze_line(int at, const char *line) {
 
 // pub
 //
-void init_parser(void) {
+bool parser_init(void) {
   multiline_regex = compile_regex("\\n", G_REGEX_MULTILINE);
-  for (int i = 0; i < G_N_ELEMENTS(regexes); i++)
+  bool re = true;
+  for (int i = 0; i < G_N_ELEMENTS(regexes); i++) {
     regexes[i].regex = compile_regex(regexes[i].pattern, 0);
+    if (!regexes[i].regex) re = false;
+  }
   hostname_char0_regex = compile_regex("^[" DIGIT_OR_LETTER "]", 0);
   hostname_chars_regex = compile_regex("^[" DIGIT_OR_LETTER ".-]+$", 0);
+  return (re && multiline_regex && hostname_char0_regex && hostname_chars_regex);
 }
 
-void parse_input(int at, char *input) {
+void parser_parse(int at, char *input) {
   gchar **lines = g_regex_split(multiline_regex, input, 0);
   for (gchar **s = lines; *s; s++) if ((*s)[0]) analyze_line(at, *s);
   if (lines) g_strfreev(lines);
 }
 
-inline bool test_hchar0(gchar *s) { return g_regex_match(hostname_char0_regex, s, 0, NULL); }
-inline bool test_hchars(gchar *s) { return g_regex_match(hostname_chars_regex, s, 0, NULL); }
+inline bool parser_valid_char0(gchar *str) { return g_regex_match(hostname_char0_regex, str, 0, NULL); }
+inline bool parser_valid_host(gchar *host) { return g_regex_match(hostname_chars_regex, host, 0, NULL); }
 

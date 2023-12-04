@@ -3,9 +3,9 @@
 
 #include <gtk/gtk.h>
 
-void init_parser(void);
-void parse_input(int at, char *input);
-bool test_hchar0(gchar *s);
-bool test_hchars(gchar *s);
+bool parser_init(void);
+void parser_parse(int at, char *input);
+bool parser_valid_char0(gchar *str);
+bool parser_valid_host(gchar *host);
 
 #endif
