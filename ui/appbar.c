@@ -1,10 +1,11 @@
 
 #include "appbar.h"
-#include "styles.h"
+#include "style.h"
 #include "menu.h"
 #include "pinger.h"
 #include "valid.h"
 
+guint datetime_id;
 static GtkWidget *appbar;
 
 // aux
@@ -12,11 +13,12 @@ static GtkWidget *appbar;
 
 static gboolean update_datetime(gpointer label) {
   static char datetime_label[32];
+  if (!datetime_id) return false;
   time_t now = time(NULL);
-  g_return_val_if_fail(GTK_IS_LABEL(label), true);
   strftime(datetime_label, sizeof(datetime_label), "%F %T", localtime(&now));
+  g_return_val_if_fail(GTK_IS_LABEL(label), true);
   gtk_label_set_text(GTK_LABEL(label), datetime_label);
-  return true;
+  return datetime_id;
 }
 
 static bool start_datetime(void) {
@@ -25,13 +27,13 @@ static bool start_datetime(void) {
   if (datetime) return true; // already done
   datetime = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
   g_return_val_if_fail(GTK_IS_BOX(datetime), false);
-  if (styles_loaded) gtk_widget_set_name(datetime, CSS_ID_DATETIME);
+  if (style_loaded) gtk_widget_set_name(datetime, CSS_ID_DATETIME);
   gtk_header_bar_set_title_widget(GTK_HEADER_BAR(appbar), datetime);
   label = gtk_label_new(NULL);
   g_return_val_if_fail(GTK_IS_LABEL(label), false);
   gtk_box_append(GTK_BOX(datetime), label);
   gtk_widget_set_visible(label, true);
-  g_timeout_add(1000, update_datetime, label);
+  datetime_id = g_timeout_add(1000, update_datetime, label);
   return true;
 }
 
@@ -67,7 +69,6 @@ bool appbar_init(GtkApplication *app, GtkWidget *win) {
   g_return_val_if_fail(GTK_IS_APPLICATION(app), false);
   appbar = gtk_header_bar_new();
   g_return_val_if_fail(GTK_IS_HEADER_BAR(appbar), false);
-  if (styles_loaded) gtk_widget_set_name(appbar, CSS_ID_APPBAR);
   if (GTK_IS_WINDOW(win)) gtk_window_set_titlebar(GTK_WINDOW(win), appbar);
   if (!menu_init(app, appbar)) return false;
   if (!add_target_input()) return false;

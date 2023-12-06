@@ -9,7 +9,8 @@
 #define PING "/bin/ping"
 #define SKIPNAME PING ": "
 
-t_ping_opts ping_opts = { .target = NULL, .dns = true, .count = COUNT, .timeout = TIMEOUT, .tout_usec = TIMEOUT * 1000000 };
+t_ping_opts ping_opts = { .target = NULL, .dns = true, .count = COUNT, .qos = DEF_QOS, .size = DEF_PSIZE,
+  .timeout = TIMEOUT, .tout_usec = TIMEOUT * 1000000 };
 t_pinger_state pinger_state;
 
 typedef struct proc {
@@ -113,6 +114,13 @@ static bool create_ping(int at, t_proc *p) {
   char scnt[16]; snprintf(scnt, sizeof(scnt), "-c%d", ping_opts.count);   argv[argc++] = scnt;
   char sitm[16]; snprintf(sitm, sizeof(sitm), "-i%d", ping_opts.timeout); argv[argc++] = sitm;
   char sWtm[16]; snprintf(sWtm, sizeof(sitm), "-W%d", ping_opts.timeout); argv[argc++] = sWtm;
+  char sqos[16]; if (ping_opts.qos != DEF_QOS) {
+    snprintf(sqos, sizeof(sqos), "-q%d", ping_opts.qos);   argv[argc++] = sqos; }
+  char spad[64]; if (strncmp(ping_opts.pad, DEF_PPAD, sizeof(ping_opts.pad))) {
+    snprintf(spad, sizeof(spad), "-p'%s'", ping_opts.pad); argv[argc++] = spad; }
+  char spsz[16]; if (ping_opts.size != DEF_PSIZE) {
+    snprintf(spsz, sizeof(spsz), "-s%d", ping_opts.size);  argv[argc++] = spsz; }
+  char sipv[4];  if (ping_opts.ipv > 0)   { snprintf(sipv, sizeof(sipv), "-%d", ping_opts.ipv);    argv[argc++] = sipv; }
   argv[argc++] = "--";
   argv[argc++] = ping_opts.target;
   GError *err = NULL;
@@ -134,6 +142,7 @@ static bool create_ping(int at, t_proc *p) {
 //
 
 void pinger_init(void) {
+  snprintf(ping_opts.pad, sizeof(ping_opts.pad), "%s", DEF_PPAD);
   for (int i = 0; i < MAXTTL; i++) { pings[i].ndx = -1; pings[i].active = false; }
 }
 

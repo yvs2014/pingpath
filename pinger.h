@@ -4,10 +4,15 @@
 #include <gtk/gtk.h>
 #include "common.h"
 
+#define DEF_QOS   0
+#define DEF_PPAD "00"
+#define DEF_PSIZE 56
+
 typedef struct ping_opts {
   gchar *target;
-  int count, timeout;
+  int count, timeout, qos, size, ipv;
   bool dns;
+  char pad[48];        // 16 x "00."
   guint timer;         // thread ID of stat-view-area updater
   long long tout_usec; // internal const
 } t_ping_opts;

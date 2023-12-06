@@ -5,7 +5,7 @@
 #include "aux.h"
 
 #define APPNAME "pingpath"
-#define VERSION "0.1.18"
+#define VERSION "0.1.19"
 
 #define MAXTTL 30
 #define COUNT 10

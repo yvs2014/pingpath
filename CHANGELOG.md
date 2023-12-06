@@ -1,3 +1,6 @@
+## 0.1.19
+- move options to popover listbox
+
 ## 0.1.18
 - add menu states
 - add g_if_fail asserts at init

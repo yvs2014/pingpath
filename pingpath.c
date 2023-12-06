@@ -2,13 +2,14 @@
 #include <gtk/gtk.h>
 
 #include "ui/appbar.h"
-#include "ui/styles.h"
+#include "ui/style.h"
 #include "tabs/ping.h"
 #include "pinger.h"
 #include "parser.h"
 #include "stat.h"
 
 static void on_app_exit(GtkWidget *widget, gpointer unused) {
+  g_source_remove(datetime_id); datetime_id = 0; // stop timer unless it's already done
   pinger_free();
 // note: subprocesses have to be already terminated by system at this point
 // if not, then pinger_stop("at app exit");
@@ -16,11 +17,11 @@ static void on_app_exit(GtkWidget *widget, gpointer unused) {
 }
 
 static void activate(GtkApplication* app, gpointer unused) {
-  styles_init();
+  style_init();
   GtkWidget *win = gtk_application_window_new(app);
   g_return_if_fail(GTK_IS_WINDOW(win));
   gtk_window_set_default_size(GTK_WINDOW(win), 1280, 720);
-  if (styles_loaded) gtk_widget_set_name(win, CSS_ID_WIN);
+  if (style_loaded) gtk_widget_add_css_class(win, CSS_BGROUND);
   if (!appbar_init(app, win)) {
     LOG("appbar init %s", "failed");
     g_application_quit(G_APPLICATION(app));

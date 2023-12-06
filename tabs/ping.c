@@ -3,7 +3,7 @@
 #include "pinger.h"
 #include "stat.h"
 #include "common.h"
-#include "ui/styles.h"
+#include "ui/style.h"
 
 #define ELEM_BUFF_SIZE 16
 #define HOPNO_MAX_CHARS 3
@@ -174,13 +174,13 @@ void pingtab_set_error(const gchar *error) {
 t_area* pingtab_init() {
   area.tab = gtk_box_new(GTK_ORIENTATION_VERTICAL, MARGIN);
   g_return_val_if_fail(GTK_IS_BOX(area.tab), NULL);
-  if (styles_loaded) gtk_widget_set_name(area.tab, CSS_ID_PINGTAB);
+  if (style_loaded) gtk_widget_set_name(area.tab, CSS_ID_PINGTAB);
   area.hdr = init_list_box(listbox.header, HDRLINES, true, true);
-  if (styles_loaded) gtk_widget_set_name(area.hdr, CSS_ID_HDRAREA);
+  if (style_loaded) gtk_widget_add_css_class(area.hdr, CSS_BGROUND);
   gtk_box_append(GTK_BOX(area.tab), area.hdr);
   area.dyn = init_list_box(listbox.lines, MAXTTL, false, false);
   g_return_val_if_fail(GTK_IS_LIST_BOX(area.dyn), NULL);
-  if (styles_loaded) gtk_widget_set_name(area.dyn, CSS_ID_DYNAREA);
+  if (style_loaded) gtk_widget_add_css_class(area.dyn, CSS_BGROUND);
   //
   GtkWidget *box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
   g_return_val_if_fail(GTK_IS_BOX(box), NULL);
