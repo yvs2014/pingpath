@@ -1,3 +1,6 @@
+## 0.1.20
+- add menu shortcuts
+
 ## 0.1.19
 - move options to popover listbox
 

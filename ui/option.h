@@ -3,7 +3,7 @@
 
 #include <gtk/gtk.h>
 
-bool option_init(GtkWidget* bar, const gchar *icon);
+bool option_init(GtkWidget* bar);
 void option_update(void);
 
 #endif

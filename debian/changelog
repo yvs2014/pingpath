@@ -1,3 +1,9 @@
+pingpath (0.1.20) lunar mantic; urgency=low
+
+  * add menu shortcuts
+
+ -- yvs <VSYakovetsky@gmail.com>  Wed, 06 Dec 2023 07:19:20 +0200
+
 pingpath (0.1.19) lunar mantic; urgency=low
 
   * move options to popover listbox

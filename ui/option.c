@@ -3,6 +3,7 @@
 #include "pinger.h"
 #include "style.h"
 
+#define OPT_MENU_ICON "document-properties-symbolic"
 #define ENT_BUFF_SIZE 64
 
 typedef struct ent_ndx {
@@ -60,7 +61,7 @@ static GtkWidget* add_rl(GtkWidget* list, const gchar *name) {
   gtk_list_box_append(GTK_LIST_BOX(list), row);
   return row;
 }
- 
+
 static bool add_rlc(GtkWidget* list, const gchar *name, int *ndx, gboolean state) {
   GtkWidget *row = add_rl(list, name); g_return_val_if_fail(GTK_IS_BOX(row), false);
   GtkWidget *check = gtk_check_button_new();
@@ -106,7 +107,7 @@ static bool create_list(GtkWidget *bar) {
   gtk_list_box_remove_all(GTK_LIST_BOX(optlist));
   GtkWidget *button = gtk_menu_button_new();
   g_return_val_if_fail(GTK_IS_MENU_BUTTON(button), false);
-  gtk_menu_button_set_icon_name(GTK_MENU_BUTTON(button), "document-properties-symbolic");
+  gtk_menu_button_set_icon_name(GTK_MENU_BUTTON(button), OPT_MENU_ICON);
   gtk_header_bar_pack_start(GTK_HEADER_BAR(bar), button);
   GtkWidget *popover = gtk_popover_new();
   g_return_val_if_fail(GTK_IS_POPOVER(popover), false);
@@ -136,7 +137,7 @@ static bool create_list(GtkWidget *bar) {
 // pub
 //
 
-bool option_init(GtkWidget* bar, const gchar *icon) {
+bool option_init(GtkWidget* bar) {
   g_return_val_if_fail(GTK_IS_HEADER_BAR(bar), false);
   if (!create_list(bar)) return false;
   option_update();
