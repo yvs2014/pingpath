@@ -5,10 +5,10 @@
 #include "aux.h"
 
 #define APPNAME "pingpath"
-#define VERSION "0.1.20"
+#define VERSION "0.1.21"
 
 #define MAXTTL 30
-#define COUNT 10
+#define COUNT 50
 #define TIMEOUT 1
 
 #define MAXHOSTNAME 63 // in chars: must 63, should 255

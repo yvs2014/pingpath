@@ -1,3 +1,7 @@
+## 0.1.21
+- fix stat clearing at reset action
+- split menu on action,option
+
 ## 0.1.20
 - add menu shortcuts
 

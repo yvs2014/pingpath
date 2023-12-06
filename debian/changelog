@@ -1,3 +1,11 @@
+pingpath (0.1.21) lunar mantic; urgency=low
+
+  * fix stat clearing at reset action
+
+  * split menu on action,option
+
+ -- yvs <VSYakovetsky@gmail.com>  Wed, 06 Dec 2023 14:46:51 +0200
+
 pingpath (0.1.20) lunar mantic; urgency=low
 
   * add menu shortcuts

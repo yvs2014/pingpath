@@ -1,6 +1,6 @@
 
-#include "menu.h"
-#include "option.h"
+#include "action.h"
+#include "appbar.h"
 #include "pinger.h"
 #include "tabs/ping.h"
 
@@ -49,29 +49,39 @@ static GMenu *act_menu;
 // aux
 //
 
+static const char* action_label(int ndx) {
+  switch (ndx) {
+    case ACT_NDX_START: return pinger_state.run ? "Stop" : "Start";
+    case ACT_NDX_PAUSE: return pinger_state.pause ? "Resume" : "Pause";
+    case ACT_NDX_RESET: return "Reset";
+    case ACT_NDX_HELP:  return "Help";
+  }
+  return "";
+}
+
 static void on_startstop(GSimpleAction *action, GVariant *var, gpointer data) {
-  DEBUG("action: %s", g_action_get_name(G_ACTION(action)));
+  LOG("action: %s", action_label(ACT_NDX_START));
   if (ping_opts.target) {
     if (!ping_opts.timer) pinger_start();
     else pinger_stop("request");
-    menu_update();
+    appbar_update();
   }
 }
 
 static void on_pauseresume(GSimpleAction *action, GVariant *var, gpointer data) {
-  DEBUG("action: %s", g_action_get_name(G_ACTION(action)));
+  LOG("action: %s", action_label(ACT_NDX_PAUSE));
   pinger_state.pause = !pinger_state.pause;
-  menu_update_action();
+  action_update();
   pingtab_update(NULL);
 }
 
 static void on_reset(GSimpleAction *action, GVariant *var, gpointer data) {
-  DEBUG("action: %s", g_action_get_name(G_ACTION(action)));
+  LOG("action: %s", action_label(ACT_NDX_RESET));
   pinger_clear_data();
 }
 
 static void on_help(GSimpleAction *action, GVariant *var, gpointer data) {
-  DEBUG("action: %s", g_action_get_name(G_ACTION(action)));
+  LOG("action: %s", action_label(ACT_NDX_HELP));
   // TODO
 }
 
@@ -96,46 +106,29 @@ static bool create_menus(void) {
   for (int i = 0; i < ACT_NDX_MAX; i++)
     act_desc[i].sa = G_SIMPLE_ACTION(g_action_map_lookup_action(G_ACTION_MAP(mainapp), act_entries[i].name));
   if (!create_act_menu()) return false;
-  if (!option_init(appbar)) return false;
   for (int i = 0; i < ACT_NDX_MAX; i++)
     gtk_application_set_accels_for_action(mainapp, act_desc[i].name, act_desc[i].shortcut);
   return true;
-}
-
-static const char* menu_label(int ndx) {
-  switch (ndx) {
-    case ACT_NDX_START: return pinger_state.run ? "Stop" : "Start";
-    case ACT_NDX_PAUSE: return pinger_state.pause ? "Resume" : "Pause";
-    case ACT_NDX_RESET: return "Reset";
-    case ACT_NDX_HELP:  return "Help";
-  }
-  return "";
 }
 
 
 // pub
 //
 
-bool menu_init(GtkApplication *app, GtkWidget* bar) {
+bool action_init(GtkApplication *app, GtkWidget* bar) {
   g_return_val_if_fail(GTK_IS_APPLICATION(app), false);
   g_return_val_if_fail(GTK_IS_HEADER_BAR(bar), false);
   mainapp = app;
   appbar = bar;
   g_return_val_if_fail(create_menus(), false);
-  menu_update();
   return true;
 }
 
-void menu_update(void) {
-  menu_update_action();
-  option_update();
-}
-
-void menu_update_action(void) {
+void action_update(void) {
   if (G_IS_MENU(act_menu)) {
     g_menu_remove_all(act_menu);
     for (int i = 0; i < ACT_NDX_MAX; i++)
-      g_menu_append_item(act_menu, g_menu_item_new(menu_label(i), act_desc[i].name));
+      g_menu_append_item(act_menu, g_menu_item_new(action_label(i), act_desc[i].name));
   }
   bool run = pinger_state.run, pause = pinger_state.pause;
   SET_SA(ACT_NDX_START, ping_opts.target != NULL);

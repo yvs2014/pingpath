@@ -58,7 +58,7 @@ printf "$NAME ($vn) lunar mantic; urgency=low\n$deb_comments\n -- $_mntr  $(date
 echo "Keep in mind:"
 echo "	git diff"
 echo "	git status"
-echo "	make && make clean"
+echo "	make clean && make && make clean"
 echo "	git add ."
 echo "	git commit $git_comments"
 echo "	git push"

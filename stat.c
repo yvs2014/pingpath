@@ -135,7 +135,7 @@ static void update_stat(int at, int rtt, t_tseq *mark, int rxtx) {
     if ((rtt < hops[at].best) || (hops[at].best < 0)) hops[at].best = rtt;
     if ((rtt > hops[at].wrst) || (hops[at].wrst < 0)) hops[at].wrst = rtt;
     if (hops[at].avrg < 0) hops[at].avrg = 0; // initiate avrg
-    hops[at].avrg += (rtt - hops[at].avrg) / hops[at].recv;
+    if (hops[at].recv > 0) hops[at].avrg += (rtt - hops[at].avrg) / hops[at].recv;
     if ((hops[at].prev > 0) && (hops[at].recv > 1)) {
       if (hops[at].jttr < 0) hops[at].jttr = 0; // initiate jttr
       hops[at].jttr += (abs(rtt - hops[at].prev) - hops[at].jttr) / (hops[at].recv - 1);
@@ -231,7 +231,7 @@ void stat_init(void) {
   for (int i = 0; i < MAXTTL; i++) {
     hops[i].reach = true;
     hops[i].last = hops[i].best = hops[i].wrst = -1;
-    hops[i].avrg = hops[i].jttr = -1; // <0 unknown
+    hops[i].loss = hops[i].avrg = hops[i].jttr = -1;
   }
   host_addr_max = host_name_max = g_utf8_strlen(ELEM_INFO_HDR, MAXHOSTNAME);
   pinger_state.gotdata = false;
@@ -239,19 +239,24 @@ void stat_init(void) {
 }
 
 void stat_free(void) {
-  for (int at = 0; at < MAXTTL; at++) {
+  for (int at = 0; at < MAXTTL; at++) { // clear all except of mark and tout
+    t_hop *hop = &hops[at];
+    // clear statdata
+    hop->sent = hop->recv = hop->prev = 0;
+    hop->last = hop->best = hop->wrst = -1; // NA(-1) at init too
+    hop->loss = hop->avrg = hop->jttr = -1;
+    // clear strings
     for (int i = 0; i < MAX_ADDRS; i++) {
-      UPD_STR(hops[at].host[i].addr, NULL);
-      UPD_STR(hops[at].host[i].name, NULL);
+      UPD_STR(hop->host[i].addr, NULL);
+      UPD_STR(hop->host[i].name, NULL);
     }
-    UPD_STR(hops[at].info, NULL);
+    UPD_STR(hop->info, NULL);
   }
   host_addr_max = host_name_max = g_utf8_strlen(ELEM_INFO_HDR, MAXHOSTNAME);
 }
 
 void stat_clear(void) {
   stat_free();
-  memset(hops, 0, sizeof(hops));
   stat_init();
   pingtab_set_error(NULL);
 }

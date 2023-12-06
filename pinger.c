@@ -3,7 +3,6 @@
 #include "parser.h"
 #include "stat.h"
 #include "ui/appbar.h"
-#include "ui/menu.h"
 #include "tabs/ping.h"
 
 #define PING "/bin/ping"
@@ -49,7 +48,7 @@ static bool pinger_active(void) {
   if (pinger_state.run != active) {
     pinger_state.run = active;
     view_updater(active);
-    menu_update();
+    appbar_update();
   }
   return active;
 }

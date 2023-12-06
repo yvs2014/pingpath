@@ -1,7 +1,8 @@
 
 #include "appbar.h"
 #include "style.h"
-#include "menu.h"
+#include "action.h"
+#include "option.h"
 #include "pinger.h"
 #include "valid.h"
 
@@ -42,7 +43,7 @@ static void set_target(GtkWidget *widget, GtkWidget *entry) {
   gchar *target = valid_target(gtk_editable_get_text(GTK_EDITABLE(entry)));
   if (target) {
     g_free(ping_opts.target); ping_opts.target = target;
-    menu_update_action();
+    action_update();
     LOG("target: %s", target);
   }
 }
@@ -70,9 +71,13 @@ bool appbar_init(GtkApplication *app, GtkWidget *win) {
   appbar = gtk_header_bar_new();
   g_return_val_if_fail(GTK_IS_HEADER_BAR(appbar), false);
   if (GTK_IS_WINDOW(win)) gtk_window_set_titlebar(GTK_WINDOW(win), appbar);
-  if (!menu_init(app, appbar)) return false;
+  if (!action_init(app, appbar)) return false;
+  if (!option_init(appbar)) return false;
   if (!add_target_input()) return false;
   if (!start_datetime()) return false;
+  appbar_update();
   return true;
 }
+
+inline void appbar_update(void) { action_update(); option_update(); }
 
