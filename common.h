@@ -5,7 +5,7 @@
 #include "aux.h"
 
 #define APPNAME "pingpath"
-#define VERSION "0.1.22"
+#define VERSION "0.1.23"
 
 #define MAXTTL 30
 #define COUNT 50
@@ -40,5 +40,10 @@
 #define SUB_MENU_ICON_UP   "go-up-symbolic"
 #define SUB_MENU_ICON_DOWN "go-down-symbolic"
 #define SUB_MENU_PROP      "icon-name"
+
+enum { ENT_BOOL_NONE, ENT_BOOL_DNS, ENT_BOOL_HOST, ENT_BOOL_LOSS, ENT_BOOL_SENT, ENT_BOOL_RECV,
+  ENT_BOOL_LAST, ENT_BOOL_BEST, ENT_BOOL_WRST, ENT_BOOL_AVRG, ENT_BOOL_JTTR, ENT_BOOL_MAX };
+enum { ELEM_NO, ELEM_HOST, ELEM_LOSS, ELEM_SENT, ELEM_RECV, ELEM_LAST, ELEM_BEST, ELEM_WRST,
+  ELEM_AVRG, ELEM_JTTR, ELEM_MAX };
 
 #endif

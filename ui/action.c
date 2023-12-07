@@ -70,7 +70,7 @@ static void on_pauseresume(GSimpleAction *action, GVariant *var, gpointer data) 
   LOG("action: %s", action_label(ACT_NDX_PAUSE));
   pinger_state.pause = !pinger_state.pause;
   action_update();
-  pingtab_update(NULL);
+  pingtab_wrap_update();
 }
 
 static void on_reset(GSimpleAction *action, GVariant *var, gpointer data) {

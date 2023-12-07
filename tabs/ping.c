@@ -11,9 +11,9 @@
 #define HDRLINES 1
 
 typedef struct listline {
-  GtkListBoxRow* row;          // row from ListBox
-  GtkWidget* child;            // child
-  GtkWidget* cells[MAX_ELEMS]; // cells inside of child
+  GtkListBoxRow* row;         // row from ListBox
+  GtkWidget* child;           // child
+  GtkWidget* cells[ELEM_MAX]; // cells inside of child
 } t_listline;
 
 typedef struct listbox {
@@ -40,11 +40,12 @@ static void set_elem_align(int typ, GtkWidget *label) {
     case ELEM_NO:
       align_elem_label(label, HOPNO_MAX_CHARS, GTK_ALIGN_END, false);
       break;
-    case ELEM_INFO:
+    case ELEM_HOST:
       align_elem_label(label, stat_elem_max(typ), GTK_ALIGN_START, true);
       break;
     case ELEM_LOSS:
     case ELEM_SENT:
+    case ELEM_RECV:
     case ELEM_LAST:
     case ELEM_BEST:
     case ELEM_WRST:
@@ -56,12 +57,12 @@ static void set_elem_align(int typ, GtkWidget *label) {
   gtk_widget_set_valign(label, GTK_ALIGN_START);
 }
 
-static bool init_child_elem(const t_stat_elems str, t_listline *line, bool visible) {
-  for (int i = 0; i < MAX_ELEMS; i++) {
-    GtkWidget *elem = line->cells[i] = gtk_label_new(str[i]);
+static bool init_child_elem(const t_stat_elem *str, t_listline *line, bool visible) {
+  for (int i = 0; i < ELEM_MAX; i++) {
+    GtkWidget *elem = line->cells[i] = gtk_label_new(str[i].name);
     g_return_val_if_fail(GTK_IS_LABEL(elem), false);
     set_elem_align(i, elem);
-    gtk_widget_set_visible(elem, visible && str[i]);
+    gtk_widget_set_visible(elem, visible && str[i].enable);
     gtk_box_append(GTK_BOX(line->child), elem);
   }
   return true;
@@ -81,14 +82,14 @@ static GtkWidget* init_list_box(t_listline *boxes, int boxes_len, bool vis, bool
     GtkListBoxRow *row = boxes[i].row = line_row_new(c, vis);
     g_return_val_if_fail(GTK_IS_LIST_BOX_ROW(row), NULL);
     gtk_list_box_row_set_activatable(row, !hdr);
-    const t_stat_elems *arr;
-    if (hdr) arr = &stat_elems; else {
+    t_stat_elem *arr;
+    if (hdr) arr = statelem; else {
       char *s = stat_no_at_buff[i];
       snprintf(s, ELEM_BUFF_SIZE, "%d.", i + 1);
-      const t_stat_elems str = { [ELEM_NO] = s };
-      arr = &str;
+      t_stat_elem str[ELEM_MAX] = {[ELEM_NO] = { .enable = statelem[i].enable, .name = s }};
+      arr = str;
     }
-    if (!init_child_elem(*arr, &boxes[i], vis)) return NULL;
+    if (!init_child_elem(arr, &boxes[i], vis)) return NULL;
     gtk_list_box_append(GTK_LIST_BOX(list), GTK_WIDGET(row));
   }
   gtk_list_box_set_selection_mode(GTK_LIST_BOX(list), GTK_SELECTION_MULTIPLE);
@@ -104,6 +105,11 @@ static GtkWidget* init_info(void) {
   return label;
 }
 
+static void set_vis_cells(t_listline *line) {
+  if (line) for (int i = 0; i < ELEM_MAX; i++) gtk_widget_set_visible(line->cells[i], statelem[i].enable);
+}
+
+
 // pub
 //
 void pingtab_clear(void) {
@@ -111,7 +117,7 @@ void pingtab_clear(void) {
     t_listline *line = &listbox.lines[i];
     gtk_widget_set_visible(GTK_WIDGET(line->row), false);
     gtk_widget_set_visible(line->child, false);
-    for (int j = 0; j < MAX_ELEMS; j++) {
+    for (int j = 0; j < ELEM_MAX; j++) {
       gtk_widget_set_visible(line->cells[j], false);
       if (j != ELEM_NO) gtk_label_set_text(GTK_LABEL(line->cells[j]), NULL);
     }
@@ -125,8 +131,8 @@ gboolean pingtab_update(gpointer data) {
   static const gchar *nopong_mesg = "No response";
   if (!pinger_state.pause)
     for (int i = 0; i < hops_no; i++)
-      for (int j = 0; j < MAX_ELEMS; j++)
-        if ((j != ELEM_NO) && stat_elems[j])
+      for (int j = 0; j < ELEM_MAX; j++)
+        if ((j != ELEM_NO) && statelem[j].enable)
           gtk_label_set_text(GTK_LABEL(listbox.lines[i].cells[j]), stat_elem(i, j));
   { // no data display
     bool notyet = info_mesg == notyet_mesg;
@@ -137,15 +143,24 @@ gboolean pingtab_update(gpointer data) {
   return true;
 }
 
-void pingtab_set_visible(int no) {
+inline void pingtab_wrap_update(void) { pingtab_update(NULL); }
+
+void pingtab_vis_rows(int no) {
   LOG("set upto %d visible rows", no);
   for (int i = 0; i < MAXTTL; i++) {
     bool vis = i < no;
     t_listline *line = &listbox.lines[i];
     gtk_widget_set_visible(GTK_WIDGET(line->row), vis);
     gtk_widget_set_visible(line->child, vis);
-    for (int j = 0; j < MAX_ELEMS; j++) gtk_widget_set_visible(line->cells[j], vis && stat_elems[j]);
+    for (int j = 0; j < ELEM_MAX; j++) gtk_widget_set_visible(line->cells[j], vis && statelem[j].enable);
   }
+}
+
+void pingtab_vis_cols(void) {
+  LOG("set %s", "visible columns");
+  for (int i = 0; i < MAXTTL; i++) set_vis_cells(&listbox.header[i]);
+  for (int i = 0; i < MAXTTL; i++) set_vis_cells(&listbox.lines[i]);
+  pingtab_wrap_update();
 }
 
 void pingtab_update_width(int max, int ndx) {

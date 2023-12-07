@@ -60,7 +60,7 @@ static void set_finish_flag(struct _GObject *a, struct _GAsyncResult *b, gpointe
   if (p) {
     if (p->active) p->active = false;
     a_state = pinger_active();
-    if (!a_state) pingtab_update(NULL); // final update
+    if (!a_state) pingtab_wrap_update(); // final update
   }
   if (!pinger_state.gotdata) {
     if (a_state < 0) a_state = pinger_active();

@@ -1,3 +1,6 @@
+## 0.1.23
+- add selected stat element handlers
+
 ## 0.1.22
 - add expanded sublists to popover menu
 

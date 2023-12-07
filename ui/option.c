@@ -1,7 +1,9 @@
 
 #include "option.h"
 #include "pinger.h"
+#include "stat.h"
 #include "style.h"
+#include "tabs/ping.h"
 
 #define ENT_BUFF_SIZE 64
 #define SUBLIST_MAX 16
@@ -30,22 +32,20 @@ typedef struct ent_exp {
   GtkWidget *arrow, *sub; // aux widgets
 } t_ent_exp;
 
-enum { ENT_BOOL_NONE, ENT_BOOL_DNS, ENT_BOOL_HOP, ENT_BOOL_LOSS, ENT_BOOL_SENT, ENT_BOOL_RECV,
-  ENT_BOOL_LAST, ENT_BOOL_BEST, ENT_BOOL_WRST, ENT_BOOL_AVRG, ENT_BOOL_JTTR, ENT_BOOL_MAX };
 enum { ENT_STR_NONE, ENT_STR_CYCLES, ENT_STR_IVAL, ENT_STR_QOS, ENT_STR_PLOAD, ENT_STR_PSIZE, ENT_STR_MAX };
 enum { ENT_EXP_NONE, ENT_EXP_INFO, ENT_EXP_STAT, ENT_EXP_MAX };
 
 static t_ent_bool ent_bool[ENT_BOOL_MAX] = {
-  [ENT_BOOL_DNS]  = { .en = { .typ = ENT_BOOL_DNS,  .name = "DNS" }, .pval = &ping_opts.dns },
-  [ENT_BOOL_HOP]  = { .en = { .typ = ENT_BOOL_HOP,  .name = "Hop" }},
-  [ENT_BOOL_LOSS] = { .en = { .typ = ENT_BOOL_LOSS, .name = "Loss, %" }},
-  [ENT_BOOL_SENT] = { .en = { .typ = ENT_BOOL_SENT, .name = "Sent" }},
-  [ENT_BOOL_RECV] = { .en = { .typ = ENT_BOOL_RECV, .name = "Recv" }},
-  [ENT_BOOL_LAST] = { .en = { .typ = ENT_BOOL_LAST, .name = "Last" }},
-  [ENT_BOOL_BEST] = { .en = { .typ = ENT_BOOL_BEST, .name = "Best" }},
-  [ENT_BOOL_WRST] = { .en = { .typ = ENT_BOOL_WRST, .name = "Worst" }},
-  [ENT_BOOL_AVRG] = { .en = { .typ = ENT_BOOL_AVRG, .name = "Average" }},
-  [ENT_BOOL_JTTR] = { .en = { .typ = ENT_BOOL_JTTR, .name = "Jitter" }},
+  [ENT_BOOL_DNS]  = { .en = { .typ = ENT_BOOL_DNS,  .name = "DNS" },     .pval = &ping_opts.dns },
+  [ENT_BOOL_HOST] = { .en = { .typ = ENT_BOOL_HOST, .name = "Host" },    .pval = &statelem[ELEM_HOST].enable },
+  [ENT_BOOL_LOSS] = { .en = { .typ = ENT_BOOL_LOSS, .name = "Loss, %"},  .pval = &statelem[ELEM_LOSS].enable },
+  [ENT_BOOL_SENT] = { .en = { .typ = ENT_BOOL_SENT, .name = "Sent" },    .pval = &statelem[ELEM_SENT].enable },
+  [ENT_BOOL_RECV] = { .en = { .typ = ENT_BOOL_RECV, .name = "Recv" },    .pval = &statelem[ELEM_RECV].enable },
+  [ENT_BOOL_LAST] = { .en = { .typ = ENT_BOOL_LAST, .name = "Last" },    .pval = &statelem[ELEM_LAST].enable },
+  [ENT_BOOL_BEST] = { .en = { .typ = ENT_BOOL_BEST, .name = "Best" },    .pval = &statelem[ELEM_BEST].enable },
+  [ENT_BOOL_WRST] = { .en = { .typ = ENT_BOOL_WRST, .name = "Worst" },   .pval = &statelem[ELEM_WRST].enable },
+  [ENT_BOOL_AVRG] = { .en = { .typ = ENT_BOOL_AVRG, .name = "Average" }, .pval = &statelem[ELEM_AVRG].enable },
+  [ENT_BOOL_JTTR] = { .en = { .typ = ENT_BOOL_JTTR, .name = "Jitter" },  .pval = &statelem[ELEM_JTTR].enable },
 };
 
 static t_ent_str ent_str[ENT_STR_MAX] = {
@@ -57,9 +57,9 @@ static t_ent_str ent_str[ENT_STR_MAX] = {
 };
 
 static t_ent_exp ent_exp[ENT_EXP_MAX] = {
-  [ENT_EXP_INFO] = { .en = { .typ = ENT_EXP_INFO, .name = "Hop Info" }, .ndxs = {ENT_BOOL_HOP}},
-  [ENT_EXP_STAT] = { .en = { .typ = ENT_EXP_STAT, .name = "Statistics" },
-    .ndxs = {ENT_BOOL_LOSS, ENT_BOOL_SENT, ENT_BOOL_LAST, ENT_BOOL_BEST, ENT_BOOL_WRST, ENT_BOOL_AVRG, ENT_BOOL_JTTR},
+  [ENT_EXP_INFO] = { .en = { .typ = ENT_EXP_INFO, .name = "Hop Info" }, .ndxs = {ENT_BOOL_HOST}},
+  [ENT_EXP_STAT] = { .en = { .typ = ENT_EXP_STAT, .name = "Statistics" }, .ndxs = {ENT_BOOL_LOSS,
+    ENT_BOOL_SENT, ENT_BOOL_RECV, ENT_BOOL_LAST, ENT_BOOL_BEST, ENT_BOOL_WRST, ENT_BOOL_AVRG, ENT_BOOL_JTTR},
   },
 };
 
@@ -67,12 +67,22 @@ static t_ent_exp ent_exp[ENT_EXP_MAX] = {
 // aux
 //
 
+static void check_bool_val(GtkCheckButton *check, t_ent_bool *en, void (*update)(void)) {
+  bool state = gtk_check_button_get_active(check);
+  if (en->pval) if (*(en->pval) != state) {
+    *(en->pval) = state;
+    if (update) update();
+  }
+  LOG("%s: %s", en->en.name, state ? "on" : "off");
+}
+
 static void toggle_cb(GtkCheckButton *check, t_ent_bool *en) {
   if (!en) return;
   g_return_if_fail(GTK_IS_CHECK_BUTTON(check));
   switch (en->en.typ) {
     case ENT_BOOL_DNS:
-    case ENT_BOOL_HOP:
+      check_bool_val(check, en, pingtab_wrap_update); break;
+    case ENT_BOOL_HOST:
     case ENT_BOOL_LOSS:
     case ENT_BOOL_SENT:
     case ENT_BOOL_RECV:
@@ -81,10 +91,7 @@ static void toggle_cb(GtkCheckButton *check, t_ent_bool *en) {
     case ENT_BOOL_WRST:
     case ENT_BOOL_AVRG:
     case ENT_BOOL_JTTR:
-    { bool state = gtk_check_button_get_active(check);
-      if (en->pval) *(en->pval) = state;
-      LOG("%s: %s", en->en.name, state ? "on" : "off");
-    } break;
+      check_bool_val(check, en, pingtab_vis_cols); break;
   }
 }
 

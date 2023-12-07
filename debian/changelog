@@ -1,3 +1,9 @@
+pingpath (0.1.23) lunar mantic; urgency=low
+
+  * add selected stat element handlers
+
+ -- yvs <VSYakovetsky@gmail.com>  Thu, 07 Dec 2023 21:18:20 +0200
+
 pingpath (0.1.22) lunar mantic; urgency=low
 
   * add expanded sublists to popover menu
