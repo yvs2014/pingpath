@@ -206,6 +206,7 @@ static const gchar* fill_stat_rtt(int usec, gchar* buff, int size) {
 static const gchar *stat_hop(int typ, t_hop *hop) {
   static gchar loss[NUM_BUFF_SZ];
   static gchar sent[NUM_BUFF_SZ];
+  static gchar recv[NUM_BUFF_SZ];
   static gchar last[NUM_BUFF_SZ];
   static gchar best[NUM_BUFF_SZ];
   static gchar wrst[NUM_BUFF_SZ];
@@ -214,6 +215,7 @@ static const gchar *stat_hop(int typ, t_hop *hop) {
   switch (typ) {
     case ELEM_LOSS: return fill_stat_dbl(hop->loss, loss, sizeof(loss), "%", 0);
     case ELEM_SENT: return fill_stat_int(hop->sent, sent, sizeof(sent));
+    case ELEM_RECV: return fill_stat_int(hop->recv, recv, sizeof(recv));
     case ELEM_LAST: return fill_stat_rtt(hop->last, last, sizeof(last));
     case ELEM_BEST: return fill_stat_rtt(hop->best, best, sizeof(best));
     case ELEM_WRST: return fill_stat_rtt(hop->wrst, wrst, sizeof(wrst));
@@ -320,6 +322,7 @@ const gchar *stat_elem(int at, int typ) {
     case ELEM_INFO: return stat_host(at);
     case ELEM_LOSS:
     case ELEM_SENT:
+    case ELEM_RECV:
     case ELEM_LAST:
     case ELEM_BEST:
     case ELEM_WRST:

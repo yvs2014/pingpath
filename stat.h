@@ -48,7 +48,7 @@ void stat_last_tx(int at);
 const gchar *stat_elem(int at, int typ);
 int stat_elem_max(int typ);
 
-enum { ELEM_NO, ELEM_INFO, ELEM_LOSS, ELEM_SENT, ELEM_LAST, ELEM_BEST, ELEM_WRST, ELEM_AVRG, ELEM_JTTR, MAX_ELEMS };
+enum { ELEM_NO, ELEM_INFO, ELEM_LOSS, ELEM_SENT, ELEM_RECV, ELEM_LAST, ELEM_BEST, ELEM_WRST, ELEM_AVRG, ELEM_JTTR, MAX_ELEMS };
 
 typedef gchar* t_stat_elems[MAX_ELEMS];
 extern t_stat_elems stat_elems; // map indexes to elems

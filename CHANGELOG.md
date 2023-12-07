@@ -1,3 +1,6 @@
+## 0.1.22
+- add expanded sublists to popover menu
+
 ## 0.1.21
 - fix stat clearing at reset action
 - split menu on action,option

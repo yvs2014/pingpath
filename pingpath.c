@@ -16,7 +16,7 @@ static void on_app_exit(GtkWidget *widget, gpointer unused) {
   LOG("app %s", "quit");
 }
 
-static void activate(GtkApplication* app, gpointer unused) {
+static void app_cb(GtkApplication* app, gpointer unused) {
   style_init();
   GtkWidget *win = gtk_application_window_new(app);
   g_return_if_fail(GTK_IS_WINDOW(win));
@@ -44,7 +44,7 @@ int main(int argc, char **argv) {
   stat_init();
   pinger_init();
   if (!parser_init()) return -1;
-  g_signal_connect(app, "activate", G_CALLBACK(activate), NULL);
+  g_signal_connect(app, EV_ACTIVE, G_CALLBACK(app_cb), NULL);
   int rc = g_application_run(G_APPLICATION(app), argc, argv);
   g_object_unref(app);
   return rc;

@@ -38,7 +38,7 @@ static bool start_datetime(void) {
   return true;
 }
 
-static void set_target(GtkWidget *widget, GtkWidget *entry) {
+static void target_cb(GtkWidget *widget, GtkWidget *entry) {
   g_return_if_fail(GTK_IS_EDITABLE(entry));
   gchar *target = valid_target(gtk_editable_get_text(GTK_EDITABLE(entry)));
   if (target) {
@@ -49,17 +49,19 @@ static void set_target(GtkWidget *widget, GtkWidget *entry) {
 }
 
 static bool add_target_input(void) {
-  static GtkWidget *target_entry;
+  static GtkWidget *entry;
   g_return_val_if_fail(GTK_IS_HEADER_BAR(appbar), false);
-  if (target_entry) gtk_header_bar_remove(GTK_HEADER_BAR(appbar), target_entry);
-  target_entry = gtk_entry_new();
-  gtk_entry_set_max_length(GTK_ENTRY(target_entry), MAXHOSTNAME);
-  g_signal_connect(target_entry, "activate", G_CALLBACK(set_target), target_entry);
+  if (entry) gtk_header_bar_remove(GTK_HEADER_BAR(appbar), entry);
+  entry = gtk_entry_new();
+  g_return_val_if_fail(GTK_IS_ENTRY(entry), false);
+//gtk_entry_set_has_frame(GTK_ENTRY(entry), false);
+  gtk_entry_set_max_length(GTK_ENTRY(entry), MAXHOSTNAME);
   gchar *hint = "Enter hostname or IP address ...";
-  gtk_entry_set_placeholder_text(GTK_ENTRY(target_entry), hint);
-  gtk_editable_set_editable(GTK_EDITABLE(target_entry), true);
-  gtk_editable_set_max_width_chars(GTK_EDITABLE(target_entry), g_utf8_strlen(hint, MAXHOSTNAME) - 5);
-  gtk_header_bar_pack_start(GTK_HEADER_BAR(appbar), target_entry);
+  gtk_entry_set_placeholder_text(GTK_ENTRY(entry), hint);
+  gtk_editable_set_editable(GTK_EDITABLE(entry), true);
+  gtk_editable_set_max_width_chars(GTK_EDITABLE(entry), g_utf8_strlen(hint, MAXHOSTNAME) - 5);
+  g_signal_connect(entry, EV_ACTIVE, G_CALLBACK(target_cb), entry);
+  gtk_header_bar_pack_start(GTK_HEADER_BAR(appbar), entry);
   return true;
 }
 

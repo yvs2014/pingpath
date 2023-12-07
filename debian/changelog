@@ -1,3 +1,9 @@
+pingpath (0.1.22) lunar mantic; urgency=low
+
+  * add expanded sublists to popover menu
+
+ -- yvs <VSYakovetsky@gmail.com>  Thu, 07 Dec 2023 15:34:55 +0200
+
 pingpath (0.1.21) lunar mantic; urgency=low
 
   * fix stat clearing at reset action

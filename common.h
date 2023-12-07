@@ -5,7 +5,7 @@
 #include "aux.h"
 
 #define APPNAME "pingpath"
-#define VERSION "0.1.21"
+#define VERSION "0.1.22"
 
 #define MAXTTL 30
 #define COUNT 50
@@ -30,7 +30,15 @@
 #endif
 
 #define WARN(fmt, ...) g_warning("%s: " fmt "\n", __func__, __VA_ARGS__)
-
 #define UPD_STR(str, val) { g_free(str); str = g_strdup(val); }
+
+#define EV_ACTIVE "activate"
+#define EV_TOGGLE "toggled"
+
+#define ACT_MENU_ICON      "open-menu-symbolic"
+#define OPT_MENU_ICON      "document-properties-symbolic"
+#define SUB_MENU_ICON_UP   "go-up-symbolic"
+#define SUB_MENU_ICON_DOWN "go-down-symbolic"
+#define SUB_MENU_PROP      "icon-name"
 
 #endif

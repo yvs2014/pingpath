@@ -16,18 +16,19 @@ static const gchar *css_dark_colors =
   "." CSS_BGROUND "{background:" DEF_BGROUND_DARK ";}"
   "." CSS_BGONBG "{background:" APP_BGROUND_DARK ";}"
   "popover > arrow, popover > contents {background:" APP_BGROUND_DARK "; box-shadow:none;}"
-  "entry {background:" APP_BGROUND_DARK "; text-decoration:underline; border:none;}"
+  "entry, entry.flat {background:" APP_BGROUND_DARK "; text-decoration:underline; border:none;}"
   "headerbar {background:" APP_BGROUND_DARK ";}"
   "headerbar:backdrop {background:" APP_BGROUND_DARK ";}"
+  "." CSS_EXP "{background:" APP_BGROUND_DARK ";}"
 ;
 
 static const gchar *css_common =
-  "toolbar {-gtk-icon-style:symbolic;}"
   "vertical {padding:" PAD2 ";}"
   ".flat {padding:" PAD05 ";}"
   "." CSS_PAD "{padding:" PAD ";}"
   "." CSS_NOPAD "{min-height:0px;}"
   "." CSS_CHPAD "{padding-right:" PAD ";}"
+  "." CSS_NOFRAME "{border:none;}"
   "#" CSS_ID_PINGTAB "{padding:" PAD " " PAD2 ";}"
   "#" CSS_ID_DATETIME "{font-weight:500;}"
 ;

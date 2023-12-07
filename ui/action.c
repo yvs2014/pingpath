@@ -4,8 +4,6 @@
 #include "pinger.h"
 #include "tabs/ping.h"
 
-#define ACT_MENU_ICON "open-menu-symbolic"
-
 enum { ACT_NDX_START, ACT_NDX_PAUSE, ACT_NDX_RESET, ACT_NDX_HELP, ACT_NDX_MAX };
 
 typedef struct t_act_desc {
@@ -14,16 +12,16 @@ typedef struct t_act_desc {
   const char *const *shortcut;
 } t_act_desc;
 
-static const char* cntr_s[] = {"<Control>s", NULL};
-static const char* cntr_p[] = {"<Control>p", NULL};
-static const char* cntr_r[] = {"<Control>r", NULL};
-static const char* cntr_h[] = {"<Control>h", NULL};
+static const char* alt_s[] = {"<Alt>s", NULL};
+static const char* alt_p[] = {"<Alt>p", NULL};
+static const char* alt_r[] = {"<Alt>r", NULL};
+static const char* alt_h[] = {"<Alt>h", NULL};
 
 static t_act_desc act_desc[ACT_NDX_MAX] = {
-  [ACT_NDX_START] = { .name = "app.act_start", .shortcut = cntr_s },
-  [ACT_NDX_PAUSE] = { .name = "app.act_pause", .shortcut = cntr_p },
-  [ACT_NDX_RESET] = { .name = "app.act_reset", .shortcut = cntr_r },
-  [ACT_NDX_HELP]  = { .name = "app.act_help",  .shortcut = cntr_h },
+  [ACT_NDX_START] = { .name = "app.act_start", .shortcut = alt_s },
+  [ACT_NDX_PAUSE] = { .name = "app.act_pause", .shortcut = alt_p },
+  [ACT_NDX_RESET] = { .name = "app.act_reset", .shortcut = alt_r },
+  [ACT_NDX_HELP]  = { .name = "app.act_help",  .shortcut = alt_h },
 };
 
 #define APP_DOT 4
