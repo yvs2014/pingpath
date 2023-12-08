@@ -12,16 +12,16 @@ typedef struct t_act_desc {
   const char *const *shortcut;
 } t_act_desc;
 
-static const char* alt_s[] = {"<Alt>s", NULL};
-static const char* alt_p[] = {"<Alt>p", NULL};
-static const char* alt_r[] = {"<Alt>r", NULL};
-static const char* alt_h[] = {"<Alt>h", NULL};
+static const char* kb_ctrl_s[] = {"<Ctrl>s", NULL};
+static const char* kb_space[]  = {"space",   NULL};
+static const char* kb_ctrl_r[] = {"<Ctrl>r", NULL};
+static const char* kb_ctrl_h[] = {"<Ctrl>h", NULL};
 
 static t_act_desc act_desc[ACT_NDX_MAX] = {
-  [ACT_NDX_START] = { .name = "app.act_start", .shortcut = alt_s },
-  [ACT_NDX_PAUSE] = { .name = "app.act_pause", .shortcut = alt_p },
-  [ACT_NDX_RESET] = { .name = "app.act_reset", .shortcut = alt_r },
-  [ACT_NDX_HELP]  = { .name = "app.act_help",  .shortcut = alt_h },
+  [ACT_NDX_START] = { .name = "app.act_start", .shortcut = kb_ctrl_s },
+  [ACT_NDX_PAUSE] = { .name = "app.act_pause", .shortcut = kb_space  },
+  [ACT_NDX_RESET] = { .name = "app.act_reset", .shortcut = kb_ctrl_r },
+  [ACT_NDX_HELP]  = { .name = "app.act_help",  .shortcut = kb_ctrl_h },
 };
 
 #define APP_DOT 4

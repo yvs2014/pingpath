@@ -8,9 +8,14 @@
 #define DEF_PPAD "00"
 #define DEF_PSIZE 56
 
+typedef struct minmax {
+  int min, max;
+} t_minmax;
+
 typedef struct ping_opts {
   gchar *target;
   int count, timeout, qos, size, ipv;
+  t_minmax ttl;
   bool dns;
   char pad[48];        // 16 x "00."
   guint timer;         // thread ID of stat-view-area updater

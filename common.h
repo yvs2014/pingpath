@@ -5,7 +5,7 @@
 #include "aux.h"
 
 #define APPNAME "pingpath"
-#define VERSION "0.1.23"
+#define VERSION "0.1.24"
 
 #define MAXTTL 30
 #define COUNT 50
@@ -34,6 +34,7 @@
 
 #define EV_ACTIVE "activate"
 #define EV_TOGGLE "toggled"
+#define EV_SPIN   "value-changed"
 
 #define ACT_MENU_ICON      "open-menu-symbolic"
 #define OPT_MENU_ICON      "document-properties-symbolic"

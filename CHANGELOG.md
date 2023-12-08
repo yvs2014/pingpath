@@ -1,3 +1,6 @@
+## 0.1.24
+- add TTL and IPvN handlers
+
 ## 0.1.23
 - add selected stat element handlers
 

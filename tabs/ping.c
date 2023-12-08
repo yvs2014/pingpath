@@ -68,18 +68,19 @@ static bool init_child_elem(const t_stat_elem *str, t_listline *line, bool visib
   return true;
 }
 
-static GtkWidget* init_list_box(t_listline *boxes, int boxes_len, bool vis, bool hdr) {
+static GtkWidget* init_list_box(t_listline *lines, int len, bool vis, bool hdr) {
   static char stat_no_at_buff[MAXTTL][ELEM_BUFF_SIZE];
   GtkWidget *list = gtk_list_box_new();
   g_return_val_if_fail(GTK_IS_LIST_BOX(list), NULL);
   gtk_list_box_set_show_separators(GTK_LIST_BOX(list), true);
   gtk_widget_set_halign(list, GTK_ALIGN_FILL);
   gtk_widget_set_hexpand(list, false);
-  for (int i = 0; i < boxes_len; i++) {
-    GtkWidget *c = boxes[i].child = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 1);
+  for (int i = 0; i < len; i++) {
+    GtkWidget *c = lines[i].child = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, MARGIN);
     g_return_val_if_fail(GTK_IS_BOX(c), NULL);
+    if (style_loaded) gtk_widget_add_css_class(c, CSS_PAD6);
     gtk_widget_set_visible(c, vis);
-    GtkListBoxRow *row = boxes[i].row = line_row_new(c, vis);
+    GtkListBoxRow *row = lines[i].row = line_row_new(c, vis);
     g_return_val_if_fail(GTK_IS_LIST_BOX_ROW(row), NULL);
     gtk_list_box_row_set_activatable(row, !hdr);
     t_stat_elem *arr;
@@ -89,7 +90,7 @@ static GtkWidget* init_list_box(t_listline *boxes, int boxes_len, bool vis, bool
       t_stat_elem str[ELEM_MAX] = {[ELEM_NO] = { .enable = statelem[i].enable, .name = s }};
       arr = str;
     }
-    if (!init_child_elem(arr, &boxes[i], vis)) return NULL;
+    if (!init_child_elem(arr, &lines[i], vis)) return NULL;
     gtk_list_box_append(GTK_LIST_BOX(list), GTK_WIDGET(row));
   }
   gtk_list_box_set_selection_mode(GTK_LIST_BOX(list), GTK_SELECTION_MULTIPLE);

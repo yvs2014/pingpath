@@ -1,3 +1,9 @@
+pingpath (0.1.24) lunar mantic; urgency=low
+
+  * add TTL and IPvN handlers
+
+ -- yvs <VSYakovetsky@gmail.com>  Fri, 08 Dec 2023 12:40:04 +0200
+
 pingpath (0.1.23) lunar mantic; urgency=low
 
   * add selected stat element handlers

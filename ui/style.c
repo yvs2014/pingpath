@@ -12,6 +12,11 @@ int style_loaded;
 #define DEF_BGROUND_DARK "#151515"
 #define APP_BGROUND_DARK "#2c2c2c"
 
+#define PAD   "8px"
+#define PAD4  "4px"
+#define PAD6  "6px"
+#define PAD16 "16px"
+
 static const gchar *css_dark_colors =
   "." CSS_BGROUND "{background:" DEF_BGROUND_DARK ";}"
   "." CSS_BGONBG "{background:" APP_BGROUND_DARK ";}"
@@ -23,13 +28,14 @@ static const gchar *css_dark_colors =
 ;
 
 static const gchar *css_common =
-  "vertical {padding:" PAD2 ";}"
-  ".flat {padding:" PAD05 ";}"
+  "vertical {padding:" PAD16 ";}"
+  ".flat {padding:" PAD4 ";}"
   "." CSS_PAD "{padding:" PAD ";}"
   "." CSS_NOPAD "{min-height:0px;}"
   "." CSS_CHPAD "{padding-right:" PAD ";}"
+  "." CSS_PAD6  "{padding-right:" PAD6 ";}"
   "." CSS_NOFRAME "{border:none;}"
-  "#" CSS_ID_PINGTAB "{padding:" PAD " " PAD2 ";}"
+  "#" CSS_ID_PINGTAB "{padding:" PAD " " PAD16 ";}"
   "#" CSS_ID_DATETIME "{font-weight:500;}"
 ;
 
