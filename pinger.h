@@ -12,38 +12,31 @@ typedef struct minmax {
   int min, max;
 } t_minmax;
 
-typedef struct ping_opts {
+typedef struct opts {
   gchar *target;
-  int count, timeout, qos, size, ipv;
-  t_minmax ttl;
   bool dns;
+  int count, timeout, qos, size, ipv;
+  int min, lim;        // TTL range
   char pad[48];        // 16 x "00."
-  guint timer;         // thread ID of stat-view-area updater
   long long tout_usec; // internal const
-} t_ping_opts;
-
-//typedef struct procdata {
-//  GSubprocess *proc;
-//  bool active;        // process state
-//  GString *out, *err; // for received input data and errors
-//  int ndx;            // index in internal list
-//} t_procdata;
+} t_opts;
 
 typedef struct pinger_state {
   bool run, pause, gotdata, reachable;
 } t_pinger_state;
 
-extern t_ping_opts  ping_opts;
+extern t_opts opts;
 extern t_pinger_state pinger_state;
+extern guint stat_timer; // thread ID of stat-view-area updater
 
 void pinger_init(void);
 void pinger_start(void);
 void pinger_stop(const gchar* reason);
 void pinger_stop_nth(int at, const gchar* reason);
-//bool pinger_active(void);
 void pinger_free(void);
 void pinger_free_errors(void);
 void pinger_free_nth_error(int nth);
-void pinger_clear_data(void);
+void pinger_clear_data(bool clean);
+bool pinger_within_range(int min, int max, int got);
 
 #endif

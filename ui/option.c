@@ -37,9 +37,17 @@ typedef struct ent_exp {
   int ndxs[SUBLIST_MAX];  // 0 terminated indexes, otherwise max
 } t_ent_exp;
 
+typedef struct ent_spn_aux {
+  int *pval; // indexed: 0 .. lim-1
+  int def;   // not-indexed default: 1 .. lim
+  GtkWidget *spn;
+  GCallback cb;
+} t_ent_spn_aux;
+
+enum {SPN_AUX_MIN, SPN_AUX_LIM, SPN_AUX_MAX};
 typedef struct ent_spn {
   t_ent_exp_common c;
-  t_minmax *mm;
+  t_ent_spn_aux aux[SPN_AUX_MAX];
 } t_ent_spn;
 
 typedef struct ent_rad_map {
@@ -59,7 +67,7 @@ enum { ENT_SPN_NONE, ENT_SPN_TTL, ENT_SPN_MAX };
 enum { ENT_RAD_NONE, ENT_RAD_IPV, ENT_RAD_MAX };
 
 static t_ent_bool ent_bool[ENT_BOOL_MAX] = {
-  [ENT_BOOL_DNS]  = { .en = { .typ = ENT_BOOL_DNS,  .name = "DNS" },     .pval = &ping_opts.dns },
+  [ENT_BOOL_DNS]  = { .en = { .typ = ENT_BOOL_DNS,  .name = "DNS" },     .pval = &opts.dns },
   [ENT_BOOL_HOST] = { .en = { .typ = ENT_BOOL_HOST, .name = "Host" },    .pval = &statelem[ELEM_HOST].enable },
   [ENT_BOOL_LOSS] = { .en = { .typ = ENT_BOOL_LOSS, .name = "Loss, %"},  .pval = &statelem[ELEM_LOSS].enable },
   [ENT_BOOL_SENT] = { .en = { .typ = ENT_BOOL_SENT, .name = "Sent" },    .pval = &statelem[ELEM_SENT].enable },
@@ -86,12 +94,17 @@ static t_ent_exp ent_exp[ENT_EXP_MAX] = {
   },
 };
 
+static void min_cb(GtkWidget*, t_ent_spn*);
+static void max_cb(GtkWidget*, t_ent_spn*);
 static t_ent_spn ent_spn[ENT_SPN_MAX] = {
-  [ENT_SPN_TTL] = { .c = {.en = {.typ = ENT_SPN_TTL, .name = "TTL"}}, .mm = &ping_opts.ttl },
+  [ENT_SPN_TTL] = { .c = {.en = {.typ = ENT_SPN_TTL, .name = "TTL"}}, .aux = {
+    [SPN_AUX_MIN] = {.cb = G_CALLBACK(min_cb), .pval = &opts.min, .def = 1},
+    [SPN_AUX_LIM] = {.cb = G_CALLBACK(max_cb), .pval = &opts.lim, .def = MAXTTL}
+  }},
 };
 
 static t_ent_rad ent_rad[ENT_RAD_MAX] = {
-  [ENT_RAD_IPV] = { .c = {.en = {.typ = ENT_RAD_IPV, .name = "IP Version №"}}, .pval = &ping_opts.ipv,
+  [ENT_RAD_IPV] = { .c = {.en = {.typ = ENT_RAD_IPV, .name = "IP Version №"}}, .pval = &opts.ipv,
     .map = {
       {.ndx = ENT_RAD_IPV, .str = "Auto"},
       {.ndx = ENT_RAD_IPV, .val = 4, .str = "IPv4"},
@@ -158,8 +171,8 @@ static void arrow_cb(GtkWidget *widget, t_ent_exp_common *en) {
     bool active = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(en->arrow));
     g_object_set(G_OBJECT(en->arrow), SUB_MENU_PROP, active ? SUB_MENU_ICON_UP : SUB_MENU_ICON_DOWN, NULL);
     if (GTK_IS_WIDGET(en->sub)) gtk_widget_set_visible(en->sub, active);
+    DEBUG("%s: %d", en->en.name, active);
   }
-  DEBUG("%s: %d", en->en.name, active);
 }
 
 static void input_cb(GtkWidget *input, t_ent_ndx *en) {
@@ -173,32 +186,53 @@ static void input_cb(GtkWidget *input, t_ent_ndx *en) {
 
 static void min_cb(GtkWidget *spin, t_ent_spn *en) {
   if (!en) return;
+  int *pmin = en->aux[SPN_AUX_MIN].pval;
+  if (!pmin) return;
   g_return_if_fail(GTK_IS_SPIN_BUTTON(spin));
-  t_minmax *mm = en->mm;
-  if (!mm) return;
   int got = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(spin));
-  if (got > mm->max) {
-    LOG("min(%d) cannot be greater than max(%d)", mm->min, mm->max);
-    gtk_spin_button_set_value(GTK_SPIN_BUTTON(spin), mm->max);
-    return;
-  }
-  mm->min = got;
-  LOG("%s: %d <=> %d", en->c.en.name, mm->min, mm->max);
+  int val = got - 1;
+  if (*pmin == val) return;
+  int *plim = en->aux[SPN_AUX_LIM].pval;
+  int max = plim ? *plim : MAXTTL;
+  if (pinger_within_range(1, max, got)) {
+    LOG("%s: %d <=> %d", en->c.en.name, got, max);
+    *pmin = val;
+    // then adjust right:range
+    double cp_min, cp_max;
+    t_ent_spn_aux *cp = &en->aux[SPN_AUX_LIM];
+    gtk_spin_button_get_range(GTK_SPIN_BUTTON(cp->spn), &cp_min, &cp_max);
+    if (got != cp_min) {
+      int cp_val = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(cp->spn));
+      if (cp_val >= got) { // avoid callback triggering
+        gtk_spin_button_set_range(GTK_SPIN_BUTTON(cp->spn), got, cp_max);
+      }
+    }
+  } else WARN("out-of-range[%d,%d]: %d", 1, max, got);
 }
 
 static void max_cb(GtkWidget *spin, t_ent_spn *en) {
   if (!en) return;
+  int *plim = en->aux[SPN_AUX_LIM].pval;
+  if (!plim) return;
   g_return_if_fail(GTK_IS_SPIN_BUTTON(spin));
-  t_minmax *mm = en->mm;
-  if (!mm) return;
   int got = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(spin));
-  if (got < mm->min) {
-    LOG("max(%d) cannot be less than min(%d)", mm->max, mm->min);
-    gtk_spin_button_set_value(GTK_SPIN_BUTTON(spin), mm->min);
-    return;
-  }
-  mm->max = got;
-  LOG("%s: %d <=> %d", en->c.en.name, mm->min, mm->max);
+  if (*plim == got) return;
+  int *pmin = en->aux[SPN_AUX_MIN].pval;
+  int min = (pmin ? *pmin : 0) + 1;
+  if (pinger_within_range(min, MAXTTL, got)) {
+    LOG("%s: %d <=> %d", en->c.en.name, min, got);
+    *plim = got;
+    // then adjust left:range
+    double cp_min, cp_max;
+    t_ent_spn_aux *cp = &en->aux[SPN_AUX_MIN];
+    gtk_spin_button_get_range(GTK_SPIN_BUTTON(cp->spn), &cp_min, &cp_max);
+    if (got != cp_max) {
+      int cp_val = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(cp->spn));
+      if (cp_val <= got) { // avoid callback triggering
+        gtk_spin_button_set_range(GTK_SPIN_BUTTON(cp->spn), cp_min, got);
+      }
+    }
+  } else WARN("out-of-range[%d,%d]: %d", min, MAXTTL, got);
 }
 
 static GtkWidget* label_box(const gchar *name) {
@@ -296,28 +330,39 @@ static GtkWidget* add_opt_expand(GtkWidget* list, t_ent_exp *en) {
   return box;
 }
 
-static bool add_minmax(GtkWidget *box, t_ent_spn *en, int min, int max, bool ismin) {
+static bool add_minmax(GtkWidget *box, t_ent_spn *en, int ndx) {
   if (!en || !GTK_IS_BOX(box)) return false;
-  GtkWidget *spn = gtk_spin_button_new_with_range(min, max, 1);
+  GtkWidget *spn = gtk_spin_button_new_with_range(en->aux[SPN_AUX_MIN].def, en->aux[SPN_AUX_LIM].def, 1);
   g_return_val_if_fail(GTK_IS_SPIN_BUTTON(spn), false);
   gtk_box_append(GTK_BOX(box), spn);
-  gtk_spin_button_set_value(GTK_SPIN_BUTTON(spn), ismin ? min : max);
-  g_signal_connect(spn, EV_SPIN, G_CALLBACK(ismin ? min_cb : max_cb), en);
+  int *pval = en->aux[ndx].pval;
+  if (pval) {
+    int val = *pval;
+    gtk_spin_button_set_value(GTK_SPIN_BUTTON(spn), (ndx == SPN_AUX_MIN) ? val + 1 : val);
+  }
+  en->aux[ndx].spn = spn;
+  if (en->aux[ndx].cb) g_signal_connect(spn, EV_SPIN, en->aux[ndx].cb, en);
   return true;
 }
 
+static void grey_into_box(GtkWidget *box, GtkWidget *widget) {
+  if (!GTK_IS_BOX(box) || !GTK_IS_WIDGET(widget)) return;
+  gtk_widget_set_sensitive(widget, false);
+  gtk_box_append(GTK_BOX(box), widget);
+}
+
 static GtkWidget* add_opt_range(GtkWidget* list, t_ent_spn *en) {
-  if (!en) return false;
+  if (!en) return NULL;
   GtkWidget *box = add_expand_common(list, &en->c);
-  t_minmax *mm = en->mm;
-  if (GTK_IS_BOX(box) && en->c.sub && mm) {
-    GtkWidget *subrow = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, MARGIN * 2);
+  if (GTK_IS_BOX(box) && en->c.sub) {
+    GtkWidget *subrow = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, MARGIN);
     g_return_val_if_fail(GTK_IS_BOX(subrow), box);
     gtk_list_box_append(GTK_LIST_BOX(en->c.sub), subrow);
-    add_minmax(subrow, en, mm->min, mm->max, true);
-    GtkWidget *between = gtk_label_new("range"); // "🡸 🡺" "🠔🠖" "←→" "⟷" "🡄🡆" "🢀 🢂"
-    if (between) gtk_box_append(GTK_BOX(subrow), between);
-    add_minmax(subrow, en, mm->min, mm->max, false);
+    add_minmax(subrow, en, SPN_AUX_MIN);
+    grey_into_box(subrow, gtk_image_new_from_icon_name(TO_LEFT_ICON));
+    grey_into_box(subrow, gtk_label_new("range")); // "🡸 min max 🡺" "🡸 🡺" "🠔🠖" "←→" "⟷" "🡄🡆" "🢀 🢂"
+    grey_into_box(subrow, gtk_image_new_from_icon_name(TO_RIGHT_ICON));
+    add_minmax(subrow, en, SPN_AUX_LIM);
   }
   return box;
 }
@@ -368,15 +413,15 @@ static bool create_optmenu(GtkWidget *bar) {
   //
   bool re = true;
   gtk_list_box_remove_all(GTK_LIST_BOX(list));
-  EN_PR_D(ENT_STR_CYCLES, ping_opts.count);
-  EN_PR_D(ENT_STR_IVAL,   ping_opts.timeout);
-  if (!add_opt_check(list, &ent_bool[ENT_BOOL_DNS])) re = false;
-  if (!add_opt_expand(list, &ent_exp[ENT_EXP_INFO])) re = false;
-  if (!add_opt_expand(list, &ent_exp[ENT_EXP_STAT])) re = false;
-  if (!add_opt_range(list, &ent_spn[ENT_SPN_TTL])) re = false;
-  EN_PR_D(ENT_STR_QOS,   ping_opts.qos);
-  EN_PR_S(ENT_STR_PLOAD, ping_opts.pad);
-  EN_PR_D(ENT_STR_PSIZE, ping_opts.size);
+  EN_PR_D(ENT_STR_CYCLES, opts.count);
+  EN_PR_D(ENT_STR_IVAL,   opts.timeout);
+  if (!add_opt_check(list,  &ent_bool[ENT_BOOL_DNS])) re = false;
+  if (!add_opt_expand(list, &ent_exp[ENT_EXP_INFO]))  re = false;
+  if (!add_opt_expand(list, &ent_exp[ENT_EXP_STAT]))  re = false;
+  if (!add_opt_range(list,  &ent_spn[ENT_SPN_TTL]))   re = false;
+  EN_PR_D(ENT_STR_QOS,    opts.qos);
+  EN_PR_S(ENT_STR_PLOAD,  opts.pad);
+  EN_PR_D(ENT_STR_PSIZE,  opts.size);
   if (!add_opt_radio(list, &ent_rad[ENT_RAD_IPV])) re = false;
   //
   return re;

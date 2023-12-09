@@ -1,3 +1,11 @@
+pingpath (0.1.25) lunar mantic; urgency=low
+
+  * ping with ttl settings
+
+  * a bit clear unreach messaging
+
+ -- yvs <VSYakovetsky@gmail.com>  Sat, 09 Dec 2023 14:10:48 +0200
+
 pingpath (0.1.24) lunar mantic; urgency=low
 
   * add TTL and IPvN handlers

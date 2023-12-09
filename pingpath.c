@@ -41,7 +41,7 @@ int main(int argc, char **argv) {
   GtkApplication *app = gtk_application_new("net.tools." APPNAME, G_APPLICATION_DEFAULT_FLAGS);
   g_return_val_if_fail(GTK_IS_APPLICATION(app), -1);
   LOG("app %s", "run");
-  stat_init();
+  stat_init(true);
   pinger_init();
   if (!parser_init()) return -1;
   g_signal_connect(app, EV_ACTIVE, G_CALLBACK(app_cb), NULL);

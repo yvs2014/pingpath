@@ -59,8 +59,8 @@ static const char* action_label(int ndx) {
 
 static void on_startstop(GSimpleAction *action, GVariant *var, gpointer data) {
   LOG("action: %s", action_label(ACT_NDX_START));
-  if (ping_opts.target) {
-    if (!ping_opts.timer) pinger_start();
+  if (opts.target) {
+    if (!stat_timer) pinger_start();
     else pinger_stop("request");
     appbar_update();
   }
@@ -75,7 +75,7 @@ static void on_pauseresume(GSimpleAction *action, GVariant *var, gpointer data) 
 
 static void on_reset(GSimpleAction *action, GVariant *var, gpointer data) {
   LOG("action: %s", action_label(ACT_NDX_RESET));
-  pinger_clear_data();
+  pinger_clear_data(false);
 }
 
 static void on_help(GSimpleAction *action, GVariant *var, gpointer data) {
@@ -129,7 +129,7 @@ void action_update(void) {
       g_menu_append_item(act_menu, g_menu_item_new(action_label(i), act_desc[i].name));
   }
   bool run = pinger_state.run, pause = pinger_state.pause;
-  SET_SA(ACT_NDX_START, ping_opts.target != NULL);
+  SET_SA(ACT_NDX_START, opts.target != NULL);
   SET_SA(ACT_NDX_PAUSE, pause || (!pause && run));
   SET_SA(ACT_NDX_RESET, run);
 }

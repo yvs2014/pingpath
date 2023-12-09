@@ -33,6 +33,7 @@ int hops_no = MAXTTL;
 static t_hop hops[MAXTTL];
 static int host_addr_max;
 static int host_name_max;
+static int visibles;
 
 #define ELEM_HOST_HDR "Host"
 #define ELEM_LOSS_HDR "Loss"
@@ -67,8 +68,8 @@ static void update_hmax(const gchar* s, bool addr) {
     int l = g_utf8_strlen(s, MAXHOSTNAME);
     if (l > *max) {
       *max = l;
-      if (addr && !ping_opts.dns) pingtab_update_width(host_addr_max, ELEM_HOST);
-      if (!addr && ping_opts.dns) pingtab_update_width(host_name_max, ELEM_HOST);
+      if (addr && !opts.dns) pingtab_update_width(host_addr_max, ELEM_HOST);
+      if (!addr && opts.dns) pingtab_update_width(host_name_max, ELEM_HOST);
     }
   }
   if (addr && (host_name_max < host_addr_max)) host_name_max = host_addr_max;
@@ -149,16 +150,19 @@ static void update_stat(int at, int rtt, t_tseq *mark, int rxtx) {
   if (rxtx == TX) hops[at].tout = true;
   else if (rxtx != NONE) hops[at].tout = false;
   // update global gotdata flag
-  if (!pinger_state.gotdata && !hops[at].tout) {
-    pinger_state.gotdata = true;
-    pingtab_vis_rows(at + 1);
+  if (!pinger_state.gotdata) pinger_state.gotdata = true;
+  if (!hops[at].tout) {
+    if ((at > visibles) && (at < hops_no)) {
+      visibles = at;
+      pingtab_vis_rows(at + 1);
+    }
   }
 }
 
 static int calc_rtt(int at, t_tseq *mark) {
   if (!hops[at].mark.sec) return -1;
   int rtt = (mark->sec - hops[at].mark.sec) * 1000000 + (mark->usec - hops[at].mark.usec);
-  rtt = (rtt > ping_opts.tout_usec) ? -1 : rtt; // skip timeouted responses
+  rtt = (rtt > opts.tout_usec) ? -1 : rtt; // skip timeouted responses
   return rtt;
 }
 
@@ -167,7 +171,7 @@ static inline bool seq_accord(int prev, int curr) { return ((curr - prev) == 1);
 #define ADDRONLY(addr) ((addr) ? (addr) : UNKN)
 #define ADDRNAME(addr, name) ((name) ? (name) : ADDRONLY(addr))
 static inline const gchar* addrname(int ndx, t_host *host) {
-  return ping_opts.dns ? ADDRNAME(host[ndx].addr, host[ndx].name) : ADDRONLY(host[ndx].addr);
+  return opts.dns ? ADDRNAME(host[ndx].addr, host[ndx].name) : ADDRONLY(host[ndx].addr);
 }
 
 static const gchar *stat_host(int at) {
@@ -235,16 +239,20 @@ static const gchar *stat_hop(int typ, t_hop *hop) {
 
 // pub
 //
-
-void stat_init(void) {
+void stat_init(bool clean) { // clean start or on reset
+  if (clean) {
+    hops_no = MAXTTL;
+    visibles = 0;
+    pinger_state.gotdata = false;
+    pinger_state.reachable = false;
+    memset(hops, 0, sizeof(hops));
+  }
   for (int i = 0; i < MAXTTL; i++) {
-    hops[i].reach = true;
+    if (clean) hops[i].reach = true;
     hops[i].last = hops[i].best = hops[i].wrst = -1;
     hops[i].loss = hops[i].avrg = hops[i].jttr = -1;
   }
   host_addr_max = host_name_max = g_utf8_strlen(ELEM_HOST_HDR, MAXHOSTNAME);
-  pinger_state.gotdata = false;
-  pinger_state.reachable = false;
 }
 
 void stat_free(void) {
@@ -264,16 +272,10 @@ void stat_free(void) {
   host_addr_max = host_name_max = g_utf8_strlen(ELEM_HOST_HDR, MAXHOSTNAME);
 }
 
-void stat_clear(void) {
+void stat_clear(bool clean) {
   stat_free();
-  stat_init();
+  stat_init(clean);
   pingtab_set_error(NULL);
-}
-
-void stat_set_nopong(const gchar *mesg) {
-  bool info = false;
-  for (int i = 0; i < hops_no; i++) if (hops[i].info) { info = true; break; }
-  if (!info) pingtab_set_error(mesg);
 }
 
 void stat_save_success(int at, t_ping_success *data) {
@@ -341,6 +343,6 @@ const gchar *stat_elem(int at, int typ) {
 }
 
 int stat_elem_max(int typ) {
-  return (typ != ELEM_HOST) ? ELEM_LEN : (ping_opts.dns ? host_name_max : host_addr_max);
+  return (typ != ELEM_HOST) ? ELEM_LEN : (opts.dns ? host_name_max : host_addr_max);
 }
 

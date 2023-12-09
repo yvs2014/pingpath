@@ -9,9 +9,10 @@
 #define PING "/bin/ping"
 #define SKIPNAME PING ": "
 
-t_ping_opts ping_opts = { .target = NULL, .dns = true, .count = COUNT, .qos = DEF_QOS, .size = DEF_PSIZE,
-  .ttl = { .min = 1, .max = MAXTTL }, .timeout = TIMEOUT, .tout_usec = TIMEOUT * 1000000 };
+t_opts opts = { .target = NULL, .dns = true, .count = COUNT, .qos = DEF_QOS, .size = DEF_PSIZE,
+  .min = 0, .lim = MAXTTL, .timeout = TIMEOUT, .tout_usec = TIMEOUT * 1000000 };
 t_pinger_state pinger_state;
+guint stat_timer;
 
 typedef struct proc {
   GSubprocess *proc;
@@ -28,7 +29,7 @@ static gchar* ping_errors[MAXTTL];
 
 static gchar* last_error(void) {
   static gchar last_error_buff[BUFF_SIZE];
-  for (int i = MAXTTL; i > 0; i--) {
+  for (int i = opts.lim; i > opts.min; i--) {
     gchar *err = ping_errors[i - 1];
     if (err) {
       snprintf(last_error_buff, sizeof(last_error_buff), "%s", err);
@@ -39,13 +40,13 @@ static gchar* last_error(void) {
 }
 
 static void view_updater(bool reset) {
-  if (ping_opts.timer) { g_source_remove(ping_opts.timer); ping_opts.timer = 0; }
-  if (reset) ping_opts.timer = g_timeout_add(ping_opts.timeout * 1000, pingtab_update, NULL);
+  if (stat_timer) { g_source_remove(stat_timer); stat_timer = 0; }
+  if (reset) stat_timer = g_timeout_add(opts.timeout * 1000, pingtab_update, NULL);
 }
 
 static bool pinger_active(void) {
   bool active = false;
-  for (int i = 0; i < MAXTTL; i++) if (pings[i].active) { active = true; break; }
+  for (int i = opts.min; i < opts.lim; i++) if (pings[i].active) { active = true; break; }
   if (pinger_state.run != active) {
     pinger_state.run = active;
     view_updater(active);
@@ -109,21 +110,21 @@ static bool create_ping(int at, t_proc *p) {
   const gchar** argv = calloc(16, sizeof(gchar*)); int argc = 0;
   argv[argc++] = PING;
   argv[argc++] = "-OD";
-  if (!ping_opts.dns) argv[argc++] = "-n";
-  char sttl[16]; snprintf(sttl, sizeof(sttl), "-t%d", at + 1);            argv[argc++] = sttl;
-  char scnt[16]; snprintf(scnt, sizeof(scnt), "-c%d", ping_opts.count);   argv[argc++] = scnt;
-  char sitm[16]; snprintf(sitm, sizeof(sitm), "-i%d", ping_opts.timeout); argv[argc++] = sitm;
-  char sWtm[16]; snprintf(sWtm, sizeof(sitm), "-W%d", ping_opts.timeout); argv[argc++] = sWtm;
-  char sqos[16]; if (ping_opts.qos != DEF_QOS) {
-    snprintf(sqos, sizeof(sqos), "-q%d",   ping_opts.qos);  argv[argc++] = sqos; }
-  char spad[64]; if (strncmp(ping_opts.pad, DEF_PPAD, sizeof(ping_opts.pad))) {
-    snprintf(spad, sizeof(spad), "-p'%s'", ping_opts.pad);  argv[argc++] = spad; }
-  char spsz[16]; if (ping_opts.size != DEF_PSIZE) {
-    snprintf(spsz, sizeof(spsz), "-s%d",   ping_opts.size); argv[argc++] = spsz; }
-  char sipv[4];  if ((ping_opts.ipv == 4) || (ping_opts.ipv == 6)) {
-    snprintf(sipv, sizeof(sipv), "-%d",    ping_opts.ipv);  argv[argc++] = sipv; }
+  if (!opts.dns) argv[argc++] = "-n";
+  char sttl[16]; snprintf(sttl, sizeof(sttl), "-t%d", at + 1);       argv[argc++] = sttl;
+  char scnt[16]; snprintf(scnt, sizeof(scnt), "-c%d", opts.count);   argv[argc++] = scnt;
+  char sitm[16]; snprintf(sitm, sizeof(sitm), "-i%d", opts.timeout); argv[argc++] = sitm;
+  char sWtm[16]; snprintf(sWtm, sizeof(sitm), "-W%d", opts.timeout); argv[argc++] = sWtm;
+  char sqos[16]; if (opts.qos != DEF_QOS) {
+    snprintf(sqos, sizeof(sqos), "-q%d",   opts.qos);  argv[argc++] = sqos; }
+  char spad[64]; if (strncmp(opts.pad, DEF_PPAD, sizeof(opts.pad))) {
+    snprintf(spad, sizeof(spad), "-p'%s'", opts.pad);  argv[argc++] = spad; }
+  char spsz[16]; if (opts.size != DEF_PSIZE) {
+    snprintf(spsz, sizeof(spsz), "-s%d",   opts.size); argv[argc++] = spsz; }
+  char sipv[4];  if ((opts.ipv == 4) || (opts.ipv == 6)) {
+    snprintf(sipv, sizeof(sipv), "-%d",    opts.ipv);  argv[argc++] = sipv; }
   argv[argc++] = "--";
-  argv[argc++] = ping_opts.target;
+  argv[argc++] = opts.target;
   GError *err = NULL;
   p->proc = g_subprocess_newv(argv, G_SUBPROCESS_FLAGS_STDOUT_PIPE | G_SUBPROCESS_FLAGS_STDERR_PIPE, &err);
   if (err) { WARN("create subprocess: %s", err->message); return false; }
@@ -143,15 +144,15 @@ static bool create_ping(int at, t_proc *p) {
 //
 
 void pinger_init(void) {
-  snprintf(ping_opts.pad, sizeof(ping_opts.pad), "%s", DEF_PPAD);
-  for (int i = 0; i < MAXTTL; i++) { pings[i].ndx = -1; pings[i].active = false; }
+  snprintf(opts.pad, sizeof(opts.pad), "%s", DEF_PPAD);
+  for (int i = opts.min; i < opts.lim; i++) { pings[i].ndx = -1; pings[i].active = false; }
 }
 
 void pinger_start(void) {
-  if (!ping_opts.target) return;
-  stat_clear();
-  for (int i = 0; i < MAXTTL; i++) if (!create_ping(i, &pings[i])) break;
-  if (pinger_active()) pinger_clear_data();
+  if (!opts.target) return;
+  stat_clear(true);
+  for (int i = opts.min; i < opts.lim; i++) if (!create_ping(i, &pings[i])) break;
+  if (pinger_active()) pinger_clear_data(true);
 }
 
 void pinger_stop_nth(int nth, const gchar* reason) {
@@ -179,24 +180,31 @@ void pinger_stop_nth(int nth, const gchar* reason) {
 }
 
 void pinger_stop(const gchar* reason) {
-  for (int i = 0; i < MAXTTL; i++) pinger_stop_nth(i, reason);
+  for (int i = opts.min; i < opts.lim; i++) pinger_stop_nth(i, reason);
   pinger_active();
 }
 
 void pinger_free(void) {
   pinger_free_errors();
   stat_free();
-  g_free(ping_opts.target); ping_opts.target = NULL;
+  g_free(opts.target); opts.target = NULL;
 }
 
-void pinger_free_errors(void) { for (int i = 0; i < MAXTTL; i++) pinger_free_nth_error(i); }
+void pinger_free_errors(void) { for (int i = opts.min; i < opts.lim; i++) pinger_free_nth_error(i); }
 
 inline void pinger_free_nth_error(int nth) { UPD_STR(ping_errors[nth], NULL); }
 
-void pinger_clear_data(void) {
+void pinger_clear_data(bool clean) {
   pinger_free_errors();
-  stat_clear();
-  hops_no = MAXTTL;
+  stat_clear(clean);
+  hops_no = opts.lim;
   pingtab_clear();
+}
+
+bool pinger_within_range(int min, int max, int got) { // 1..MAXTTL
+  if (min > max) return false;
+  if ((min < 1) || (min > MAXTTL)) return false;
+  if ((max < 1) || (max > MAXTTL)) return false;
+  return ((min <= got) && (got <= max));
 }
 

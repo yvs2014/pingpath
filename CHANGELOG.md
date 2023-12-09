@@ -1,3 +1,7 @@
+## 0.1.25
+- ping with ttl settings
+- a bit clear unreach messaging
+
 ## 0.1.24
 - add TTL and IPvN handlers
 

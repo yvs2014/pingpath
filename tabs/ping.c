@@ -129,7 +129,7 @@ void pingtab_clear(void) {
 }
 
 gboolean pingtab_update(gpointer data) {
-  static const gchar *nopong_mesg = "No response";
+  static const gchar *nopong_mesg[] = { "Not reached", "Not reached yet"};
   if (!pinger_state.pause)
     for (int i = 0; i < hops_no; i++)
       for (int j = 0; j < ELEM_MAX; j++)
@@ -140,7 +140,11 @@ gboolean pingtab_update(gpointer data) {
     if (pinger_state.gotdata) { if (notyet) pingtab_set_error(NULL); }
     else { if (!notyet && !info_mesg) pingtab_set_error(notyet_mesg); }
   }
-  if (!info_mesg && !pinger_state.reachable) stat_set_nopong(nopong_mesg); // no response display
+  if (!pinger_state.reachable) {
+    bool yet = pinger_state.run;
+    if (!info_mesg || (!yet && (info_mesg == nopong_mesg[1])))
+      pingtab_set_error(nopong_mesg[yet]);
+  }
   return true;
 }
 
@@ -148,7 +152,7 @@ inline void pingtab_wrap_update(void) { pingtab_update(NULL); }
 
 void pingtab_vis_rows(int no) {
   LOG("set upto %d visible rows", no);
-  for (int i = 0; i < MAXTTL; i++) {
+  for (int i = opts.min; i < MAXTTL; i++) {
     bool vis = i < no;
     t_listline *line = &listbox.lines[i];
     gtk_widget_set_visible(GTK_WIDGET(line->row), vis);

@@ -37,10 +37,9 @@ typedef struct ping_info {
   gchar* info;
 } t_ping_info;
 
-void stat_init(void);
+void stat_init(bool clean);
 void stat_free(void);
-void stat_clear(void);
-void stat_set_nopong(const gchar *mesg);
+void stat_clear(bool clean);
 void stat_save_success(int at, t_ping_success *data);
 void stat_save_discard(int at, t_ping_discard *data);
 void stat_save_timeout(int at, t_ping_timeout *data);

@@ -42,7 +42,7 @@ static void target_cb(GtkWidget *widget, GtkWidget *entry) {
   g_return_if_fail(GTK_IS_EDITABLE(entry));
   gchar *target = valid_target(gtk_editable_get_text(GTK_EDITABLE(entry)));
   if (target) {
-    g_free(ping_opts.target); ping_opts.target = target;
+    g_free(opts.target); opts.target = target;
     action_update();
     LOG("target: %s", target);
   }

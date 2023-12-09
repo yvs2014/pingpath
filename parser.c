@@ -20,9 +20,6 @@
 #define PATT_FROM "rom (((?<" REN_NAME ">.*) \\((?<" REN_ADDR ">.*)\\))|(?<" REN_IP ">.*))"
 #define PATT_SEQ  "icmp_seq=(?<" REN_SEQ ">\\d+)"
 
-#define SUCCESS 0
-#define DISCARD 1
-
 #define DIGIT_OR_LETTER "\\d\\pLu\\pLl"
 
 typedef bool parser_fn(int at, GMatchInfo* match, const char *line);
