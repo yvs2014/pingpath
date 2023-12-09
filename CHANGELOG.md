@@ -1,3 +1,6 @@
+## 0.1.26
+- add int option setters/validators
+
 ## 0.1.25
 - ping with ttl settings
 - a bit clear unreach messaging

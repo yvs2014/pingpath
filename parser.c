@@ -22,33 +22,48 @@
 
 #define DIGIT_OR_LETTER "\\d\\pLu\\pLl"
 
-typedef bool parser_fn(int at, GMatchInfo* match, const char *line);
+const int tos_max   = 255;
+const int psize_min = 16;
+const int psize_max = 9000 - 20 - 8;
+
+typedef bool parser_cb(int at, GMatchInfo* match, const char *line);
+
+typedef struct parser_regex {
+  char *pattern;
+  GRegex *regex;
+} t_parser_regex;
 
 typedef struct response_regex {
-  char *pattern;
-  parser_fn *parser;
-  GRegex *regex;
+  t_parser_regex rx;
+  parser_cb *cb;
 } t_response_regex;
+
+enum { STR_ED_CYCLES, STR_ED_MAX };
+enum { STR_RX_INT, STR_RX_MAX };
 
 static bool parse_success_match(int at, GMatchInfo* match, const char *line);
 static bool parse_discard_match(int at, GMatchInfo* match, const char *line);
 static bool parse_timeout_match(int at, GMatchInfo* match, const char *line);
 static bool parse_info_match(int at, GMatchInfo* match, const char *line); // like 'success' without 'time'
 
-t_response_regex regexes[] = {
-  { .parser = parse_success_match, .pattern =
-    PATT_TS " \\d+ bytes f" PATT_FROM ": " PATT_SEQ " ttl=(?<" REN_TTL ">\\d+) time=(?<" REN_TIME ">\\d+.?\\d+)" },
-  { .parser = parse_discard_match, .pattern =
-    PATT_TS " F" PATT_FROM " " PATT_SEQ " (?<" REN_REASON ">.*)" },
-  { .parser = parse_timeout_match, .pattern =
-    PATT_TS " no answer yet for " PATT_SEQ },
-  { .parser = parse_info_match, .pattern =
-    PATT_TS " \\d+ bytes f" PATT_FROM ": " PATT_SEQ " ttl=(?<" REN_TTL ">\\d+) (?<" REN_INFO ">.*)" },
+static const GRegex *multiline_regex;
+static const GRegex *hostname_char0_regex;
+static const GRegex *hostname_chars_regex;
+
+static t_response_regex regexes[] = {
+  { .cb = parse_success_match, .rx = { .pattern =
+    PATT_TS " \\d+ bytes f" PATT_FROM ": " PATT_SEQ " ttl=(?<" REN_TTL ">\\d+) time=(?<" REN_TIME ">\\d+.?\\d+)" }},
+  { .cb = parse_discard_match, .rx = { .pattern =
+    PATT_TS " F" PATT_FROM " " PATT_SEQ " (?<" REN_REASON ">.*)" }},
+  { .cb = parse_timeout_match, .rx = { .pattern =
+    PATT_TS " no answer yet for " PATT_SEQ }},
+  { .cb = parse_info_match,    .rx = { .pattern =
+    PATT_TS " \\d+ bytes f" PATT_FROM ": " PATT_SEQ " ttl=(?<" REN_TTL ">\\d+) (?<" REN_INFO ">.*)" }},
 };
 
-GRegex *multiline_regex;
-GRegex *hostname_char0_regex;
-GRegex *hostname_chars_regex;
+static t_parser_regex str_rx[STR_RX_MAX] = {
+  [STR_RX_INT] = { .pattern = "\\d+" },
+};
 
 // aux
 //
@@ -81,12 +96,12 @@ static long long fetch_named_ll(GMatchInfo* match, char *prop) {
   g_free(s); return val;
 }
 
-static int fetch_named_rtt(GMatchInfo* match, char *prop, double max) {
+static int fetch_named_rtt(GMatchInfo* match, char *prop) {
   gchar *s = g_match_info_fetch_named(match, prop);
   double val = -1;
   if (s && s[0]) {
     val = g_ascii_strtod(s, NULL);
-    if ((ERANGE == errno) || (val > max)) val = -1;
+    if (ERANGE == errno) val = -1;
     if (val > 0) val *= 1000; // msec to usec
   }
   g_free(s); return (val < 0) ? -1 : floor(val);
@@ -116,9 +131,9 @@ static bool parse_success_match(int at, GMatchInfo* match, const char *line) {
   memset(&res, 0, sizeof(res));
   res.ttl = fetch_named_int(match, REN_TTL);
   if (res.ttl < 0) { WARN("wrong TTL in SUCCESS message: %s", line); return false; }
-  res.time = fetch_named_rtt(match, REN_TIME, TIMEOUT * 1000 * 10); // max: 10 times more than timeout in msec
+  res.time = fetch_named_rtt(match, REN_TIME);
   if (res.time < 0) { WARN("wrong TIME in SUCCESS message: %s", line); return false; }
-  // after other mandatory fields to not free() if their fetch failed
+  // to not free() after other mandatory fields unless it's failed
   if (!valid_markhost(match, &res.mark, &res.host, "SUCCESS", line)) return false;
   DEBUG("SUCCESS[at=%d seq=%d]: host=%s,%s ttl=%d time=%dusec", at, res.mark.seq, res.host.addr, res.host.name, res.ttl, res.time);
   stat_save_success(at, &res);
@@ -157,11 +172,12 @@ static bool parse_info_match(int at, GMatchInfo* match, const char *line) {
   return true;
 }
 
-static bool parse_match_wrap(int at, GRegex *re, const char *line, parser_fn *fn) {
+static bool parse_match_wrap(int at, GRegex *re, const char *line, parser_cb parser) {
   GMatchInfo *match = NULL;
+  if (!parser) return false;
   bool gowith = g_regex_match(re, line, 0, &match);
   if (match) {
-    bool valid = gowith ? fn(at, match, line) : false;
+    bool valid = gowith ? parser(at, match, line) : false;
     g_match_info_free(match);
     return valid;
   }
@@ -170,7 +186,7 @@ static bool parse_match_wrap(int at, GRegex *re, const char *line, parser_fn *fn
 
 static void analyze_line(int at, const char *line) {
   for (int i = 0; i < G_N_ELEMENTS(regexes); i++)
-    if (parse_match_wrap(at, regexes[i].regex, line, regexes[i].parser)) return;
+    if (parse_match_wrap(at, regexes[i].rx.regex, line, regexes[i].cb)) return;
   DEBUG("UNKNOWN[at=%d]: %s", at, line);
 }
 
@@ -178,14 +194,18 @@ static void analyze_line(int at, const char *line) {
 //
 bool parser_init(void) {
   multiline_regex = compile_regex("\\n", G_REGEX_MULTILINE);
-  bool re = true;
-  for (int i = 0; i < G_N_ELEMENTS(regexes); i++) {
-    regexes[i].regex = compile_regex(regexes[i].pattern, 0);
-    if (!regexes[i].regex) re = false;
-  }
   hostname_char0_regex = compile_regex("^[" DIGIT_OR_LETTER "]", 0);
   hostname_chars_regex = compile_regex("^[" DIGIT_OR_LETTER ".-]+$", 0);
-  return (re && multiline_regex && hostname_char0_regex && hostname_chars_regex);
+  bool re = multiline_regex && hostname_char0_regex && hostname_chars_regex;
+  for (int i = 0; i < G_N_ELEMENTS(regexes); i++) {
+    regexes[i].rx.regex = compile_regex(regexes[i].rx.pattern, 0);
+    if (!regexes[i].rx.regex) re = false;
+  }
+  for (int i = 0; i < G_N_ELEMENTS(str_rx); i++) {
+    str_rx[i].regex = compile_regex(str_rx[i].pattern, 0);
+    if (!str_rx[i].regex) re = false;
+  }
+  return re;
 }
 
 void parser_parse(int at, char *input) {
@@ -196,4 +216,36 @@ void parser_parse(int at, char *input) {
 
 inline bool parser_valid_char0(gchar *str) { return g_regex_match(hostname_char0_regex, str, 0, NULL); }
 inline bool parser_valid_host(gchar *host) { return g_regex_match(hostname_chars_regex, host, 0, NULL); }
+
+#define CI_MIN 1
+#define PIERR(fmt, ...) { LOG("%s: " fmt ": %s", option, __VA_ARGS__, val); n = -1; }
+#define PIOUT(min, max) PIERR("out of range[%d,%d]", min, max)
+
+int parser_int(const gchar *str, int typ, const gchar *option) {
+  GMatchInfo *match = NULL;
+  gchar *cpy = g_strdup(str);
+  if (!cpy) return -1;
+  gchar *val = g_strstrip(cpy);
+  bool valid = g_regex_match(str_rx[STR_RX_INT].regex, val, 0, &match);
+  int n = atol(val);
+  if (valid) {
+    g_match_info_free(match);
+    if ((n >= 0) && (n <= INT_MAX)) {
+      switch (typ) {
+        case ENT_STR_CYCLES:
+        case ENT_STR_IVAL:
+          if (n < CI_MIN) PIERR("less than minimal(%d)", CI_MIN);
+          break;
+        case ENT_STR_QOS:
+          if (n > tos_max) PIOUT(0, tos_max);
+          break;
+        case ENT_STR_PSIZE:
+          if ((n < psize_min) || (n > psize_max)) PIOUT(psize_min, psize_max);
+          break;
+      }
+    } else PIOUT(0, INT_MAX)
+  } else PIERR("no match %s regexp", str_rx[STR_RX_INT].pattern);
+  g_free(cpy);
+  return n;
+}
 

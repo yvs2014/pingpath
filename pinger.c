@@ -9,8 +9,8 @@
 #define PING "/bin/ping"
 #define SKIPNAME PING ": "
 
-t_opts opts = { .target = NULL, .dns = true, .count = COUNT, .qos = DEF_QOS, .size = DEF_PSIZE,
-  .min = 0, .lim = MAXTTL, .timeout = TIMEOUT, .tout_usec = TIMEOUT * 1000000 };
+t_opts opts = { .target = NULL, .dns = true, .count = DEF_COUNT, .qos = DEF_QOS, .size = DEF_PSIZE,
+  .min = 0, .lim = MAXTTL, .timeout = DEF_TOUT, .tout_usec = DEF_TOUT * 1000000 };
 t_pinger_state pinger_state;
 guint stat_timer;
 

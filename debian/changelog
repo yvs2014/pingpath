@@ -1,3 +1,9 @@
+pingpath (0.1.26) lunar mantic; urgency=low
+
+  * add int option setters/validators
+
+ -- yvs <VSYakovetsky@gmail.com>  Sun, 10 Dec 2023 00:31:33 +0200
+
 pingpath (0.1.25) lunar mantic; urgency=low
 
   * ping with ttl settings

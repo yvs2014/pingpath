@@ -1,6 +1,7 @@
 
 #include "option.h"
 #include "common.h"
+#include "parser.h"
 #include "pinger.h"
 #include "stat.h"
 #include "style.h"
@@ -9,6 +10,12 @@
 #define ENT_BUFF_SIZE 64
 #define SUBLIST_MAX 16
 
+enum { SPN_AUX_MIN, SPN_AUX_LIM, SPN_AUX_MAX };
+
+enum { ENT_EXP_NONE, ENT_EXP_INFO, ENT_EXP_STAT, ENT_EXP_MAX };
+enum { ENT_SPN_NONE, ENT_SPN_TTL, ENT_SPN_MAX };
+enum { ENT_RAD_NONE, ENT_RAD_IPV, ENT_RAD_MAX };
+
 typedef struct ent_ndx {
   int typ;
   const gchar *name;
@@ -16,6 +23,8 @@ typedef struct ent_ndx {
 
 typedef struct ent_str {
   t_ent_ndx en;
+  int *pval, def;
+  parser_str_fn parser;
   GtkWidget *box, *input;
   int len, width;
   gchar hint[ENT_BUFF_SIZE];
@@ -44,7 +53,6 @@ typedef struct ent_spn_aux {
   GCallback cb;
 } t_ent_spn_aux;
 
-enum {SPN_AUX_MIN, SPN_AUX_LIM, SPN_AUX_MAX};
 typedef struct ent_spn {
   t_ent_exp_common c;
   t_ent_spn_aux aux[SPN_AUX_MAX];
@@ -61,11 +69,6 @@ typedef struct ent_rad {
   t_ent_rad_map map[SUBLIST_MAX]; // 0 str terminated map, otherwise max
 } t_ent_rad;
 
-enum { ENT_STR_NONE, ENT_STR_CYCLES, ENT_STR_IVAL, ENT_STR_QOS, ENT_STR_PLOAD, ENT_STR_PSIZE, ENT_STR_MAX };
-enum { ENT_EXP_NONE, ENT_EXP_INFO, ENT_EXP_STAT, ENT_EXP_MAX };
-enum { ENT_SPN_NONE, ENT_SPN_TTL, ENT_SPN_MAX };
-enum { ENT_RAD_NONE, ENT_RAD_IPV, ENT_RAD_MAX };
-
 static t_ent_bool ent_bool[ENT_BOOL_MAX] = {
   [ENT_BOOL_DNS]  = { .en = { .typ = ENT_BOOL_DNS,  .name = "DNS" },     .pval = &opts.dns },
   [ENT_BOOL_HOST] = { .en = { .typ = ENT_BOOL_HOST, .name = "Host" },    .pval = &statelem[ELEM_HOST].enable },
@@ -80,11 +83,15 @@ static t_ent_bool ent_bool[ENT_BOOL_MAX] = {
 };
 
 static t_ent_str ent_str[ENT_STR_MAX] = {
-  [ENT_STR_CYCLES] = { .len = 6,  .width = 6, .en = { .typ = ENT_STR_CYCLES, .name = "Cycles" }},
-  [ENT_STR_IVAL]   = { .len = 2,  .width = 6, .en = { .typ = ENT_STR_IVAL,   .name = "Interval, sec" }},
-  [ENT_STR_QOS]    = { .len = 3,  .width = 6, .en = { .typ = ENT_STR_QOS,    .name = "QoS" }},
+  [ENT_STR_CYCLES] = { .len = 6,  .width = 6, .en = { .typ = ENT_STR_CYCLES, .name = "Cycles" },
+    .parser = parser_int, .pval = &opts.count,   .def = DEF_COUNT },
+  [ENT_STR_IVAL]   = { .len = 4,  .width = 6, .en = { .typ = ENT_STR_IVAL,   .name = "Interval, sec" },
+    .parser = parser_int, .pval = &opts.timeout, .def = DEF_TOUT },
+  [ENT_STR_QOS]    = { .len = 3,  .width = 6, .en = { .typ = ENT_STR_QOS,    .name = "QoS" },
+    .parser = parser_int, .pval = &opts.qos,     .def = DEF_QOS },
   [ENT_STR_PLOAD]  = { .len = 48, .width = 6, .en = { .typ = ENT_STR_PLOAD,  .name = "Payload, hex" }},
-  [ENT_STR_PSIZE]  = { .len = 4,  .width = 6, .en = { .typ = ENT_STR_PSIZE,  .name = "Size" }},
+  [ENT_STR_PSIZE]  = { .len = 4,  .width = 6, .en = { .typ = ENT_STR_PSIZE,  .name = "Size" },
+    .parser = parser_int, .pval = &opts.size,    .def = DEF_PSIZE },
 };
 
 static t_ent_exp ent_exp[ENT_EXP_MAX] = {
@@ -124,6 +131,18 @@ static void check_bool_val(GtkCheckButton *check, t_ent_bool *en, void (*update)
     if (update) update();
   }
   LOG("%s: %s", en->en.name, state ? "on" : "off");
+}
+
+static void set_ed_texthint(t_ent_str *en) {
+  if (!en) return;
+  g_return_if_fail(GTK_IS_EDITABLE(en->input));
+  int *pval = en->pval;
+  gtk_editable_delete_text(GTK_EDITABLE(en->input), 0, -1);
+  if (pval && (*pval != en->def)) {
+    g_snprintf(en->buff, sizeof(en->buff), "%d", *pval);
+    gtk_editable_set_text(GTK_EDITABLE(en->input), en->buff);
+  } else if (en->hint[0])
+    gtk_entry_set_placeholder_text(GTK_ENTRY(en->input), en->hint);
 }
 
 static void toggle_cb(GtkCheckButton *check, t_ent_bool *en) {
@@ -175,13 +194,26 @@ static void arrow_cb(GtkWidget *widget, t_ent_exp_common *en) {
   }
 }
 
-static void input_cb(GtkWidget *input, t_ent_ndx *en) {
+static void input_cb(GtkWidget *input, t_ent_str *en) {
   if (!en) return;
   g_return_if_fail(GTK_IS_EDITABLE(input));
   const gchar *got = gtk_editable_get_text(GTK_EDITABLE(input));
-//  gchar *valid = valid_input(en->en.ndx, got);
-//  DEBUG("%s: %s: %s", en->name, EV_ACTIVE, got);
-  LOG("%s: %s", en->name, got); // TMP
+  switch (en->en.typ) {
+// ENT_STR_PLOAD
+    case ENT_STR_CYCLES:
+    case ENT_STR_IVAL:
+    case ENT_STR_QOS:
+    case ENT_STR_PSIZE: {
+      if (!en->parser) return;
+      int n = en->parser(got, en->en.typ, en->en.name);
+      if (n > 0) {
+        if (en->pval) *(en->pval) = n;
+        /*extra*/ if (en->en.typ == ENT_STR_IVAL) opts.tout_usec = n * 1000000;
+        LOG("%s: %d", en->en.name, n);
+      } else set_ed_texthint(en);
+    } return;
+  }
+  LOG("%s: %s", en->en.name, got); // TMP
 }
 
 static void min_cb(GtkWidget *spin, t_ent_spn *en) {
@@ -280,10 +312,10 @@ static GtkWidget* add_opt_enter(GtkWidget* list, t_ent_str *en) {
     gtk_widget_set_halign(en->input, GTK_ALIGN_END);
     gtk_entry_set_alignment(GTK_ENTRY(en->input), 0.99);
     gtk_entry_set_max_length(GTK_ENTRY(en->input), en->len);
-    if (en->hint[0]) gtk_entry_set_placeholder_text(GTK_ENTRY(en->input), en->hint);
+    set_ed_texthint(en);
     gtk_editable_set_editable(GTK_EDITABLE(en->input), true);
     gtk_editable_set_max_width_chars(GTK_EDITABLE(en->input), en->width);
-    g_signal_connect(en->input, EV_ACTIVE, G_CALLBACK(input_cb), &en->en);
+    g_signal_connect(en->input, EV_ACTIVE, G_CALLBACK(input_cb), en);
   }
   return box;
 }
@@ -390,8 +422,8 @@ static GtkWidget* add_opt_radio(GtkWidget* list, t_ent_rad *en) {
 
 #define EN_PR_FMT(ndx, fmt, arg) { g_snprintf(ent_str[ndx].hint, sizeof(ent_str[ndx].hint), fmt, arg); \
   if (!add_opt_enter(list, &ent_str[ndx])) re = false; }
-#define EN_PR_D(ndx, arg) EN_PR_FMT(ndx, "%d", arg)
 #define EN_PR_S(ndx, arg) EN_PR_FMT(ndx, "%s", arg)
+#define EN_PR_INT(ndx) EN_PR_FMT(ndx, "%d", ent_str[ndx].def)
 
 static bool create_optmenu(GtkWidget *bar) {
   static GtkWidget *optmenu;
@@ -413,15 +445,15 @@ static bool create_optmenu(GtkWidget *bar) {
   //
   bool re = true;
   gtk_list_box_remove_all(GTK_LIST_BOX(list));
-  EN_PR_D(ENT_STR_CYCLES, opts.count);
-  EN_PR_D(ENT_STR_IVAL,   opts.timeout);
+  EN_PR_INT(ENT_STR_CYCLES);
+  EN_PR_INT(ENT_STR_IVAL);
   if (!add_opt_check(list,  &ent_bool[ENT_BOOL_DNS])) re = false;
   if (!add_opt_expand(list, &ent_exp[ENT_EXP_INFO]))  re = false;
   if (!add_opt_expand(list, &ent_exp[ENT_EXP_STAT]))  re = false;
   if (!add_opt_range(list,  &ent_spn[ENT_SPN_TTL]))   re = false;
-  EN_PR_D(ENT_STR_QOS,    opts.qos);
+  EN_PR_INT(ENT_STR_QOS);
   EN_PR_S(ENT_STR_PLOAD,  opts.pad);
-  EN_PR_D(ENT_STR_PSIZE,  opts.size);
+  EN_PR_INT(ENT_STR_PSIZE);
   if (!add_opt_radio(list, &ent_rad[ENT_RAD_IPV])) re = false;
   //
   return re;
