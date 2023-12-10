@@ -1,3 +1,11 @@
+pingpath (0.1.27) lunar mantic; urgency=low
+
+  * add payload pad setter/validator
+
+  * fix typos in argv list
+
+ -- yvs <VSYakovetsky@gmail.com>  Sun, 10 Dec 2023 12:06:10 +0200
+
 pingpath (0.1.26) lunar mantic; urgency=low
 
   * add int option setters/validators

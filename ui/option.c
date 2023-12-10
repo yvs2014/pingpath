@@ -23,8 +23,8 @@ typedef struct ent_ndx {
 
 typedef struct ent_str {
   t_ent_ndx en;
-  int *pval, def;
-  parser_str_fn parser;
+  int  *pint, idef; // int fields
+  char *pstr; int slen; const char *sdef; // str fields
   GtkWidget *box, *input;
   int len, width;
   gchar hint[ENT_BUFF_SIZE];
@@ -84,14 +84,15 @@ static t_ent_bool ent_bool[ENT_BOOL_MAX] = {
 
 static t_ent_str ent_str[ENT_STR_MAX] = {
   [ENT_STR_CYCLES] = { .len = 6,  .width = 6, .en = { .typ = ENT_STR_CYCLES, .name = "Cycles" },
-    .parser = parser_int, .pval = &opts.count,   .def = DEF_COUNT },
+    .pint = &opts.count,   .idef = DEF_COUNT },
   [ENT_STR_IVAL]   = { .len = 4,  .width = 6, .en = { .typ = ENT_STR_IVAL,   .name = "Interval, sec" },
-    .parser = parser_int, .pval = &opts.timeout, .def = DEF_TOUT },
+    .pint = &opts.timeout, .idef = DEF_TOUT },
   [ENT_STR_QOS]    = { .len = 3,  .width = 6, .en = { .typ = ENT_STR_QOS,    .name = "QoS" },
-    .parser = parser_int, .pval = &opts.qos,     .def = DEF_QOS },
-  [ENT_STR_PLOAD]  = { .len = 48, .width = 6, .en = { .typ = ENT_STR_PLOAD,  .name = "Payload, hex" }},
+    .pint = &opts.qos,     .idef = DEF_QOS },
+  [ENT_STR_PLOAD]  = { .len = 48, .width = 6, .en = { .typ = ENT_STR_PLOAD,  .name = "Payload, hex" },
+    .pstr = opts.pad,      .sdef = DEF_PPAD, .slen = sizeof(opts.pad) },
   [ENT_STR_PSIZE]  = { .len = 4,  .width = 6, .en = { .typ = ENT_STR_PSIZE,  .name = "Size" },
-    .parser = parser_int, .pval = &opts.size,    .def = DEF_PSIZE },
+    .pint = &opts.size,    .idef = DEF_PSIZE },
 };
 
 static t_ent_exp ent_exp[ENT_EXP_MAX] = {
@@ -136,10 +137,14 @@ static void check_bool_val(GtkCheckButton *check, t_ent_bool *en, void (*update)
 static void set_ed_texthint(t_ent_str *en) {
   if (!en) return;
   g_return_if_fail(GTK_IS_EDITABLE(en->input));
-  int *pval = en->pval;
+  int *pint = en->pint;
+  char *pstr = en->pstr;
   gtk_editable_delete_text(GTK_EDITABLE(en->input), 0, -1);
-  if (pval && (*pval != en->def)) {
-    g_snprintf(en->buff, sizeof(en->buff), "%d", *pval);
+  if (pint && (*pint != en->idef)) {
+    g_snprintf(en->buff, sizeof(en->buff), "%d", *pint);
+    gtk_editable_set_text(GTK_EDITABLE(en->input), en->buff);
+  } else if (pstr && strncmp(pstr, en->sdef, en->slen)) {
+    g_snprintf(en->buff, sizeof(en->buff), "%s", pstr);
     gtk_editable_set_text(GTK_EDITABLE(en->input), en->buff);
   } else if (en->hint[0])
     gtk_entry_set_placeholder_text(GTK_ENTRY(en->input), en->hint);
@@ -199,21 +204,26 @@ static void input_cb(GtkWidget *input, t_ent_str *en) {
   g_return_if_fail(GTK_IS_EDITABLE(input));
   const gchar *got = gtk_editable_get_text(GTK_EDITABLE(input));
   switch (en->en.typ) {
-// ENT_STR_PLOAD
     case ENT_STR_CYCLES:
     case ENT_STR_IVAL:
     case ENT_STR_QOS:
     case ENT_STR_PSIZE: {
-      if (!en->parser) return;
-      int n = en->parser(got, en->en.typ, en->en.name);
+      int n = parser_int(got, en->en.typ, en->en.name);
       if (n > 0) {
-        if (en->pval) *(en->pval) = n;
+        if (en->pint) *(en->pint) = n;
         /*extra*/ if (en->en.typ == ENT_STR_IVAL) opts.tout_usec = n * 1000000;
         LOG("%s: %d", en->en.name, n);
       } else set_ed_texthint(en);
-    } return;
+    } break;
+    case ENT_STR_PLOAD: {
+      const char *pad = parser_pad(got, en->en.name);
+      if (pad) {
+        if (en->pstr) snprintf(en->pstr, en->slen, "%s", pad);
+        LOG("%s: %s", en->en.name, pad);
+      } else set_ed_texthint(en);
+    } break;
   }
-  LOG("%s: %s", en->en.name, got); // TMP
+  DEBUG("%s: %s", en->en.name, got);
 }
 
 static void min_cb(GtkWidget *spin, t_ent_spn *en) {
@@ -422,8 +432,8 @@ static GtkWidget* add_opt_radio(GtkWidget* list, t_ent_rad *en) {
 
 #define EN_PR_FMT(ndx, fmt, arg) { g_snprintf(ent_str[ndx].hint, sizeof(ent_str[ndx].hint), fmt, arg); \
   if (!add_opt_enter(list, &ent_str[ndx])) re = false; }
-#define EN_PR_S(ndx, arg) EN_PR_FMT(ndx, "%s", arg)
-#define EN_PR_INT(ndx) EN_PR_FMT(ndx, "%d", ent_str[ndx].def)
+#define EN_PR_STR(ndx) EN_PR_FMT(ndx, "%s", ent_str[ndx].sdef)
+#define EN_PR_INT(ndx) EN_PR_FMT(ndx, "%d", ent_str[ndx].idef)
 
 static bool create_optmenu(GtkWidget *bar) {
   static GtkWidget *optmenu;
@@ -452,9 +462,9 @@ static bool create_optmenu(GtkWidget *bar) {
   if (!add_opt_expand(list, &ent_exp[ENT_EXP_STAT]))  re = false;
   if (!add_opt_range(list,  &ent_spn[ENT_SPN_TTL]))   re = false;
   EN_PR_INT(ENT_STR_QOS);
-  EN_PR_S(ENT_STR_PLOAD,  opts.pad);
+  EN_PR_STR(ENT_STR_PLOAD);
   EN_PR_INT(ENT_STR_PSIZE);
-  if (!add_opt_radio(list, &ent_rad[ENT_RAD_IPV])) re = false;
+  if (!add_opt_radio(list, &ent_rad[ENT_RAD_IPV]))    re = false;
   //
   return re;
 }

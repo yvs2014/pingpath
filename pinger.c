@@ -103,11 +103,13 @@ static void on_stderr(GObject *stream, GAsyncResult *re, gpointer data) {
     G_PRIORITY_DEFAULT, NULL, on_stderr, data);
 }
 
+#define MAX_ARGC 32
+
 static bool create_ping(int at, t_proc *p) {
   if (!p->out) p->out = g_string_sized_new(BUFF_SIZE);
   if (!p->err) p->err = g_string_sized_new(BUFF_SIZE);
   if (!p->out || !p->err) { WARN("%s failed", "g_string_sized_new()"); return false; }
-  const gchar** argv = calloc(16, sizeof(gchar*)); int argc = 0;
+  const gchar** argv = calloc(MAX_ARGC, sizeof(gchar*)); int argc = 0;
   argv[argc++] = PING;
   argv[argc++] = "-OD";
   if (!opts.dns) argv[argc++] = "-n";
@@ -116,9 +118,9 @@ static bool create_ping(int at, t_proc *p) {
   char sitm[16]; snprintf(sitm, sizeof(sitm), "-i%d", opts.timeout); argv[argc++] = sitm;
   char sWtm[16]; snprintf(sWtm, sizeof(sitm), "-W%d", opts.timeout); argv[argc++] = sWtm;
   char sqos[16]; if (opts.qos != DEF_QOS) {
-    snprintf(sqos, sizeof(sqos), "-q%d",   opts.qos);  argv[argc++] = sqos; }
+    snprintf(sqos, sizeof(sqos), "-Q%d",   opts.qos);  argv[argc++] = sqos; }
   char spad[64]; if (strncmp(opts.pad, DEF_PPAD, sizeof(opts.pad))) {
-    snprintf(spad, sizeof(spad), "-p'%s'", opts.pad);  argv[argc++] = spad; }
+    snprintf(spad, sizeof(spad), "-p%s", opts.pad);  argv[argc++] = spad; }
   char spsz[16]; if (opts.size != DEF_PSIZE) {
     snprintf(spsz, sizeof(spsz), "-s%d",   opts.size); argv[argc++] = spsz; }
   char sipv[4];  if ((opts.ipv == 4) || (opts.ipv == 6)) {
@@ -135,6 +137,13 @@ static bool create_ping(int at, t_proc *p) {
   g_input_stream_read_async(errput, p->err->str, p->err->allocated_len, G_PRIORITY_DEFAULT, NULL, on_stderr, p);
   p->active = true;
   p->ndx = at;
+#ifdef DEBUGGING
+  gchar* deb_argv[MAX_ARGC];
+  memcpy(deb_argv, argv, sizeof(deb_argv));
+  gchar *deb_argv_s = g_strjoinv(", ", deb_argv);
+  DEBUG("ping[ttl=%d]: argv[%s]", at + 1, deb_argv_s);
+  g_free(deb_argv_s);
+#endif
   LOG("ping[ttl=%d] started", at + 1);
   return p->active;
 }

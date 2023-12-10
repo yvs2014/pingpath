@@ -39,7 +39,7 @@ typedef struct response_regex {
 } t_response_regex;
 
 enum { STR_ED_CYCLES, STR_ED_MAX };
-enum { STR_RX_INT, STR_RX_MAX };
+enum { STR_RX_INT, STR_RX_PAD, STR_RX_MAX };
 
 static bool parse_success_match(int at, GMatchInfo* match, const char *line);
 static bool parse_discard_match(int at, GMatchInfo* match, const char *line);
@@ -62,7 +62,8 @@ static t_response_regex regexes[] = {
 };
 
 static t_parser_regex str_rx[STR_RX_MAX] = {
-  [STR_RX_INT] = { .pattern = "\\d+" },
+  [STR_RX_INT] = { .pattern = "^\\d+$" },
+  [STR_RX_PAD] = { .pattern = "^[\\da-fA-F]{1,32}$" },
 };
 
 // aux
@@ -244,8 +245,21 @@ int parser_int(const gchar *str, int typ, const gchar *option) {
           break;
       }
     } else PIOUT(0, INT_MAX)
-  } else PIERR("no match %s regexp", str_rx[STR_RX_INT].pattern);
+  } else PIERR("no match %s regex", str_rx[STR_RX_INT].pattern);
   g_free(cpy);
   return n;
+}
+
+const char* parser_pad(const gchar *str, const gchar *option) {
+  static char pad_buff[PAD_SIZE];
+  GMatchInfo *match = NULL;
+  g_snprintf(pad_buff, sizeof(pad_buff), "%s", str);
+  char *val = g_strstrip(pad_buff);
+  bool valid = g_regex_match(str_rx[STR_RX_PAD].regex, val, 0, &match);
+  if (valid) {
+    g_match_info_free(match);
+    return val;
+  } else LOG("%s: no match %s regex: %s", option, str_rx[STR_RX_PAD].pattern, val);
+  return NULL;
 }
 

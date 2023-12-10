@@ -1,3 +1,7 @@
+## 0.1.27
+- add payload pad setter/validator
+- fix typos in argv list
+
 ## 0.1.26
 - add int option setters/validators
 
