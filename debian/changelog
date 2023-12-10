@@ -1,3 +1,13 @@
+pingpath (0.1.28) lunar mantic; urgency=low
+
+  * cache hop info
+
+  * add whois elem template
+
+  * misc correction of hostname widths
+
+ -- yvs <VSYakovetsky@gmail.com>  Sun, 10 Dec 2023 23:08:06 +0200
+
 pingpath (0.1.27) lunar mantic; urgency=low
 
   * add payload pad setter/validator

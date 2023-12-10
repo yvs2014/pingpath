@@ -72,6 +72,10 @@ typedef struct ent_rad {
 static t_ent_bool ent_bool[ENT_BOOL_MAX] = {
   [ENT_BOOL_DNS]  = { .en = { .typ = ENT_BOOL_DNS,  .name = "DNS" },     .pval = &opts.dns },
   [ENT_BOOL_HOST] = { .en = { .typ = ENT_BOOL_HOST, .name = "Host" },    .pval = &statelem[ELEM_HOST].enable },
+  [ENT_BOOL_AS]   = { .en = { .typ = ENT_BOOL_AS,   .name = "AS" },      .pval = &statelem[ELEM_AS].enable   },
+  [ENT_BOOL_CC]   = { .en = { .typ = ENT_BOOL_CC,   .name = "Country" }, .pval = &statelem[ELEM_CC].enable   },
+  [ENT_BOOL_DESC] = { .en = { .typ = ENT_BOOL_DESC, .name = "Description" }, .pval = &statelem[ELEM_DESC].enable },
+  [ENT_BOOL_RT]   = { .en = { .typ = ENT_BOOL_RT,   .name = "Route" },   .pval = &statelem[ELEM_RT].enable   },
   [ENT_BOOL_LOSS] = { .en = { .typ = ENT_BOOL_LOSS, .name = "Loss, %"},  .pval = &statelem[ELEM_LOSS].enable },
   [ENT_BOOL_SENT] = { .en = { .typ = ENT_BOOL_SENT, .name = "Sent" },    .pval = &statelem[ELEM_SENT].enable },
   [ENT_BOOL_RECV] = { .en = { .typ = ENT_BOOL_RECV, .name = "Recv" },    .pval = &statelem[ELEM_RECV].enable },
@@ -96,10 +100,10 @@ static t_ent_str ent_str[ENT_STR_MAX] = {
 };
 
 static t_ent_exp ent_exp[ENT_EXP_MAX] = {
-  [ENT_EXP_INFO] = { .c = {.en = {.typ = ENT_EXP_INFO, .name = "Hop Info"  }}, .ndxs = {ENT_BOOL_HOST}},
+  [ENT_EXP_INFO] = { .c = {.en = {.typ = ENT_EXP_INFO, .name = "Hop Info"  }}, .ndxs = {ENT_BOOL_HOST,
+    ENT_BOOL_AS, ENT_BOOL_CC, ENT_BOOL_DESC, ENT_BOOL_RT }},
   [ENT_EXP_STAT] = { .c = {.en = {.typ = ENT_EXP_STAT, .name = "Statistics"}}, .ndxs = {ENT_BOOL_LOSS,
-    ENT_BOOL_SENT, ENT_BOOL_RECV, ENT_BOOL_LAST, ENT_BOOL_BEST, ENT_BOOL_WRST, ENT_BOOL_AVRG, ENT_BOOL_JTTR},
-  },
+    ENT_BOOL_SENT, ENT_BOOL_RECV, ENT_BOOL_LAST, ENT_BOOL_BEST, ENT_BOOL_WRST, ENT_BOOL_AVRG, ENT_BOOL_JTTR }},
 };
 
 static void min_cb(GtkWidget*, t_ent_spn*);
@@ -150,13 +154,22 @@ static void set_ed_texthint(t_ent_str *en) {
     gtk_entry_set_placeholder_text(GTK_ENTRY(en->input), en->hint);
 }
 
+static void toggled_dns(void) {
+  stat_reset_cache();
+  pingtab_wrap_update();
+}
+
 static void toggle_cb(GtkCheckButton *check, t_ent_bool *en) {
   if (!en) return;
   g_return_if_fail(GTK_IS_CHECK_BUTTON(check));
   switch (en->en.typ) {
     case ENT_BOOL_DNS:
-      check_bool_val(check, en, pingtab_wrap_update); break;
+      check_bool_val(check, en, toggled_dns); break;
     case ENT_BOOL_HOST:
+    case ENT_BOOL_AS:
+    case ENT_BOOL_CC:
+    case ENT_BOOL_DESC:
+    case ENT_BOOL_RT:
     case ENT_BOOL_LOSS:
     case ENT_BOOL_SENT:
     case ENT_BOOL_RECV:

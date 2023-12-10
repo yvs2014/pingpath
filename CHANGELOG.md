@@ -1,3 +1,8 @@
+## 0.1.28
+- cache hop info
+- add whois elem template
+- misc correction of hostname widths
+
 ## 0.1.27
 - add payload pad setter/validator
 - fix typos in argv list

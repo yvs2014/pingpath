@@ -41,6 +41,13 @@ static void set_elem_align(int typ, GtkWidget *label) {
       align_elem_label(label, HOPNO_MAX_CHARS, GTK_ALIGN_END, false);
       break;
     case ELEM_HOST:
+    case ELEM_AS:
+    case ELEM_CC:
+    case ELEM_DESC:
+    case ELEM_RT:
+      align_elem_label(label, stat_elem_max(typ), GTK_ALIGN_START, false);
+      break;
+    case ELEM_FILL:
       align_elem_label(label, stat_elem_max(typ), GTK_ALIGN_START, true);
       break;
     case ELEM_LOSS:
@@ -138,7 +145,7 @@ gboolean pingtab_update(gpointer data) {
   { // no data display
     bool notyet = info_mesg == notyet_mesg;
     if (pinger_state.gotdata) { if (notyet) pingtab_set_error(NULL); }
-    else { if (!notyet && !info_mesg) pingtab_set_error(notyet_mesg); }
+    else if (!notyet && !info_mesg && pinger_state.gotdata) pingtab_set_error(notyet_mesg);
   }
   if (!pinger_state.reachable) {
     bool yet = pinger_state.run;

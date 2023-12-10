@@ -20,7 +20,8 @@
 enum { NONE = 0, RX = 1, TX = 2, RXTX = 3 };
 
 typedef struct hop {
-  t_host host[MAX_ADDRS]; int pos;
+  t_host host[MAX_ADDRS]; int pos; bool cached;
+  t_whois whois;
   int sent, recv, last, prev, best, wrst;
   double loss, avrg, jttr;
   t_tseq mark;
@@ -31,11 +32,15 @@ typedef struct hop {
 
 int hops_no = MAXTTL;
 static t_hop hops[MAXTTL];
-static int host_addr_max;
-static int host_name_max;
+static t_host_max host_max;
+static t_whois_max whois_max;
 static int visibles;
 
 #define ELEM_HOST_HDR "Host"
+#define ELEM_AS_HDR   "AS"
+#define ELEM_CC_HDR   "Country"
+#define ELEM_DESC_HDR "Description"
+#define ELEM_RT_HDR   "Route"
 #define ELEM_LOSS_HDR "Loss"
 #define ELEM_SENT_HDR "Sent"
 #define ELEM_RECV_HDR "Recv"
@@ -48,6 +53,11 @@ static int visibles;
 t_stat_elem statelem[ELEM_MAX] = { // TODO: editable from option menu
   [ELEM_NO]   = { .enable = true, .name = "" },
   [ELEM_HOST] = { .enable = true, .name = ELEM_HOST_HDR },
+  [ELEM_AS]   = { .enable = true, .name = ELEM_AS_HDR },
+  [ELEM_CC]   = { .enable = true, .name = ELEM_CC_HDR },
+  [ELEM_DESC] = { .enable = true, .name = ELEM_DESC_HDR },
+  [ELEM_RT]   = { .enable = true, .name = ELEM_RT_HDR },
+  [ELEM_FILL] = { .enable = true, .name = "" },
   [ELEM_LOSS] = { .enable = true, .name = ELEM_LOSS_HDR },
   [ELEM_SENT] = { .enable = true, .name = ELEM_SENT_HDR },
   [ELEM_RECV] = { .name = ELEM_RECV_HDR },
@@ -60,19 +70,28 @@ t_stat_elem statelem[ELEM_MAX] = { // TODO: editable from option menu
 
 
 // aux
-//
 
-static void update_hmax(const gchar* s, bool addr) {
-  int *max = addr ? &host_addr_max : &host_name_max;
-  if (s) {
-    int l = g_utf8_strlen(s, MAXHOSTNAME);
-    if (l > *max) {
-      *max = l;
-      if (addr && !opts.dns) pingtab_update_width(host_addr_max, ELEM_HOST);
-      if (!addr && opts.dns) pingtab_update_width(host_name_max, ELEM_HOST);
-    }
+static inline void chk_addr_width(int l) {
+  if (host_max.addr < l) {
+    host_max.addr = l;
+    if (!opts.dns) pingtab_update_width(l, ELEM_HOST);
   }
-  if (addr && (host_name_max < host_addr_max)) host_name_max = host_addr_max;
+}
+
+static inline void chk_name_width(int l) {
+  if (host_max.name < l) {
+    host_max.name = l;
+    if (opts.dns) pingtab_update_width(l, ELEM_HOST);
+  }
+}
+
+static void update_hmax(const gchar* addr, const gchar *name) {
+  if (addr) {
+    int l = g_utf8_strlen(addr, MAXHOSTNAME);
+    chk_addr_width(l);
+    chk_name_width(name ? g_utf8_strlen(name, MAXHOSTNAME) : l);
+  } else if (name)
+    chk_name_width(g_utf8_strlen(name, MAXHOSTNAME));
 }
 
 static void update_addrname(int at, t_host *b) {
@@ -87,7 +106,9 @@ static void update_addrname(int at, t_host *b) {
       hops[at].pos = i;
       if (STR_NEQ(a->name, b->name)) { // add|update NAME
         UPD_STR(a->name, b->name);
-        update_hmax(b->name, false);
+        update_hmax(NULL, b->name);
+        hops[at].cached = false;
+        LOG("set hostname[%d]: %s", at, b->name);
       }
       break;
     }
@@ -98,9 +119,10 @@ static void update_addrname(int at, t_host *b) {
       hops[at].pos = vacant;
       t_host *a = &(hops[at].host[vacant]);
       UPD_STR(a->addr, b->addr);
-      update_hmax(b->addr, true);
       UPD_STR(a->name, b->name);
-      update_hmax(b->name, false);
+      update_hmax(b->addr, b->name);
+      hops[at].cached = false;
+      LOG("set addrname[%d]: %s, %s", at, b->addr, b->name);
     }
   }
   // cleanup dups
@@ -174,19 +196,35 @@ static inline const gchar* addrname(int ndx, t_host *host) {
   return opts.dns ? ADDRNAME(host[ndx].addr, host[ndx].name) : ADDRONLY(host[ndx].addr);
 }
 
-static const gchar *stat_host(int at) {
-  static gchar stat_host_buff[MAXTTL][BUFF_SIZE];
+static const gchar *info_host(int at) {
+  static gchar hostinfo_cache[MAXTTL][BUFF_SIZE];
   t_hop *hop = &(hops[at]);
   t_host *host = hop->host;
   if (host[0].addr) {
-    gchar *s = stat_host_buff[at];
+    if (hop->cached) return hostinfo_cache[at];
+    gchar *s = hostinfo_cache[at];
     int l = g_snprintf(s, BUFF_SIZE, "%s", addrname(0, host));
     for (int i = 1; (i < MAX_ADDRS) && host[i].addr; i++)
       if (host[i].addr) g_snprintf(s + l, BUFF_SIZE - l, "\n%s", addrname(i, host));
     if (hop->info) snprintf(s + l, BUFF_SIZE - l, "\n%s", hop->info);
+    hop->cached = true;
+    LOG("hostinfo cache[%d] updated with: %s", at, s);
     return s;
   }
   return NULL;
+}
+
+enum { IWBUFF_AS_NDX, IWBUFF_CC_NDX, IWBUFF_DESC_NDX, IWBUFF_RT_NDX, IWBUFF_NDX_MAX };
+
+static const gchar *info_whois(int at, const gchar *elem, int ndx) {
+  static gchar whois_cache[MAXTTL][IWBUFF_NDX_MAX][BUFF_SIZE];
+  t_whois *whois = &hops[at].whois;
+  if (whois->cached) return whois_cache[at][ndx];
+  gchar *s = whois_cache[at][ndx];
+  g_snprintf(s, BUFF_SIZE, "%s", elem);
+  whois->cached = true;
+  LOG("whois cache[%d] updated with: %s", at, s);
+  return s;
 }
 
 static int prec(double v) { return ((v > 0) && (v < 10)) ? (v < 0.1 ? 2 : 1) : 0; }
@@ -236,6 +274,14 @@ static const gchar *stat_hop(int typ, t_hop *hop) {
   return NULL;
 }
 
+static void set_initial_maxes(void) {
+  host_max.addr = host_max.name = g_utf8_strlen(ELEM_HOST_HDR, MAXHOSTNAME);
+  whois_max.as   = g_utf8_strlen(ELEM_AS_HDR,   MAXHOSTNAME);
+  whois_max.cc   = g_utf8_strlen(ELEM_CC_HDR,   MAXHOSTNAME);
+  whois_max.desc = g_utf8_strlen(ELEM_DESC_HDR, MAXHOSTNAME);
+  whois_max.rt   = g_utf8_strlen(ELEM_RT_HDR,   MAXHOSTNAME);
+}
+
 
 // pub
 //
@@ -252,7 +298,7 @@ void stat_init(bool clean) { // clean start or on reset
     hops[i].last = hops[i].best = hops[i].wrst = -1;
     hops[i].loss = hops[i].avrg = hops[i].jttr = -1;
   }
-  host_addr_max = host_name_max = g_utf8_strlen(ELEM_HOST_HDR, MAXHOSTNAME);
+  set_initial_maxes();
 }
 
 void stat_free(void) {
@@ -269,13 +315,25 @@ void stat_free(void) {
     }
     UPD_STR(hop->info, NULL);
   }
-  host_addr_max = host_name_max = g_utf8_strlen(ELEM_HOST_HDR, MAXHOSTNAME);
+  set_initial_maxes();
 }
 
 void stat_clear(bool clean) {
   stat_free();
   stat_init(clean);
   pingtab_set_error(NULL);
+}
+
+void stat_reset_cache(void) { // reset 'cached' flags
+  for (int i = 0; i < MAXTTL; i++) hops[i].cached = false;
+  pingtab_update_width(opts.dns ? host_max.name : host_max.addr, ELEM_HOST);
+}
+
+static void stat_up_info(int at, const gchar *info) {
+  if (STR_EQ(hops[at].info, info)) return;
+  UPD_STR(hops[at].info, info);
+  hops[at].cached = false;
+  LOG("set info[%d]: %s", at, info);
 }
 
 void stat_save_success(int at, t_ping_success *data) {
@@ -289,7 +347,7 @@ void stat_save_success(int at, t_ping_success *data) {
     set_hops_no(ttl, "behind target");
   }
   pinger_free_nth_error(at);
-  UPD_STR(hops[at].info, NULL);
+  if (hops[at].info) stat_up_info(at, NULL);
   if (!pinger_state.reachable) pinger_state.reachable = true;
 }
 
@@ -305,7 +363,7 @@ void stat_save_discard(int at, t_ping_discard *data) {
     if (reach) { if (hops_no < ttl) set_hops_no(ttl, "unreachable"); }
     else {
       if (hops_no > ttl) uniq_unreach(at);
-      UPD_STR(hops[at].info, data->reason);
+      stat_up_info(at, data->reason);
     }
     g_free(data->reason);
   }
@@ -319,16 +377,22 @@ void stat_save_timeout(int at, t_ping_timeout *data) {
 void stat_save_info(int at, t_ping_info *data) {
   update_addrname(at, &data->host);
 //  update_stat(at, -1, &data->mark, seq_accord(hops[at].mark.seq, data->mark.seq) ? RXTX : NONE);
-  UPD_STR(hops[at].info, data->info);
+  stat_up_info(at, data->info);
 }
 
 void stat_last_tx(int at) { // update last 'tx' unless done before
   if (hops[at].tout) { update_stat(at, -1, NULL, TX); hops[at].tout = false; }
 }
 
+#define IW_RET(elem, ndx) { return (elem) ? info_whois(at, elem, ndx) : NULL; }
+
 const gchar *stat_elem(int at, int typ) {
   switch (typ) {
-    case ELEM_HOST: return stat_host(at);
+    case ELEM_HOST: return info_host(at);
+    case ELEM_AS:   IW_RET(hops[at].whois.as,   IWBUFF_AS_NDX);
+    case ELEM_CC:   IW_RET(hops[at].whois.cc,   IWBUFF_CC_NDX);
+    case ELEM_DESC: IW_RET(hops[at].whois.desc, IWBUFF_DESC_NDX);
+    case ELEM_RT:   IW_RET(hops[at].whois.rt,   IWBUFF_RT_NDX);
     case ELEM_LOSS:
     case ELEM_SENT:
     case ELEM_RECV:
@@ -343,6 +407,14 @@ const gchar *stat_elem(int at, int typ) {
 }
 
 int stat_elem_max(int typ) {
-  return (typ != ELEM_HOST) ? ELEM_LEN : (opts.dns ? host_name_max : host_addr_max);
+  switch (typ) {
+    case ELEM_HOST: return opts.dns ? host_max.name : host_max.addr;
+    case ELEM_AS:   return whois_max.as;
+    case ELEM_CC:   return whois_max.cc;
+    case ELEM_DESC: return whois_max.desc;
+    case ELEM_RT:   return whois_max.rt;
+    case ELEM_FILL: return ELEM_LEN / 2;
+  }
+  return ELEM_LEN;
 }
 

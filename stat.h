@@ -14,6 +14,19 @@ typedef struct host {
   gchar *addr, *name;
 } t_host;
 
+typedef struct host_max {
+  int addr, name;
+} t_host_max;
+
+typedef struct whois {
+  gchar *as, *cc, *desc, *rt;
+  bool cached;
+} t_whois;
+
+typedef struct whois_max {
+  int as, cc, desc, rt;
+} t_whois_max;
+
 typedef struct ping_success {
   t_tseq mark;
   t_host host;
@@ -40,6 +53,7 @@ typedef struct ping_info {
 void stat_init(bool clean);
 void stat_free(void);
 void stat_clear(bool clean);
+void stat_reset_cache(void);
 void stat_save_success(int at, t_ping_success *data);
 void stat_save_discard(int at, t_ping_discard *data);
 void stat_save_timeout(int at, t_ping_timeout *data);
