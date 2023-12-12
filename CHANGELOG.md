@@ -1,3 +1,6 @@
+## 0.1.29
+- add whois resolver
+
 ## 0.1.28
 - cache hop info
 - add whois elem template

@@ -72,7 +72,7 @@ void style_init(void) {
     gchar *theme = get_gset_str_by_key(settings, PROP_THEME);
     if ((prefer_dark >= 0) || theme) { // check out preferences
       if (prefer_dark || strcasestr(theme, "dark"))
-        g_snprintf(css_data + l, sizeof(css_data) - l, "%s", css_dark_colors);
+        if (l < sizeof(css_data)) g_strlcpy(css_data + l, css_dark_colors, sizeof(css_data) - l);
 //      LOG("theme=%s prefer-dark=%d", theme, prefer_dark);
     }
     g_free(theme);

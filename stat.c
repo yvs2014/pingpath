@@ -1,13 +1,9 @@
 
 #include "stat.h"
 #include "pinger.h"
+#include "whois.h"
 #include "tabs/ping.h"
 #include "common.h"
-
-#define MAX_ADDRS 10
-
-#define STR_EQ(a, b) (!g_strcmp0(a, b))
-#define STR_NEQ(a, b) (g_strcmp0(a, b))
 
 // stat formats
 #define UNKN    "???"
@@ -19,26 +15,17 @@
 
 enum { NONE = 0, RX = 1, TX = 2, RXTX = 3 };
 
-typedef struct hop {
-  t_host host[MAX_ADDRS]; int pos; bool cached;
-  t_whois whois;
-  int sent, recv, last, prev, best, wrst;
-  double loss, avrg, jttr;
-  t_tseq mark;
-  bool reach;
-  bool tout; // at last update
-  gchar* info;
-} t_hop;
-
 int hops_no = MAXTTL;
 static t_hop hops[MAXTTL];
 static t_host_max host_max;
-static t_whois_max whois_max;
+static int whois_max[WHOIS_NDX_MAX];
+static const int wndx2endx[WHOIS_NDX_MAX] = {
+  [WHOIS_AS_NDX] = ELEM_AS, [WHOIS_CC_NDX] = ELEM_CC, [WHOIS_DESC_NDX] = ELEM_DESC, [WHOIS_RT_NDX] = ELEM_RT };
 static int visibles;
 
 #define ELEM_HOST_HDR "Host"
 #define ELEM_AS_HDR   "AS"
-#define ELEM_CC_HDR   "Country"
+#define ELEM_CC_HDR   "CC"
 #define ELEM_DESC_HDR "Description"
 #define ELEM_RT_HDR   "Route"
 #define ELEM_LOSS_HDR "Loss"
@@ -55,8 +42,8 @@ t_stat_elem statelem[ELEM_MAX] = { // TODO: editable from option menu
   [ELEM_HOST] = { .enable = true, .name = ELEM_HOST_HDR },
   [ELEM_AS]   = { .enable = true, .name = ELEM_AS_HDR },
   [ELEM_CC]   = { .enable = true, .name = ELEM_CC_HDR },
-  [ELEM_DESC] = { .enable = true, .name = ELEM_DESC_HDR },
-  [ELEM_RT]   = { .enable = true, .name = ELEM_RT_HDR },
+  [ELEM_DESC] = { .enable = false, .name = ELEM_DESC_HDR },
+  [ELEM_RT]   = { .enable = false, .name = ELEM_RT_HDR },
   [ELEM_FILL] = { .enable = true, .name = "" },
   [ELEM_LOSS] = { .enable = true, .name = ELEM_LOSS_HDR },
   [ELEM_SENT] = { .enable = true, .name = ELEM_SENT_HDR },
@@ -94,17 +81,16 @@ static void update_hmax(const gchar* addr, const gchar *name) {
     chk_name_width(g_utf8_strlen(name, MAXHOSTNAME));
 }
 
-static void update_addrname(int at, t_host *b) {
-  // addr is mandatory, name not
+static void update_addrname(int at, t_host *b) { // addr is mandatory, name not
+  if (!b) return;
   bool done;
   int vacant = -1;
-  for (int i = 0; i < MAX_ADDRS; i++) {
-    t_host *a = &(hops[at].host[i]);
+  for (int i = 0; i < MAXADDR; i++) {
+    t_host *a = &hops[at].host[i];
     if ((vacant < 0) && !(a->addr)) vacant = i;
     done = STR_EQ(a->addr, b->addr);
     if (done) {
-      hops[at].pos = i;
-      if (STR_NEQ(a->name, b->name)) { // add|update NAME
+      if (!a->name && b->name) { // add first resolved hostname to not change it back-n-forth
         UPD_STR(a->name, b->name);
         update_hmax(NULL, b->name);
         hops[at].cached = false;
@@ -116,12 +102,16 @@ static void update_addrname(int at, t_host *b) {
   if (!done) { // add addrname
     if (vacant < 0) { LOG("no free slots for hop#%d address(%s)", at, b->addr); }
     else {
-      hops[at].pos = vacant;
       t_host *a = &(hops[at].host[vacant]);
       UPD_STR(a->addr, b->addr);
       UPD_STR(a->name, b->name);
       update_hmax(b->addr, b->name);
       hops[at].cached = false;
+      for (int j = 0; j < WHOIS_NDX_MAX; j++) {
+        UPD_STR(hops[at].whois[vacant].elem[j], NULL);
+        hops[at].wcached[j] = false;
+      }
+      whois_resolv(&hops[at], vacant);
       LOG("set addrname[%d]: %s, %s", at, b->addr, b->name);
     }
   }
@@ -198,15 +188,17 @@ static inline const gchar* addrname(int ndx, t_host *host) {
 
 static const gchar *info_host(int at) {
   static gchar hostinfo_cache[MAXTTL][BUFF_SIZE];
-  t_hop *hop = &(hops[at]);
+  t_hop *hop = &hops[at];
   t_host *host = hop->host;
-  if (host[0].addr) {
+  if (host[0].addr) { // as a marker
     if (hop->cached) return hostinfo_cache[at];
     gchar *s = hostinfo_cache[at];
     int l = g_snprintf(s, BUFF_SIZE, "%s", addrname(0, host));
-    for (int i = 1; (i < MAX_ADDRS) && host[i].addr; i++)
-      if (host[i].addr) g_snprintf(s + l, BUFF_SIZE - l, "\n%s", addrname(i, host));
-    if (hop->info) snprintf(s + l, BUFF_SIZE - l, "\n%s", hop->info);
+    for (int i = 1; (i < MAXADDR) && (l < BUFF_SIZE); i++) {
+      if (host[i].addr) l += g_snprintf(s + l, BUFF_SIZE - l, "\n%s", addrname(i, host));
+      else break;
+    }
+    if (hop->info && (l < BUFF_SIZE)) l += g_snprintf(s + l, BUFF_SIZE - l, "\n%s", hop->info);
     hop->cached = true;
     LOG("hostinfo cache[%d] updated with: %s", at, s);
     return s;
@@ -214,17 +206,25 @@ static const gchar *info_host(int at) {
   return NULL;
 }
 
-enum { IWBUFF_AS_NDX, IWBUFF_CC_NDX, IWBUFF_DESC_NDX, IWBUFF_RT_NDX, IWBUFF_NDX_MAX };
-
-static const gchar *info_whois(int at, const gchar *elem, int ndx) {
-  static gchar whois_cache[MAXTTL][IWBUFF_NDX_MAX][BUFF_SIZE];
-  t_whois *whois = &hops[at].whois;
-  if (whois->cached) return whois_cache[at][ndx];
-  gchar *s = whois_cache[at][ndx];
-  g_snprintf(s, BUFF_SIZE, "%s", elem);
-  whois->cached = true;
-  LOG("whois cache[%d] updated with: %s", at, s);
-  return s;
+static const gchar *info_whois(int at, int wtyp) {
+  static gchar whois_cache[MAXTTL][WHOIS_NDX_MAX][BUFF_SIZE];
+  t_whois *whois = hops[at].whois;
+  gchar *elem = whois[0].elem[wtyp];
+  if (elem) { // as a marker
+    gchar *s = whois_cache[at][wtyp];
+    if (!hops[at].wcached[wtyp]) {
+      int l = g_snprintf(s, BUFF_SIZE, "%s", elem);
+      for (int i = 1; (i < MAXADDR) && (l < BUFF_SIZE); i++) {
+        elem = whois[i].elem[wtyp];
+        if (!elem) break;
+        l += g_snprintf(s + l, BUFF_SIZE - l, "\n%s", elem);
+      }
+      hops[at].wcached[wtyp] = true;
+      LOG("whois cache[%d,%d] updated with: %s", at, wtyp, s);
+    }
+    return s;
+  }
+  return NULL;
 }
 
 static int prec(double v) { return ((v > 0) && (v < 10)) ? (v < 0.1 ? 2 : 1) : 0; }
@@ -276,10 +276,10 @@ static const gchar *stat_hop(int typ, t_hop *hop) {
 
 static void set_initial_maxes(void) {
   host_max.addr = host_max.name = g_utf8_strlen(ELEM_HOST_HDR, MAXHOSTNAME);
-  whois_max.as   = g_utf8_strlen(ELEM_AS_HDR,   MAXHOSTNAME);
-  whois_max.cc   = g_utf8_strlen(ELEM_CC_HDR,   MAXHOSTNAME);
-  whois_max.desc = g_utf8_strlen(ELEM_DESC_HDR, MAXHOSTNAME);
-  whois_max.rt   = g_utf8_strlen(ELEM_RT_HDR,   MAXHOSTNAME);
+  whois_max[WHOIS_AS_NDX]   = g_utf8_strlen(ELEM_AS_HDR,   MAXHOSTNAME);
+  whois_max[WHOIS_CC_NDX]   = g_utf8_strlen(ELEM_CC_HDR,   MAXHOSTNAME);
+  whois_max[WHOIS_DESC_NDX] = g_utf8_strlen(ELEM_DESC_HDR, MAXHOSTNAME);
+  whois_max[WHOIS_RT_NDX]   = g_utf8_strlen(ELEM_RT_HDR,   MAXHOSTNAME);
 }
 
 
@@ -309,9 +309,10 @@ void stat_free(void) {
     hop->last = hop->best = hop->wrst = -1; // NA(-1) at init too
     hop->loss = hop->avrg = hop->jttr = -1;
     // clear strings
-    for (int i = 0; i < MAX_ADDRS; i++) {
+    for (int i = 0; i < MAXADDR; i++) {
       UPD_STR(hop->host[i].addr, NULL);
       UPD_STR(hop->host[i].name, NULL);
+      for (int j = 0; j < WHOIS_NDX_MAX; j++) UPD_STR(hops[at].whois[i].elem[j], NULL);
     }
     UPD_STR(hop->info, NULL);
   }
@@ -389,10 +390,10 @@ void stat_last_tx(int at) { // update last 'tx' unless done before
 const gchar *stat_elem(int at, int typ) {
   switch (typ) {
     case ELEM_HOST: return info_host(at);
-    case ELEM_AS:   IW_RET(hops[at].whois.as,   IWBUFF_AS_NDX);
-    case ELEM_CC:   IW_RET(hops[at].whois.cc,   IWBUFF_CC_NDX);
-    case ELEM_DESC: IW_RET(hops[at].whois.desc, IWBUFF_DESC_NDX);
-    case ELEM_RT:   IW_RET(hops[at].whois.rt,   IWBUFF_RT_NDX);
+    case ELEM_AS:   return info_whois(at, WHOIS_AS_NDX);
+    case ELEM_CC:   return info_whois(at, WHOIS_CC_NDX);
+    case ELEM_DESC: return info_whois(at, WHOIS_DESC_NDX);
+    case ELEM_RT:   return info_whois(at, WHOIS_RT_NDX);
     case ELEM_LOSS:
     case ELEM_SENT:
     case ELEM_RECV:
@@ -409,12 +410,23 @@ const gchar *stat_elem(int at, int typ) {
 int stat_elem_max(int typ) {
   switch (typ) {
     case ELEM_HOST: return opts.dns ? host_max.name : host_max.addr;
-    case ELEM_AS:   return whois_max.as;
-    case ELEM_CC:   return whois_max.cc;
-    case ELEM_DESC: return whois_max.desc;
-    case ELEM_RT:   return whois_max.rt;
+    case ELEM_AS:   return whois_max[WHOIS_AS_NDX];
+    case ELEM_CC:   return whois_max[WHOIS_CC_NDX];
+    case ELEM_DESC: return whois_max[WHOIS_DESC_NDX];
+    case ELEM_RT:   return whois_max[WHOIS_RT_NDX];
     case ELEM_FILL: return ELEM_LEN / 2;
   }
   return ELEM_LEN;
+}
+
+void stat_check_whois_max(gchar* elem[]) {
+  for (int i = 0; i < WHOIS_NDX_MAX; i++) {
+    if (elem[i]) {
+      int len = g_utf8_strlen(elem[i], MAXHOSTNAME);
+      if (len > whois_max[i]) {
+        whois_max[i] = len; pingtab_update_width(len, wndx2endx[i]);
+      }
+    }
+  }
 }
 

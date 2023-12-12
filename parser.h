@@ -11,5 +11,6 @@ bool parser_valid_char0(gchar *str);
 bool parser_valid_host(gchar *host);
 int parser_int(const gchar *str, int typ, const gchar *option);
 const char* parser_pad(const gchar *str, const gchar *option);
+void parser_whois(gchar *buff, int sz, gchar* elem[]);
 
 #endif

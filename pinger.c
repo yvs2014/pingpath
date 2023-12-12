@@ -32,7 +32,7 @@ static gchar* last_error(void) {
   for (int i = opts.lim; i > opts.min; i--) {
     gchar *err = ping_errors[i - 1];
     if (err) {
-      snprintf(last_error_buff, sizeof(last_error_buff), "%s", err);
+      g_strlcpy(last_error_buff, err, sizeof(last_error_buff));
       return last_error_buff;
     }
   }
@@ -79,7 +79,7 @@ static void on_stdout(GObject *stream, GAsyncResult *re, gpointer data) {
   int sz = g_input_stream_read_finish(G_INPUT_STREAM(stream), re, &err);
   if ((sz < 0) || err) { WARN("stream read: %s", err ? err->message : ""); pinger_stop_nth(p->ndx, "sz < 0"); return; }
   if (!sz) { pinger_stop_nth(p->ndx, "EOF"); stat_last_tx(p->ndx); return; } // EOF
-  snprintf(s, sizeof(obuff), "%*.*s", sz, sz, p->out->str);
+  g_snprintf(s, sizeof(obuff), "%*.*s", sz, sz, p->out->str);
   parser_parse(p->ndx, s);
   g_input_stream_read_async(G_INPUT_STREAM(stream), p->out->str, p->out->allocated_len,
     G_PRIORITY_DEFAULT, NULL, on_stdout, data);
@@ -94,7 +94,7 @@ static void on_stderr(GObject *stream, GAsyncResult *re, gpointer data) {
   int sz = g_input_stream_read_finish(G_INPUT_STREAM(stream), re, &err);
   if ((sz < 0) || err) { WARN("stream read: %s", err ? err->message : ""); return; }
   if (!sz) return; // EOF
-  snprintf(s, sizeof(ebuff), "%*.*s", sz, sz, p->err->str);
+  g_snprintf(s, sizeof(ebuff), "%*.*s", sz, sz, p->err->str);
   { int l = strlen(SKIPNAME); if (!strncmp(s, SKIPNAME, l)) s += l; } // skip program name
   s = g_strstrip(s); LOG("ERROR: %s", s);
   UPD_STR(ping_errors[p->ndx], s); s = last_error(); // save error and display last one
@@ -113,18 +113,18 @@ static bool create_ping(int at, t_proc *p) {
   argv[argc++] = PING;
   argv[argc++] = "-OD";
   if (!opts.dns) argv[argc++] = "-n";
-  char sttl[16]; snprintf(sttl, sizeof(sttl), "-t%d", at + 1);       argv[argc++] = sttl;
-  char scnt[16]; snprintf(scnt, sizeof(scnt), "-c%d", opts.count);   argv[argc++] = scnt;
-  char sitm[16]; snprintf(sitm, sizeof(sitm), "-i%d", opts.timeout); argv[argc++] = sitm;
-  char sWtm[16]; snprintf(sWtm, sizeof(sitm), "-W%d", opts.timeout); argv[argc++] = sWtm;
+  char sttl[16]; g_snprintf(sttl, sizeof(sttl), "-t%d", at + 1);       argv[argc++] = sttl;
+  char scnt[16]; g_snprintf(scnt, sizeof(scnt), "-c%d", opts.count);   argv[argc++] = scnt;
+  char sitm[16]; g_snprintf(sitm, sizeof(sitm), "-i%d", opts.timeout); argv[argc++] = sitm;
+  char sWtm[16]; g_snprintf(sWtm, sizeof(sitm), "-W%d", opts.timeout); argv[argc++] = sWtm;
   char sqos[16]; if (opts.qos != DEF_QOS) {
-    snprintf(sqos, sizeof(sqos), "-Q%d",   opts.qos);  argv[argc++] = sqos; }
+    g_snprintf(sqos, sizeof(sqos), "-Q%d",   opts.qos);  argv[argc++] = sqos; }
   char spad[64]; if (strncmp(opts.pad, DEF_PPAD, sizeof(opts.pad))) {
-    snprintf(spad, sizeof(spad), "-p%s", opts.pad);  argv[argc++] = spad; }
+    g_snprintf(spad, sizeof(spad), "-p%s", opts.pad);  argv[argc++] = spad; }
   char spsz[16]; if (opts.size != DEF_PSIZE) {
-    snprintf(spsz, sizeof(spsz), "-s%d",   opts.size); argv[argc++] = spsz; }
+    g_snprintf(spsz, sizeof(spsz), "-s%d",   opts.size); argv[argc++] = spsz; }
   char sipv[4];  if ((opts.ipv == 4) || (opts.ipv == 6)) {
-    snprintf(sipv, sizeof(sipv), "-%d",    opts.ipv);  argv[argc++] = sipv; }
+    g_snprintf(sipv, sizeof(sipv), "-%d",    opts.ipv);  argv[argc++] = sipv; }
   argv[argc++] = "--";
   argv[argc++] = opts.target;
   GError *err = NULL;
@@ -153,7 +153,7 @@ static bool create_ping(int at, t_proc *p) {
 //
 
 void pinger_init(void) {
-  snprintf(opts.pad, sizeof(opts.pad), "%s", DEF_PPAD);
+  g_strlcpy(opts.pad, DEF_PPAD, sizeof(opts.pad));
   for (int i = opts.min; i < opts.lim; i++) { pings[i].ndx = -1; pings[i].active = false; }
 }
 

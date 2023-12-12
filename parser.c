@@ -191,6 +191,16 @@ static void analyze_line(int at, const char *line) {
   DEBUG("UNKNOWN[at=%d]: %s", at, line);
 }
 
+static char* split_with_delim(char **ps, int c) {
+  if (!ps || !*ps) return NULL;
+  char *val = strchr(*ps, c);
+  if (!val) return NULL;
+  *val++ = 0;
+  *ps = g_strstrip(*ps);
+  return g_strstrip(val);
+}
+
+
 // pub
 //
 bool parser_init(void) {
@@ -253,7 +263,7 @@ int parser_int(const gchar *str, int typ, const gchar *option) {
 const char* parser_pad(const gchar *str, const gchar *option) {
   static char pad_buff[PAD_SIZE];
   GMatchInfo *match = NULL;
-  g_snprintf(pad_buff, sizeof(pad_buff), "%s", str);
+  g_strlcpy(pad_buff, str, sizeof(pad_buff));
   char *val = g_strstrip(pad_buff);
   bool valid = g_regex_match(str_rx[STR_RX_PAD].regex, val, 0, &match);
   if (valid) {
@@ -261,5 +271,46 @@ const char* parser_pad(const gchar *str, const gchar *option) {
     return val;
   } else LOG("%s: no match %s regex: %s", option, str_rx[STR_RX_PAD].pattern, val);
   return NULL;
+}
+
+#define WHOIS_RT_TAG   "route"
+#define WHOIS_AS_TAG   "origin"
+#define WHOIS_DESC_TAG "descr"
+
+#define WHOIS_UNKN    "" // "?" "???"
+
+#define WHOIS_NL      "\n"
+#define WHOIS_COMMENT '%'
+#define WHOIS_DELIM   ':'
+#define WHOIS_CCDEL   ','
+
+
+void parser_whois(gchar *buff, int sz, gchar* elem[]) {
+  static const char skip_as_prfx[] = "AS";
+  static int as_prfx_len = sizeof(skip_as_prfx) - 1;
+  if (!buff || !elem) return;
+  memset(elem, 0, sizeof(gchar*) * WHOIS_NDX_MAX);
+  char *p = buff, *s;
+  while ((s = strsep(&p, WHOIS_NL))) {
+    s = g_strstrip(s);
+    if (s && s[0] && (s[0] != WHOIS_COMMENT)) {
+      char *val = split_with_delim(&s, WHOIS_DELIM);
+      if (!val) continue;
+      int ndx = -1;
+      if (STR_EQ(s, WHOIS_RT_TAG)) ndx = WHOIS_RT_NDX;
+      else if (STR_EQ(s, WHOIS_AS_TAG)) {
+        ndx = WHOIS_AS_NDX;
+        int l = strnlen(val, MAXHOSTNAME);
+        if ((l > as_prfx_len) && !g_ascii_strncasecmp(val, skip_as_prfx, as_prfx_len))
+          val += as_prfx_len;
+      } else if (STR_EQ(s, WHOIS_DESC_TAG)) {
+        ndx = WHOIS_DESC_NDX;
+        char *cc = split_with_delim(&val, WHOIS_CCDEL);
+        if (cc) elem[WHOIS_CC_NDX] = g_strndup(cc, MAXHOSTNAME);
+      }
+      if (ndx >= 0) elem[ndx] = g_strndup(val, MAXHOSTNAME);
+    }
+  }
+  for (int i = 0; i < WHOIS_NDX_MAX; i++) if (!elem[i]) elem[i] = g_strdup(WHOIS_UNKN);
 }
 

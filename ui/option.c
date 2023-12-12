@@ -148,7 +148,7 @@ static void set_ed_texthint(t_ent_str *en) {
     g_snprintf(en->buff, sizeof(en->buff), "%d", *pint);
     gtk_editable_set_text(GTK_EDITABLE(en->input), en->buff);
   } else if (pstr && strncmp(pstr, en->sdef, en->slen)) {
-    g_snprintf(en->buff, sizeof(en->buff), "%s", pstr);
+    g_strlcpy(en->buff, pstr, sizeof(en->buff));
     gtk_editable_set_text(GTK_EDITABLE(en->input), en->buff);
   } else if (en->hint[0])
     gtk_entry_set_placeholder_text(GTK_ENTRY(en->input), en->hint);
@@ -231,7 +231,7 @@ static void input_cb(GtkWidget *input, t_ent_str *en) {
     case ENT_STR_PLOAD: {
       const char *pad = parser_pad(got, en->en.name);
       if (pad) {
-        if (en->pstr) snprintf(en->pstr, en->slen, "%s", pad);
+        if (en->pstr) g_strlcpy(en->pstr, pad, en->slen);
         LOG("%s: %s", en->en.name, pad);
       } else set_ed_texthint(en);
     } break;

@@ -4,28 +4,9 @@
 #include <gtk/gtk.h>
 #include "common.h"
 
-typedef struct tseq {
-  int seq;
-  long long sec;
-  int usec;
-} t_tseq;
-
-typedef struct host {
-  gchar *addr, *name;
-} t_host;
-
 typedef struct host_max {
   int addr, name;
 } t_host_max;
-
-typedef struct whois {
-  gchar *as, *cc, *desc, *rt;
-  bool cached;
-} t_whois;
-
-typedef struct whois_max {
-  int as, cc, desc, rt;
-} t_whois_max;
 
 typedef struct ping_success {
   t_tseq mark;
@@ -61,6 +42,7 @@ void stat_save_info(int at, t_ping_info *data);
 void stat_last_tx(int at);
 const gchar *stat_elem(int at, int typ);
 int stat_elem_max(int typ);
+void stat_check_whois_max(gchar* elem[]);
 
 typedef struct t_stat_elem {
   bool enable;

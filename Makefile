@@ -13,7 +13,11 @@ endif
 
 PKGCONFIG = $(shell which pkg-config)
 
-SRC = $(NAME).c pinger.c parser.c stat.c ui/style.c ui/appbar.c ui/action.c ui/option.c tabs/ping.c valid.c aux.c
+SRC = $(NAME).c aux.c
+SRC += pinger.c parser.c stat.c whois.c valid.c
+SRC += tabs/ping.c
+SRC += ui/style.c ui/appbar.c ui/action.c ui/option.c
+
 OBJS = $(SRC:.c=.o)
 
 all: $(NAME)

@@ -93,7 +93,7 @@ static GtkWidget* init_list_box(t_listline *lines, int len, bool vis, bool hdr) 
     t_stat_elem *arr;
     if (hdr) arr = statelem; else {
       char *s = stat_no_at_buff[i];
-      snprintf(s, ELEM_BUFF_SIZE, "%d.", i + 1);
+      g_snprintf(s, ELEM_BUFF_SIZE, "%d.", i + 1);
       t_stat_elem str[ELEM_MAX] = {[ELEM_NO] = { .enable = statelem[i].enable, .name = s }};
       arr = str;
     }
@@ -140,14 +140,18 @@ gboolean pingtab_update(gpointer data) {
   if (!pinger_state.pause)
     for (int i = 0; i < hops_no; i++)
       for (int j = 0; j < ELEM_MAX; j++)
-        if ((j != ELEM_NO) && statelem[j].enable)
-          gtk_label_set_text(GTK_LABEL(listbox.lines[i].cells[j]), stat_elem(i, j));
+        if ((j != ELEM_NO) && statelem[j].enable) {
+          GtkWidget *label = listbox.lines[i].cells[j];
+          const gchar *elem = stat_elem(i, j);
+          const gchar *cell = gtk_label_get_text(GTK_LABEL(label));
+          if (STR_NEQ(elem, cell)) gtk_label_set_text(GTK_LABEL(label), elem);
+        }
   { // no data display
     bool notyet = info_mesg == notyet_mesg;
     if (pinger_state.gotdata) { if (notyet) pingtab_set_error(NULL); }
     else if (!notyet && !info_mesg && pinger_state.gotdata) pingtab_set_error(notyet_mesg);
   }
-  if (!pinger_state.reachable) {
+  if (pinger_state.gotdata && !pinger_state.reachable) {
     bool yet = pinger_state.run;
     if (!info_mesg || (!yet && (info_mesg == nopong_mesg[1])))
       pingtab_set_error(nopong_mesg[yet]);
