@@ -200,7 +200,7 @@ static const gchar *info_host(int at) {
     }
     if (hop->info && (l < BUFF_SIZE)) l += g_snprintf(s + l, BUFF_SIZE - l, "\n%s", hop->info);
     hop->cached = true;
-    LOG("hostinfo cache[%d] updated with: %s", at, s);
+    LOG("hostinfo cache[%d] updated with %s", at, s);
     return s;
   }
   return NULL;
@@ -220,7 +220,7 @@ static const gchar *info_whois(int at, int wtyp) {
         l += g_snprintf(s + l, BUFF_SIZE - l, "\n%s", elem);
       }
       hops[at].wcached[wtyp] = true;
-      LOG("whois cache[%d,%d] updated with: %s", at, wtyp, s);
+      LOG("whois cache[%d,%d] updated with %s", at, wtyp, s);
     }
     return s;
   }

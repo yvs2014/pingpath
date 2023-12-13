@@ -1,3 +1,6 @@
+## 0.1.30
+- replace some temporary static data
+
 ## 0.1.29
 - add whois resolver
 

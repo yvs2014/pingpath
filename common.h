@@ -5,7 +5,7 @@
 #include "aux.h"
 
 #define APPNAME "pingpath"
-#define VERSION "0.1.29"
+#define VERSION "0.1.30"
 
 #define MAXTTL      30
 #define MAXADDR     10
@@ -29,6 +29,7 @@
 #define DEBUG(fmt, ...) {}
 #endif
 
+#define UNKN_ERR "unknown error"
 #define WARN(fmt, ...) g_warning("%s: " fmt "\n", __func__, __VA_ARGS__)
 
 #define STR_EQ(a, b) (!g_strcmp0(a, b))

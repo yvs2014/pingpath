@@ -9,6 +9,11 @@
 #define PING "/bin/ping"
 #define SKIPNAME PING ": "
 
+#define PING_ERR(at) { WARN("%s: %s: %s", __func__, at, err ? err->message : UNKN_ERR); g_error_free(err); }
+
+#define RESET_ISTREAM(ins, buff, cb, data) g_input_stream_read_async(G_INPUT_STREAM(ins), \
+  (buff), BUFF_SIZE, G_PRIORITY_DEFAULT, NULL, (GAsyncReadyCallback)(cb), (data))
+
 t_opts opts = { .target = NULL, .dns = true, .count = DEF_COUNT, .qos = DEF_QOS, .size = DEF_PSIZE,
   .min = 0, .lim = MAXTTL, .timeout = DEF_TOUT, .tout_usec = DEF_TOUT * 1000000 };
 t_pinger_state pinger_state;
@@ -16,9 +21,9 @@ guint stat_timer;
 
 typedef struct proc {
   GSubprocess *proc;
-  bool active;        // process state
-  GString *out, *err; // for received input data and errors
-  int ndx;            // index in internal list
+  bool active;     // process state
+  int ndx;         // index in internal list
+  char *out, *err; // stdout, stderr buffers
 } t_proc;
 
 static t_proc pings[MAXTTL];
@@ -70,45 +75,51 @@ static void set_finish_flag(struct _GObject *a, struct _GAsyncResult *b, gpointe
   }
 }
 
-static void on_stdout(GObject *stream, GAsyncResult *re, gpointer data) {
-  static char obuff[BUFF_SIZE];
-  t_proc *p = data;
+static void on_stdout(GObject *stream, GAsyncResult *result, t_proc *p) {
+  if (!G_IS_INPUT_STREAM(stream)) return;
+  if (!p || (p->ndx < 0)) return;
   if (p->ndx < 0) return;
-  char *s = obuff;
   GError *err = NULL;
-  int sz = g_input_stream_read_finish(G_INPUT_STREAM(stream), re, &err);
-  if ((sz < 0) || err) { WARN("stream read: %s", err ? err->message : ""); pinger_stop_nth(p->ndx, "sz < 0"); return; }
-  if (!sz) { pinger_stop_nth(p->ndx, "EOF"); stat_last_tx(p->ndx); return; } // EOF
-  g_snprintf(s, sizeof(obuff), "%*.*s", sz, sz, p->out->str);
-  parser_parse(p->ndx, s);
-  g_input_stream_read_async(G_INPUT_STREAM(stream), p->out->str, p->out->allocated_len,
-    G_PRIORITY_DEFAULT, NULL, on_stdout, data);
+  gssize size = g_input_stream_read_finish(G_INPUT_STREAM(stream), result, &err);
+  if (size < 0) {    // error
+    PING_ERR("stdin read");
+    pinger_stop_nth(p->ndx, "stdin error");
+  } else if (size) { // data
+    gssize left = BUFF_SIZE - size;
+    p->out[(left > 0) ? size : size - 1] = 0;
+    parser_parse(p->ndx, p->out);
+    RESET_ISTREAM(stream, p->out, on_stdout, p);
+  } else {           // EOF
+    pinger_stop_nth(p->ndx, "EOF");
+    stat_last_tx(p->ndx);
+  }
 }
 
-static void on_stderr(GObject *stream, GAsyncResult *re, gpointer data) {
-  static char ebuff[BUFF_SIZE];
-  t_proc *p = data;
-  if (p->ndx < 0) return;
-  char *s = ebuff;
+static void on_stderr(GObject *stream, GAsyncResult *result, t_proc *p) {
+  if (!G_IS_INPUT_STREAM(stream)) return;
+  if (!p || (p->ndx < 0)) return;
   GError *err = NULL;
-  int sz = g_input_stream_read_finish(G_INPUT_STREAM(stream), re, &err);
-  if ((sz < 0) || err) { WARN("stream read: %s", err ? err->message : ""); return; }
-  if (!sz) return; // EOF
-  g_snprintf(s, sizeof(ebuff), "%*.*s", sz, sz, p->err->str);
-  { int l = strlen(SKIPNAME); if (!strncmp(s, SKIPNAME, l)) s += l; } // skip program name
-  s = g_strstrip(s); LOG("ERROR: %s", s);
-  UPD_STR(ping_errors[p->ndx], s); s = last_error(); // save error and display last one
-  pingtab_set_error(s);
-  g_input_stream_read_async(G_INPUT_STREAM(stream), p->err->str, p->err->allocated_len,
-    G_PRIORITY_DEFAULT, NULL, on_stderr, data);
+  gssize size = g_input_stream_read_finish(G_INPUT_STREAM(stream), result, &err);
+  if (size < 0) {    // error
+    PING_ERR("stderr read");
+  } else if (size) { // data
+    gchar *s = p->err;
+    gssize left = BUFF_SIZE - size;
+    s[(left > 0) ? size : size - 1] = 0;
+    { int l = strlen(SKIPNAME); if (!strncmp(s, SKIPNAME, l)) s += l; } // skip program name
+    s = g_strstrip(s); LOG("ERROR: %s", s);
+    UPD_STR(ping_errors[p->ndx], s); // save error
+    pingtab_set_error(last_error()); // display the last one
+    RESET_ISTREAM(stream, p->err, on_stderr, p);
+  } // else EOF
 }
 
 #define MAX_ARGC 32
 
 static bool create_ping(int at, t_proc *p) {
-  if (!p->out) p->out = g_string_sized_new(BUFF_SIZE);
-  if (!p->err) p->err = g_string_sized_new(BUFF_SIZE);
-  if (!p->out || !p->err) { WARN("%s failed", "g_string_sized_new()"); return false; }
+  if (!p->out) p->out = g_malloc(BUFF_SIZE);
+  if (!p->err) p->err = g_malloc(BUFF_SIZE);
+  if (!p->out || !p->err) { WARN("%s(%d): g_malloc() failed", __func__, at); return false; }
   const gchar** argv = calloc(MAX_ARGC, sizeof(gchar*)); int argc = 0;
   argv[argc++] = PING;
   argv[argc++] = "-OD";
@@ -129,12 +140,14 @@ static bool create_ping(int at, t_proc *p) {
   argv[argc++] = opts.target;
   GError *err = NULL;
   p->proc = g_subprocess_newv(argv, G_SUBPROCESS_FLAGS_STDOUT_PIPE | G_SUBPROCESS_FLAGS_STDERR_PIPE, &err);
-  if (err) { WARN("create subprocess: %s", err->message); return false; }
+  if (!p->proc) { PING_ERR("create subprocess"); return false; }
   g_subprocess_wait_check_async(p->proc, NULL, set_finish_flag, p);
   GInputStream *output = g_subprocess_get_stdout_pipe(p->proc);
-  g_input_stream_read_async(output, p->out->str, p->out->allocated_len, G_PRIORITY_DEFAULT, NULL, on_stdout, p);
   GInputStream *errput = g_subprocess_get_stderr_pipe(p->proc);
-  g_input_stream_read_async(errput, p->err->str, p->err->allocated_len, G_PRIORITY_DEFAULT, NULL, on_stderr, p);
+  if (output && errput) {
+    RESET_ISTREAM(output, p->out, on_stdout, p);
+    RESET_ISTREAM(errput, p->err, on_stderr, p);
+  } else WARN("%s: get input streams failed", __func__);
   p->active = true;
   p->ndx = at;
 #ifdef DEBUGGING
@@ -154,7 +167,7 @@ static bool create_ping(int at, t_proc *p) {
 
 void pinger_init(void) {
   g_strlcpy(opts.pad, DEF_PPAD, sizeof(opts.pad));
-  for (int i = opts.min; i < opts.lim; i++) { pings[i].ndx = -1; pings[i].active = false; }
+  for (int i = 0; i < MAXTTL; i++) { pings[i].ndx = -1; pings[i].active = false; }
 }
 
 void pinger_start(void) {
@@ -181,7 +194,7 @@ void pinger_stop_nth(int nth, const gchar* reason) {
       }
       GError *err = NULL;
       g_subprocess_wait(p->proc, NULL, &err);
-      if (err) WARN("pid=%s: %s", id, err->message);
+      if (err) { WARN("%s(%d): pid=%s: %s", __func__, nth, id, err->message); g_error_free(err); }
       else LOG("ping[ttl=%d] finished (rc=%d)", p->ndx + 1, g_subprocess_get_status(p->proc));
     }
     if (!id) { set_finish_flag(NULL, NULL, p); p->proc = NULL; }
@@ -193,10 +206,13 @@ void pinger_stop(const gchar* reason) {
   pinger_active();
 }
 
+#define FREE_PROC_BUFF(nth) { UPD_STR(pings[nth].out, NULL); UPD_STR(pings[nth].err, NULL); }
+
 void pinger_free(void) {
   pinger_free_errors();
   stat_free();
-  g_free(opts.target); opts.target = NULL;
+  UPD_STR(opts.target, NULL);
+  for (int i = 0; i < MAXTTL; i++) FREE_PROC_BUFF(i);
 }
 
 void pinger_free_errors(void) { for (int i = opts.min; i < opts.lim; i++) pinger_free_nth_error(i); }
