@@ -1,10 +1,11 @@
 
 #include "appbar.h"
+#include "common.h"
 #include "style.h"
 #include "action.h"
 #include "option.h"
 #include "pinger.h"
-#include "valid.h"
+#include "parser.h"
 
 guint datetime_id;
 static GtkWidget *appbar;
@@ -40,7 +41,7 @@ static bool start_datetime(void) {
 
 static void target_cb(GtkWidget *widget, GtkWidget *entry) {
   g_return_if_fail(GTK_IS_EDITABLE(entry));
-  gchar *target = valid_target(gtk_editable_get_text(GTK_EDITABLE(entry)));
+  gchar *target = parser_valid_target(gtk_editable_get_text(GTK_EDITABLE(entry)));
   if (target) {
     g_free(opts.target); opts.target = target;
     action_update();

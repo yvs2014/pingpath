@@ -1,3 +1,9 @@
+pingpath (0.1.31) lunar mantic; urgency=low
+
+  * [intermediate] add dns hostname lookup
+
+ -- yvs <VSYakovetsky@gmail.com>  Sat, 16 Dec 2023 00:33:48 +0200
+
 pingpath (0.1.30) lunar mantic; urgency=low
 
   * replace some temporary static data

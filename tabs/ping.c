@@ -1,8 +1,8 @@
 
 #include "ping.h"
+#include "common.h"
 #include "pinger.h"
 #include "stat.h"
-#include "common.h"
 #include "ui/style.h"
 
 #define ELEM_BUFF_SIZE 16

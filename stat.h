@@ -42,6 +42,8 @@ void stat_save_info(int at, t_ping_info *data);
 void stat_last_tx(int at);
 const gchar *stat_elem(int at, int typ);
 int stat_elem_max(int typ);
+void stat_check_hostaddr_max(int l);
+void stat_check_hostname_max(int l);
 void stat_check_whois_max(gchar* elem[]);
 
 typedef struct t_stat_elem {

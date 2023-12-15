@@ -1,3 +1,6 @@
+## 0.1.31
+- [intermediate] add dns hostname lookup
+
 ## 0.1.30
 - replace some temporary static data
 

@@ -1,18 +1,21 @@
 
 #include <gtk/gtk.h>
 
+#include "common.h"
 #include "ui/appbar.h"
 #include "ui/style.h"
 #include "tabs/ping.h"
 #include "pinger.h"
 #include "parser.h"
-#include "whois.h"
 #include "stat.h"
+#include "dns.h"
+//#include "whois.h"
 
 static void on_app_exit(GtkWidget *widget, gpointer unused) {
   g_source_remove(datetime_id); datetime_id = 0; // stop timer unless it's already done
   pinger_free();
-  whois_free_cache();
+  dns_cache_free();
+//  whois_cache_free();
 // note: subprocesses have to be already terminated by system at this point
 // if not, then pinger_stop("at app exit");
   LOG("app %s", "quit");

@@ -1,5 +1,6 @@
 
 #include "action.h"
+#include "common.h"
 #include "appbar.h"
 #include "pinger.h"
 #include "tabs/ping.h"

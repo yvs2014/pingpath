@@ -1,7 +1,7 @@
 
 #include "parser.h"
-#include "stat.h"
 #include "common.h"
+#include "stat.h"
 
 #define MAX_LINES 10
 
@@ -21,6 +21,17 @@
 #define PATT_SEQ  "icmp_seq=(?<" REN_SEQ ">\\d+)"
 
 #define DIGIT_OR_LETTER "\\d\\pLu\\pLl"
+
+#define WHOIS_RT_TAG   "route"
+#define WHOIS_AS_TAG   "origin"
+#define WHOIS_DESC_TAG "descr"
+
+#define WHOIS_UNKN    "" // "?" "???"
+
+#define WHOIS_NL      "\n"
+#define WHOIS_COMMENT '%'
+#define WHOIS_DELIM   ':'
+#define WHOIS_CCDEL   ','
 
 const int tos_max   = 255;
 const int psize_min = 16;
@@ -65,6 +76,7 @@ static t_parser_regex str_rx[STR_RX_MAX] = {
   [STR_RX_INT] = { .pattern = "^\\d+$" },
   [STR_RX_PAD] = { .pattern = "^[\\da-fA-F]{1,32}$" },
 };
+
 
 // aux
 //
@@ -200,6 +212,18 @@ static char* split_with_delim(char **ps, int c) {
   return g_strstrip(val);
 }
 
+static inline bool parser_valid_char0(gchar *str) { return g_regex_match(hostname_char0_regex, str, 0, NULL); }
+static inline bool parser_valid_host(gchar *host) { return g_regex_match(hostname_chars_regex, host, 0, NULL); }
+
+static bool target_meet_all_conditions(gchar *s, int len, int max) {
+  // rfc1123,rfc952 restrictions
+  if (len > max) { LOG("Out of length limit (%d > %d)", len, max); return false; }
+  if (s[len - 1] == '-') { LOG("Hostname %s", "cannot end with hyphen"); return false; }
+  if (!parser_valid_char0(s)) { LOG("Hostname %s", "must start with a letter or a digit"); return false; }
+  if (!parser_valid_host(s)) { LOG("Hostname %s", "contains not allowed characters"); return false; }
+  return true;
+}
+
 
 // pub
 //
@@ -224,9 +248,6 @@ void parser_parse(int at, char *input) {
   for (gchar **s = lines; *s; s++) if ((*s)[0]) analyze_line(at, *s);
   if (lines) g_strfreev(lines);
 }
-
-inline bool parser_valid_char0(gchar *str) { return g_regex_match(hostname_char0_regex, str, 0, NULL); }
-inline bool parser_valid_host(gchar *host) { return g_regex_match(hostname_chars_regex, host, 0, NULL); }
 
 #define CI_MIN 1
 #define PIERR(fmt, ...) { LOG("%s: " fmt ": %s", option, __VA_ARGS__, val); n = -1; }
@@ -273,17 +294,15 @@ const char* parser_pad(const gchar *str, const gchar *option) {
   return NULL;
 }
 
-#define WHOIS_RT_TAG   "route"
-#define WHOIS_AS_TAG   "origin"
-#define WHOIS_DESC_TAG "descr"
-
-#define WHOIS_UNKN    "" // "?" "???"
-
-#define WHOIS_NL      "\n"
-#define WHOIS_COMMENT '%'
-#define WHOIS_DELIM   ':'
-#define WHOIS_CCDEL   ','
-
+gchar* parser_valid_target(const gchar *target) {
+  if (!target || !target[0]) return NULL;
+  gchar *copy = g_strdup(target);
+  gchar *hostname = NULL, *s = g_strstrip(copy);
+  int len = g_utf8_strlen(s, MAXHOSTNAME + 1);
+  if (len && target_meet_all_conditions(s, len, MAXHOSTNAME)) hostname = g_strdup(s);
+  g_free(copy);
+  return hostname;
+}
 
 void parser_whois(gchar *buff, int sz, gchar* elem[]) {
   static const char skip_as_prfx[] = "AS";

@@ -1,239 +1,226 @@
 
 #include "whois.h"
+#include "common.h"
 #include "parser.h"
 #include "stat.h"
-#include "common.h"
 
 #define WHOIS_HOST          "riswhois.ripe.net"
 #define WHOIS_PORT          43
 #define WHOIS_REQUEST_FMT   "-m %s\n"
-#define WHOIS_NET_BUFF_SIZE 4096 // suppose it's enough (data is usually 200-300 bytes)
-
-#define WHOIS_WARN(fmt, ...) LOG("WARN: %s: " fmt, __func__, __VA_ARGS__)
-#define WHOIS_ERR(at) { LOG("WARN: %s: %s: %s", __func__, at, err ? err->message : UNKN_ERR); g_error_free(err); }
 
 #define WN_CACHE_MAX MAXTTL
 #define WN_DATA_MAX  MAXTTL
-#define WN_REF_MAX   MAXTTL
 
-typedef struct hop_ref { t_hop *hop; int andx; } t_hop_ref;
-
-typedef struct wn_data { // network stuff
-  t_hop_ref ref[WN_REF_MAX]; // hops requested whois resolv
-  gchar *addr;               // copy of origin addr from request
-  char *buff; int size;      // data buffer and its actual size
-  GSocketClient *sock;
+typedef struct wn_data {  // network stuff
+  GSList *refs;           // hops requested whois resolv
+  gchar *addr;            // copy of origin addr from request
+  char *buff; int size;   // data buffer and its actual size
   GSocketConnection *conn;
   GInputStream *input;
   GOutputStream *output;
 } t_wn_data;
 
 typedef struct wn_cache {
-  gchar addr[BUFF_SIZE];
-  gchar* elem[WHOIS_NDX_MAX];
+  gchar *addr;
+  t_whois whois;
 } t_wn_cache;
 
+typedef struct wn_data_n_cache {
+  t_wn_data *data;
+  t_wn_cache *cache;
+} t_wn_data_n_cache;
+
 static t_wn_data wn_data[WN_DATA_MAX];
-static t_wn_cache wn_cache[WN_CACHE_MAX]; // circular list
+static GSList *wn_cache;
 static int wnc_next_ndx;
 
 
 // aux
 //
 
-static t_wn_cache* addr_in_wnc(const gchar* addr) {
-  for (int i = 0; i < WN_CACHE_MAX; i++) if (STR_EQ(addr, wn_cache[i].addr)) return &wn_cache[i];
-  return NULL;
+//static GSList* whois_cache_find_addr(gchar* addr) {
+//  t_whoaddr find = { .addr = addr };
+//  return g_slist_find_custom(wn_cache, &find, (GCompareFunc)find_whoaddr);
+//}
+
+//static GSList* whois_cache_set_addr(const gchar *addr) {
+//  int i = wnc_next_ndx++;
+//  if (wnc_next_ndx >= WN_CACHE_MAX) wnc_next_ndx = 0;
+//  UPD_STR(wn_cache[i].addr, g_strndup(addr, MAXHOSTNAME));
+//  for (int j = 0; j < WHOIS_NDX_MAX; j++) UPD_STR(wn_cache[i].whois.elem[j], NULL);
+//  return &wn_cache[i];
+//}
+
+//static GSList* whois_cache_fill(t_wn_data *data, bool okay) {
+//  if (!data || !data->addr) return NULL;
+//  wn_cache = add_whoaddr(wn_cache, data->addr);
+//  t_whoaddr *wa = new_whoaddr(data->addr);
+//  GSList *cache = g_slist_find_custom(wn_cache, &find, (GCompareFunc)find_whoaddr);
+//  t_wn_cache *cache = whois_cache_find_addr(data->addr);
+//  if (!cache) cache = whois_cache_set_addr(data->addr);
+//  if (okay) parser_whois(data->buff, NET_BUFF_SIZE, cache->whois.elem);
+//  else for (int j = 0; j < WHOIS_NDX_MAX; j++) UPD_STR(cache->whois.elem[j], NULL);
+//  return cache;
+//}
+
+static void whois_data_close(t_wn_data *data) {
+  if (!data) return;
+  if (G_IS_SOCKET_CONNECTION(data->conn) && !g_io_stream_is_closed(G_IO_STREAM(data->conn)))
+    g_io_stream_close(G_IO_STREAM(data->conn), NULL, NULL);
+  UPD_STR(data->addr, NULL);
+  UPD_STR(data->buff, NULL);
+  data->size = 0;
+  if (data->refs) g_slist_free_full(g_steal_pointer(&data->refs), g_free);
 }
 
-static t_wn_cache* wnc_set_addr(const gchar *addr) {
-  int i = wnc_next_ndx++;
-  if (wnc_next_ndx >= WN_CACHE_MAX) wnc_next_ndx = 0; //1; // 0 is reserved for undefined
-  g_strlcpy(wn_cache[i].addr, addr, sizeof(wn_cache[i].addr));
-  for (int j = 0; j < WHOIS_NDX_MAX; j++) UPD_STR(wn_cache[i].elem[j], NULL);
-  return &wn_cache[i];
-}
-
-static t_wn_cache* fill_wnc(t_wn_data *wnd, bool okay) {
-  if (!wnd || !wnd->addr) return NULL;
-  t_wn_cache *wnc = addr_in_wnc(wnd->addr);
-  if (!wnc) wnc = wnc_set_addr(wnd->addr);
-  if (okay) parser_whois(wnd->buff, WHOIS_NET_BUFF_SIZE, wnc->elem);
-  else for (int j = 0; j < WHOIS_NDX_MAX; j++) UPD_STR(wnc->elem[j], NULL);
-  return wnc;
-}
-
-static void close_wnd(t_wn_data *wnd) {
-  if (!wnd) return;
-  if (G_IS_SOCKET_CONNECTION(wnd->conn) && !g_io_stream_is_closed(G_IO_STREAM(wnd->conn)))
-    g_io_stream_close(G_IO_STREAM(wnd->conn), NULL, NULL);
-  if (wnd->sock) { g_object_unref(wnd->sock); wnd->sock = NULL; }
-  UPD_STR(wnd->addr, NULL);
-  UPD_STR(wnd->buff, NULL);
-  wnd->size = 0;
-  for (int i = 0; i < WN_REF_MAX; i++) {
-    wnd->ref[i].hop = NULL;
-    wnd->ref[i].andx = 0;
-  }
-}
-
-static void dup_whois_elems(gchar* from[], gchar* to[], bool wcached[]) {
+static void whois_copy_elems(gchar* from[], gchar* to[], bool wcached[]) {
   if (!from || !to) return;
   for (int i = 0; i < WHOIS_NDX_MAX; i++) {
-    to[i] = g_strndup(from[i], MAXHOSTNAME);
+    UPD_NSTR(to[i], from[i], MAXHOSTNAME);
     if (wcached) wcached[i] = false;
   }
 }
 
-static void complete_wnd(t_wn_data *wnd, t_wn_cache *wnc) {
-  if (!wnd || !wnc) return;
-  for (int i = 0; i < WN_REF_MAX; i++) {
-    t_hop *hop = wnd->ref[i].hop;
-    if (hop) {
-      int andx = wnd->ref[i].andx;
-      gchar *orig = hop->host[andx].addr;
-      if (STR_EQ(wnd->addr, orig)) {
-        dup_whois_elems(wnc->elem, hop->whois[andx].elem, hop->wcached);
-        stat_check_whois_max(hop->whois[andx].elem);
-      } else LOG("whois(%s) origin is changed: %s", wnd->addr, orig);
-    }
+static void whois_data_complete(t_hop_ref *hr, t_wn_data_n_cache *dc) {
+  if (!hr || !dc || !dc->data || !dc->cache) return;
+  t_hop *hop = hr->hop;
+  if (hop) {
+    int ndx = hr->ndx;
+    gchar *orig = hop->host[ndx].addr;
+    gchar *addr = dc->data->addr;
+    if (STR_EQ(orig, addr)) {
+      gchar **elems = hop->whois[ndx].elem;
+      whois_copy_elems(dc->cache->whois.elem, elems, hop->wcached);
+      stat_check_whois_max(elems);
+    } else LOG("whois(%s) origin is changed: %s", addr, orig);
   }
 }
 
-static void on_whois_read(GObject *stream, GAsyncResult *result, t_wn_data *wnd);
+static void on_whois_read(GObject *stream, GAsyncResult *result, t_wn_data *data);
 
-static bool whois_reset_read(gssize size, t_wn_data *wnd) {
-  if (!wnd) return false;
-  wnd->size += size;
-  gssize left = WHOIS_NET_BUFF_SIZE - wnd->size;
+static bool whois_reset_read(GObject *stream, gssize size, t_wn_data *data) {
+  if (!data || !G_IS_INPUT_STREAM(stream)) return false;
+  data->size += size;
+  gssize left = NET_BUFF_SIZE - data->size;
   bool reset_read = left > 0;
   if (reset_read) { // continue unless EOF
-    char *off = wnd->buff + wnd->size;
+    char *off = data->buff + data->size;
     *off = 0;
-    g_input_stream_read_async(wnd->input, off, left, G_PRIORITY_DEFAULT, NULL, (GAsyncReadyCallback)on_whois_read, wnd);
+    g_input_stream_read_async(G_INPUT_STREAM(stream), off, left, G_PRIORITY_DEFAULT, NULL,
+      (GAsyncReadyCallback)on_whois_read, data);
   } else {
-    WHOIS_WARN("buffer[%d]: no space left", WHOIS_NET_BUFF_SIZE);
-    wnd->buff[WHOIS_NET_BUFF_SIZE - 1] = 0;
+    WARN("buffer[%d]: no space left", NET_BUFF_SIZE);
+    data->buff[NET_BUFF_SIZE - 1] = 0;
   }
   return reset_read;
 }
 
-static void on_whois_read(GObject *stream, GAsyncResult *result, t_wn_data *wnd) {
+static void on_whois_read(GObject *stream, GAsyncResult *result, t_wn_data *data) {
   if (!G_IS_INPUT_STREAM(stream)) return;
-  GError *err = NULL;
-  gssize size = g_input_stream_read_finish(G_INPUT_STREAM(stream), result, &err);
-  if (size < 0) { WHOIS_ERR("stream read"); }
-  else if (size) { if (whois_reset_read(size, wnd)) return; }
-  complete_wnd(wnd, fill_wnc(wnd, !size)); // EOF (size == 0)
-  close_wnd(wnd);
+  GError *error = NULL;
+  gssize size = g_input_stream_read_finish(G_INPUT_STREAM(stream), result, &error);
+  if (size < 0) { ERROR("stream read"); }
+  else if (size) { if (whois_reset_read(stream, size, data)) return; }
+  else { // EOF (size == 0)
+    t_wn_data_n_cache dc = { .data = data, .cache = whois_cache_fill(data, !size) };
+    if (dc.data && dc.cache) g_slist_foreach(dc.data->refs, (GFunc)whois_data_complete, &dc);
+    whois_data_close(data);
+  }
 }
 
 static void on_whois_write_all(GObject *stream, GAsyncResult *result, gchar *request) {
   if (!G_IS_OUTPUT_STREAM(stream)) return;
-  GError *err = NULL;
-  if (!g_output_stream_write_all_finish(G_OUTPUT_STREAM(stream), result, NULL, &err)) WHOIS_ERR("stream write");
+  GError *error = NULL;
+  if (!g_output_stream_write_all_finish(G_OUTPUT_STREAM(stream), result, NULL, &error))
+    ERROR("stream write");
   g_free(request);
 }
 
-static void on_whois_connect(GObject* src, GAsyncResult *res, t_wn_data *wnd) {
-  if (!wnd || !wnd->sock) return;
-  GError *err = NULL;
-  wnd->conn = g_socket_client_connect_to_host_finish(G_SOCKET_CLIENT(src), res, &err);
-  if (wnd->conn) {
-    wnd->input = g_io_stream_get_input_stream(G_IO_STREAM(wnd->conn));
-    wnd->output = g_io_stream_get_output_stream(G_IO_STREAM(wnd->conn));
-    if (wnd->input && wnd->output) {
-      char *request = g_strdup_printf("-m %s\n", wnd->addr); // form request
+static void on_whois_connect(GObject* source, GAsyncResult *result, t_wn_data *data) {
+  if (!data) return;
+  GError *error = NULL;
+  data->conn = g_socket_client_connect_to_host_finish(G_SOCKET_CLIENT(source), result, &error);
+  if (data->conn) {
+    data->input = g_io_stream_get_input_stream(G_IO_STREAM(data->conn));
+    data->output = g_io_stream_get_output_stream(G_IO_STREAM(data->conn));
+    if (data->input && data->output) {
+      char *request = g_strdup_printf("-m %s\n", data->addr); // form request
       if (request) {
-        g_input_stream_read_async(wnd->input, wnd->buff, WHOIS_NET_BUFF_SIZE,
-          G_PRIORITY_DEFAULT, NULL, (GAsyncReadyCallback)on_whois_read, wnd);
-        g_output_stream_write_all_async(wnd->output, request, strnlen(request, MAXHOSTNAME),
+        g_input_stream_read_async(data->input, data->buff, NET_BUFF_SIZE,
+          G_PRIORITY_DEFAULT, NULL, (GAsyncReadyCallback)on_whois_read, data);
+        g_output_stream_write_all_async(data->output, request, strnlen(request, MAXHOSTNAME),
           G_PRIORITY_DEFAULT, NULL, (GAsyncReadyCallback)on_whois_write_all, request);
         return;
-      } else WHOIS_WARN("%s: g_strdup_printf() failed", wnd->addr);
-    } else WHOIS_WARN("get %s stream failed", wnd->input ? "output" : "input");
-  } else WHOIS_ERR("connection failed");
-  close_wnd(wnd);
+      } else WARN("%s: g_strdup_printf() failed", data->addr);
+    } else WARN("get %s stream failed", data->input ? "output" : "input");
+  } else ERRLOG("whois connection failed");
+  whois_data_close(data);
 }
 
-static void add_ref_to_wnd(t_wn_data *wnd, t_hop *hop, int andx) {
-  if (!wnd || !hop) return;
-  int vacant = -1;
-  for (int i = 0; i < WN_REF_MAX; i++) {
-    if ((wnd->ref[i].hop == hop) && (wnd->ref[i].andx == andx)) {
-      WHOIS_WARN("%s is already in list", wnd->addr);
-      return;
-    }
-    if (!wnd->ref[i].hop) vacant = i;
-  }
-  if (vacant < 0) WHOIS_WARN("%s: no vacant references", wnd->addr);
-  else {
-    wnd->ref[vacant].hop = hop;
-    wnd->ref[vacant].andx = andx;
-  }
-}
-
-static t_wn_data* save_wnd(const gchar *addr, t_hop *hop, int andx) {
+static t_wn_data* whois_data_save(const gchar *addr, t_hop *hop, int ndx) {
   if (!hop || !addr) return NULL;
   for (int i = 0; i < WN_DATA_MAX; i++) {
     if (!wn_data[i].addr) { // vacant
       UPD_STR(wn_data[i].addr, g_strndup(addr, MAXHOSTNAME));
-      if (!wn_data[i].addr) { WHOIS_WARN("%s: g_strndup() failed", addr); return NULL; }
-      wn_data[i].buff = g_malloc(WHOIS_NET_BUFF_SIZE);
+      if (!wn_data[i].addr) { WARN("%s: g_strndup() failed", addr); return NULL; }
+      wn_data[i].buff = g_malloc0(NET_BUFF_SIZE);
       if (!wn_data[i].buff) {
         UPD_STR(wn_data[i].addr, NULL);
-        WHOIS_WARN("%s: g_malloc() failed", addr);
+        WARN("%s: g_malloc0() failed", addr);
         return NULL;
       }
-      add_ref_to_wnd(&wn_data[i], hop, andx);
+      ADD_REF_OR_RET(&wn_data[i].refs);
       return &wn_data[i];
     }
   }
-  WHOIS_WARN("%s: no vacant slots", addr);
+  WARN("%s: no vacant slots", addr);
   return NULL;
 }
 
-static t_wn_data* new_addr_in_wnd(const gchar *addr, t_hop *hop, int andx) {
+static t_wn_data* whois_data_add_addr(const gchar *addr, t_hop *hop, int ndx) {
   if (!hop || !addr) return NULL;
   for (int i = 0; i < WN_DATA_MAX; i++) {
     if (STR_EQ(addr, wn_data[i].addr)) {
-      add_ref_to_wnd(&wn_data[i], hop, andx);
+      ADD_REF_OR_RET(&wn_data[i].refs);
       return NULL;
     }
   }
-  return save_wnd(addr, hop, andx);
+  return whois_data_save(addr, hop, ndx);
 }
 
 
 // pub
 //
 
-void whois_resolv(t_hop *hop, int andx) {
-  if (!hop) return;
-  gchar *addr = hop->host[andx].addr;
-  if (!addr) return;
-  t_wn_cache *wnc = addr_in_wnc(addr);
-  if (wnc) // update with cached data and return
-    dup_whois_elems(wnc->elem, hop->whois[andx].elem, hop->wcached);
-  else {
-    t_wn_data *wn_data = new_addr_in_wnd(addr, hop, andx);
-    if (wn_data) {
-      wn_data->sock = g_socket_client_new();
-      if (wn_data->sock)
-        g_socket_client_connect_to_host_async(wn_data->sock, WHOIS_HOST, WHOIS_PORT,
-          NULL, (GAsyncReadyCallback)on_whois_connect, wn_data);
-      else WHOIS_WARN("%s failed", "g_socket_client_new()");
+void whois_resolv(t_hop *hop, int ndx) {
+  if (hop) {
+    gchar *addr = hop->host[ndx].addr;
+    if (addr) {
+      t_wn_cache *cache = whois_cache_find_addr(addr);
+      if (cache) // update with cached data and return
+        whois_copy_elems(cache->whois.elem, hop->whois[ndx].elem, hop->wcached);
+      else {
+        t_wn_data *data = whois_data_add_addr(addr, hop, ndx);
+        if (data) {
+          GSocketClient *sock = g_socket_client_new();
+          if (sock) {
+            g_socket_client_connect_to_host_async(sock, WHOIS_HOST, WHOIS_PORT, NULL,
+              (GAsyncReadyCallback)on_whois_connect, data);
+            g_object_unref(sock);
+          } else WARN("%s failed", "g_socket_client_new()");
+        }
+      }
     }
   }
 }
 
 void whois_free_cache(void) {
   for (int i = 0; i < WN_CACHE_MAX; i++) {
-    wn_cache[i].addr[0] = 0;
+    UPD_STR(wn_cache[i].addr, NULL);
     for (int j = 0; j < WHOIS_NDX_MAX; j++)
-      UPD_STR(wn_cache[i].elem[j], NULL);
+      UPD_STR(wn_cache[i].whois.elem[j], NULL);
   }
   for (int i = 0; i < WN_DATA_MAX; i++)
-    close_wnd(&wn_data[i]);
+    whois_data_close(&wn_data[i]);
 }
 

@@ -9,13 +9,11 @@
 #define PING "/bin/ping"
 #define SKIPNAME PING ": "
 
-#define PING_ERR(at) { WARN("%s: %s: %s", __func__, at, err ? err->message : UNKN_ERR); g_error_free(err); }
-
 #define RESET_ISTREAM(ins, buff, cb, data) g_input_stream_read_async(G_INPUT_STREAM(ins), \
   (buff), BUFF_SIZE, G_PRIORITY_DEFAULT, NULL, (GAsyncReadyCallback)(cb), (data))
 
-t_opts opts = { .target = NULL, .dns = true, .count = DEF_COUNT, .qos = DEF_QOS, .size = DEF_PSIZE,
-  .min = 0, .lim = MAXTTL, .timeout = DEF_TOUT, .tout_usec = DEF_TOUT * 1000000 };
+t_opts opts = { .target = NULL, .dns = true, .count = 5/*DEF_COUNT*/, .qos = DEF_QOS, .size = DEF_PSIZE,
+  .min = 0, .lim = 1/*MAXTTL*/, .timeout = DEF_TOUT, .tout_usec = DEF_TOUT * 1000000 };
 t_pinger_state pinger_state;
 guint stat_timer;
 
@@ -79,10 +77,10 @@ static void on_stdout(GObject *stream, GAsyncResult *result, t_proc *p) {
   if (!G_IS_INPUT_STREAM(stream)) return;
   if (!p || (p->ndx < 0)) return;
   if (p->ndx < 0) return;
-  GError *err = NULL;
-  gssize size = g_input_stream_read_finish(G_INPUT_STREAM(stream), result, &err);
+  GError *error = NULL;
+  gssize size = g_input_stream_read_finish(G_INPUT_STREAM(stream), result, &error);
   if (size < 0) {    // error
-    PING_ERR("stdin read");
+    ERROR("stdin read");
     pinger_stop_nth(p->ndx, "stdin error");
   } else if (size) { // data
     gssize left = BUFF_SIZE - size;
@@ -98,10 +96,10 @@ static void on_stdout(GObject *stream, GAsyncResult *result, t_proc *p) {
 static void on_stderr(GObject *stream, GAsyncResult *result, t_proc *p) {
   if (!G_IS_INPUT_STREAM(stream)) return;
   if (!p || (p->ndx < 0)) return;
-  GError *err = NULL;
-  gssize size = g_input_stream_read_finish(G_INPUT_STREAM(stream), result, &err);
+  GError *error = NULL;
+  gssize size = g_input_stream_read_finish(G_INPUT_STREAM(stream), result, &error);
   if (size < 0) {    // error
-    PING_ERR("stderr read");
+    ERROR("stderr read");
   } else if (size) { // data
     gchar *s = p->err;
     gssize left = BUFF_SIZE - size;
@@ -117,9 +115,9 @@ static void on_stderr(GObject *stream, GAsyncResult *result, t_proc *p) {
 #define MAX_ARGC 32
 
 static bool create_ping(int at, t_proc *p) {
-  if (!p->out) p->out = g_malloc(BUFF_SIZE);
-  if (!p->err) p->err = g_malloc(BUFF_SIZE);
-  if (!p->out || !p->err) { WARN("%s(%d): g_malloc() failed", __func__, at); return false; }
+  if (!p->out) p->out = g_malloc0(BUFF_SIZE);
+  if (!p->err) p->err = g_malloc0(BUFF_SIZE);
+  if (!p->out || !p->err) { WARN("%s(%d): g_malloc0() failed", __func__, at); return false; }
   const gchar** argv = calloc(MAX_ARGC, sizeof(gchar*)); int argc = 0;
   argv[argc++] = PING;
   argv[argc++] = "-OD";
@@ -138,9 +136,9 @@ static bool create_ping(int at, t_proc *p) {
     g_snprintf(sipv, sizeof(sipv), "-%d",    opts.ipv);  argv[argc++] = sipv; }
   argv[argc++] = "--";
   argv[argc++] = opts.target;
-  GError *err = NULL;
-  p->proc = g_subprocess_newv(argv, G_SUBPROCESS_FLAGS_STDOUT_PIPE | G_SUBPROCESS_FLAGS_STDERR_PIPE, &err);
-  if (!p->proc) { PING_ERR("create subprocess"); return false; }
+  GError *error = NULL;
+  p->proc = g_subprocess_newv(argv, G_SUBPROCESS_FLAGS_STDOUT_PIPE | G_SUBPROCESS_FLAGS_STDERR_PIPE, &error);
+  if (!p->proc) { ERROR("create subprocess"); return false; }
   g_subprocess_wait_check_async(p->proc, NULL, set_finish_flag, p);
   GInputStream *output = g_subprocess_get_stdout_pipe(p->proc);
   GInputStream *errput = g_subprocess_get_stderr_pipe(p->proc);
@@ -192,9 +190,9 @@ void pinger_stop_nth(int nth, const gchar* reason) {
         id = g_subprocess_get_identifier(p->proc);
         if (id) { WARN("Cannot stop subprocess[id=%s]", id); return; }
       }
-      GError *err = NULL;
-      g_subprocess_wait(p->proc, NULL, &err);
-      if (err) { WARN("%s(%d): pid=%s: %s", __func__, nth, id, err->message); g_error_free(err); }
+      GError *error = NULL;
+      g_subprocess_wait(p->proc, NULL, &error);
+      if (error) { WARN("%s(%d): pid=%s: %s", __func__, nth, id, error->message); g_error_free(error); }
       else LOG("ping[ttl=%d] finished (rc=%d)", p->ndx + 1, g_subprocess_get_status(p->proc));
     }
     if (!id) { set_finish_flag(NULL, NULL, p); p->proc = NULL; }

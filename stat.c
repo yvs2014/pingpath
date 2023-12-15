@@ -1,9 +1,10 @@
 
 #include "stat.h"
-#include "pinger.h"
-#include "whois.h"
-#include "tabs/ping.h"
 #include "common.h"
+#include "pinger.h"
+#include "dns.h"
+//#include "whois.h"
+#include "tabs/ping.h"
 
 // stat formats
 #define UNKN    "???"
@@ -21,7 +22,7 @@ static t_host_max host_max;
 static int whois_max[WHOIS_NDX_MAX];
 static const int wndx2endx[WHOIS_NDX_MAX] = {
   [WHOIS_AS_NDX] = ELEM_AS, [WHOIS_CC_NDX] = ELEM_CC, [WHOIS_DESC_NDX] = ELEM_DESC, [WHOIS_RT_NDX] = ELEM_RT };
-static int visibles;
+static int visibles = -1;
 
 #define ELEM_HOST_HDR "Host"
 #define ELEM_AS_HDR   "AS"
@@ -57,44 +58,35 @@ t_stat_elem statelem[ELEM_MAX] = { // TODO: editable from option menu
 
 
 // aux
-
-static inline void chk_addr_width(int l) {
-  if (host_max.addr < l) {
-    host_max.addr = l;
-    if (!opts.dns) pingtab_update_width(l, ELEM_HOST);
-  }
-}
-
-static inline void chk_name_width(int l) {
-  if (host_max.name < l) {
-    host_max.name = l;
-    if (opts.dns) pingtab_update_width(l, ELEM_HOST);
-  }
-}
+//
 
 static void update_hmax(const gchar* addr, const gchar *name) {
+  int la = addr ? g_utf8_strlen(addr, MAXHOSTNAME) : 0;
+  int ln = name ? g_utf8_strlen(name, MAXHOSTNAME) : 0;
   if (addr) {
-    int l = g_utf8_strlen(addr, MAXHOSTNAME);
-    chk_addr_width(l);
-    chk_name_width(name ? g_utf8_strlen(name, MAXHOSTNAME) : l);
+    stat_check_hostaddr_max(la);
+    stat_check_hostname_max(name ? ln : la);
   } else if (name)
-    chk_name_width(g_utf8_strlen(name, MAXHOSTNAME));
+    stat_check_hostname_max(ln);
 }
 
 static void update_addrname(int at, t_host *b) { // addr is mandatory, name not
   if (!b) return;
   bool done;
   int vacant = -1;
+  t_hop *hop = &hops[at];
   for (int i = 0; i < MAXADDR; i++) {
-    t_host *a = &hops[at].host[i];
+    t_host *a = &hop->host[i];
     if ((vacant < 0) && !(a->addr)) vacant = i;
     done = STR_EQ(a->addr, b->addr);
     if (done) {
-      if (!a->name && b->name) { // add first resolved hostname to not change it back-n-forth
-        UPD_STR(a->name, b->name);
-        update_hmax(NULL, b->name);
-        hops[at].cached = false;
-        LOG("set hostname[%d]: %s", at, b->name);
+      if (!a->name) {
+        if (b->name) { // add first resolved hostname to not change it back-n-forth
+          UPD_STR(a->name, b->name);
+          update_hmax(NULL, b->name);
+          hops[at].cached = false;
+          LOG("set hostname[%d]: %s", at, b->name);
+        } else dns_resolv(hop, i); // otherwise run dns resolver
       }
       break;
     }
@@ -102,17 +94,18 @@ static void update_addrname(int at, t_host *b) { // addr is mandatory, name not
   if (!done) { // add addrname
     if (vacant < 0) { LOG("no free slots for hop#%d address(%s)", at, b->addr); }
     else {
-      t_host *a = &(hops[at].host[vacant]);
+      t_host *a = &hop->host[vacant];
       UPD_STR(a->addr, b->addr);
       UPD_STR(a->name, b->name);
       update_hmax(b->addr, b->name);
       hops[at].cached = false;
       for (int j = 0; j < WHOIS_NDX_MAX; j++) {
-        UPD_STR(hops[at].whois[vacant].elem[j], NULL);
+        UPD_STR(hop->whois[vacant].elem[j], NULL);
         hops[at].wcached[j] = false;
       }
-      whois_resolv(&hops[at], vacant);
+//      whois_resolv(hop, vacant);
       LOG("set addrname[%d]: %s, %s", at, b->addr, b->name);
+      if (!b->name) dns_resolv(hop, vacant); // run dns resolver
     }
   }
   // cleanup dups
@@ -164,7 +157,7 @@ static void update_stat(int at, int rtt, t_tseq *mark, int rxtx) {
   // update global gotdata flag
   if (!pinger_state.gotdata) pinger_state.gotdata = true;
   if (!hops[at].tout) {
-    if ((at > visibles) && (at < hops_no)) {
+    if ((visibles < at) && (at < hops_no)) {
       visibles = at;
       pingtab_vis_rows(at + 1);
     }
@@ -288,7 +281,7 @@ static void set_initial_maxes(void) {
 void stat_init(bool clean) { // clean start or on reset
   if (clean) {
     hops_no = MAXTTL;
-    visibles = 0;
+    visibles = -1;
     pinger_state.gotdata = false;
     pinger_state.reachable = false;
     memset(hops, 0, sizeof(hops));
@@ -297,6 +290,7 @@ void stat_init(bool clean) { // clean start or on reset
     if (clean) hops[i].reach = true;
     hops[i].last = hops[i].best = hops[i].wrst = -1;
     hops[i].loss = hops[i].avrg = hops[i].jttr = -1;
+    hops[i].at = i;
   }
   set_initial_maxes();
 }
@@ -417,6 +411,20 @@ int stat_elem_max(int typ) {
     case ELEM_FILL: return ELEM_LEN / 2;
   }
   return ELEM_LEN;
+}
+
+void stat_check_hostaddr_max(int l) {
+  if (host_max.addr < l) {
+    host_max.addr = l;
+    if (!opts.dns) pingtab_update_width(l, ELEM_HOST);
+  }
+}
+
+void stat_check_hostname_max(int l) {
+  if (host_max.name < l) {
+    host_max.name = l;
+    if (opts.dns) pingtab_update_width(l, ELEM_HOST);
+  }
 }
 
 void stat_check_whois_max(gchar* elem[]) {

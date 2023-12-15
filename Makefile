@@ -9,20 +9,20 @@ CFLAGS += -Wall
 ifeq ($(CC),gcc)
 CFLAGS += -fanalyzer
 endif
-#CFLAGS += -g
+CFLAGS += -g
 
 PKGCONFIG = $(shell which pkg-config)
 
-SRC = $(NAME).c aux.c
-SRC += pinger.c parser.c stat.c whois.c valid.c
-SRC += tabs/ping.c
+SRC = $(NAME).c common.c
+SRC += pinger.c parser.c stat.c dns.c whois.c
 SRC += ui/style.c ui/appbar.c ui/action.c ui/option.c
+SRC += tabs/ping.c
 
 OBJS = $(SRC:.c=.o)
 
 all: $(NAME)
 
-%.o: %.c %.h common.h aux.h
+%.o: %.c %.h common.h
 	$(CC) -c -o $@ $(CFLAGS) $<
 
 $(NAME): $(OBJS)
