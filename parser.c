@@ -26,12 +26,10 @@
 #define WHOIS_AS_TAG   "origin"
 #define WHOIS_DESC_TAG "descr"
 
-#define WHOIS_UNKN    "" // "?" "???"
-
-#define WHOIS_NL      "\n"
-#define WHOIS_COMMENT '%'
-#define WHOIS_DELIM   ':'
-#define WHOIS_CCDEL   ','
+#define WHOIS_NL       "\n"
+#define WHOIS_COMMENT  '%'
+#define WHOIS_DELIM    ':'
+#define WHOIS_CCDEL    ','
 
 const int tos_max   = 255;
 const int psize_min = 16;
@@ -330,6 +328,6 @@ void parser_whois(gchar *buff, int sz, gchar* elem[]) {
       if (ndx >= 0) elem[ndx] = g_strndup(val, MAXHOSTNAME);
     }
   }
-  for (int i = 0; i < WHOIS_NDX_MAX; i++) if (!elem[i]) elem[i] = g_strdup(WHOIS_UNKN);
+  for (int i = 0; i < WHOIS_NDX_MAX; i++) if (!elem[i]) elem[i] = g_strdup(unkn_whois);
 }
 

@@ -12,10 +12,15 @@ static GSList *dns_query;
 static GSList *dns_cache;
 
 #ifdef DNS_DEBUGGING
-#define PR_DNS_Q { LOG("DNS: %s: q=%p", __func__, dns_query); _pr_qlist(dns_query); }
-#define PR_DNS_C { LOG("DNS: %s: c=%p", __func__, dns_cache); _pr_clist(dns_cache); }
 #define DNS_DEBUG(fmt, ...) LOG("DNS: " fmt, __VA_ARGS__)
-void _pr_qlist(GSList *qlist) {
+#else
+#define DNS_DEBUG(...) {}
+#endif
+
+#if DNS_DEBUGGING && DNS_DEBUGGING > 1
+#define PR_DNS_Q { LOG("DNS: %s: q=%p", __func__, dns_query); _pr_dns_qlist(dns_query); }
+#define PR_DNS_C { LOG("DNS: %s: c=%p", __func__, dns_cache); _pr_dns_clist(dns_cache); }
+static void _pr_dns_qlist(GSList *qlist) {
   int i = 0;
   for (GSList* p = qlist; p; p = p->next, i++) {
     t_dns_elem *data = p->data; if (!data) continue;
@@ -23,7 +28,7 @@ void _pr_qlist(GSList *qlist) {
     print_refs(data->refs, "DNS:  ");
   }
 }
-void _pr_clist(GSList *clist) {
+static void _pr_dns_clist(GSList *clist) {
   int i = 0;
   for (GSList* p = clist; p; p = p->next, i++) {
     t_host *c = p->data; if (!c) continue;
@@ -33,7 +38,6 @@ void _pr_clist(GSList *clist) {
 #else
 #define PR_DNS_Q {}
 #define PR_DNS_C {}
-#define DNS_DEBUG(...) {}
 #endif
 
 
@@ -51,13 +55,13 @@ static int dns_query_cmp(const void *a, const void *b) {
 
 static t_host* dns_cache_find(gchar* addr) {
   t_host find = { .addr = addr };
-  GSList *found = g_slist_find_custom(dns_cache, &find, (GCompareFunc)host_cmp);
+  GSList *found = g_slist_find_custom(dns_cache, &find, host_cmp);
   return found ? found->data : NULL;
 }
 
 static t_dns_elem* dns_query_find(gchar* addr) {
   t_dns_elem find = { .host = { .addr = addr }};
-  GSList *found = g_slist_find_custom(dns_query, &find, (GCompareFunc)dns_query_cmp);
+  GSList *found = g_slist_find_custom(dns_query, &find, dns_query_cmp);
   return found ? found->data : NULL;
 }
 
@@ -85,9 +89,9 @@ static void dns_cache_update(gchar *addr, gchar *name) {
   host = g_malloc0(sizeof(t_host));
   if (host) {
     host->addr = g_strndup(addr, MAXHOSTNAME);
-    host->name = g_strndup(name, MAXHOSTNAME);
+    host->name = g_strndup(name ? name : unkn_field, MAXHOSTNAME);
     if (host->addr && host->name) {
-      if (list_add_nodup(&dns_cache, host, (GCompareFunc)host_cmp, DNS_CACHE_MAX)) {
+      if (list_add_nodup(&dns_cache, host, host_cmp, DNS_CACHE_MAX)) {
         LOG("dns cache updated with addr=%s name=%s", host->addr, host->name);
         PR_DNS_C; return;
       } else WARN("%s: add cache failed", addr);
@@ -97,7 +101,7 @@ static void dns_cache_update(gchar *addr, gchar *name) {
   g_free(host);
 }
 
-t_dns_elem* dns_query_save(const gchar *addr, t_hop *hop, int ndx) {
+static t_dns_elem* dns_query_save(const gchar *addr, t_hop *hop, int ndx) {
   if (!hop || !addr) return NULL;
   t_dns_elem *elem = g_malloc0(sizeof(t_dns_elem));
   if (!elem) return NULL;
@@ -128,7 +132,7 @@ static void on_dns_lookup(GObject* src, GAsyncResult *result, t_dns_elem *elem) 
   GError *error = NULL;
   gchar *name = g_resolver_lookup_by_address_finish(G_RESOLVER(src), result, &error);
   if (elem) {
-    if (!name) LOG("%s unresolved", elem->host.addr);
+    if (!name) DNS_DEBUG("%s unresolved", elem->host.addr);
     elem->host.name = name;
     DNS_DEBUG("%s(%s) name=%s", __func__, elem->host.addr, name);
     PR_DNS_Q;
@@ -144,7 +148,7 @@ static void on_dns_lookup(GObject* src, GAsyncResult *result, t_dns_elem *elem) 
 // pub
 //
 
-void dns_resolv(t_hop *hop, int ndx) {
+void dns_lookup(t_hop *hop, int ndx) {
   if (!hop) return;
   gchar *addr = hop->host[ndx].addr;
   if (!addr) return;
@@ -153,7 +157,7 @@ void dns_resolv(t_hop *hop, int ndx) {
   if (cached) { // update with cached data and return
     UPD_NSTR(hop->host[ndx].name, cached->name, MAXHOSTNAME);
     if (hop->cached) hop->cached = false;
-    DNS_DEBUG("cached[%d,%d] addr=%s name=%s", hop->at, ndx, addr, cached->name);
+    DNS_DEBUG("cache hit[%d,%d]: addr=%s -> name=%s", hop->at, ndx, addr, cached->name);
     return;
   }
   PR_DNS_Q;
@@ -163,7 +167,7 @@ void dns_resolv(t_hop *hop, int ndx) {
   if (res) {
     GInetAddress *ia = g_inet_address_new_from_string(addr);
     if (ia) {
-      DNS_DEBUG("send q(%s)", addr);
+      DNS_DEBUG("send query=%s", addr);
       g_resolver_lookup_by_address_async(res, ia, NULL, (GAsyncReadyCallback)on_dns_lookup, query);
       g_object_unref(ia);
     } else WARN("%s failed", "g_inet_address_new_from_string()");

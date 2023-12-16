@@ -9,7 +9,7 @@ CFLAGS += -Wall
 ifeq ($(CC),gcc)
 CFLAGS += -fanalyzer
 endif
-CFLAGS += -g
+#CFLAGS += -g
 
 PKGCONFIG = $(shell which pkg-config)
 

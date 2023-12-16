@@ -1,3 +1,13 @@
+pingpath (0.1.32) lunar mantic; urgency=low
+
+  * rewrite whois resolver using g_lists in place of static arrays
+
+  * tune up a bit dns lookups
+
+  * tune up UI dns/whois enablers
+
+ -- yvs <VSYakovetsky@gmail.com>  Sun, 17 Dec 2023 00:02:41 +0200
+
 pingpath (0.1.31) lunar mantic; urgency=low
 
   * [intermediate] add dns hostname lookup

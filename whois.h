@@ -4,6 +4,6 @@
 #include "common.h"
 
 void whois_resolv(t_hop *hop, int ndx);
-void whois_free_cache(void);
+void whois_cache_free(void);
 
 #endif

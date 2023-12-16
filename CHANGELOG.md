@@ -1,3 +1,8 @@
+## 0.1.32
+- rewrite whois resolver using g_lists in place of static arrays
+- tune up a bit dns lookups
+- tune up UI dns/whois enablers
+
 ## 0.1.31
 - [intermediate] add dns hostname lookup
 

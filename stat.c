@@ -3,11 +3,10 @@
 #include "common.h"
 #include "pinger.h"
 #include "dns.h"
-//#include "whois.h"
+#include "whois.h"
 #include "tabs/ping.h"
 
 // stat formats
-#define UNKN    "???"
 #define INT_FMT "%d"
 #define DBL_FMT "%.*f"
 #define DBL_SFX DBL_FMT "%s"
@@ -55,7 +54,7 @@ t_stat_elem statelem[ELEM_MAX] = { // TODO: editable from option menu
   [ELEM_AVRG] = { .enable = true, .name = ELEM_AVRG_HDR },
   [ELEM_JTTR] = { .enable = true, .name = ELEM_JTTR_HDR },
 };
-
+bool whois_enable; // true if any of {ELEM_AS,ELEM_CC,ELEM_DESC,ELEM_RT} is enabled
 
 // aux
 //
@@ -86,7 +85,7 @@ static void update_addrname(int at, t_host *b) { // addr is mandatory, name not
           update_hmax(NULL, b->name);
           hops[at].cached = false;
           LOG("set hostname[%d]: %s", at, b->name);
-        } else dns_resolv(hop, i); // otherwise run dns resolver
+        } else if (opts.dns) dns_lookup(hop, i); // otherwise run dns lookup
       }
       break;
     }
@@ -103,9 +102,9 @@ static void update_addrname(int at, t_host *b) { // addr is mandatory, name not
         UPD_STR(hop->whois[vacant].elem[j], NULL);
         hops[at].wcached[j] = false;
       }
-//      whois_resolv(hop, vacant);
       LOG("set addrname[%d]: %s, %s", at, b->addr, b->name);
-      if (!b->name) dns_resolv(hop, vacant); // run dns resolver
+      if (!b->name && opts.dns) dns_lookup(hop, vacant); // run dns lookup
+      if (whois_enable) whois_resolv(hop, vacant);       // run whois resolv
     }
   }
   // cleanup dups
@@ -173,8 +172,9 @@ static int calc_rtt(int at, t_tseq *mark) {
 
 static inline bool seq_accord(int prev, int curr) { return ((curr - prev) == 1); }
 
-#define ADDRONLY(addr) ((addr) ? (addr) : UNKN)
-#define ADDRNAME(addr, name) ((name) ? (name) : ADDRONLY(addr))
+// Note: name[0] is shortcut for "" test instead of STR_NEQ(name, unkn_field)
+#define ADDRNAME(addr, name) ((name && name[0]) ? (name) : ADDRONLY(addr))
+#define ADDRONLY(addr) ((addr) ? (addr) : unkn_field)
 static inline const gchar* addrname(int ndx, t_host *host) {
   return opts.dns ? ADDRNAME(host[ndx].addr, host[ndx].name) : ADDRONLY(host[ndx].addr);
 }
@@ -193,7 +193,7 @@ static const gchar *info_host(int at) {
     }
     if (hop->info && (l < BUFF_SIZE)) l += g_snprintf(s + l, BUFF_SIZE - l, "\n%s", hop->info);
     hop->cached = true;
-    LOG("hostinfo cache[%d] updated with %s", at, s);
+    LOG("hostinfo cache[%d] updated with %s", at, (s && s[0]) ? s : log_empty);
     return s;
   }
   return NULL;
@@ -213,7 +213,7 @@ static const gchar *info_whois(int at, int wtyp) {
         l += g_snprintf(s + l, BUFF_SIZE - l, "\n%s", elem);
       }
       hops[at].wcached[wtyp] = true;
-      LOG("whois cache[%d,%d] updated with %s", at, wtyp, s);
+      LOG("whois cache[%d,%d] updated with %s", at, wtyp, (s && s[0]) ? s : log_empty);
     }
     return s;
   }
@@ -293,6 +293,7 @@ void stat_init(bool clean) { // clean start or on reset
     hops[i].at = i;
   }
   set_initial_maxes();
+  stat_whois_enabler();
 }
 
 void stat_free(void) {
@@ -435,6 +436,30 @@ void stat_check_whois_max(gchar* elem[]) {
         whois_max[i] = len; pingtab_update_width(len, wndx2endx[i]);
       }
     }
+  }
+}
+
+void stat_whois_enabler(void) {
+  bool enable = false;
+  for (int i = 0; i < ELEM_MAX; i++) switch (i) {
+    case ELEM_AS:
+    case ELEM_CC:
+    case ELEM_DESC:
+    case ELEM_RT:
+      if (statelem[i].enable && !enable) enable = true;
+      break;
+  }
+  if (enable != whois_enable) {
+    whois_enable = enable;
+    LOG("whois %sabled", enable ? "en" : "dis");
+  }
+}
+
+void stat_run_whois_resolv(void) {
+  for (int at = opts.min; at < opts.lim; at++) {
+    t_hop *hop = &hops[at];
+    for (int i = 0; i < MAXADDR; i++)
+      if (hop->host[i].addr) whois_resolv(hop, i);
   }
 }
 

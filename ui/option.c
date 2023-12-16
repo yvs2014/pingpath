@@ -164,12 +164,9 @@ static void toggle_cb(GtkCheckButton *check, t_ent_bool *en) {
   g_return_if_fail(GTK_IS_CHECK_BUTTON(check));
   switch (en->en.typ) {
     case ENT_BOOL_DNS:
-      check_bool_val(check, en, toggled_dns); break;
+      check_bool_val(check, en, toggled_dns);
+      break;
     case ENT_BOOL_HOST:
-    case ENT_BOOL_AS:
-    case ENT_BOOL_CC:
-    case ENT_BOOL_DESC:
-    case ENT_BOOL_RT:
     case ENT_BOOL_LOSS:
     case ENT_BOOL_SENT:
     case ENT_BOOL_RECV:
@@ -178,7 +175,16 @@ static void toggle_cb(GtkCheckButton *check, t_ent_bool *en) {
     case ENT_BOOL_WRST:
     case ENT_BOOL_AVRG:
     case ENT_BOOL_JTTR:
-      check_bool_val(check, en, pingtab_vis_cols); break;
+      check_bool_val(check, en, pingtab_vis_cols);
+      break;
+    case ENT_BOOL_AS:
+    case ENT_BOOL_CC:
+    case ENT_BOOL_DESC:
+    case ENT_BOOL_RT:
+      check_bool_val(check, en, pingtab_vis_cols);
+      stat_whois_enabler();
+      if (whois_enable) stat_run_whois_resolv();
+      break;
   }
 }
 
@@ -194,8 +200,8 @@ static void radio_cb(GtkCheckButton *check, t_ent_rad_map *map) {
       if (selected) {
         if (map->val != *(en->pval)) {
           *(en->pval) = map->val;
-         if (map->val) LOG("%s: %d", en->c.en.name, map->val);
-         else LOG("%s: %s", en->c.en.name, map->str);
+         if (map->val) { LOG("%s: %d", en->c.en.name, map->val); }
+         else { LOG("%s: %s", en->c.en.name, map->str); }
         }
       }
     }

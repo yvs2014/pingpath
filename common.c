@@ -2,6 +2,14 @@
 #include <time.h>
 #include "common.h"
 
+#ifdef LOGGING
+const char *log_empty  = "<empty>";
+#endif
+
+const char *unkn_error = "unknown error";
+const char *unkn_field = ""; // "?" "???" (see notes)
+const char *unkn_whois = "";
+
 const char *timestampit(void) {
   static char now_ts[32];
   time_t now = time(NULL);

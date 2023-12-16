@@ -142,9 +142,11 @@ gboolean pingtab_update(gpointer data) {
       for (int j = 0; j < ELEM_MAX; j++)
         if ((j != ELEM_NO) && statelem[j].enable) {
           GtkWidget *label = listbox.lines[i].cells[j];
-          const gchar *elem = stat_elem(i, j);
-          const gchar *cell = gtk_label_get_text(GTK_LABEL(label));
-          if (STR_NEQ(elem, cell)) gtk_label_set_text(GTK_LABEL(label), elem);
+          if (GTK_IS_LABEL(label)) {
+            const gchar *elem = stat_elem(i, j);
+            const gchar *cell = gtk_label_get_text(GTK_LABEL(label));
+            if (STR_NEQ(elem, cell)) gtk_label_set_text(GTK_LABEL(label), elem);
+          }
         }
   { // no data display
     bool notyet = info_mesg == notyet_mesg;
@@ -173,7 +175,7 @@ void pingtab_vis_rows(int no) {
 }
 
 void pingtab_vis_cols(void) {
-  LOG("set %s", "visible columns");
+  DEBUG("set %s", "visible columns");
   for (int i = 0; i < MAXTTL; i++) set_vis_cells(&listbox.header[i]);
   for (int i = 0; i < MAXTTL; i++) set_vis_cells(&listbox.lines[i]);
   pingtab_wrap_update();

@@ -12,8 +12,8 @@
 #define RESET_ISTREAM(ins, buff, cb, data) g_input_stream_read_async(G_INPUT_STREAM(ins), \
   (buff), BUFF_SIZE, G_PRIORITY_DEFAULT, NULL, (GAsyncReadyCallback)(cb), (data))
 
-t_opts opts = { .target = NULL, .dns = true, .count = 5/*DEF_COUNT*/, .qos = DEF_QOS, .size = DEF_PSIZE,
-  .min = 0, .lim = 1/*MAXTTL*/, .timeout = DEF_TOUT, .tout_usec = DEF_TOUT * 1000000 };
+t_opts opts = { .target = NULL, .dns = true, .count = DEF_COUNT, .qos = DEF_QOS, .size = DEF_PSIZE,
+  .min = 0, .lim = MAXTTL, .timeout = DEF_TOUT, .tout_usec = DEF_TOUT * 1000000 };
 t_pinger_state pinger_state;
 guint stat_timer;
 
@@ -213,7 +213,7 @@ void pinger_free(void) {
   for (int i = 0; i < MAXTTL; i++) FREE_PROC_BUFF(i);
 }
 
-void pinger_free_errors(void) { for (int i = opts.min; i < opts.lim; i++) pinger_free_nth_error(i); }
+void pinger_free_errors(void) { for (int i = 0; i < MAXTTL; i++) pinger_free_nth_error(i); }
 
 inline void pinger_free_nth_error(int nth) { UPD_STR(ping_errors[nth], NULL); }
 

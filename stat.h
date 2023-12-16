@@ -45,6 +45,8 @@ int stat_elem_max(int typ);
 void stat_check_hostaddr_max(int l);
 void stat_check_hostname_max(int l);
 void stat_check_whois_max(gchar* elem[]);
+void stat_whois_enabler(void);
+void stat_run_whois_resolv(void);
 
 typedef struct t_stat_elem {
   bool enable;
@@ -53,5 +55,6 @@ typedef struct t_stat_elem {
 
 extern int hops_no;
 extern t_stat_elem statelem[ELEM_MAX]; // map indexes to elems
+extern bool whois_enable;
 
 #endif

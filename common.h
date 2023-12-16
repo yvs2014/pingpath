@@ -4,7 +4,7 @@
 #include <gtk/gtk.h>
 
 #define APPNAME "pingpath"
-#define VERSION "0.1.31"
+#define VERSION "0.1.32"
 
 #define MAXTTL  30
 #define MAXADDR 10
@@ -20,32 +20,6 @@
 #define BUFF_SIZE     1024
 #define PAD_SIZE        48
 
-#define LOGGING 1
-//#define DEBUGGING 1
-#define DNS_DEBUGGING 1
-
-#ifdef LOGGING
-#define LOG(fmt, ...) g_print("[%s] " fmt "\n", timestampit(), __VA_ARGS__)
-#else
-#define LOG(fmt, ...) {}
-#endif
-
-#ifdef DEBUGGING
-#define DEBUG(fmt, ...) LOG(fmt, __VA_ARGS__)
-#else
-#define DEBUG(fmt, ...) {}
-#endif
-
-#define UNKN_ERROR "unknown error"
-#define WARN(fmt, ...) g_warning("%s: " fmt "\n", __func__, __VA_ARGS__)
-#define ERROR(at) { g_warning("%s: %s: %s\n", __func__, at, error ? error->message : UNKN_ERROR); g_error_free(error); }
-#define ERRLOG(what) { LOG("%s: %s", what, error ? error->message : UNKN_ERROR); g_error_free(error); }
-
-#define STR_EQ(a, b) (!g_strcmp0(a, b))
-#define STR_NEQ(a, b) (g_strcmp0(a, b))
-#define UPD_STR(str, val) { g_free(str); str = g_strdup(val); }
-#define UPD_NSTR(str, val, max) { g_free(str); str = g_strndup(val, max); }
-
 #define EV_ACTIVE "activate"
 #define EV_TOGGLE "toggled"
 #define EV_SPIN   "value-changed"
@@ -57,6 +31,33 @@
 #define SUB_MENU_PROP      "icon-name"
 #define TO_LEFT_ICON       "go-previous-symbolic"
 #define TO_RIGHT_ICON      "go-next-symbolic"
+
+#define LOGGING 1
+//#define DEBUGGING 1
+//#define DNS_DEBUGGING 1
+//#define WHOIS_DEBUGGING 1
+
+#ifdef LOGGING
+#define LOG(fmt, ...) g_print("[%s] " fmt "\n", timestampit(), __VA_ARGS__)
+extern const char *log_empty;
+#else
+#define LOG(fmt, ...) {}
+#endif
+
+#ifdef DEBUGGING
+#define DEBUG(fmt, ...) LOG(fmt, __VA_ARGS__)
+#else
+#define DEBUG(fmt, ...) {}
+#endif
+
+#define WARN(fmt, ...) g_warning("%s: " fmt "\n", __func__, __VA_ARGS__)
+#define ERROR(at) { g_warning("%s: %s: %s\n", __func__, at, error ? error->message : unkn_error); g_error_free(error); }
+#define ERRLOG(what) { LOG("%s: %s", what, error ? error->message : unkn_error); g_error_free(error); }
+
+#define STR_EQ(a, b) (!g_strcmp0(a, b))
+#define STR_NEQ(a, b) (g_strcmp0(a, b))
+#define UPD_STR(str, val) { g_free(str); str = g_strdup(val); }
+#define UPD_NSTR(str, val, max) { g_free(str); str = g_strndup(val, max); }
 
 enum { ENT_BOOL_NONE, ENT_BOOL_DNS, ENT_BOOL_HOST, ENT_BOOL_AS, ENT_BOOL_CC, ENT_BOOL_DESC, ENT_BOOL_RT,
   ENT_BOOL_LOSS, ENT_BOOL_SENT, ENT_BOOL_RECV, ENT_BOOL_LAST, ENT_BOOL_BEST, ENT_BOOL_WRST,
@@ -99,6 +100,10 @@ typedef struct hop {
 } t_hop;
 
 typedef struct ref { t_hop *hop; int ndx; } t_ref;
+
+extern const char *unkn_error;
+extern const char *unkn_field;
+extern const char *unkn_whois;
 
 const char *timestampit(void);
 GtkListBoxRow* line_row_new(GtkWidget *child, bool visible);
