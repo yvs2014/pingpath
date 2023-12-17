@@ -2,6 +2,8 @@
 #include <time.h>
 #include "common.h"
 
+const char *appver = APPNAME "-" VERSION;
+
 #ifdef LOGGING
 const char *log_empty  = "<empty>";
 #endif

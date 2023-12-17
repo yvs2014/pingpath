@@ -1,3 +1,7 @@
+## 0.1.33
+- add help dialog
+- add 'exit' keyboard shortcut
+
 ## 0.1.32
 - rewrite whois resolver using g_lists in place of static arrays
 - tune up a bit dns lookups

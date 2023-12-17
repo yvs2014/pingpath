@@ -3,7 +3,7 @@
 
 #include <gtk/gtk.h>
 
-bool action_init(GtkApplication *app, GtkWidget* bar);
+bool action_init(GtkApplication *app, GtkWidget *win, GtkWidget* bar);
 void action_update(void);
 
 #endif

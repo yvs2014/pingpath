@@ -4,7 +4,7 @@
 #include <gtk/gtk.h>
 
 #define APPNAME "pingpath"
-#define VERSION "0.1.32"
+#define VERSION "0.1.33"
 
 #define MAXTTL  30
 #define MAXADDR 10
@@ -59,6 +59,48 @@ extern const char *log_empty;
 #define UPD_STR(str, val) { g_free(str); str = g_strdup(val); }
 #define UPD_NSTR(str, val, max) { g_free(str); str = g_strndup(val, max); }
 
+#define ACT_START_HDR  "Start"
+#define ACT_STOP_HDR   "Stop"
+#define ACT_PAUSE_HDR  "Pause"
+#define ACT_RESUME_HDR "Resume"
+#define ACT_RESET_HDR  "Reset"
+#define ACT_HELP_HDR   "Help"
+#define ACT_QUIT_HDR   "Exit"
+
+#define OPT_CYCLES_HDR "Cycles"
+#define OPT_IVAL_HDR   "Interval"
+#define OPT_IVAL_HDRL  OPT_IVAL_HDR ", sec"
+#define OPT_DNS_HDR    "DNS"
+#define OPT_INFO_HDR   "Hop Info"
+#define OPT_STAT_HDR   "Statistics"
+#define OPT_TTL_HDR    "TTL"
+#define OPT_QOS_HDR    "QoS"
+#define OPT_PLOAD_HDR  "Payload"
+#define OPT_PLOAD_HDRL OPT_IVAL_HDR ", hex"
+#define OPT_PSIZE_HDR  "Size"
+#define OPT_IPV_HDR    "IP Version"
+#define OPT_IPVA_HDR   "Auto"
+#define OPT_IPV4_HDR   "IPv4"
+#define OPT_IPV6_HDR   "IPv6"
+
+#define ELEM_HOST_HDR  "Host"
+#define ELEM_AS_HDR    "AS"
+#define ELEM_CC_HDR    "CC"
+#define ELEM_DESC_HDR  "Description"
+#define ELEM_RT_HDR    "Route"
+#define ELEM_LOSS_HDR  "Loss"
+#define ELEM_LOSS_HDRL ELEM_LOSS_HDR ", %"
+#define ELEM_SENT_HDR  "Sent"
+#define ELEM_RECV_HDR  "Recv"
+#define ELEM_LAST_HDR  "Last"
+#define ELEM_BEST_HDR  "Best"
+#define ELEM_WRST_HDR  "Wrst"
+#define ELEM_WRST_HDRL "Worst"
+#define ELEM_AVRG_HDR  "Avrg"
+#define ELEM_AVRG_HDRL "Average"
+#define ELEM_JTTR_HDR  "Jttr"
+#define ELEM_JTTR_HDRL "Jitter"
+
 enum { ENT_BOOL_NONE, ENT_BOOL_DNS, ENT_BOOL_HOST, ENT_BOOL_AS, ENT_BOOL_CC, ENT_BOOL_DESC, ENT_BOOL_RT,
   ENT_BOOL_LOSS, ENT_BOOL_SENT, ENT_BOOL_RECV, ENT_BOOL_LAST, ENT_BOOL_BEST, ENT_BOOL_WRST,
   ENT_BOOL_AVRG, ENT_BOOL_JTTR, ENT_BOOL_MAX };
@@ -101,6 +143,7 @@ typedef struct hop {
 
 typedef struct ref { t_hop *hop; int ndx; } t_ref;
 
+extern const char *appver;
 extern const char *unkn_error;
 extern const char *unkn_field;
 extern const char *unkn_whois;

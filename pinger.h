@@ -40,5 +40,6 @@ void pinger_free_errors(void);
 void pinger_free_nth_error(int nth);
 void pinger_clear_data(bool clean);
 bool pinger_within_range(int min, int max, int got);
+void pinger_on_quit(bool andstop);
 
 #endif

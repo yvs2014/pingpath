@@ -1,3 +1,11 @@
+pingpath (0.1.33) lunar mantic; urgency=low
+
+  * add help dialog
+
+  * add 'exit' keyboard shortcut
+
+ -- yvs <VSYakovetsky@gmail.com>  Sun, 17 Dec 2023 22:54:39 +0200
+
 pingpath (0.1.32) lunar mantic; urgency=low
 
   * rewrite whois resolver using g_lists in place of static arrays

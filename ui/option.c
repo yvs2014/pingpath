@@ -70,57 +70,57 @@ typedef struct ent_rad {
 } t_ent_rad;
 
 static t_ent_bool ent_bool[ENT_BOOL_MAX] = {
-  [ENT_BOOL_DNS]  = { .en = { .typ = ENT_BOOL_DNS,  .name = "DNS" },     .pval = &opts.dns },
-  [ENT_BOOL_HOST] = { .en = { .typ = ENT_BOOL_HOST, .name = "Host" },    .pval = &statelem[ELEM_HOST].enable },
-  [ENT_BOOL_AS]   = { .en = { .typ = ENT_BOOL_AS,   .name = "AS" },      .pval = &statelem[ELEM_AS].enable   },
-  [ENT_BOOL_CC]   = { .en = { .typ = ENT_BOOL_CC,   .name = "Country" }, .pval = &statelem[ELEM_CC].enable   },
-  [ENT_BOOL_DESC] = { .en = { .typ = ENT_BOOL_DESC, .name = "Description" }, .pval = &statelem[ELEM_DESC].enable },
-  [ENT_BOOL_RT]   = { .en = { .typ = ENT_BOOL_RT,   .name = "Route" },   .pval = &statelem[ELEM_RT].enable   },
-  [ENT_BOOL_LOSS] = { .en = { .typ = ENT_BOOL_LOSS, .name = "Loss, %"},  .pval = &statelem[ELEM_LOSS].enable },
-  [ENT_BOOL_SENT] = { .en = { .typ = ENT_BOOL_SENT, .name = "Sent" },    .pval = &statelem[ELEM_SENT].enable },
-  [ENT_BOOL_RECV] = { .en = { .typ = ENT_BOOL_RECV, .name = "Recv" },    .pval = &statelem[ELEM_RECV].enable },
-  [ENT_BOOL_LAST] = { .en = { .typ = ENT_BOOL_LAST, .name = "Last" },    .pval = &statelem[ELEM_LAST].enable },
-  [ENT_BOOL_BEST] = { .en = { .typ = ENT_BOOL_BEST, .name = "Best" },    .pval = &statelem[ELEM_BEST].enable },
-  [ENT_BOOL_WRST] = { .en = { .typ = ENT_BOOL_WRST, .name = "Worst" },   .pval = &statelem[ELEM_WRST].enable },
-  [ENT_BOOL_AVRG] = { .en = { .typ = ENT_BOOL_AVRG, .name = "Average" }, .pval = &statelem[ELEM_AVRG].enable },
-  [ENT_BOOL_JTTR] = { .en = { .typ = ENT_BOOL_JTTR, .name = "Jitter" },  .pval = &statelem[ELEM_JTTR].enable },
+  [ENT_BOOL_DNS]  = { .en = { .typ = ENT_BOOL_DNS,  .name = OPT_DNS_HDR },    .pval = &opts.dns },
+  [ENT_BOOL_HOST] = { .en = { .typ = ENT_BOOL_HOST, .name = ELEM_HOST_HDR },  .pval = &statelem[ELEM_HOST].enable },
+  [ENT_BOOL_AS]   = { .en = { .typ = ENT_BOOL_AS,   .name = ELEM_AS_HDR },    .pval = &statelem[ELEM_AS].enable   },
+  [ENT_BOOL_CC]   = { .en = { .typ = ENT_BOOL_CC,   .name = ELEM_CC_HDR },    .pval = &statelem[ELEM_CC].enable   },
+  [ENT_BOOL_DESC] = { .en = { .typ = ENT_BOOL_DESC, .name = ELEM_DESC_HDR },  .pval = &statelem[ELEM_DESC].enable },
+  [ENT_BOOL_RT]   = { .en = { .typ = ENT_BOOL_RT,   .name = ELEM_RT_HDR },    .pval = &statelem[ELEM_RT].enable   },
+  [ENT_BOOL_LOSS] = { .en = { .typ = ENT_BOOL_LOSS, .name = ELEM_LOSS_HDRL},  .pval = &statelem[ELEM_LOSS].enable },
+  [ENT_BOOL_SENT] = { .en = { .typ = ENT_BOOL_SENT, .name = ELEM_SENT_HDR },  .pval = &statelem[ELEM_SENT].enable },
+  [ENT_BOOL_RECV] = { .en = { .typ = ENT_BOOL_RECV, .name = ELEM_RECV_HDR },  .pval = &statelem[ELEM_RECV].enable },
+  [ENT_BOOL_LAST] = { .en = { .typ = ENT_BOOL_LAST, .name = ELEM_LAST_HDR },  .pval = &statelem[ELEM_LAST].enable },
+  [ENT_BOOL_BEST] = { .en = { .typ = ENT_BOOL_BEST, .name = ELEM_BEST_HDR },  .pval = &statelem[ELEM_BEST].enable },
+  [ENT_BOOL_WRST] = { .en = { .typ = ENT_BOOL_WRST, .name = ELEM_WRST_HDRL }, .pval = &statelem[ELEM_WRST].enable },
+  [ENT_BOOL_AVRG] = { .en = { .typ = ENT_BOOL_AVRG, .name = ELEM_AVRG_HDRL }, .pval = &statelem[ELEM_AVRG].enable },
+  [ENT_BOOL_JTTR] = { .en = { .typ = ENT_BOOL_JTTR, .name = ELEM_JTTR_HDRL }, .pval = &statelem[ELEM_JTTR].enable },
 };
 
 static t_ent_str ent_str[ENT_STR_MAX] = {
-  [ENT_STR_CYCLES] = { .len = 6,  .width = 6, .en = { .typ = ENT_STR_CYCLES, .name = "Cycles" },
+  [ENT_STR_CYCLES] = { .len = 6,  .width = 6, .en = { .typ = ENT_STR_CYCLES, .name = OPT_CYCLES_HDR },
     .pint = &opts.count,   .idef = DEF_COUNT },
-  [ENT_STR_IVAL]   = { .len = 4,  .width = 6, .en = { .typ = ENT_STR_IVAL,   .name = "Interval, sec" },
+  [ENT_STR_IVAL]   = { .len = 4,  .width = 6, .en = { .typ = ENT_STR_IVAL,   .name = OPT_IVAL_HDRL },
     .pint = &opts.timeout, .idef = DEF_TOUT },
-  [ENT_STR_QOS]    = { .len = 3,  .width = 6, .en = { .typ = ENT_STR_QOS,    .name = "QoS" },
+  [ENT_STR_QOS]    = { .len = 3,  .width = 6, .en = { .typ = ENT_STR_QOS,    .name = OPT_QOS_HDR },
     .pint = &opts.qos,     .idef = DEF_QOS },
-  [ENT_STR_PLOAD]  = { .len = 48, .width = 6, .en = { .typ = ENT_STR_PLOAD,  .name = "Payload, hex" },
+  [ENT_STR_PLOAD]  = { .len = 48, .width = 6, .en = { .typ = ENT_STR_PLOAD,  .name = OPT_PLOAD_HDRL },
     .pstr = opts.pad,      .sdef = DEF_PPAD, .slen = sizeof(opts.pad) },
-  [ENT_STR_PSIZE]  = { .len = 4,  .width = 6, .en = { .typ = ENT_STR_PSIZE,  .name = "Size" },
+  [ENT_STR_PSIZE]  = { .len = 4,  .width = 6, .en = { .typ = ENT_STR_PSIZE,  .name = OPT_PSIZE_HDR },
     .pint = &opts.size,    .idef = DEF_PSIZE },
 };
 
 static t_ent_exp ent_exp[ENT_EXP_MAX] = {
-  [ENT_EXP_INFO] = { .c = {.en = {.typ = ENT_EXP_INFO, .name = "Hop Info"  }}, .ndxs = {ENT_BOOL_HOST,
+  [ENT_EXP_INFO] = { .c = {.en = {.typ = ENT_EXP_INFO, .name = OPT_INFO_HDR }}, .ndxs = {ENT_BOOL_HOST,
     ENT_BOOL_AS, ENT_BOOL_CC, ENT_BOOL_DESC, ENT_BOOL_RT }},
-  [ENT_EXP_STAT] = { .c = {.en = {.typ = ENT_EXP_STAT, .name = "Statistics"}}, .ndxs = {ENT_BOOL_LOSS,
+  [ENT_EXP_STAT] = { .c = {.en = {.typ = ENT_EXP_STAT, .name = OPT_STAT_HDR }}, .ndxs = {ENT_BOOL_LOSS,
     ENT_BOOL_SENT, ENT_BOOL_RECV, ENT_BOOL_LAST, ENT_BOOL_BEST, ENT_BOOL_WRST, ENT_BOOL_AVRG, ENT_BOOL_JTTR }},
 };
 
 static void min_cb(GtkWidget*, t_ent_spn*);
 static void max_cb(GtkWidget*, t_ent_spn*);
 static t_ent_spn ent_spn[ENT_SPN_MAX] = {
-  [ENT_SPN_TTL] = { .c = {.en = {.typ = ENT_SPN_TTL, .name = "TTL"}}, .aux = {
+  [ENT_SPN_TTL] = { .c = {.en = {.typ = ENT_SPN_TTL, .name = OPT_TTL_HDR }}, .aux = {
     [SPN_AUX_MIN] = {.cb = G_CALLBACK(min_cb), .pval = &opts.min, .def = 1},
     [SPN_AUX_LIM] = {.cb = G_CALLBACK(max_cb), .pval = &opts.lim, .def = MAXTTL}
   }},
 };
 
 static t_ent_rad ent_rad[ENT_RAD_MAX] = {
-  [ENT_RAD_IPV] = { .c = {.en = {.typ = ENT_RAD_IPV, .name = "IP Version №"}}, .pval = &opts.ipv,
+  [ENT_RAD_IPV] = { .c = {.en = {.typ = ENT_RAD_IPV, .name = OPT_IPV_HDR }}, .pval = &opts.ipv,
     .map = {
-      {.ndx = ENT_RAD_IPV, .str = "Auto"},
-      {.ndx = ENT_RAD_IPV, .val = 4, .str = "IPv4"},
-      {.ndx = ENT_RAD_IPV, .val = 6, .str = "IPv6"}
+      {.ndx = ENT_RAD_IPV, .str = OPT_IPVA_HDR},
+      {.ndx = ENT_RAD_IPV, .val = 4, .str = OPT_IPV4_HDR},
+      {.ndx = ENT_RAD_IPV, .val = 6, .str = OPT_IPV6_HDR}
     },
   },
 };

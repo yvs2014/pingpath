@@ -3,6 +3,8 @@
 #include "common.h"
 #include "parser.h"
 #include "stat.h"
+#include "dns.h"
+#include "whois.h"
 #include "ui/appbar.h"
 #include "tabs/ping.h"
 
@@ -229,5 +231,13 @@ bool pinger_within_range(int min, int max, int got) { // 1..MAXTTL
   if ((min < 1) || (min > MAXTTL)) return false;
   if ((max < 1) || (max > MAXTTL)) return false;
   return ((min <= got) && (got <= max));
+}
+
+void pinger_on_quit(bool andstop) {
+  g_source_remove(datetime_id); datetime_id = 0; // stop timer unless it's already done
+  pinger_free();
+  dns_cache_free();
+  whois_cache_free();
+  if (andstop) pinger_stop("at exit"); // note: if it's sysexit, subprocesses have to be already terminated by system
 }
 

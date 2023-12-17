@@ -23,20 +23,6 @@ static const int wndx2endx[WHOIS_NDX_MAX] = {
   [WHOIS_AS_NDX] = ELEM_AS, [WHOIS_CC_NDX] = ELEM_CC, [WHOIS_DESC_NDX] = ELEM_DESC, [WHOIS_RT_NDX] = ELEM_RT };
 static int visibles = -1;
 
-#define ELEM_HOST_HDR "Host"
-#define ELEM_AS_HDR   "AS"
-#define ELEM_CC_HDR   "CC"
-#define ELEM_DESC_HDR "Description"
-#define ELEM_RT_HDR   "Route"
-#define ELEM_LOSS_HDR "Loss"
-#define ELEM_SENT_HDR "Sent"
-#define ELEM_RECV_HDR "Recv"
-#define ELEM_LAST_HDR "Last"
-#define ELEM_BEST_HDR "Best"
-#define ELEM_WRST_HDR "Wrst"
-#define ELEM_AVRG_HDR "Avrg"
-#define ELEM_JTTR_HDR "Jttr"
-
 t_stat_elem statelem[ELEM_MAX] = { // TODO: editable from option menu
   [ELEM_NO]   = { .enable = true, .name = "" },
   [ELEM_HOST] = { .enable = true, .name = ELEM_HOST_HDR },
