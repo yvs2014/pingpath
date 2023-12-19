@@ -212,7 +212,7 @@ static void arrow_cb(GtkWidget *widget, t_ent_exp_common *en) {
   if (!en) return;
   if (GTK_IS_TOGGLE_BUTTON(en->arrow)) {
     bool active = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(en->arrow));
-    g_object_set(G_OBJECT(en->arrow), SUB_MENU_PROP, active ? SUB_MENU_ICON_UP : SUB_MENU_ICON_DOWN, NULL);
+    g_object_set(G_OBJECT(en->arrow), ICON_PROP, active ? GO_UP_ICON : GO_DOWN_ICON, NULL);
     if (GTK_IS_WIDGET(en->sub)) gtk_widget_set_visible(en->sub, active);
     DEBUG("%s: %d", en->en.name, active);
   }
@@ -367,7 +367,7 @@ static GtkWidget* add_expand_common(GtkWidget* list, t_ent_exp_common *en) {
       gtk_widget_add_css_class(en->arrow, CSS_NOFRAME);
     }
     gtk_widget_set_halign(en->arrow, GTK_ALIGN_END);
-    g_object_set(G_OBJECT(en->arrow), SUB_MENU_PROP, SUB_MENU_ICON_DOWN, NULL);
+    g_object_set(G_OBJECT(en->arrow), ICON_PROP, GO_DOWN_ICON, NULL);
     g_signal_connect(en->arrow, EV_TOGGLE, G_CALLBACK(arrow_cb), en);
   }
   en->sub = gtk_list_box_new();
@@ -402,7 +402,7 @@ static bool add_minmax(GtkWidget *box, t_ent_spn *en, int ndx) {
     gtk_spin_button_set_value(GTK_SPIN_BUTTON(spn), (ndx == SPN_AUX_MIN) ? val + 1 : val);
   }
   en->aux[ndx].spn = spn;
-  if (en->aux[ndx].cb) g_signal_connect(spn, EV_SPIN, en->aux[ndx].cb, en);
+  if (en->aux[ndx].cb) g_signal_connect(spn, EV_VAL_CHANGE, en->aux[ndx].cb, en);
   return true;
 }
 
@@ -420,9 +420,9 @@ static GtkWidget* add_opt_range(GtkWidget* list, t_ent_spn *en) {
     g_return_val_if_fail(GTK_IS_BOX(subrow), box);
     gtk_list_box_append(GTK_LIST_BOX(en->c.sub), subrow);
     add_minmax(subrow, en, SPN_AUX_MIN);
-    grey_into_box(subrow, gtk_image_new_from_icon_name(TO_LEFT_ICON));
+    grey_into_box(subrow, gtk_image_new_from_icon_name(GO_LEFT_ICON));
     grey_into_box(subrow, gtk_label_new("range")); // "🡸 min max 🡺" "🡸 🡺" "🠔🠖" "←→" "⟷" "🡄🡆" "🢀 🢂"
-    grey_into_box(subrow, gtk_image_new_from_icon_name(TO_RIGHT_ICON));
+    grey_into_box(subrow, gtk_image_new_from_icon_name(GO_RIGHT_ICON));
     add_minmax(subrow, en, SPN_AUX_LIM);
   }
   return box;

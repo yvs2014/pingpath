@@ -22,7 +22,7 @@ typedef struct listbox {
   GtkWidget* info;
 } t_listbox;
 
-static t_area area;
+static t_tab pingtab = { .ico = PING_TAB_ICON, .tag = PING_TAB_TAG };
 static t_listbox listbox;
 
 const gchar *info_mesg;
@@ -194,20 +194,19 @@ void pingtab_set_error(const gchar *error) {
   gtk_widget_set_visible(listbox.info, true);
 }
 
-t_area* pingtab_init() {
-  area.tab = gtk_box_new(GTK_ORIENTATION_VERTICAL, MARGIN);
-  g_return_val_if_fail(GTK_IS_BOX(area.tab), NULL);
-  if (style_loaded) gtk_widget_set_name(area.tab, CSS_ID_PINGTAB);
-  area.hdr = init_list_box(listbox.header, HDRLINES, true, true);
-  if (style_loaded) gtk_widget_add_css_class(area.hdr, CSS_BGROUND);
-  gtk_box_append(GTK_BOX(area.tab), area.hdr);
-  area.dyn = init_list_box(listbox.lines, MAXTTL, false, false);
-  g_return_val_if_fail(GTK_IS_LIST_BOX(area.dyn), NULL);
-  if (style_loaded) gtk_widget_add_css_class(area.dyn, CSS_BGROUND);
+t_tab* pingtab_init() {
+  pingtab.lab = gtk_box_new(GTK_ORIENTATION_VERTICAL, 2);
+  g_return_val_if_fail(GTK_IS_BOX(pingtab.lab), NULL);
+  pingtab.tab = gtk_box_new(GTK_ORIENTATION_VERTICAL, MARGIN);
+  g_return_val_if_fail(GTK_IS_BOX(pingtab.tab), NULL);
+  pingtab.hdr = init_list_box(listbox.header, HDRLINES, true, true);
+  gtk_box_append(GTK_BOX(pingtab.tab), pingtab.hdr);
+  pingtab.dyn = init_list_box(listbox.lines, MAXTTL, false, false);
+  g_return_val_if_fail(GTK_IS_LIST_BOX(pingtab.dyn), NULL);
   //
-  GtkWidget *box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+  GtkWidget *box = gtk_box_new(GTK_ORIENTATION_VERTICAL, MARGIN);
   g_return_val_if_fail(GTK_IS_BOX(box), NULL);
-  gtk_box_append(GTK_BOX(box), area.dyn);
+  gtk_box_append(GTK_BOX(box), pingtab.dyn);
   GtkWidget *info = init_info();
   g_return_val_if_fail(GTK_IS_WIDGET(info), NULL);
   gtk_box_append(GTK_BOX(box), info);
@@ -216,7 +215,7 @@ t_area* pingtab_init() {
   g_return_val_if_fail(GTK_IS_SCROLLED_WINDOW(scroll), NULL);
   gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scroll), box);
   gtk_widget_set_vexpand(GTK_WIDGET(scroll), true);
-  gtk_box_append(GTK_BOX(area.tab), scroll);
-  return &area;
+  gtk_box_append(GTK_BOX(pingtab.tab), scroll);
+  return &pingtab;
 }
 

@@ -1,3 +1,6 @@
+## 0.1.34
+- add notebook and log-tab template
+
 ## 0.1.33
 - add help dialog
 - add 'exit' keyboard shortcut

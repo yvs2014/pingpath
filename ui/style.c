@@ -24,10 +24,13 @@ static const gchar *css_dark_colors =
   "entry, entry.flat {background:" APP_BGROUND_DARK "; text-decoration:underline; border:none;}"
   "headerbar {background:" APP_BGROUND_DARK ";}"
   "headerbar:backdrop {background:" APP_BGROUND_DARK ";}"
+  "notebook > header > tabs > tab { background-color:" APP_BGROUND_DARK ";}"
   "." CSS_EXP "{background:" APP_BGROUND_DARK ";}"
 ;
 
 static const gchar *css_common =
+  "notebook > header > tabs {padding-left:0px; padding-right:0px;}"
+  "notebook > header > tabs > tab {margin-left:0px; margin-right:0px;}"
   "vertical {padding:" PAD16 ";}"
   ".flat {padding:" PAD4 ";}"
   "." CSS_PAD "{padding:" PAD ";}"
@@ -35,7 +38,7 @@ static const gchar *css_common =
   "." CSS_CHPAD "{padding-right:" PAD ";}"
   "." CSS_PAD6  "{padding-right:" PAD6 ";}"
   "." CSS_NOFRAME "{border:none;}"
-  "#" CSS_ID_PINGTAB "{padding:" PAD " " PAD16 ";}"
+  "." CSS_TAB "{padding:" PAD ";}"
   "#" CSS_ID_DATETIME "{font-weight:500;}"
 ;
 

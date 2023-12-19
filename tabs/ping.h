@@ -1,11 +1,9 @@
 #ifndef TABS_PING_H
 #define TABS_PING_H
 
-#include <gtk/gtk.h>
+#include "common.h"
 
-typedef struct area { GtkWidget *tab, *hdr, *dyn; } t_area;
-
-t_area* pingtab_init(void);
+t_tab* pingtab_init(void);
 gboolean pingtab_update(gpointer data);
 void pingtab_wrap_update(void);
 void pingtab_clear(void);

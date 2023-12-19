@@ -1,10 +1,8 @@
 #ifndef UI_STYLE_H
 #define UI_STYLE_H
 
-#define MARGIN 8
-
-#define CSS_ID_PINGTAB   "pingtab"
 #define CSS_ID_DATETIME  "datetime"
+#define CSS_TAB          "tab"
 #define CSS_BGROUND      "bground"
 #define CSS_BGONBG       "bgonbg"
 #define CSS_EXP          "expander"

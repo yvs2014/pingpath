@@ -1,6 +1,8 @@
 
 #include <time.h>
+
 #include "common.h"
+#include "ui/style.h"
 
 const char *appver = APPNAME "-" VERSION;
 
@@ -25,6 +27,36 @@ GtkListBoxRow* line_row_new(GtkWidget *child, bool visible) {
   gtk_list_box_row_set_child(row, child);
   gtk_widget_set_visible(GTK_WIDGET(row), visible);
   return row;
+}
+
+void tab_setup(t_tab *tab) {
+  if (!tab) return;
+  if (GTK_IS_WIDGET(tab->lab)) {
+    gtk_widget_set_hexpand(tab->lab, true);
+    if (style_loaded) gtk_widget_add_css_class(tab->lab, CSS_PAD);
+    if (GTK_IS_BOX(tab->lab)) {
+      if (tab->ico) {
+        GtkWidget *image = gtk_image_new_from_icon_name(tab->ico);
+        if (GTK_IS_IMAGE(image)) gtk_box_append(GTK_BOX(tab->lab), image);
+      }
+      if (tab->tag) {
+        GtkWidget *tag = gtk_label_new(tab->tag);
+        if (GTK_IS_LABEL(tag)) gtk_box_append(GTK_BOX(tab->lab), tag);
+      }
+    }
+  }
+  if (GTK_IS_WIDGET(tab->hdr)) {
+    gtk_widget_set_can_focus(tab->hdr, false);
+    if (style_loaded) gtk_widget_add_css_class(tab->hdr, CSS_BGROUND);
+  }
+  if (GTK_IS_WIDGET(tab->dyn)) {
+    gtk_widget_set_can_focus(tab->dyn, false);
+    if (style_loaded) gtk_widget_add_css_class(tab->dyn, CSS_BGROUND);
+  }
+  if (GTK_IS_WIDGET(tab->tab) && style_loaded) {
+    gtk_widget_add_css_class(tab->tab, CSS_PAD);
+    gtk_widget_add_css_class(tab->tab, CSS_BGROUND);
+  }
 }
 
 void host_free(t_host *host) {

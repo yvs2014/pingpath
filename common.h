@@ -4,7 +4,7 @@
 #include <gtk/gtk.h>
 
 #define APPNAME "pingpath"
-#define VERSION "0.1.33"
+#define VERSION "0.1.34"
 
 #define MAXTTL  30
 #define MAXADDR 10
@@ -20,17 +20,25 @@
 #define BUFF_SIZE     1024
 #define PAD_SIZE        48
 
-#define EV_ACTIVE "activate"
-#define EV_TOGGLE "toggled"
-#define EV_SPIN   "value-changed"
+#define EV_ACTIVE     "activate"
+#define EV_TOGGLE     "toggled"
+#define EV_VAL_CHANGE "value-changed"
+#define EV_TAB_SWITCH "switch-page"
 
-#define ACT_MENU_ICON      "open-menu-symbolic"
-#define OPT_MENU_ICON      "document-properties-symbolic"
-#define SUB_MENU_ICON_UP   "go-up-symbolic"
-#define SUB_MENU_ICON_DOWN "go-down-symbolic"
-#define SUB_MENU_PROP      "icon-name"
-#define TO_LEFT_ICON       "go-previous-symbolic"
-#define TO_RIGHT_ICON      "go-next-symbolic"
+#define ICON_PROP     "icon-name"
+#define ACT_MENU_ICON "open-menu-symbolic"
+#define OPT_MENU_ICON "document-properties-symbolic"
+#define GO_UP_ICON    "go-up-symbolic"
+#define GO_DOWN_ICON  "go-down-symbolic"
+#define GO_LEFT_ICON  "go-previous-symbolic"
+#define GO_RIGHT_ICON "go-next-symbolic"
+#define PING_TAB_ICON "format-justify-left-symbolic"
+#define LOG_TAB_ICON  "weather-clear-symbolic"
+
+#define PING_TAB_TAG "Trace"
+#define LOG_TAB_TAG  "Log"
+
+#define MARGIN 8
 
 #define LOGGING 1
 //#define DEBUGGING 1
@@ -101,6 +109,8 @@ extern const char *log_empty;
 #define ELEM_JTTR_HDR  "Jttr"
 #define ELEM_JTTR_HDRL "Jitter"
 
+enum { TAB_PING_NDX, TAB_LOG_NDX, TAB_NDX_MAX };
+
 enum { ENT_BOOL_NONE, ENT_BOOL_DNS, ENT_BOOL_HOST, ENT_BOOL_AS, ENT_BOOL_CC, ENT_BOOL_DESC, ENT_BOOL_RT,
   ENT_BOOL_LOSS, ENT_BOOL_SENT, ENT_BOOL_RECV, ENT_BOOL_LAST, ENT_BOOL_BEST, ENT_BOOL_WRST,
   ENT_BOOL_AVRG, ENT_BOOL_JTTR, ENT_BOOL_MAX };
@@ -142,6 +152,7 @@ typedef struct hop {
 } t_hop;
 
 typedef struct ref { t_hop *hop; int ndx; } t_ref;
+typedef struct tab { GtkWidget *tab, *lab, *dyn, *hdr; const char *ico, *tag; } t_tab;
 
 extern const char *appver;
 extern const char *unkn_error;
@@ -150,6 +161,7 @@ extern const char *unkn_whois;
 
 const char *timestampit(void);
 GtkListBoxRow* line_row_new(GtkWidget *child, bool visible);
+void tab_setup(t_tab *tab);
 
 void host_free(t_host *host);
 int host_cmp(const void *a, const void *b);
