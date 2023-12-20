@@ -1,3 +1,9 @@
+pingpath (0.1.35) lunar mantic; urgency=low
+
+  * dup log to log-tab too
+
+ -- yvs <VSYakovetsky@gmail.com>  Wed, 20 Dec 2023 03:59:04 +0200
+
 pingpath (0.1.34) lunar mantic; urgency=low
 
   * add notebook and log-tab template

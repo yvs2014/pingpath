@@ -6,10 +6,6 @@
 
 const char *appver = APPNAME "-" VERSION;
 
-#ifdef LOGGING
-const char *log_empty  = "<empty>";
-#endif
-
 const char *unkn_error = "unknown error";
 const char *unkn_field = ""; // "?" "???" (see notes)
 const char *unkn_whois = "";

@@ -3,7 +3,7 @@
 
 #include <gtk/gtk.h>
 
-enum { ENT_STR_NONE, ENT_STR_CYCLES, ENT_STR_IVAL, ENT_STR_QOS, ENT_STR_PLOAD, ENT_STR_PSIZE, ENT_STR_MAX };
+enum { ENT_STR_NONE, ENT_STR_CYCLES, ENT_STR_IVAL, ENT_STR_QOS, ENT_STR_PLOAD, ENT_STR_PSIZE, ENT_STR_LOGMAX, ENT_STR_MAX };
 
 bool parser_init(void);
 void parser_parse(int at, char *input);

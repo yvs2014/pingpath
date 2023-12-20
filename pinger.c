@@ -14,8 +14,8 @@
 #define RESET_ISTREAM(ins, buff, cb, data) g_input_stream_read_async(G_INPUT_STREAM(ins), \
   (buff), BUFF_SIZE, G_PRIORITY_DEFAULT, NULL, (GAsyncReadyCallback)(cb), (data))
 
-t_opts opts = { .target = NULL, .dns = true, .count = DEF_COUNT, .qos = DEF_QOS, .size = DEF_PSIZE,
-  .min = 0, .lim = MAXTTL, .timeout = DEF_TOUT, .tout_usec = DEF_TOUT * 1000000 };
+t_opts opts = { .target = NULL, .dns = true, .cycles = DEF_CYCLES, .qos = DEF_QOS, .size = DEF_PSIZE,
+  .min = 0, .lim = MAXTTL, .timeout = DEF_TOUT, .tout_usec = DEF_TOUT * 1000000, .logmax = DEF_LOGMAX };
 t_pinger_state pinger_state;
 guint stat_timer;
 
@@ -125,7 +125,7 @@ static bool create_ping(int at, t_proc *p) {
   argv[argc++] = "-OD";
   if (!opts.dns) argv[argc++] = "-n";
   char sttl[16]; g_snprintf(sttl, sizeof(sttl), "-t%d", at + 1);       argv[argc++] = sttl;
-  char scnt[16]; g_snprintf(scnt, sizeof(scnt), "-c%d", opts.count);   argv[argc++] = scnt;
+  char scls[16]; g_snprintf(scls, sizeof(scls), "-c%d", opts.cycles);  argv[argc++] = scls;
   char sitm[16]; g_snprintf(sitm, sizeof(sitm), "-i%d", opts.timeout); argv[argc++] = sitm;
   char sWtm[16]; g_snprintf(sWtm, sizeof(sitm), "-W%d", opts.timeout); argv[argc++] = sWtm;
   char sqos[16]; if (opts.qos != DEF_QOS) {

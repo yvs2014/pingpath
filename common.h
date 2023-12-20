@@ -4,7 +4,7 @@
 #include <gtk/gtk.h>
 
 #define APPNAME "pingpath"
-#define VERSION "0.1.34"
+#define VERSION "0.1.35"
 
 #define MAXTTL  30
 #define MAXADDR 10
@@ -45,11 +45,15 @@
 //#define DNS_DEBUGGING 1
 //#define WHOIS_DEBUGGING 1
 
+#define LOG(fmt, ...) { const char *ts = timestampit(); \
+  GLIB_PR("[%s] " fmt "\n", ts, __VA_ARGS__); \
+  log_add("[%s] " fmt     , ts, __VA_ARGS__); \
+}
+
 #ifdef LOGGING
-#define LOG(fmt, ...) g_print("[%s] " fmt "\n", timestampit(), __VA_ARGS__)
-extern const char *log_empty;
+#define GLIB_PR(fmt, ...) g_print(fmt, __VA_ARGS__)
 #else
-#define LOG(fmt, ...) {}
+#define GLIB_PR(fmt, ...) {}
 #endif
 
 #ifdef DEBUGGING
@@ -90,6 +94,7 @@ extern const char *log_empty;
 #define OPT_IPVA_HDR   "Auto"
 #define OPT_IPV4_HDR   "IPv4"
 #define OPT_IPV6_HDR   "IPv6"
+#define OPT_LOGMAX_HDR "Log lines"
 
 #define ELEM_HOST_HDR  "Host"
 #define ELEM_AS_HDR    "AS"
@@ -158,6 +163,7 @@ extern const char *appver;
 extern const char *unkn_error;
 extern const char *unkn_field;
 extern const char *unkn_whois;
+extern const char *log_empty;
 
 const char *timestampit(void);
 GtkListBoxRow* line_row_new(GtkWidget *child, bool visible);
@@ -169,6 +175,7 @@ int ref_cmp(const t_ref *a, const t_ref *b);
 t_ref* ref_new(t_hop *hop, int ndx);
 void print_refs(GSList *refs, const gchar *prefix);
 GSList* list_add_nodup(GSList **list, gpointer data, GCompareFunc cmp, int max);
+extern void log_add(const gchar *fmt, ...);
 
 #define ADD_REF_OR_RET(refs) { \
   if (!list_add_nodup(refs, ref_new(hop, ndx), (GCompareFunc)ref_cmp, REF_MAX)) { \

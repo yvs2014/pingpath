@@ -88,7 +88,7 @@ static t_ent_bool ent_bool[ENT_BOOL_MAX] = {
 
 static t_ent_str ent_str[ENT_STR_MAX] = {
   [ENT_STR_CYCLES] = { .len = 6,  .width = 6, .en = { .typ = ENT_STR_CYCLES, .name = OPT_CYCLES_HDR },
-    .pint = &opts.count,   .idef = DEF_COUNT },
+    .pint = &opts.cycles,  .idef = DEF_CYCLES },
   [ENT_STR_IVAL]   = { .len = 4,  .width = 6, .en = { .typ = ENT_STR_IVAL,   .name = OPT_IVAL_HDRL },
     .pint = &opts.timeout, .idef = DEF_TOUT },
   [ENT_STR_QOS]    = { .len = 3,  .width = 6, .en = { .typ = ENT_STR_QOS,    .name = OPT_QOS_HDR },
@@ -97,6 +97,8 @@ static t_ent_str ent_str[ENT_STR_MAX] = {
     .pstr = opts.pad,      .sdef = DEF_PPAD, .slen = sizeof(opts.pad) },
   [ENT_STR_PSIZE]  = { .len = 4,  .width = 6, .en = { .typ = ENT_STR_PSIZE,  .name = OPT_PSIZE_HDR },
     .pint = &opts.size,    .idef = DEF_PSIZE },
+  [ENT_STR_LOGMAX] = { .len = 3,  .width = 6, .en = { .typ = ENT_STR_LOGMAX, .name = OPT_LOGMAX_HDR },
+    .pint = &opts.logmax,  .idef = DEF_LOGMAX },
 };
 
 static t_ent_exp ent_exp[ENT_EXP_MAX] = {
@@ -225,6 +227,7 @@ static void input_cb(GtkWidget *input, t_ent_str *en) {
   switch (en->en.typ) {
     case ENT_STR_CYCLES:
     case ENT_STR_IVAL:
+    case ENT_STR_LOGMAX:
     case ENT_STR_QOS:
     case ENT_STR_PSIZE: {
       int n = parser_int(got, en->en.typ, en->en.name);
@@ -484,6 +487,7 @@ static bool create_optmenu(GtkWidget *bar) {
   EN_PR_STR(ENT_STR_PLOAD);
   EN_PR_INT(ENT_STR_PSIZE);
   if (!add_opt_radio(list, &ent_rad[ENT_RAD_IPV]))    re = false;
+  EN_PR_INT(ENT_STR_LOGMAX);
   //
   return re;
 }

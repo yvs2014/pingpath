@@ -47,7 +47,6 @@ typedef struct response_regex {
   parser_cb *cb;
 } t_response_regex;
 
-enum { STR_ED_CYCLES, STR_ED_MAX };
 enum { STR_RX_INT, STR_RX_PAD, STR_RX_MAX };
 
 static bool parse_success_match(int at, GMatchInfo* match, const char *line);
@@ -264,6 +263,7 @@ int parser_int(const gchar *str, int typ, const gchar *option) {
       switch (typ) {
         case ENT_STR_CYCLES:
         case ENT_STR_IVAL:
+        case ENT_STR_LOGMAX:
           if (n < CI_MIN) PIERR("less than minimal(%d)", CI_MIN);
           break;
         case ENT_STR_QOS:

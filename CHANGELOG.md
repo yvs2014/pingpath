@@ -1,3 +1,6 @@
+## 0.1.35
+- dup log to log-tab too
+
 ## 0.1.34
 - add notebook and log-tab template
 

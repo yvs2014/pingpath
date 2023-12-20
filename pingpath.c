@@ -10,8 +10,6 @@
 #include "tabs/ping.h"
 #include "tabs/log.h"
 
-static t_tab* tabs[TAB_NDX_MAX];
-
 static void on_app_exit(GtkWidget *widget, gpointer unused) {
 // note: subprocesses have to be already terminated by system at this point
 // if not, then pinger_on_quit(true);
@@ -44,9 +42,8 @@ static void app_cb(GtkApplication* app, gpointer unused) {
   GtkWidget *nb = gtk_notebook_new();
   if (!GTK_IS_NOTEBOOK(nb)) APPQUIT("%s", "notebook");
   if (style_loaded) gtk_widget_add_css_class(nb, CSS_BGROUND);
-  tabs[TAB_PING_NDX] = pingtab_init();
-  tabs[TAB_LOG_NDX]  = logtab_init();
   gtk_notebook_set_tab_pos(GTK_NOTEBOOK(nb), GTK_POS_BOTTOM);
+  t_tab* tabs[TAB_NDX_MAX] = { [TAB_PING_NDX] = pingtab_init(), [TAB_LOG_NDX] = logtab_init() };
   for (int i = 0; i < G_N_ELEMENTS(tabs); i++) {
     t_tab *tab = tabs[i]; if (!tab) APPQUIT("tab#%d", i);
     tab_setup(tab);

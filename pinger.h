@@ -4,11 +4,12 @@
 #include <gtk/gtk.h>
 #include "common.h"
 
-#define DEF_COUNT 100
-#define DEF_TOUT  1
-#define DEF_QOS   0
-#define DEF_PPAD "00"
-#define DEF_PSIZE 56
+#define DEF_CYCLES 100
+#define DEF_TOUT   1
+#define DEF_QOS    0
+#define DEF_PPAD  "00"
+#define DEF_PSIZE  56
+#define DEF_LOGMAX 500
 
 typedef struct minmax {
   int min, max;
@@ -17,10 +18,11 @@ typedef struct minmax {
 typedef struct opts {
   gchar *target;
   bool dns;
-  int count, timeout, qos, size, ipv;
+  int cycles, timeout, qos, size, ipv;
   int min, lim;       // TTL range
   char pad[PAD_SIZE]; // 16 x "00."
-  int tout_usec;      // internal const
+  int tout_usec;      // internal: timeout in usecs
+  int logmax;         // internal: max lines in log tab
 } t_opts;
 
 typedef struct pinger_state {
