@@ -1,3 +1,6 @@
+## 0.1.36
+- close pipe fds after ping termination and suppress clang-tidy complains on g_clear_object()
+
 ## 0.1.35
 - dup log to log-tab too
 

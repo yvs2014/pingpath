@@ -4,7 +4,7 @@
 #include <gtk/gtk.h>
 
 #define APPNAME "pingpath"
-#define VERSION "0.1.35"
+#define VERSION "0.1.36"
 
 #define MAXTTL  30
 #define MAXADDR 10

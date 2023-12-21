@@ -14,6 +14,8 @@
 #define RESET_ISTREAM(ins, buff, cb, data) g_input_stream_read_async(G_INPUT_STREAM(ins), \
   (buff), BUFF_SIZE, G_PRIORITY_DEFAULT, NULL, (GAsyncReadyCallback)(cb), (data))
 
+#define CLEAR_G_OBJECT(obj) g_clear_object(obj) // NOLINT(bugprone-sizeof-expression)
+
 t_opts opts = { .target = NULL, .dns = true, .cycles = DEF_CYCLES, .qos = DEF_QOS, .size = DEF_PSIZE,
   .min = 0, .lim = MAXTTL, .timeout = DEF_TOUT, .tout_usec = DEF_TOUT * 1000000, .logmax = DEF_LOGMAX };
 t_pinger_state pinger_state;
@@ -22,6 +24,7 @@ guint stat_timer;
 typedef struct proc {
   GSubprocess *proc;
   bool active;     // process state
+  int sig;         // signal of own stop
   int ndx;         // index in internal list
   char *out, *err; // stdout, stderr buffers
 } t_proc;
@@ -60,18 +63,30 @@ static bool pinger_active(void) {
   return active;
 }
 
-static void set_finish_flag(struct _GObject *a, struct _GAsyncResult *b, gpointer data) {
+static void process_stopped(GObject *process, GAsyncResult *result, t_proc *proc) {
   static gchar *nodata_mesg = "No data";
-  int a_state = -1;
-  t_proc *p = data;
-  if (p) {
-    if (p->active) p->active = false;
-    a_state = pinger_active();
-    if (!a_state) pingtab_wrap_update(); // final update
+  if (G_IS_SUBPROCESS(process)) {
+    GError *error = NULL;
+    bool okay = g_subprocess_wait_check_finish(G_SUBPROCESS(process), result, &error);
+    int rc = g_subprocess_get_term_sig(G_SUBPROCESS(process));
+    int sig = proc ? proc->sig : 0;
+    if (!okay && sig && (rc != sig)) ERROR("subprocess wait-finish"); // rc != sig: skip own stop signals
   }
-  if (!pinger_state.gotdata) {
-    if (a_state < 0) a_state = pinger_active();
-    if (!a_state && (!info_mesg || (info_mesg == notyet_mesg))) pingtab_set_error(nodata_mesg);
+  if (proc) {
+    if G_IS_OBJECT(proc->proc) {
+      LOG("clear ping[%d] resources", proc->ndx);
+      CLEAR_G_OBJECT(&proc->proc);
+    }
+    proc->proc = NULL;
+    proc->active = false;
+    proc->sig = 0;
+  } else if (G_IS_OBJECT(process)) {
+    GObject *p = process;
+    CLEAR_G_OBJECT(&p);
+  }
+  if (!pinger_active()) {
+    pingtab_wrap_update(); // final view update
+    if (!pinger_state.gotdata && (!info_mesg || (info_mesg == notyet_mesg))) pingtab_set_error(nodata_mesg);
   }
 }
 
@@ -141,23 +156,29 @@ static bool create_ping(int at, t_proc *p) {
   GError *error = NULL;
   p->proc = g_subprocess_newv(argv, G_SUBPROCESS_FLAGS_STDOUT_PIPE | G_SUBPROCESS_FLAGS_STDERR_PIPE, &error);
   if (!p->proc) { ERROR("create subprocess"); return false; }
-  g_subprocess_wait_check_async(p->proc, NULL, set_finish_flag, p);
+  g_subprocess_wait_check_async(p->proc, NULL, (GAsyncReadyCallback)process_stopped, p);
   GInputStream *output = g_subprocess_get_stdout_pipe(p->proc);
   GInputStream *errput = g_subprocess_get_stderr_pipe(p->proc);
   if (output && errput) {
     RESET_ISTREAM(output, p->out, on_stdout, p);
     RESET_ISTREAM(errput, p->err, on_stderr, p);
-  } else WARN("%s: get input streams failed", __func__);
-  p->active = true;
-  p->ndx = at;
+    p->active = true;
+    p->ndx = at;
 #ifdef DEBUGGING
-  gchar* deb_argv[MAX_ARGC];
-  memcpy(deb_argv, argv, sizeof(deb_argv));
-  gchar *deb_argv_s = g_strjoinv(", ", deb_argv);
-  DEBUG("ping[ttl=%d]: argv[%s]", at + 1, deb_argv_s);
-  g_free(deb_argv_s);
+    gchar* deb_argv[MAX_ARGC];
+    memcpy(deb_argv, argv, sizeof(deb_argv));
+    gchar *deb_argv_s = g_strjoinv(", ", deb_argv);
+    DEBUG("ping[ttl=%d]: argv[%s]", at + 1, deb_argv_s);
+    g_free(deb_argv_s);
 #endif
-  LOG("ping[ttl=%d] started", at + 1);
+    LOG("ping[ttl=%d] started", at + 1);
+  } else {
+    pinger_stop_nth(at, "input failed");
+    p->active = false;
+    p->ndx = -1;
+    WARN("%s: get input streams failed", __func__);
+  }
+  p->sig = 0;
   return p->active;
 }
 
@@ -183,7 +204,8 @@ void pinger_stop_nth(int nth, const gchar* reason) {
     const gchar *id = g_subprocess_get_identifier(p->proc);
     if (id) {
       LOG("stop[pid=%s] reason: %s", id ? id : "NA", reason);
-      g_subprocess_send_signal(p->proc, SIGTERM);
+      p->sig = SIGTERM;
+      g_subprocess_send_signal(p->proc, p->sig);
       id = g_subprocess_get_identifier(p->proc);
       if (id) { g_usleep(20 * 1000); id = g_subprocess_get_identifier(p->proc); } // wait a bit
       if (id) {
@@ -197,7 +219,7 @@ void pinger_stop_nth(int nth, const gchar* reason) {
       if (error) { WARN("%s(%d): pid=%s: %s", __func__, nth, id, error->message); g_error_free(error); }
       else LOG("ping[ttl=%d] finished (rc=%d)", p->ndx + 1, g_subprocess_get_status(p->proc));
     }
-    if (!id) { set_finish_flag(NULL, NULL, p); p->proc = NULL; }
+    if (!id) process_stopped(NULL, NULL, p);
   }
 }
 

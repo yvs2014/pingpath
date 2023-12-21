@@ -1,3 +1,9 @@
+pingpath (0.1.36) lunar mantic; urgency=low
+
+  * close pipe fds after ping termination and suppress clang-tidy complains on g_clear_object()
+
+ -- yvs <VSYakovetsky@gmail.com>  Thu, 21 Dec 2023 17:49:02 +0200
+
 pingpath (0.1.35) lunar mantic; urgency=low
 
   * dup log to log-tab too
