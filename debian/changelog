@@ -1,3 +1,9 @@
+pingpath (0.1.37) lunar mantic; urgency=low
+
+  * add clipboard menu to log tab
+
+ -- yvs <VSYakovetsky@gmail.com>  Sat, 23 Dec 2023 00:25:32 +0200
+
 pingpath (0.1.36) lunar mantic; urgency=low
 
   * close pipe fds after ping termination and suppress clang-tidy complains on g_clear_object()

@@ -36,7 +36,7 @@ static GSList *whois_cache;
 #define PR_WHOIS_C { LOG("WHOIS: %s: c=%p", __func__, whois_cache); _pr_whois_clist(whois_cache); }
 void _pr_whois_qlist(GSList *qlist) {
   int i = 0;
-  for (GSList* p = qlist; p; p = p->next, i++) {
+  for (GSList *p = qlist; p; p = p->next, i++) {
     t_wq_elem *q = p->data; if (!q) continue;
     gchar **w = q->data.whois.elem;
     WHOIS_DEBUG("c[%d]: refs=%p addr=%s as=%s cc=%s rt=%s desc=%s", i, q->refs, q->data.addr, w[WHOIS_AS_NDX],
@@ -46,7 +46,7 @@ void _pr_whois_qlist(GSList *qlist) {
 }
 void _pr_whois_clist(GSList *clist) {
   int i = 0;
-  for (GSList* p = clist; p; p = p->next, i++) {
+  for (GSList *p = clist; p; p = p->next, i++) {
     t_wc_elem *c = p->data; if (!c) continue;
     WHOIS_DEBUG("c[%d]: addr=%s as=%s cc=%s rt=%s desc=%s", i, c->addr, c->whois.elem[WHOIS_AS_NDX],
       c->whois.elem[WHOIS_CC_NDX], c->whois.elem[WHOIS_RT_NDX], c->whois.elem[WHOIS_DESC_NDX]);

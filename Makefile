@@ -20,7 +20,12 @@ SRC += tabs/ping.c tabs/log.c
 
 OBJS = $(SRC:.c=.o)
 
+RELEASE = -D RELEASE
+
 all: $(NAME)
+
+release: CFLAGS += -D RELEASE
+release: $(NAME)
 
 %.o: %.c %.h common.h
 	$(CC) -c -o $@ $(CFLAGS) $<
@@ -31,4 +36,10 @@ $(NAME): $(OBJS)
 clean:
 	rm -f $(OBJS)
 	rm -f $(NAME)
+
+## TMP: internal devs
+test.o: test.c
+	$(CC) -c -o $@ $(CFLAGS) $<
+test: test.o
+	$(CC) -o $@ test.o $(LIBS)
 

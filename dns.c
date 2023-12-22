@@ -22,7 +22,7 @@ static GSList *dns_cache;
 #define PR_DNS_C { LOG("DNS: %s: c=%p", __func__, dns_cache); _pr_dns_clist(dns_cache); }
 static void _pr_dns_qlist(GSList *qlist) {
   int i = 0;
-  for (GSList* p = qlist; p; p = p->next, i++) {
+  for (GSList *p = qlist; p; p = p->next, i++) {
     t_dns_elem *data = p->data; if (!data) continue;
     DNS_DEBUG("q[%d]: addr=%s name=%s refs=%p", i, data->host.addr, data->host.name, data->refs);
     print_refs(data->refs, "DNS:  ");
@@ -30,7 +30,7 @@ static void _pr_dns_qlist(GSList *qlist) {
 }
 static void _pr_dns_clist(GSList *clist) {
   int i = 0;
-  for (GSList* p = clist; p; p = p->next, i++) {
+  for (GSList *p = clist; p; p = p->next, i++) {
     t_host *c = p->data; if (!c) continue;
     DNS_DEBUG("c[%d]: addr=%s name=%s", i, c->addr, c->name);
   }

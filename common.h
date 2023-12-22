@@ -4,7 +4,7 @@
 #include <gtk/gtk.h>
 
 #define APPNAME "pingpath"
-#define VERSION "0.1.36"
+#define VERSION "0.1.37"
 
 #define MAXTTL  30
 #define MAXADDR 10
@@ -22,7 +22,9 @@
 
 #define EV_ACTIVE     "activate"
 #define EV_TOGGLE     "toggled"
+#define EV_CLICK      "pressed"
 #define EV_VAL_CHANGE "value-changed"
+#define EV_ROW_CHANGE "selected-rows-changed"
 #define EV_TAB_SWITCH "switch-page"
 
 #define ICON_PROP     "icon-name"
@@ -38,17 +40,22 @@
 #define PING_TAB_TAG "Trace"
 #define LOG_TAB_TAG  "Log"
 
-#define MARGIN 8
+#define MARGIN  8
+#define ACT_DOT 4 // beyond of "app." or "win."
 
+#ifndef RELEASE
 #define LOGGING 1
 //#define DEBUGGING 1
 //#define DNS_DEBUGGING 1
 //#define WHOIS_DEBUGGING 1
+#endif
 
 #define LOG(fmt, ...) { const char *ts = timestampit(); \
   GLIB_PR("[%s] " fmt "\n", ts, __VA_ARGS__); \
   log_add("[%s] " fmt     , ts, __VA_ARGS__); \
 }
+
+#define NOLOG(fmt, ...) { GLIB_PR("[%s] " fmt "\n", timestampit(), __VA_ARGS__); }
 
 #ifdef LOGGING
 #define GLIB_PR(fmt, ...) g_print(fmt, __VA_ARGS__)
@@ -70,6 +77,7 @@
 #define STR_NEQ(a, b) (g_strcmp0(a, b))
 #define UPD_STR(str, val) { g_free(str); str = g_strdup(val); }
 #define UPD_NSTR(str, val, max) { g_free(str); str = g_strndup(val, max); }
+#define SET_SA(desc, ndx, cond) {if (G_IS_SIMPLE_ACTION(desc[ndx].sa)) g_simple_action_set_enabled(desc[ndx].sa, cond);}
 
 #define ACT_START_HDR  "Start"
 #define ACT_STOP_HDR   "Stop"
@@ -78,6 +86,9 @@
 #define ACT_RESET_HDR  "Reset"
 #define ACT_HELP_HDR   "Help"
 #define ACT_QUIT_HDR   "Exit"
+#define ACT_COPY_HDR   "Copy"
+#define ACT_SALL_HDR   "Select all"
+#define ACT_UNSALL_HDR "Unselect all"
 
 #define OPT_CYCLES_HDR "Cycles"
 #define OPT_IVAL_HDR   "Interval"
@@ -157,7 +168,20 @@ typedef struct hop {
 } t_hop;
 
 typedef struct ref { t_hop *hop; int ndx; } t_ref;
-typedef struct tab { GtkWidget *tab, *lab, *dyn, *hdr; const char *ico, *tag; } t_tab;
+
+typedef struct tab {
+  GtkWidget *tab, *lab, *dyn, *hdr;
+  const char *ico, *tag;
+  GMenu *menu;    // menu template
+  GtkWidget *pop; // popover menu
+  bool sel;       // flag of selected rows
+} t_tab;
+
+typedef struct t_act_desc {
+  GSimpleAction* sa;
+  const char *name;
+  const char *const *shortcut;
+} t_act_desc;
 
 extern const char *appver;
 extern const char *unkn_error;

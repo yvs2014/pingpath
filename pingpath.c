@@ -43,7 +43,7 @@ static void app_cb(GtkApplication* app, gpointer unused) {
   if (!GTK_IS_NOTEBOOK(nb)) APPQUIT("%s", "notebook");
   if (style_loaded) gtk_widget_add_css_class(nb, CSS_BGROUND);
   gtk_notebook_set_tab_pos(GTK_NOTEBOOK(nb), GTK_POS_BOTTOM);
-  t_tab* tabs[TAB_NDX_MAX] = { [TAB_PING_NDX] = pingtab_init(), [TAB_LOG_NDX] = logtab_init() };
+  t_tab* tabs[TAB_NDX_MAX] = { [TAB_PING_NDX] = pingtab_init(), [TAB_LOG_NDX] = logtab_init(win) };
   for (int i = 0; i < G_N_ELEMENTS(tabs); i++) {
     t_tab *tab = tabs[i]; if (!tab) APPQUIT("tab#%d", i);
     tab_setup(tab);

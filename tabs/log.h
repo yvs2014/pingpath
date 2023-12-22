@@ -3,6 +3,6 @@
 
 #include "common.h"
 
-t_tab* logtab_init(void);
+t_tab* logtab_init(GtkWidget *win);
 
 #endif

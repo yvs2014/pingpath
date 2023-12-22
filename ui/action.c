@@ -11,15 +11,16 @@
 #define SPANSUB(txt)  SPANSZ("1",   "medium", "\t\t<tt>" txt "</tt>")
 #define MSTRSTR(x) MSTR(x)
 #define MSTR(x) #x
+#define MA_LOG(ndx) LOG("menu action %s", action_label(ndx))
 
 enum { ACT_NDX_START, ACT_NDX_PAUSE, ACT_NDX_RESET, ACT_NDX_HELP, ACT_NDX_QUIT, ACT_NDX_MAX };
 enum { APP_NDX, WIN_NDX, APP_WIN_MAX };
 
-typedef struct t_act_desc {
-  GSimpleAction* sa;
-  const char *name;
-  const char *const *shortcut;
-} t_act_desc;
+static const char* kb_ctrl_s[] = {"<Ctrl>s", NULL};
+static const char* kb_space[]  = {"space",   NULL};
+static const char* kb_ctrl_r[] = {"<Ctrl>r", NULL};
+static const char* kb_ctrl_h[] = {"<Ctrl>h", NULL};
+static const char* kb_ctrl_x[] = {"<Ctrl>x", NULL};
 
 static const gchar *help_message =
   SPANHDR("Actions")
@@ -45,12 +46,6 @@ static const gchar *help_message =
   SPANOPT(OPT_LOGMAX_HDR       , "Max rows in log tab [" MSTRSTR(DEF_LOGMAX) "]")
 ;
 
-static const char* kb_ctrl_s[] = {"<Ctrl>s", NULL};
-static const char* kb_space[]  = {"space",   NULL};
-static const char* kb_ctrl_r[] = {"<Ctrl>r", NULL};
-static const char* kb_ctrl_h[] = {"<Ctrl>h", NULL};
-static const char* kb_ctrl_x[] = {"<Ctrl>x", NULL};
-
 static t_act_desc act_desc[ACT_NDX_MAX] = {
   [ACT_NDX_START] = { .name = "app.act_start", .shortcut = kb_ctrl_s },
   [ACT_NDX_PAUSE] = { .name = "app.act_pause", .shortcut = kb_space  },
@@ -58,9 +53,6 @@ static t_act_desc act_desc[ACT_NDX_MAX] = {
   [ACT_NDX_HELP]  = { .name = "app.act_help",  .shortcut = kb_ctrl_h },
   [ACT_NDX_QUIT]  = { .name = "app.act_exit",  .shortcut = kb_ctrl_x },
 };
-
-#define APP_DOT 4
-#define SET_SA(ndx, cond) {if (G_IS_SIMPLE_ACTION(act_desc[ndx].sa)) g_simple_action_set_enabled(act_desc[ndx].sa, cond);}
 
 static void on_startstop  (GSimpleAction*, GVariant*, gpointer);
 static void on_pauseresume(GSimpleAction*, GVariant*, gpointer);
@@ -76,7 +68,7 @@ static GActionEntry act_entries[ACT_NDX_MAX] = {
   [ACT_NDX_QUIT]  = { .activate = on_quit },
 };
 
-static GMenu *act_menu;
+static GMenu *action_menu;
 
 
 // aux
@@ -95,7 +87,7 @@ static const char* action_label(int ndx) {
 
 static void on_startstop(GSimpleAction *action, GVariant *var, gpointer data) {
   if (opts.target) {
-    LOG("action %s", action_label(ACT_NDX_START));
+    MA_LOG(ACT_NDX_START);
     if (!stat_timer) pinger_start();
     else pinger_stop("request");
     appbar_update();
@@ -103,14 +95,14 @@ static void on_startstop(GSimpleAction *action, GVariant *var, gpointer data) {
 }
 
 static void on_pauseresume(GSimpleAction *action, GVariant *var, gpointer data) {
-  LOG("action %s", action_label(ACT_NDX_PAUSE));
+  MA_LOG(ACT_NDX_PAUSE);
   pinger_state.pause = !pinger_state.pause;
   action_update();
   pingtab_wrap_update();
 }
 
 static void on_reset(GSimpleAction *action, GVariant *var, gpointer data) {
-  LOG("action %s", action_label(ACT_NDX_RESET));
+  MA_LOG(ACT_NDX_RESET);
   pinger_clear_data(false);
 }
 
@@ -128,7 +120,7 @@ static void on_help(GSimpleAction *action, GVariant *var, gpointer data) {
     "buttons", GTK_BUTTONS_OK,
     NULL);
   if (GTK_IS_WINDOW(help)) {
-    LOG("action %s", action_label(ACT_NDX_HELP));
+    MA_LOG(ACT_NDX_HELP);
     g_signal_connect(help, "response", G_CALLBACK(gtk_window_destroy), NULL);
     gtk_window_present(GTK_WINDOW(help));
   }
@@ -138,12 +130,12 @@ static void on_quit(GSimpleAction *action, GVariant *var, gpointer data) {
   if (!data) return;
   GtkWidget *app = ((gpointer*)data)[APP_NDX];
   g_return_if_fail(G_IS_APPLICATION(app));
-  LOG("action %s", action_label(ACT_NDX_QUIT));
+  MA_LOG(ACT_NDX_QUIT);
   pinger_on_quit(true);
   g_application_quit(G_APPLICATION(app));
 }
 
-static GMenu* create_act_menu(GtkWidget *bar) {
+static GMenu* action_menu_init(GtkWidget *bar) {
   g_return_val_if_fail(GTK_IS_HEADER_BAR(bar), NULL);
   GMenu *menu = g_menu_new();
   g_return_val_if_fail(G_IS_MENU(menu), NULL);
@@ -154,26 +146,36 @@ static GMenu* create_act_menu(GtkWidget *bar) {
   GtkWidget *popover = gtk_popover_menu_new_from_model(G_MENU_MODEL(menu));
   g_return_val_if_fail(GTK_IS_POPOVER_MENU(popover), NULL);
   gtk_menu_button_set_popover(GTK_MENU_BUTTON(button), popover);
-  act_menu = menu;
-  return act_menu;
+  return menu;
 }
 
-static bool create_menus(GtkApplication *app, GtkWidget *win, GtkWidget *bar) {
+static bool create_action_menu(GtkApplication *app, GtkWidget *win, GtkWidget *bar) {
   static gpointer appwin[APP_WIN_MAX];
   g_return_val_if_fail(GTK_IS_APPLICATION(app), false);
   g_return_val_if_fail(GTK_IS_WINDOW(win), false);
   g_return_val_if_fail(GTK_IS_HEADER_BAR(bar), false);
   appwin[APP_NDX] = app; appwin[WIN_NDX] = win;
-  for (int i = 0; i < ACT_NDX_MAX; i++) act_entries[i].name = act_desc[i].name + APP_DOT;
+  for (int i = 0; i < ACT_NDX_MAX; i++) act_entries[i].name = act_desc[i].name + ACT_DOT;
   g_action_map_add_action_entries(G_ACTION_MAP(app), act_entries, ACT_NDX_MAX, appwin);
   for (int i = 0; i < ACT_NDX_MAX; i++)
     act_desc[i].sa = G_SIMPLE_ACTION(g_action_map_lookup_action(G_ACTION_MAP(app), act_entries[i].name));
-  if (!create_act_menu(bar)) return false;
+  if (!(action_menu = action_menu_init(bar))) return false;
   for (int i = 0; i < ACT_NDX_MAX; i++)
     gtk_application_set_accels_for_action(app, act_desc[i].name, act_desc[i].shortcut);
   return true;
 }
 
+static void action_update_internal(GMenu *menu) {
+  if (G_IS_MENU(menu)) {
+    g_menu_remove_all(menu);
+    for (int i = 0; i < ACT_NDX_MAX; i++)
+      g_menu_append_item(menu, g_menu_item_new(action_label(i), act_desc[i].name));
+  }
+  bool run = pinger_state.run, pause = pinger_state.pause;
+  SET_SA(act_desc, ACT_NDX_START, opts.target != NULL);
+  SET_SA(act_desc, ACT_NDX_PAUSE, pause || (!pause && run));
+  SET_SA(act_desc, ACT_NDX_RESET, run);
+}
 
 // pub
 //
@@ -182,19 +184,9 @@ bool action_init(GtkApplication *app, GtkWidget* win, GtkWidget* bar) {
   g_return_val_if_fail(GTK_IS_APPLICATION(app), false);
   g_return_val_if_fail(GTK_IS_WINDOW(win), false);
   g_return_val_if_fail(GTK_IS_HEADER_BAR(bar), false);
-  g_return_val_if_fail(create_menus(app, win, bar), false);
+  g_return_val_if_fail(create_action_menu(app, win, bar), false);
   return true;
 }
 
-void action_update(void) {
-  if (G_IS_MENU(act_menu)) {
-    g_menu_remove_all(act_menu);
-    for (int i = 0; i < ACT_NDX_MAX; i++)
-      g_menu_append_item(act_menu, g_menu_item_new(action_label(i), act_desc[i].name));
-  }
-  bool run = pinger_state.run, pause = pinger_state.pause;
-  SET_SA(ACT_NDX_START, opts.target != NULL);
-  SET_SA(ACT_NDX_PAUSE, pause || (!pause && run));
-  SET_SA(ACT_NDX_RESET, run);
-}
+void action_update(void) { action_update_internal(action_menu); }
 
