@@ -23,7 +23,7 @@ static void on_tab_switch(GtkNotebook *nb, GtkWidget *tab, guint ndx, gpointer u
     else if (GTK_IS_SCROLLED_WINDOW(p)) {
       GtkWidget *c = gtk_scrolled_window_get_child(GTK_SCROLLED_WINDOW(p));
       if (GTK_IS_VIEWPORT(c)) c = gtk_viewport_get_child(GTK_VIEWPORT(c));
-      if (GTK_IS_BOX(c)) for (GtkWidget *n = gtk_widget_get_first_child(c); n; n = gtk_widget_get_next_sibling(c))
+      if (GTK_IS_BOX(c)) for (GtkWidget *n = gtk_widget_get_first_child(c); n; n = gtk_widget_get_next_sibling(n))
         if (GTK_IS_LIST_BOX(n)) gtk_list_box_unselect_all(GTK_LIST_BOX(n));
     }
   }
@@ -43,7 +43,7 @@ static void app_cb(GtkApplication* app, gpointer unused) {
   if (!GTK_IS_NOTEBOOK(nb)) APPQUIT("%s", "notebook");
   if (style_loaded) gtk_widget_add_css_class(nb, CSS_BGROUND);
   gtk_notebook_set_tab_pos(GTK_NOTEBOOK(nb), GTK_POS_BOTTOM);
-  t_tab* tabs[TAB_NDX_MAX] = { [TAB_PING_NDX] = pingtab_init(), [TAB_LOG_NDX] = logtab_init(win) };
+  t_tab* tabs[TAB_NDX_MAX] = { [TAB_PING_NDX] = pingtab_init(win), [TAB_LOG_NDX] = logtab_init(win) };
   for (int i = 0; i < G_N_ELEMENTS(tabs); i++) {
     t_tab *tab = tabs[i]; if (!tab) APPQUIT("tab#%d", i);
     tab_setup(tab);

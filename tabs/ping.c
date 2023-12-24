@@ -4,6 +4,7 @@
 #include "pinger.h"
 #include "stat.h"
 #include "ui/style.h"
+#include "ui/clipboard.h"
 
 #define ELEM_BUFF_SIZE 16
 #define HOPNO_MAX_CHARS 3
@@ -19,14 +20,18 @@ typedef struct listline {
 typedef struct listbox {
   t_listline header[HDRLINES];
   t_listline lines[MAXTTL];
-  GtkWidget* info;
+  t_listline info;
 } t_listbox;
-
-static t_tab pingtab = { .ico = PING_TAB_ICON, .tag = PING_TAB_TAG };
-static t_listbox listbox;
 
 const gchar *info_mesg;
 const gchar *notyet_mesg = "No data yet";
+
+static t_listbox listbox;
+
+static t_tab pingtab = { .self = &pingtab, .name = "ping-tab", .ico = PING_TAB_ICON, .tag = PING_TAB_TAG,
+  .desc = { [POP_MENU_NDX_COPY] = { .name = "win.ping_menu_copy" }, [POP_MENU_NDX_SALL] = { .name = "win.ping_menu_sall" }},
+  .act = { [POP_MENU_NDX_COPY] = { .activate = cb_on_copy_l2 }, [POP_MENU_NDX_SALL] = { .activate = cb_on_sall }},
+};
 
 static void align_elem_label(GtkWidget* label, int max, GtkAlign align, bool expand) {
   gtk_label_set_width_chars(GTK_LABEL(label), max);
@@ -89,7 +94,6 @@ static GtkWidget* init_list_box(t_listline *lines, int len, bool vis, bool hdr) 
     gtk_widget_set_visible(c, vis);
     GtkListBoxRow *row = lines[i].row = line_row_new(c, vis);
     g_return_val_if_fail(GTK_IS_LIST_BOX_ROW(row), NULL);
-    gtk_list_box_row_set_activatable(row, !hdr);
     t_stat_elem *arr;
     if (hdr) arr = statelem; else {
       char *s = stat_no_at_buff[i];
@@ -106,11 +110,19 @@ static GtkWidget* init_list_box(t_listline *lines, int len, bool vis, bool hdr) 
 }
 
 static GtkWidget* init_info(void) {
-  GtkWidget *label = listbox.info = gtk_label_new(NULL);
+  GtkWidget *list = gtk_list_box_new();
+  g_return_val_if_fail(GTK_IS_LIST_BOX(list), NULL);
+  gtk_list_box_set_selection_mode(GTK_LIST_BOX(list), GTK_SELECTION_MULTIPLE);
+  gtk_list_box_set_activate_on_single_click(GTK_LIST_BOX(list), false);
+  GtkWidget *label = listbox.info.child = gtk_label_new(NULL);
   g_return_val_if_fail(GTK_IS_LABEL(label), NULL);
   gtk_widget_set_visible(label, false);
   gtk_widget_set_halign(label, GTK_ALIGN_START);
-  return label;
+  listbox.info.row = line_row_new(label, false);
+  g_return_val_if_fail(GTK_IS_LIST_BOX_ROW(listbox.info.row), NULL);
+  gtk_list_box_append(GTK_LIST_BOX(list), GTK_WIDGET(listbox.info.row));
+  listbox.info.child = label;
+  return list;
 }
 
 static void set_vis_cells(t_listline *line) {
@@ -120,6 +132,7 @@ static void set_vis_cells(t_listline *line) {
 
 // pub
 //
+
 void pingtab_clear(void) {
   for (int i = 0; i < MAXTTL; i++) {
     t_listline *line = &listbox.lines[i];
@@ -130,8 +143,9 @@ void pingtab_clear(void) {
       if (j != ELEM_NO) gtk_label_set_text(GTK_LABEL(line->cells[j]), NULL);
     }
   }
-  gtk_widget_set_visible(listbox.info, false);
-  gtk_label_set_label(GTK_LABEL(listbox.info), NULL);
+  gtk_widget_set_visible(GTK_WIDGET(listbox.info.row), false);
+  gtk_widget_set_visible(listbox.info.child, false);
+  gtk_label_set_label(GTK_LABEL(listbox.info.child), NULL);
   pinger_free_errors();
 }
 
@@ -149,7 +163,7 @@ gboolean pingtab_update(gpointer data) {
           }
         }
   { // no data display
-    bool notyet = info_mesg == notyet_mesg;
+    bool notyet = (info_mesg == notyet_mesg);
     if (pinger_state.gotdata) { if (notyet) pingtab_set_error(NULL); }
     else if (!notyet && !info_mesg && pinger_state.gotdata) pingtab_set_error(notyet_mesg);
   }
@@ -190,11 +204,13 @@ void pingtab_update_width(int max, int ndx) {
 
 void pingtab_set_error(const gchar *error) {
   info_mesg = error;
-  gtk_label_set_label(GTK_LABEL(listbox.info), error);
-  gtk_widget_set_visible(listbox.info, true);
+  gtk_label_set_label(GTK_LABEL(listbox.info.child), error);
+  bool vis = error && error[0];
+  gtk_widget_set_visible(GTK_WIDGET(listbox.info.row), vis);
+  gtk_widget_set_visible(listbox.info.child, vis);
 }
 
-t_tab* pingtab_init() {
+t_tab* pingtab_init(GtkWidget* win) {
   pingtab.lab = gtk_box_new(GTK_ORIENTATION_VERTICAL, 2);
   g_return_val_if_fail(GTK_IS_BOX(pingtab.lab), NULL);
   pingtab.tab = gtk_box_new(GTK_ORIENTATION_VERTICAL, MARGIN);
@@ -207,15 +223,16 @@ t_tab* pingtab_init() {
   GtkWidget *box = gtk_box_new(GTK_ORIENTATION_VERTICAL, MARGIN);
   g_return_val_if_fail(GTK_IS_BOX(box), NULL);
   gtk_box_append(GTK_BOX(box), pingtab.dyn);
-  GtkWidget *info = init_info();
-  g_return_val_if_fail(GTK_IS_WIDGET(info), NULL);
-  gtk_box_append(GTK_BOX(box), info);
+  pingtab.info = init_info();
+  g_return_val_if_fail(GTK_IS_WIDGET(pingtab.info), NULL);
+  gtk_box_append(GTK_BOX(box), pingtab.info);
   //
   GtkWidget *scroll = gtk_scrolled_window_new();
   g_return_val_if_fail(GTK_IS_SCROLLED_WINDOW(scroll), NULL);
   gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scroll), box);
   gtk_widget_set_vexpand(GTK_WIDGET(scroll), true);
   gtk_box_append(GTK_BOX(pingtab.tab), scroll);
+  if (!clipboard_init(win, &pingtab)) LOG("no %s clipboard", pingtab.name);
   return &pingtab;
 }
 

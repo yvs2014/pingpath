@@ -68,9 +68,11 @@ static void process_stopped(GObject *process, GAsyncResult *result, t_proc *proc
   if (G_IS_SUBPROCESS(process)) {
     GError *error = NULL;
     bool okay = g_subprocess_wait_check_finish(G_SUBPROCESS(process), result, &error);
-    int rc = g_subprocess_get_term_sig(G_SUBPROCESS(process));
     int sig = proc ? proc->sig : 0;
-    if (!okay && sig && (rc != sig)) ERROR("subprocess wait-finish"); // rc != sig: skip own stop signals
+    if (!okay && sig) {
+      int rc = g_subprocess_get_term_sig(G_SUBPROCESS(process));
+      if (rc != sig) ERROR("subprocess wait-finish"); // rc != sig: skip own stop signals
+    }
   }
   if (proc) {
     if G_IS_OBJECT(proc->proc) {

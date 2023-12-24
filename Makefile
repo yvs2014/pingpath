@@ -15,7 +15,7 @@ PKGCONFIG = $(shell which pkg-config)
 
 SRC = $(NAME).c common.c
 SRC += pinger.c parser.c stat.c dns.c whois.c
-SRC += ui/style.c ui/appbar.c ui/action.c ui/option.c
+SRC += ui/style.c ui/appbar.c ui/action.c ui/option.c ui/clipboard.c
 SRC += tabs/ping.c tabs/log.c
 
 OBJS = $(SRC:.c=.o)

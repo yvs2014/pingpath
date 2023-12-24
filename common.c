@@ -41,13 +41,10 @@ void tab_setup(t_tab *tab) {
       }
     }
   }
-  if (GTK_IS_WIDGET(tab->hdr)) {
-    gtk_widget_set_can_focus(tab->hdr, false);
-    if (style_loaded) gtk_widget_add_css_class(tab->hdr, CSS_BGROUND);
-  }
-  if (GTK_IS_WIDGET(tab->dyn)) {
-    gtk_widget_set_can_focus(tab->dyn, false);
-    if (style_loaded) gtk_widget_add_css_class(tab->dyn, CSS_BGROUND);
+  GtkWidget* arr[] = { tab->hdr, tab->dyn, tab->info };
+  for (int i = 0; i < G_N_ELEMENTS(arr); i++) if (GTK_IS_WIDGET(arr[i])) {
+    gtk_widget_set_can_focus(arr[i], false);
+    if (style_loaded) gtk_widget_add_css_class(arr[i], CSS_BGROUND);
   }
   if (GTK_IS_WIDGET(tab->tab) && style_loaded) {
     gtk_widget_add_css_class(tab->tab, CSS_PAD);

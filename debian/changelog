@@ -1,3 +1,9 @@
+pingpath (0.1.38) lunar mantic; urgency=low
+
+  * add clipboard menu to ping tab
+
+ -- yvs <VSYakovetsky@gmail.com>  Sun, 24 Dec 2023 11:02:20 +0200
+
 pingpath (0.1.37) lunar mantic; urgency=low
 
   * add clipboard menu to log tab

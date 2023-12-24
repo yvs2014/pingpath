@@ -9,7 +9,6 @@
 #define DEF_QOS    0
 #define DEF_PPAD  "00"
 #define DEF_PSIZE  56
-#define DEF_LOGMAX 500
 
 typedef struct minmax {
   int min, max;

@@ -3,7 +3,7 @@
 
 #include "common.h"
 
-t_tab* pingtab_init(void);
+t_tab* pingtab_init(GtkWidget* win);
 gboolean pingtab_update(gpointer data);
 void pingtab_wrap_update(void);
 void pingtab_clear(void);

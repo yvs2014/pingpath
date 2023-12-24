@@ -1,3 +1,6 @@
+## 0.1.38
+- add clipboard menu to ping tab
+
 ## 0.1.37
 - add clipboard menu to log tab
 

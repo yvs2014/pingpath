@@ -4,7 +4,7 @@
 #include <gtk/gtk.h>
 
 #define APPNAME "pingpath"
-#define VERSION "0.1.37"
+#define VERSION "0.1.38"
 
 #define MAXTTL  30
 #define MAXADDR 10
@@ -14,9 +14,10 @@
 #define DNS_CACHE_MAX   MAXTTL
 #define WHOIS_QUERY_MAX MAXTTL
 #define WHOIS_CACHE_MAX MAXTTL
+#define DEF_LOGMAX      500 // max lines in log-tab
 
-#define MAXHOSTNAME     63 // in chars: must 63, should 255
-#define NET_BUFF_SIZE 4096 // suppose it's enough (dns or whois data is usually 200-300 bytes)
+#define MAXHOSTNAME     63  // in chars: must 63, should 255
+#define NET_BUFF_SIZE 4096  // suppose it's enough (dns or whois data is usually 200-300 bytes)
 #define BUFF_SIZE     1024
 #define PAD_SIZE        48
 
@@ -136,6 +137,8 @@ enum { ELEM_NO, ELEM_HOST, ELEM_AS, ELEM_CC, ELEM_DESC, ELEM_RT, ELEM_FILL,
 
 enum { WHOIS_AS_NDX, WHOIS_CC_NDX, WHOIS_DESC_NDX, WHOIS_RT_NDX, WHOIS_NDX_MAX };
 
+enum { POP_MENU_NDX_COPY, POP_MENU_NDX_SALL, POP_MENU_NDX_MAX };
+
 typedef struct host {
   gchar *addr, *name;
 } t_host;
@@ -164,24 +167,28 @@ typedef struct hop {
   bool reach;
   bool tout; // flag of timeouted seq
   gchar* info;
-  int at;    // for DEBUG
+  int at;    // useful back reference
 } t_hop;
 
 typedef struct ref { t_hop *hop; int ndx; } t_ref;
-
-typedef struct tab {
-  GtkWidget *tab, *lab, *dyn, *hdr;
-  const char *ico, *tag;
-  GMenu *menu;    // menu template
-  GtkWidget *pop; // popover menu
-  bool sel;       // flag of selected rows
-} t_tab;
 
 typedef struct t_act_desc {
   GSimpleAction* sa;
   const char *name;
   const char *const *shortcut;
 } t_act_desc;
+
+typedef struct tab {
+  struct tab *self;
+  const char *name;
+  GtkWidget *tab, *lab, *dyn, *hdr, *info;
+  const char *ico, *tag;
+  GMenu *menu;       // menu template
+  GtkWidget *pop;    // popover menu
+  bool sel;          // flag of selection
+  t_act_desc desc[POP_MENU_NDX_MAX];
+  GActionEntry act[POP_MENU_NDX_MAX];
+} t_tab;
 
 extern const char *appver;
 extern const char *unkn_error;
