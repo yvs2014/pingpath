@@ -1,6 +1,4 @@
 
-#include <gtk/gtk.h>
-
 #include "style.h"
 #include "common.h"
 
@@ -9,8 +7,9 @@ int style_loaded;
 #define PROP_THEME "gtk-theme-name"
 #define PROP_PREFER "gtk-application-prefer-dark-theme"
 
-#define DEF_BGROUND_DARK "#151515"
-#define APP_BGROUND_DARK "#2c2c2c"
+#define DEF_BGROUND_DARK  "#151515"
+#define APP_BGROUND_DARK  "#2c2c2c"
+#define APP_BGROUND_LIGHT "#f0f0f0"
 
 #define PAD   "8px"
 #define PAD4  "4px"
@@ -26,6 +25,7 @@ static const gchar *css_dark_colors =
   "headerbar:backdrop {background:" APP_BGROUND_DARK ";}"
   "notebook > header > tabs > tab { background-color:" APP_BGROUND_DARK ";}"
   "." CSS_EXP "{background:" APP_BGROUND_DARK ";}"
+  "." CSS_LIGHT_BG "{background:" APP_BGROUND_LIGHT ";}"
 ;
 
 static const gchar *css_common =
@@ -39,7 +39,9 @@ static const gchar *css_common =
   "." CSS_PAD6  "{padding-right:" PAD6 ";}"
   "." CSS_NOFRAME "{border:none;}"
   "." CSS_TAB "{padding:" PAD ";}"
+  "." CSS_ROUNDED "{border-radius:5px; padding:" PAD16 ";}"
   "#" CSS_ID_DATETIME "{font-weight:500;}"
+  "#" CSS_ID_NOTIFIER "{ filter: invert(100%); }"
 ;
 
 static GValue* get_gval(GtkSettings *gset, const char *key, GValue *val) {
@@ -65,10 +67,10 @@ static gchar* get_gset_str_by_key(GtkSettings *sets, const char *key) {
 void style_init(void) {
   static gchar css_data[BUFF_SIZE];
   GdkDisplay *display = gdk_display_get_default();
-  if (!display) { WARN("%s", "no default display"); return; }
+  if (!display) { WARN_("no default display"); return; }
   GtkSettings *settings = gtk_settings_get_default();
   int l = g_snprintf(css_data, sizeof(css_data), "%s", css_common);
-  if (!settings) { LOG("%s", "no default settings"); }
+  if (!settings) { LOG_("no default settings"); }
   else { // try to prefer dark theme, otherwise leave default
     g_object_set(G_OBJECT(settings), PROP_PREFER, TRUE, NULL);
     int prefer_dark = get_gset_bool_by_key(settings, PROP_PREFER);

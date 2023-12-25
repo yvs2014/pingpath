@@ -1,10 +1,10 @@
 
 #include "option.h"
-#include "common.h"
 #include "parser.h"
 #include "pinger.h"
 #include "stat.h"
 #include "style.h"
+#include "notifier.h"
 #include "tabs/ping.h"
 
 #define ENT_BUFF_SIZE 64
@@ -34,6 +34,7 @@ typedef struct ent_str {
 typedef struct ent_bool {
   t_ent_ndx en;
   bool *pval;
+  const gchar *prefix;
 } t_ent_bool;
 
 typedef struct ent_exp_common {
@@ -71,19 +72,19 @@ typedef struct ent_rad {
 
 static t_ent_bool ent_bool[ENT_BOOL_MAX] = {
   [ENT_BOOL_DNS]  = { .en = { .typ = ENT_BOOL_DNS,  .name = OPT_DNS_HDR },    .pval = &opts.dns },
-  [ENT_BOOL_HOST] = { .en = { .typ = ENT_BOOL_HOST, .name = ELEM_HOST_HDR },  .pval = &statelem[ELEM_HOST].enable },
-  [ENT_BOOL_AS]   = { .en = { .typ = ENT_BOOL_AS,   .name = ELEM_AS_HDR },    .pval = &statelem[ELEM_AS].enable   },
-  [ENT_BOOL_CC]   = { .en = { .typ = ENT_BOOL_CC,   .name = ELEM_CC_HDR },    .pval = &statelem[ELEM_CC].enable   },
-  [ENT_BOOL_DESC] = { .en = { .typ = ENT_BOOL_DESC, .name = ELEM_DESC_HDR },  .pval = &statelem[ELEM_DESC].enable },
-  [ENT_BOOL_RT]   = { .en = { .typ = ENT_BOOL_RT,   .name = ELEM_RT_HDR },    .pval = &statelem[ELEM_RT].enable   },
-  [ENT_BOOL_LOSS] = { .en = { .typ = ENT_BOOL_LOSS, .name = ELEM_LOSS_HDRL},  .pval = &statelem[ELEM_LOSS].enable },
-  [ENT_BOOL_SENT] = { .en = { .typ = ENT_BOOL_SENT, .name = ELEM_SENT_HDR },  .pval = &statelem[ELEM_SENT].enable },
-  [ENT_BOOL_RECV] = { .en = { .typ = ENT_BOOL_RECV, .name = ELEM_RECV_HDR },  .pval = &statelem[ELEM_RECV].enable },
-  [ENT_BOOL_LAST] = { .en = { .typ = ENT_BOOL_LAST, .name = ELEM_LAST_HDR },  .pval = &statelem[ELEM_LAST].enable },
-  [ENT_BOOL_BEST] = { .en = { .typ = ENT_BOOL_BEST, .name = ELEM_BEST_HDR },  .pval = &statelem[ELEM_BEST].enable },
-  [ENT_BOOL_WRST] = { .en = { .typ = ENT_BOOL_WRST, .name = ELEM_WRST_HDRL }, .pval = &statelem[ELEM_WRST].enable },
-  [ENT_BOOL_AVRG] = { .en = { .typ = ENT_BOOL_AVRG, .name = ELEM_AVRG_HDRL }, .pval = &statelem[ELEM_AVRG].enable },
-  [ENT_BOOL_JTTR] = { .en = { .typ = ENT_BOOL_JTTR, .name = ELEM_JTTR_HDRL }, .pval = &statelem[ELEM_JTTR].enable },
+  [ENT_BOOL_HOST] = { .en = { .typ = ENT_BOOL_HOST, .name = ELEM_HOST_HDR },  .pval = &statelem[ELEM_HOST].enable, .prefix = OPT_INFO_HDR },
+  [ENT_BOOL_AS]   = { .en = { .typ = ENT_BOOL_AS,   .name = ELEM_AS_HDR },    .pval = &statelem[ELEM_AS].enable,   .prefix = OPT_INFO_HDR },
+  [ENT_BOOL_CC]   = { .en = { .typ = ENT_BOOL_CC,   .name = ELEM_CC_HDR },    .pval = &statelem[ELEM_CC].enable,   .prefix = OPT_INFO_HDR  },
+  [ENT_BOOL_DESC] = { .en = { .typ = ENT_BOOL_DESC, .name = ELEM_DESC_HDR },  .pval = &statelem[ELEM_DESC].enable, .prefix = OPT_INFO_HDR  },
+  [ENT_BOOL_RT]   = { .en = { .typ = ENT_BOOL_RT,   .name = ELEM_RT_HDR },    .pval = &statelem[ELEM_RT].enable,   .prefix = OPT_INFO_HDR  },
+  [ENT_BOOL_LOSS] = { .en = { .typ = ENT_BOOL_LOSS, .name = ELEM_LOSS_HDRL},  .pval = &statelem[ELEM_LOSS].enable, .prefix = OPT_STAT_HDR  },
+  [ENT_BOOL_SENT] = { .en = { .typ = ENT_BOOL_SENT, .name = ELEM_SENT_HDR },  .pval = &statelem[ELEM_SENT].enable, .prefix = OPT_STAT_HDR  },
+  [ENT_BOOL_RECV] = { .en = { .typ = ENT_BOOL_RECV, .name = ELEM_RECV_HDR },  .pval = &statelem[ELEM_RECV].enable, .prefix = OPT_STAT_HDR  },
+  [ENT_BOOL_LAST] = { .en = { .typ = ENT_BOOL_LAST, .name = ELEM_LAST_HDR },  .pval = &statelem[ELEM_LAST].enable, .prefix = OPT_STAT_HDR  },
+  [ENT_BOOL_BEST] = { .en = { .typ = ENT_BOOL_BEST, .name = ELEM_BEST_HDR },  .pval = &statelem[ELEM_BEST].enable, .prefix = OPT_STAT_HDR  },
+  [ENT_BOOL_WRST] = { .en = { .typ = ENT_BOOL_WRST, .name = ELEM_WRST_HDRL }, .pval = &statelem[ELEM_WRST].enable, .prefix = OPT_STAT_HDR  },
+  [ENT_BOOL_AVRG] = { .en = { .typ = ENT_BOOL_AVRG, .name = ELEM_AVRG_HDRL }, .pval = &statelem[ELEM_AVRG].enable, .prefix = OPT_STAT_HDR  },
+  [ENT_BOOL_JTTR] = { .en = { .typ = ENT_BOOL_JTTR, .name = ELEM_JTTR_HDRL }, .pval = &statelem[ELEM_JTTR].enable, .prefix = OPT_STAT_HDR  },
 };
 
 static t_ent_str ent_str[ENT_STR_MAX] = {
@@ -127,17 +128,15 @@ static t_ent_rad ent_rad[ENT_RAD_MAX] = {
   },
 };
 
-
-// aux
-//
-
 static void check_bool_val(GtkCheckButton *check, t_ent_bool *en, void (*update)(void)) {
   bool state = gtk_check_button_get_active(check);
   if (en->pval) if (*(en->pval) != state) {
     *(en->pval) = state;
     if (update) update();
   }
-  LOG("%s: %s", en->en.name, state ? "on" : "off");
+  const gchar *onoff = state ? TOGGLE_ON_HDR : TOGGLE_OFF_HDR;
+  if (en->prefix) notifier_inform("%s: %s %s", en->prefix, en->en.name, onoff);
+  else notifier_inform("%s %s", en->en.name, onoff);
 }
 
 static void set_ed_texthint(t_ent_str *en) {
@@ -202,8 +201,8 @@ static void radio_cb(GtkCheckButton *check, t_ent_rad_map *map) {
       if (selected) {
         if (map->val != *(en->pval)) {
           *(en->pval) = map->val;
-         if (map->val) { LOG("%s: %d", en->c.en.name, map->val); }
-         else { LOG("%s: %s", en->c.en.name, map->str); }
+         if (map->val) notifier_inform("%s: %d", en->c.en.name, map->val);
+         else notifier_inform("%s: %s", en->c.en.name, map->str);
         }
       }
     }
@@ -234,14 +233,14 @@ static void input_cb(GtkWidget *input, t_ent_str *en) {
       if (n > 0) {
         if (en->pint) *(en->pint) = n;
         /*extra*/ if (en->en.typ == ENT_STR_IVAL) opts.tout_usec = n * 1000000;
-        LOG("%s: %d", en->en.name, n);
+        notifier_inform("%s: %d", en->en.name, n);
       } else set_ed_texthint(en);
     } break;
     case ENT_STR_PLOAD: {
       const char *pad = parser_pad(got, en->en.name);
       if (pad) {
         if (en->pstr) g_strlcpy(en->pstr, pad, en->slen);
-        LOG("%s: %s", en->en.name, pad);
+        notifier_inform("%s: %s", en->en.name, pad);
       } else set_ed_texthint(en);
     } break;
   }
@@ -259,7 +258,7 @@ static void min_cb(GtkWidget *spin, t_ent_spn *en) {
   int *plim = en->aux[SPN_AUX_LIM].pval;
   int max = plim ? *plim : MAXTTL;
   if (pinger_within_range(1, max, got)) {
-    LOG("%s: %d <=> %d", en->c.en.name, got, max);
+    notifier_inform("%s: %d <=> %d", en->c.en.name, got, max);
     *pmin = val;
     // then adjust right:range
     double cp_min, cp_max;
@@ -284,7 +283,7 @@ static void max_cb(GtkWidget *spin, t_ent_spn *en) {
   int *pmin = en->aux[SPN_AUX_MIN].pval;
   int min = (pmin ? *pmin : 0) + 1;
   if (pinger_within_range(min, MAXTTL, got)) {
-    LOG("%s: %d <=> %d", en->c.en.name, min, got);
+    notifier_inform("%s: %d <=> %d", en->c.en.name, min, got);
     *plim = got;
     // then adjust left:range
     double cp_min, cp_max;

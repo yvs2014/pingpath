@@ -1,7 +1,7 @@
 
 #include "action.h"
-#include "common.h"
 #include "appbar.h"
+#include "notifier.h"
 #include "pinger.h"
 #include "tabs/ping.h"
 
@@ -11,7 +11,8 @@
 #define SPANSUB(txt)  SPANSZ("1",   "medium", "\t\t<tt>" txt "</tt>")
 #define MSTRSTR(x) MSTR(x)
 #define MSTR(x) #x
-#define MA_LOG(ndx) LOG("menu action %s", action_label(ndx))
+#define MA_LOG(ndx) LOG("Action %s", action_label(ndx))
+#define MI_LOG(ndx) notifier_inform("Action %s", action_label(ndx))
 
 enum { ACT_NDX_START, ACT_NDX_PAUSE, ACT_NDX_RESET, ACT_NDX_HELP, ACT_NDX_QUIT, ACT_NDX_MAX };
 enum { APP_NDX, WIN_NDX, APP_WIN_MAX };
@@ -70,10 +71,6 @@ static GActionEntry act_entries[ACT_NDX_MAX] = {
 
 static GMenu *action_menu;
 
-
-// aux
-//
-
 static const char* action_label(int ndx) {
   switch (ndx) {
     case ACT_NDX_START: return pinger_state.run ? ACT_STOP_HDR : ACT_START_HDR;
@@ -87,7 +84,7 @@ static const char* action_label(int ndx) {
 
 static void on_startstop(GSimpleAction *action, GVariant *var, gpointer data) {
   if (opts.target) {
-    MA_LOG(ACT_NDX_START);
+    MI_LOG(ACT_NDX_START);
     if (!stat_timer) pinger_start();
     else pinger_stop("request");
     appbar_update();
@@ -95,14 +92,14 @@ static void on_startstop(GSimpleAction *action, GVariant *var, gpointer data) {
 }
 
 static void on_pauseresume(GSimpleAction *action, GVariant *var, gpointer data) {
-  MA_LOG(ACT_NDX_PAUSE);
+  MI_LOG(ACT_NDX_PAUSE);
   pinger_state.pause = !pinger_state.pause;
   action_update();
   pingtab_wrap_update();
 }
 
 static void on_reset(GSimpleAction *action, GVariant *var, gpointer data) {
-  MA_LOG(ACT_NDX_RESET);
+  MI_LOG(ACT_NDX_RESET);
   pinger_clear_data(false);
 }
 

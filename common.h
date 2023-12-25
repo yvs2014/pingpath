@@ -4,7 +4,7 @@
 #include <gtk/gtk.h>
 
 #define APPNAME "pingpath"
-#define VERSION "0.1.38"
+#define VERSION "0.1.39"
 
 #define MAXTTL  30
 #define MAXADDR 10
@@ -20,6 +20,8 @@
 #define NET_BUFF_SIZE 4096  // suppose it's enough (dns or whois data is usually 200-300 bytes)
 #define BUFF_SIZE     1024
 #define PAD_SIZE        48
+
+#define AUTOHIDE_IN 2000    // popup notifications, in milliseconds
 
 #define EV_ACTIVE     "activate"
 #define EV_TOGGLE     "toggled"
@@ -56,6 +58,11 @@
   log_add("[%s] " fmt     , ts, __VA_ARGS__); \
 }
 
+#define LOG_(mesg) { const char *ts = timestampit(); \
+  GLIB_PR("[%s] %s\n", ts, mesg); \
+  log_add("[%s] %s"  , ts, mesg); \
+}
+
 #define NOLOG(fmt, ...) { GLIB_PR("[%s] " fmt "\n", timestampit(), __VA_ARGS__); }
 
 #ifdef LOGGING
@@ -71,6 +78,7 @@
 #endif
 
 #define WARN(fmt, ...) g_warning("%s: " fmt "\n", __func__, __VA_ARGS__)
+#define WARN_(mesg) g_warning("%s: %s\n", __func__, mesg)
 #define ERROR(at) { g_warning("%s: %s: %s\n", __func__, at, error ? error->message : unkn_error); g_error_free(error); }
 #define ERRLOG(what) { LOG("%s: %s", what, error ? error->message : unkn_error); g_error_free(error); }
 
@@ -90,6 +98,8 @@
 #define ACT_COPY_HDR   "Copy"
 #define ACT_SALL_HDR   "Select all"
 #define ACT_UNSALL_HDR "Unselect all"
+
+#define ENT_TARGET_HDR "Target"
 
 #define OPT_CYCLES_HDR "Cycles"
 #define OPT_IVAL_HDR   "Interval"
@@ -125,6 +135,9 @@
 #define ELEM_AVRG_HDRL "Average"
 #define ELEM_JTTR_HDR  "Jttr"
 #define ELEM_JTTR_HDRL "Jitter"
+
+#define TOGGLE_ON_HDR  "on"
+#define TOGGLE_OFF_HDR "off"
 
 enum { TAB_PING_NDX, TAB_LOG_NDX, TAB_NDX_MAX };
 

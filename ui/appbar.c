@@ -1,25 +1,25 @@
 
 #include "appbar.h"
-#include "common.h"
 #include "style.h"
 #include "action.h"
 #include "option.h"
 #include "pinger.h"
 #include "parser.h"
+#include "notifier.h"
+
+#define ENTER_HINT "Enter hostname or IP address ..."
 
 guint datetime_id;
 
-
-// aux
-//
-
-static gboolean update_datetime(gpointer label) {
+static int update_datetime(gpointer label) {
   static char datetime_label[32]; // note: for 'datetime_id' timer only
-  if (!datetime_id) return false;
-  time_t now = time(NULL);
-  strftime(datetime_label, sizeof(datetime_label), "%F %T", localtime(&now));
-  g_return_val_if_fail(GTK_IS_LABEL(label), true);
-  gtk_label_set_text(GTK_LABEL(label), datetime_label);
+  if (datetime_id) {
+    bool is_label = GTK_IS_LABEL(label);
+    if (!is_label) { datetime_id = 0; g_return_val_if_fail(is_label, G_SOURCE_REMOVE); }
+    time_t now = time(NULL);
+    strftime(datetime_label, sizeof(datetime_label), "%F %T", localtime(&now));
+    gtk_label_set_text(GTK_LABEL(label), datetime_label);
+  }
   return datetime_id;
 }
 
@@ -44,7 +44,7 @@ static void target_cb(GtkWidget *widget, GtkWidget *entry) {
   if (target) {
     g_free(opts.target); opts.target = target;
     action_update();
-    LOG("target: %s", target);
+    notifier_inform(ENT_TARGET_HDR " %s", target);
   }
 }
 
@@ -54,7 +54,7 @@ static bool add_target_input(GtkWidget *bar) {
   g_return_val_if_fail(GTK_IS_ENTRY(entry), false);
 //gtk_entry_set_has_frame(GTK_ENTRY(entry), false);
   gtk_entry_set_max_length(GTK_ENTRY(entry), MAXHOSTNAME);
-  gchar *hint = "Enter hostname or IP address ...";
+  gchar *hint = ENTER_HINT;
   gtk_entry_set_placeholder_text(GTK_ENTRY(entry), hint);
   gtk_editable_set_editable(GTK_EDITABLE(entry), true);
   gtk_editable_set_max_width_chars(GTK_EDITABLE(entry), g_utf8_strlen(hint, MAXHOSTNAME) - 5);

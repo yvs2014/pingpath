@@ -1,3 +1,9 @@
+pingpath (0.1.39) lunar mantic; urgency=low
+
+  * add popup notifier (actions, changes, etc.)
+
+ -- yvs <VSYakovetsky@gmail.com>  Tue, 26 Dec 2023 00:54:31 +0200
+
 pingpath (0.1.38) lunar mantic; urgency=low
 
   * add clipboard menu to ping tab

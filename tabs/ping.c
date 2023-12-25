@@ -1,6 +1,5 @@
 
 #include "ping.h"
-#include "common.h"
 #include "pinger.h"
 #include "stat.h"
 #include "ui/style.h"
@@ -149,7 +148,7 @@ void pingtab_clear(void) {
   pinger_free_errors();
 }
 
-gboolean pingtab_update(gpointer data) {
+int pingtab_update(gpointer data) {
   static const gchar *nopong_mesg[] = { "Not reached", "Not reached yet"};
   if (!pinger_state.pause)
     for (int i = 0; i < hops_no; i++)
@@ -172,7 +171,7 @@ gboolean pingtab_update(gpointer data) {
     if (!info_mesg || (!yet && (info_mesg == nopong_mesg[1])))
       pingtab_set_error(nopong_mesg[yet]);
   }
-  return true;
+  return G_SOURCE_CONTINUE;
 }
 
 inline void pingtab_wrap_update(void) { pingtab_update(NULL); }

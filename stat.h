@@ -1,7 +1,6 @@
 #ifndef STAT_H
 #define STAT_H
 
-#include <gtk/gtk.h>
 #include "common.h"
 
 typedef struct host_max {

@@ -1,6 +1,5 @@
 
 #include "clipboard.h"
-#include "common.h"
 
 static const char* cb_menu_label(int sel) {
   return (sel < 0) ? ACT_COPY_HDR : (sel ? ACT_UNSALL_HDR : ACT_SALL_HDR);

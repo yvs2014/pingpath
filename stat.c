@@ -1,6 +1,5 @@
 
 #include "stat.h"
-#include "common.h"
 #include "pinger.h"
 #include "dns.h"
 #include "whois.h"
@@ -16,12 +15,6 @@
 enum { NONE = 0, RX = 1, TX = 2, RXTX = 3 };
 
 int hops_no = MAXTTL;
-static t_hop hops[MAXTTL];
-static t_host_max host_max;
-static int whois_max[WHOIS_NDX_MAX];
-static const int wndx2endx[WHOIS_NDX_MAX] = {
-  [WHOIS_AS_NDX] = ELEM_AS, [WHOIS_CC_NDX] = ELEM_CC, [WHOIS_DESC_NDX] = ELEM_DESC, [WHOIS_RT_NDX] = ELEM_RT };
-static int visibles = -1;
 
 t_stat_elem statelem[ELEM_MAX] = { // TODO: editable from option menu
   [ELEM_NO]   = { .enable = true, .name = "" },
@@ -42,8 +35,12 @@ t_stat_elem statelem[ELEM_MAX] = { // TODO: editable from option menu
 };
 bool whois_enable; // true if any of {ELEM_AS,ELEM_CC,ELEM_DESC,ELEM_RT} is enabled
 
-// aux
-//
+static t_hop hops[MAXTTL];
+static t_host_max host_max;
+static int whois_max[WHOIS_NDX_MAX];
+static const int wndx2endx[WHOIS_NDX_MAX] = {
+  [WHOIS_AS_NDX] = ELEM_AS, [WHOIS_CC_NDX] = ELEM_CC, [WHOIS_DESC_NDX] = ELEM_DESC, [WHOIS_RT_NDX] = ELEM_RT };
+static int visibles = -1;
 
 static void update_hmax(const gchar* addr, const gchar *name) {
   int la = addr ? g_utf8_strlen(addr, MAXHOSTNAME) : 0;
@@ -88,7 +85,7 @@ static void update_addrname(int at, t_host *b) { // addr is mandatory, name not
         UPD_STR(hop->whois[vacant].elem[j], NULL);
         hops[at].wcached[j] = false;
       }
-      LOG("set addrname[%d]: %s, %s", at, b->addr, b->name);
+      LOG("set addrname[%d]: %s %s", at, b->addr, b->name ? b->name : "");
       if (!b->name && opts.dns) dns_lookup(hop, vacant); // run dns lookup
       if (whois_enable) whois_resolv(hop, vacant);       // run whois resolv
     }

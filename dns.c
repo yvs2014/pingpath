@@ -1,6 +1,5 @@
 
 #include "dns.h"
-#include "common.h"
 #include "stat.h"
 
 typedef struct dns_elem { // network stuff
@@ -39,10 +38,6 @@ static void _pr_dns_clist(GSList *clist) {
 #define PR_DNS_Q {}
 #define PR_DNS_C {}
 #endif
-
-
-// aux
-//
 
 static void dns_query_free(t_dns_elem *elem) {
   if (elem) { host_free(&elem->host); g_slist_free_full(elem->refs, g_free); }
@@ -170,9 +165,9 @@ void dns_lookup(t_hop *hop, int ndx) {
       DNS_DEBUG("send query=%s", addr);
       g_resolver_lookup_by_address_async(res, ia, NULL, (GAsyncReadyCallback)on_dns_lookup, query);
       g_object_unref(ia);
-    } else WARN("%s failed", "g_inet_address_new_from_string()");
+    } else WARN_("g_inet_address_new_from_string() failed");
     g_object_unref(res);
-  } else WARN("%s failed", "g_resolver_get_default()");
+  } else WARN_("g_resolver_get_default() failed");
 }
 
 void dns_cache_free(void) {

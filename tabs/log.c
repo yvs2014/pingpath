@@ -1,6 +1,5 @@
 
 #include "log.h"
-#include "common.h"
 #include "pinger.h"
 #include "ui/clipboard.h"
 
@@ -20,10 +19,10 @@ static void logtab_add(const gchar *str) {
     gtk_list_box_append(GTK_LIST_BOX(logtab.dyn), line);
     loglines++;
   }
-  if (loglines > opts.logmax) {
+  while (loglines > opts.logmax) {
     GtkWidget *line = gtk_widget_get_first_child(logtab.dyn);
     if (GTK_IS_LABEL(line)) gtk_label_set_text(GTK_LABEL(line), NULL);
-    if (GTK_IS_WIDGET(line)) { gtk_list_box_remove(GTK_LIST_BOX(logtab.dyn), line); loglines--; }
+    if (GTK_IS_WIDGET(line)) { gtk_list_box_remove(GTK_LIST_BOX(logtab.dyn), line); loglines--; } else break;
     if (G_IS_OBJECT(line)) g_object_run_dispose(G_OBJECT(line)); // safe to free?
   }
 }

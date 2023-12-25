@@ -1,7 +1,7 @@
 
 #include "parser.h"
-#include "common.h"
 #include "stat.h"
+#include "ui/notifier.h"
 
 #define MAX_LINES 10
 
@@ -74,9 +74,6 @@ static t_parser_regex str_rx[STR_RX_MAX] = {
   [STR_RX_PAD] = { .pattern = "^[\\da-fA-F]{1,32}$" },
 };
 
-
-// aux
-//
 static GRegex* compile_regex(const char *pattern, GRegexCompileFlags flags) {
   GError *err = NULL;
   GRegex *regex = g_regex_new(pattern, flags, 0, &err);
@@ -163,7 +160,7 @@ static bool parse_discard_match(int at, GMatchInfo* match, const char *line) {
 static bool parse_timeout_match(int at, GMatchInfo* match, const char *line) {
   t_ping_timeout res;
   memset(&res, 0, sizeof(res));
-  if (!valid_mark(match, &res.mark)) { WARN("wrong MARK in %s message: %s", "TIMEOUT", line); return false; }
+  if (!valid_mark(match, &res.mark)) { WARN("wrong MARK in TIMEOUT message: %s", line); return false; }
   DEBUG("TIMEOUT[at=%d seq=%d]: seq=%d ts=%lld.%06d", at, res.mark.seq, res.mark.seq, res.mark.sec, res.mark.usec);
   stat_save_timeout(at, &res);
   return true;
@@ -212,12 +209,14 @@ static char* split_with_delim(char **ps, int c) {
 static inline bool parser_valid_char0(gchar *str) { return g_regex_match(hostname_char0_regex, str, 0, NULL); }
 static inline bool parser_valid_host(gchar *host) { return g_regex_match(hostname_chars_regex, host, 0, NULL); }
 
+#define INV_HN_NOTIFY(cause) notifier_inform("Hostname %s", cause)
+
 static bool target_meet_all_conditions(gchar *s, int len, int max) {
   // rfc1123,rfc952 restrictions
-  if (len > max) { LOG("Out of length limit (%d > %d)", len, max); return false; }
-  if (s[len - 1] == '-') { LOG("Hostname %s", "cannot end with hyphen"); return false; }
-  if (!parser_valid_char0(s)) { LOG("Hostname %s", "must start with a letter or a digit"); return false; }
-  if (!parser_valid_host(s)) { LOG("Hostname %s", "contains not allowed characters"); return false; }
+  if (len > max) { notifier_inform("Hostname: out of length limit (%d > %d)", len, max); return false; }
+  if (s[len - 1] == '-') { INV_HN_NOTIFY("cannot end with hyphen"); return false; }
+  if (!parser_valid_char0(s)) { INV_HN_NOTIFY("must start with a letter or a digit"); return false; }
+  if (!parser_valid_host(s)) { INV_HN_NOTIFY("contains not allowed characters"); return false; }
   return true;
 }
 
@@ -247,7 +246,7 @@ void parser_parse(int at, char *input) {
 }
 
 #define CI_MIN 1
-#define PIERR(fmt, ...) { LOG("%s: " fmt ": %s", option, __VA_ARGS__, val); n = -1; }
+#define PIERR(fmt, ...) { notifier_inform("%s: " fmt, option, __VA_ARGS__); n = -1; }
 #define PIOUT(min, max) PIERR("out of range[%d,%d]", min, max)
 
 int parser_int(const gchar *str, int typ, const gchar *option) {
@@ -288,7 +287,7 @@ const char* parser_pad(const gchar *str, const gchar *option) {
   if (valid) {
     g_match_info_free(match);
     return val;
-  } else LOG("%s: no match %s regex: %s", option, str_rx[STR_RX_PAD].pattern, val);
+  } else notifier_inform("%s: no match %s regex", option, str_rx[STR_RX_PAD].pattern);
   return NULL;
 }
 

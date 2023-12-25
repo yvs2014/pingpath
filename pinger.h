@@ -1,7 +1,6 @@
 #ifndef PINGER_H
 #define PINGER_H
 
-#include <gtk/gtk.h>
 #include "common.h"
 
 #define DEF_CYCLES 100

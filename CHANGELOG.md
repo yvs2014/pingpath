@@ -1,3 +1,6 @@
+## 0.1.39
+- add popup notifier (actions, changes, etc.)
+
 ## 0.1.38
 - add clipboard menu to ping tab
 

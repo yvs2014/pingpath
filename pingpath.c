@@ -1,12 +1,11 @@
 
-#include <gtk/gtk.h>
-
 #include "common.h"
 #include "pinger.h"
 #include "parser.h"
 #include "stat.h"
-#include "ui/appbar.h"
 #include "ui/style.h"
+#include "ui/appbar.h"
+#include "ui/notifier.h"
 #include "tabs/ping.h"
 #include "tabs/log.h"
 
@@ -14,7 +13,7 @@ static void on_app_exit(GtkWidget *widget, gpointer unused) {
 // note: subprocesses have to be already terminated by system at this point
 // if not, then pinger_on_quit(true);
   pinger_on_quit(false);
-  LOG("app %s", "quit");
+  LOG_("app quit");
 }
 
 static void on_tab_switch(GtkNotebook *nb, GtkWidget *tab, guint ndx, gpointer unused) {
@@ -52,7 +51,12 @@ static void app_cb(GtkApplication* app, gpointer unused) {
     gtk_notebook_set_tab_reorderable(GTK_NOTEBOOK(nb), tab->tab, true);
   }
   g_signal_connect(nb, EV_TAB_SWITCH, G_CALLBACK(on_tab_switch), NULL);
-  gtk_window_set_child(GTK_WINDOW(win), nb);
+  // nb overlay
+  GtkWidget *over = notifier_init(nb);
+  bool with_over = GTK_IS_OVERLAY(over);
+  if (!with_over) LOG_("failed to add overlay");
+  gtk_window_set_child(GTK_WINDOW(win), with_over ? over : nb);
+  //
   g_signal_connect_swapped(win, "destroy", G_CALLBACK(on_app_exit), nb);
   gtk_window_present(GTK_WINDOW(win));
 }
@@ -60,7 +64,7 @@ static void app_cb(GtkApplication* app, gpointer unused) {
 int main(int argc, char **argv) {
   GtkApplication *app = gtk_application_new("net.tools." APPNAME, G_APPLICATION_DEFAULT_FLAGS);
   g_return_val_if_fail(GTK_IS_APPLICATION(app), -1);
-  LOG("app %s", "run");
+  LOG_("app run");
   stat_init(true);
   pinger_init();
   if (!parser_init()) return -1;

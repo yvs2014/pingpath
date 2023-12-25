@@ -1,6 +1,5 @@
 
 #include "whois.h"
-#include "common.h"
 #include "parser.h"
 #include "stat.h"
 
@@ -56,10 +55,6 @@ void _pr_whois_clist(GSList *clist) {
 #define PR_WHOIS_Q {}
 #define PR_WHOIS_C {}
 #endif
-
-
-// aux
-//
 
 static int wc_cmp(const void *a, const void *b) {
   if (!a || !b) return -1;
@@ -284,7 +279,7 @@ void whois_resolv(t_hop *hop, int ndx) {
     g_socket_client_connect_to_host_async(sock, WHOIS_HOST, WHOIS_PORT, NULL,
       (GAsyncReadyCallback)on_whois_connect, query);
     g_object_unref(sock);
-  } else WARN("%s failed", "g_socket_client_new()");
+  } else WARN_("g_socket_client_new() failed");
 }
 
 void whois_cache_free(void) {

@@ -1,6 +1,5 @@
 
 #include "pinger.h"
-#include "common.h"
 #include "parser.h"
 #include "stat.h"
 #include "dns.h"
@@ -31,9 +30,6 @@ typedef struct proc {
 
 static t_proc pings[MAXTTL];
 static gchar* ping_errors[MAXTTL];
-
-// aux
-//
 
 static gchar* last_error(void) {
   static gchar last_error_buff[BUFF_SIZE];
