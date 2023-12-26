@@ -16,22 +16,22 @@ enum { NONE = 0, RX = 1, TX = 2, RXTX = 3 };
 
 int hops_no = MAXTTL;
 
-t_stat_elem statelem[ELEM_MAX] = { // TODO: editable from option menu
-  [ELEM_NO]   = { .enable = true, .name = "" },
-  [ELEM_HOST] = { .enable = true, .name = ELEM_HOST_HDR },
-  [ELEM_AS]   = { .enable = true, .name = ELEM_AS_HDR },
-  [ELEM_CC]   = { .enable = true, .name = ELEM_CC_HDR },
-  [ELEM_DESC] = { .enable = false, .name = ELEM_DESC_HDR },
-  [ELEM_RT]   = { .enable = false, .name = ELEM_RT_HDR },
-  [ELEM_FILL] = { .enable = true, .name = "" },
-  [ELEM_LOSS] = { .enable = true, .name = ELEM_LOSS_HDR },
-  [ELEM_SENT] = { .enable = true, .name = ELEM_SENT_HDR },
-  [ELEM_RECV] = { .name = ELEM_RECV_HDR },
-  [ELEM_LAST] = { .enable = true, .name = ELEM_LAST_HDR },
-  [ELEM_BEST] = { .enable = true, .name = ELEM_BEST_HDR },
-  [ELEM_WRST] = { .enable = true, .name = ELEM_WRST_HDR },
-  [ELEM_AVRG] = { .enable = true, .name = ELEM_AVRG_HDR },
-  [ELEM_JTTR] = { .enable = true, .name = ELEM_JTTR_HDR },
+t_stat_elem statelem[ELEM_MAX] = {
+  [ELEM_NO]   = { .enable = true,  .name = "" },
+  [ELEM_HOST] = { .enable = true,  .name = ELEM_HOST_HDR, .tip = ELEM_HOST_TIP },
+  [ELEM_AS]   = { .enable = true,  .name = ELEM_AS_HDR,   .tip = ELEM_AS_TIP   },
+  [ELEM_CC]   = { .enable = true,  .name = ELEM_CC_HDR,   .tip = ELEM_CC_TIP   },
+  [ELEM_DESC] = { .enable = false, .name = ELEM_DESC_HDR, .tip = ELEM_DESC_TIP },
+  [ELEM_RT]   = { .enable = false, .name = ELEM_RT_HDR,   .tip = ELEM_RT_TIP   },
+  [ELEM_FILL] = { .enable = true,  .name = "" },
+  [ELEM_LOSS] = { .enable = true,  .name = ELEM_LOSS_HDR, .tip = ELEM_LOSS_TIP },
+  [ELEM_SENT] = { .enable = true,  .name = ELEM_SENT_HDR, .tip = ELEM_SENT_TIP },
+  [ELEM_RECV] = {                  .name = ELEM_RECV_HDR, .tip = ELEM_RECV_TIP },
+  [ELEM_LAST] = { .enable = true,  .name = ELEM_LAST_HDR, .tip = ELEM_LAST_TIP },
+  [ELEM_BEST] = { .enable = true,  .name = ELEM_BEST_HDR, .tip = ELEM_BEST_TIP },
+  [ELEM_WRST] = { .enable = true,  .name = ELEM_WRST_HDR, .tip = ELEM_WRST_TIP },
+  [ELEM_AVRG] = { .enable = true,  .name = ELEM_AVRG_HDR, .tip = ELEM_AVRG_TIP },
+  [ELEM_JTTR] = { .enable = true,  .name = ELEM_JTTR_HDR, .tip = ELEM_JTTR_TIP },
 };
 bool whois_enable; // true if any of {ELEM_AS,ELEM_CC,ELEM_DESC,ELEM_RT} is enabled
 

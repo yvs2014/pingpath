@@ -27,7 +27,7 @@ const gchar *notyet_mesg = "No data yet";
 
 static t_listbox listbox;
 
-static t_tab pingtab = { .self = &pingtab, .name = "ping-tab", .ico = PING_TAB_ICON, .tag = PING_TAB_TAG,
+static t_tab pingtab = { .self = &pingtab, .name = "ping-tab", .ico = PING_TAB_ICON, .tag = PING_TAB_TAG, .tip = PING_TAB_TIP,
   .desc = { [POP_MENU_NDX_COPY] = { .name = "win.ping_menu_copy" }, [POP_MENU_NDX_SALL] = { .name = "win.ping_menu_sall" }},
   .act = { [POP_MENU_NDX_COPY] = { .activate = cb_on_copy_l2 }, [POP_MENU_NDX_SALL] = { .activate = cb_on_sall }},
 };
@@ -68,13 +68,14 @@ static void set_elem_align(int typ, GtkWidget *label) {
   gtk_widget_set_valign(label, GTK_ALIGN_START);
 }
 
-static bool init_child_elem(const t_stat_elem *str, t_listline *line, bool visible) {
+static bool init_child_elem(const t_stat_elem *elem, t_listline *line, bool visible) {
   for (int i = 0; i < ELEM_MAX; i++) {
-    GtkWidget *elem = line->cells[i] = gtk_label_new(str[i].name);
-    g_return_val_if_fail(GTK_IS_LABEL(elem), false);
-    set_elem_align(i, elem);
-    gtk_widget_set_visible(elem, visible && str[i].enable);
-    gtk_box_append(GTK_BOX(line->child), elem);
+    GtkWidget *label = line->cells[i] = gtk_label_new(elem[i].name);
+    g_return_val_if_fail(GTK_IS_LABEL(label), false);
+    set_elem_align(i, label);
+    gtk_widget_set_visible(label, visible && elem[i].enable);
+    gtk_widget_set_tooltip_text(label, elem[i].tip);
+    gtk_box_append(GTK_BOX(line->child), label);
   }
   return true;
 }

@@ -462,6 +462,7 @@ static bool create_optmenu(GtkWidget *bar) {
   optmenu = gtk_menu_button_new();
   g_return_val_if_fail(GTK_IS_MENU_BUTTON(optmenu), false);
   gtk_menu_button_set_icon_name(GTK_MENU_BUTTON(optmenu), OPT_MENU_ICON);
+  gtk_widget_set_tooltip_text(optmenu, OPT_TOOLTIP);
   gtk_header_bar_pack_start(GTK_HEADER_BAR(bar), optmenu);
   GtkWidget *popover = gtk_popover_new();
   g_return_val_if_fail(GTK_IS_POPOVER(popover), false);

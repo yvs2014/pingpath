@@ -49,7 +49,7 @@ void stat_run_whois_resolv(void);
 
 typedef struct t_stat_elem {
   bool enable;
-  gchar* name;
+  gchar *name, *tip;
 } t_stat_elem;
 
 extern int hops_no;

@@ -39,6 +39,7 @@ void tab_setup(t_tab *tab) {
         GtkWidget *tag = gtk_label_new(tab->tag);
         if (GTK_IS_LABEL(tag)) gtk_box_append(GTK_BOX(tab->lab), tag);
       }
+      gtk_widget_set_tooltip_text(tab->lab, tab->tip);
     }
   }
   GtkWidget* arr[] = { tab->hdr, tab->dyn, tab->info };

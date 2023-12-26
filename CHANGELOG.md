@@ -1,3 +1,6 @@
+## 0.1.40
+- add tooltips on hover
+
 ## 0.1.39
 - add popup notifier (actions, changes, etc.)
 

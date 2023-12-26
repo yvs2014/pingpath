@@ -4,7 +4,7 @@
 #include <gtk/gtk.h>
 
 #define APPNAME "pingpath"
-#define VERSION "0.1.39"
+#define VERSION "0.1.40"
 
 #define MAXTTL  30
 #define MAXADDR 10
@@ -41,7 +41,9 @@
 #define LOG_TAB_ICON  "weather-clear-symbolic"
 
 #define PING_TAB_TAG "Trace"
+#define PING_TAB_TIP "Ping path and stats"
 #define LOG_TAB_TAG  "Log"
+#define LOG_TAB_TIP  "Auxiliary logs"
 
 #define MARGIN  8
 #define ACT_DOT 4 // beyond of "app." or "win."
@@ -88,6 +90,7 @@
 #define UPD_NSTR(str, val, max) { g_free(str); str = g_strndup(val, max); }
 #define SET_SA(desc, ndx, cond) {if (G_IS_SIMPLE_ACTION(desc[ndx].sa)) g_simple_action_set_enabled(desc[ndx].sa, cond);}
 
+#define ACT_TOOLTIP    "Command menu"
 #define ACT_START_HDR  "Start"
 #define ACT_STOP_HDR   "Stop"
 #define ACT_PAUSE_HDR  "Pause"
@@ -101,6 +104,7 @@
 
 #define ENT_TARGET_HDR "Target"
 
+#define OPT_TOOLTIP    "Customize options"
 #define OPT_CYCLES_HDR "Cycles"
 #define OPT_IVAL_HDR   "Interval"
 #define OPT_IVAL_HDRL  OPT_IVAL_HDR ", sec"
@@ -119,22 +123,35 @@
 #define OPT_LOGMAX_HDR "Log lines"
 
 #define ELEM_HOST_HDR  "Host"
+#define ELEM_HOST_TIP  "Hostname or IP-address"
 #define ELEM_AS_HDR    "AS"
+#define ELEM_AS_TIP    "Autonomous System"
 #define ELEM_CC_HDR    "CC"
+#define ELEM_CC_TIP    "Registrant Country Code"
 #define ELEM_DESC_HDR  "Description"
+#define ELEM_DESC_TIP  "Short description in free form"
 #define ELEM_RT_HDR    "Route"
+#define ELEM_RT_TIP    "Network prefix"
 #define ELEM_LOSS_HDR  "Loss"
+#define ELEM_LOSS_TIP  "Loss in percentage"
 #define ELEM_LOSS_HDRL ELEM_LOSS_HDR ", %"
 #define ELEM_SENT_HDR  "Sent"
+#define ELEM_SENT_TIP  "Number of pings sent"
 #define ELEM_RECV_HDR  "Recv"
+#define ELEM_RECV_TIP  "Number of pongs received"
 #define ELEM_LAST_HDR  "Last"
+#define ELEM_LAST_TIP  "Last delay in milliseconds"
 #define ELEM_BEST_HDR  "Best"
+#define ELEM_BEST_TIP  "Best known delay in milliseconds"
 #define ELEM_WRST_HDR  "Wrst"
 #define ELEM_WRST_HDRL "Worst"
+#define ELEM_WRST_TIP  "Worst delay in milliseconds"
 #define ELEM_AVRG_HDR  "Avrg"
 #define ELEM_AVRG_HDRL "Average"
+#define ELEM_AVRG_TIP  "Average delay in milliseconds"
 #define ELEM_JTTR_HDR  "Jttr"
 #define ELEM_JTTR_HDRL "Jitter"
+#define ELEM_JTTR_TIP  "Ping jitter (variation in delay)"
 
 #define TOGGLE_ON_HDR  "on"
 #define TOGGLE_OFF_HDR "off"
@@ -195,7 +212,7 @@ typedef struct tab {
   struct tab *self;
   const char *name;
   GtkWidget *tab, *lab, *dyn, *hdr, *info;
-  const char *ico, *tag;
+  const char *ico, *tag, *tip;
   GMenu *menu;       // menu template
   GtkWidget *pop;    // popover menu
   bool sel;          // flag of selection

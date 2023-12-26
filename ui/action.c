@@ -139,6 +139,7 @@ static GMenu* action_menu_init(GtkWidget *bar) {
   GtkWidget *button = gtk_menu_button_new();
   g_return_val_if_fail(GTK_IS_MENU_BUTTON(button), NULL);
   gtk_menu_button_set_icon_name(GTK_MENU_BUTTON(button), ACT_MENU_ICON);
+  gtk_widget_set_tooltip_text(button, ACT_TOOLTIP);
   gtk_header_bar_pack_start(GTK_HEADER_BAR(bar), button);
   GtkWidget *popover = gtk_popover_menu_new_from_model(G_MENU_MODEL(menu));
   g_return_val_if_fail(GTK_IS_POPOVER_MENU(popover), NULL);
