@@ -456,6 +456,15 @@ static GtkWidget* add_opt_radio(GtkWidget* list, t_ent_rad *en) {
 #define EN_PR_STR(ndx) EN_PR_FMT(ndx, "%s", ent_str[ndx].sdef)
 #define EN_PR_INT(ndx) EN_PR_FMT(ndx, "%d", ent_str[ndx].idef)
 
+#if GTK_MAJOR_VERSION == 4
+#if GTK_MINOR_VERSION < 12
+static void gtk_list_box_remove_all(GtkListBox *box) {
+  g_return_if_fail(GTK_IS_LIST_BOX(box));
+  for (GtkWidget *c; (c = gtk_widget_get_first_child(GTK_WIDGET(box)));) gtk_list_box_remove(box, c);
+}
+#endif
+#endif
+
 static bool create_optmenu(GtkWidget *bar) {
   static GtkWidget *optmenu;
   if (optmenu) return true;

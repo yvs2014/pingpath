@@ -1,10 +1,15 @@
 #ifndef COMMON_H
 #define COMMON_H
 
+#define _GNU_SOURCE
 #include <gtk/gtk.h>
 
+#if GTK_MAJOR_VERSION < 4
+#error GTK4 is required
+#endif
+
 #define APPNAME "pingpath"
-#define VERSION "0.1.40"
+#define VERSION "0.1.41"
 
 #define MAXTTL  30
 #define MAXADDR 10
@@ -81,8 +86,10 @@
 
 #define WARN(fmt, ...) g_warning("%s: " fmt "\n", __func__, __VA_ARGS__)
 #define WARN_(mesg) g_warning("%s: %s\n", __func__, mesg)
-#define ERROR(at) { g_warning("%s: %s: %s\n", __func__, at, error ? error->message : unkn_error); g_error_free(error); }
-#define ERRLOG(what) { LOG("%s: %s", what, error ? error->message : unkn_error); g_error_free(error); }
+#define ERROR(what) { if (error) { g_warning("%s: %s: rc=%d, %s\n", __func__, what, error->code, error->message); g_error_free(error); } \
+  else g_warning("%s: %s: %s\n", __func__, what, unkn_error); }
+#define ERRLOG(what) { if (error) { LOG("%s: %s: rc=%d, %s\n", __func__, what, error->code, error->message); g_error_free(error); } \
+  else LOG("%s: %s", what, unkn_error); }
 
 #define STR_EQ(a, b) (!g_strcmp0(a, b))
 #define STR_NEQ(a, b) (g_strcmp0(a, b))

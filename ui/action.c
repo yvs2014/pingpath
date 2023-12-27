@@ -5,7 +5,15 @@
 #include "pinger.h"
 #include "tabs/ping.h"
 
-#define SPANSZ(h, sz, txt) "<span line_height='" h "' size='" sz "'>" txt "</span>\n"
+#if PANGO_VERSION_MAJOR == 1
+#if PANGO_VERSION_MINOR < 50
+#define LINE_HEIGHT(f) ""
+#else
+#define LINE_HEIGHT(f) "line_height='" f "'"
+#endif
+#endif
+
+#define SPANSZ(h, sz, txt) "<span " LINE_HEIGHT(h) " size='" sz "'>" txt "</span>\n"
 #define SPANHDR(txt)  SPANSZ("1.5", "large",  txt)
 #define SPANOPT(l, r) SPANSZ("1.5", "medium", "<b>\t" l "\t</b>" r)
 #define SPANSUB(txt)  SPANSZ("1",   "medium", "\t\t<tt>" txt "</tt>")

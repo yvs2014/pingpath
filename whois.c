@@ -208,7 +208,7 @@ static void on_whois_read(GObject *stream, GAsyncResult *result, t_wq_elem *elem
   if (!elem || !G_IS_INPUT_STREAM(stream)) return;
   GError *error = NULL;
   gssize size = g_input_stream_read_finish(G_INPUT_STREAM(stream), result, &error);
-  if (size < 0) { ERROR("stream read"); }
+  if (size < 0) { ERROR("g_input_stream_read_finish()"); }
   else if (size) { if (whois_reset_read(stream, size, elem)) return; }
   else { // EOF (size == 0)
     gchar **welem = elem->data.whois.elem;
@@ -228,7 +228,7 @@ static void on_whois_write_all(GObject *stream, GAsyncResult *result, gchar *req
   if (!G_IS_OUTPUT_STREAM(stream)) return;
   GError *error = NULL;
   if (!g_output_stream_write_all_finish(G_OUTPUT_STREAM(stream), result, NULL, &error))
-    ERROR("stream write");
+    ERROR("g_output_stream_write_all_finish()");
   g_free(request);
 }
 

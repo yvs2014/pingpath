@@ -99,7 +99,7 @@ static gchar* cb_collect_level1(GList *list) {
       if ((list)[i][j]) g_free((list)[i][j]);
 
 static gchar* cb_collect_level2(GList *list) {
-  gchar* elems[MAXT2][ELEM_MAX + 1] = {NULL}; // *2 supposing it's enough for multihop lines
+  gchar* elems[MAXT2][ELEM_MAX + 1] = {{NULL}}; // *2: supposedly it's enough for multihop lines
   int i = 0;
   for (GList *p = list; p && (i < MAXT2); p = p->next) {
     GtkListBoxRow *row = p->data;

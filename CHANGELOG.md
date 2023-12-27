@@ -1,3 +1,7 @@
+## 0.1.41
+- compat with earlier gtk4 versions
+- fix refs following gcc analyzer warnings
+
 ## 0.1.40
 - add tooltips on hover
 

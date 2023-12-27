@@ -1,3 +1,11 @@
+pingpath (0.1.41) lunar mantic; urgency=low
+
+  * compat with earlier gtk4 versions
+
+  * fix refs following gcc analyzer warnings
+
+ -- yvs <VSYakovetsky@gmail.com>  Wed, 27 Dec 2023 19:30:59 +0200
+
 pingpath (0.1.40) lunar mantic; urgency=low
 
   * add tooltips on hover

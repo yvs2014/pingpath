@@ -62,3 +62,5 @@ void log_add(const gchar *fmt, ...) {
   va_end(ap);
 }
 
+void logtab_clear(void) { memset(&logtab, 0, sizeof(logtab)); } // to avoid usage of disposed instances at sysexit
+

@@ -64,6 +64,14 @@ static gchar* get_gset_str_by_key(GtkSettings *sets, const char *key) {
   return (val && G_VALUE_HOLDS_STRING(val)) ? g_strdup_value_contents(val) : NULL;
 }
 
+#if GTK_MAJOR_VERSION == 4
+#if GTK_MINOR_VERSION < 12
+#define CSS_PROVIDER_LOAD_FROM(prov, str) gtk_css_provider_load_from_data(prov, str, -1)
+#else
+#define CSS_PROVIDER_LOAD_FROM(prov, str) gtk_css_provider_load_from_string(prov, str)
+#endif
+#endif
+
 void style_init(void) {
   static gchar css_data[BUFF_SIZE];
   GdkDisplay *display = gdk_display_get_default();
@@ -76,7 +84,7 @@ void style_init(void) {
     int prefer_dark = get_gset_bool_by_key(settings, PROP_PREFER);
     gchar *theme = get_gset_str_by_key(settings, PROP_THEME);
     if ((prefer_dark >= 0) || theme) { // check out preferences
-      if (prefer_dark || strcasestr(theme, "dark"))
+      if (prefer_dark || (theme ? strcasestr(theme, "dark") : false))
         if (l < sizeof(css_data)) g_strlcpy(css_data + l, css_dark_colors, sizeof(css_data) - l);
 //      LOG("theme=%s prefer-dark=%d", theme, prefer_dark);
     }
@@ -84,7 +92,7 @@ void style_init(void) {
   }
   GtkCssProvider *css_provider = gtk_css_provider_new();
   g_return_if_fail(GTK_IS_CSS_PROVIDER(css_provider));
-  gtk_css_provider_load_from_string(css_provider, css_data);
+  CSS_PROVIDER_LOAD_FROM(css_provider, css_data);
   gtk_style_context_add_provider_for_display(display,
     GTK_STYLE_PROVIDER(css_provider), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
   g_object_unref(css_provider);

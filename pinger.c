@@ -5,6 +5,7 @@
 #include "dns.h"
 #include "whois.h"
 #include "ui/appbar.h"
+#include "ui/notifier.h"
 #include "tabs/ping.h"
 
 #define PING "/bin/ping"
@@ -67,7 +68,7 @@ static void process_stopped(GObject *process, GAsyncResult *result, t_proc *proc
     int sig = proc ? proc->sig : 0;
     if (!okay && sig) {
       int rc = g_subprocess_get_term_sig(G_SUBPROCESS(process));
-      if (rc != sig) ERROR("subprocess wait-finish"); // rc != sig: skip own stop signals
+      if (rc != sig) ERROR("g_subprocess_get_term_sig()"); // rc != sig: to skip own stop signals
     }
   }
   if (proc) {
@@ -95,7 +96,7 @@ static void on_stdout(GObject *stream, GAsyncResult *result, t_proc *p) {
   GError *error = NULL;
   gssize size = g_input_stream_read_finish(G_INPUT_STREAM(stream), result, &error);
   if (size < 0) {    // error
-    ERROR("stdin read");
+    ERROR("g_input_stream_read_finish(stdout)");
     pinger_stop_nth(p->ndx, "stdin error");
   } else if (size) { // data
     gssize left = BUFF_SIZE - size;
@@ -114,7 +115,7 @@ static void on_stderr(GObject *stream, GAsyncResult *result, t_proc *p) {
   GError *error = NULL;
   gssize size = g_input_stream_read_finish(G_INPUT_STREAM(stream), result, &error);
   if (size < 0) {    // error
-    ERROR("stderr read");
+    ERROR("g_input_stream_read_finish(stderr)");
   } else if (size) { // data
     gchar *s = p->err;
     gssize left = BUFF_SIZE - size;
@@ -133,7 +134,7 @@ static bool create_ping(int at, t_proc *p) {
   if (!p->out) p->out = g_malloc0(BUFF_SIZE);
   if (!p->err) p->err = g_malloc0(BUFF_SIZE);
   if (!p->out || !p->err) { WARN("%s(%d): g_malloc0() failed", __func__, at); return false; }
-  const gchar** argv = calloc(MAX_ARGC, sizeof(gchar*)); int argc = 0;
+  const gchar* argv[MAX_ARGC] = {NULL}; int argc = 0;
   argv[argc++] = PING;
   argv[argc++] = "-OD";
   if (!opts.dns) argv[argc++] = "-n";
@@ -153,7 +154,11 @@ static bool create_ping(int at, t_proc *p) {
   argv[argc++] = opts.target;
   GError *error = NULL;
   p->proc = g_subprocess_newv(argv, G_SUBPROCESS_FLAGS_STDOUT_PIPE | G_SUBPROCESS_FLAGS_STDERR_PIPE, &error);
-  if (!p->proc) { ERROR("create subprocess"); return false; }
+  if (!p->proc) {
+    notifier_inform("%s", error ? error->message : unkn_error);
+    ERROR("g_subprocess_newv()");
+    return false;
+  }
   g_subprocess_wait_check_async(p->proc, NULL, (GAsyncReadyCallback)process_stopped, p);
   GInputStream *output = g_subprocess_get_stdout_pipe(p->proc);
   GInputStream *errput = g_subprocess_get_stderr_pipe(p->proc);

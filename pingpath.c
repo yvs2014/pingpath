@@ -9,9 +9,18 @@
 #include "tabs/ping.h"
 #include "tabs/log.h"
 
+#if GLIB_MAJOR_VERSION == 2
+#if GLIB_MINOR_VERSION < 74
+#define APPFLAGS G_APPLICATION_FLAGS_NONE
+#else
+#define APPFLAGS G_APPLICATION_DEFAULT_FLAGS
+#endif
+#endif
+
 static void on_app_exit(GtkWidget *widget, gpointer unused) {
 // note: subprocesses have to be already terminated by system at this point
 // if not, then pinger_on_quit(true);
+  logtab_clear();
   pinger_on_quit(false);
   LOG_("app quit");
 }
@@ -62,7 +71,7 @@ static void app_cb(GtkApplication* app, gpointer unused) {
 }
 
 int main(int argc, char **argv) {
-  GtkApplication *app = gtk_application_new("net.tools." APPNAME, G_APPLICATION_DEFAULT_FLAGS);
+  GtkApplication *app = gtk_application_new("net.tools." APPNAME, APPFLAGS);
   g_return_val_if_fail(GTK_IS_APPLICATION(app), -1);
   LOG_("app run");
   stat_init(true);
