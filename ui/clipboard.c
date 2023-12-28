@@ -46,16 +46,24 @@ static void cb_on_click(GtkGestureClick *g, int n, double x, double y, GtkWidget
   if (!GTK_IS_GESTURE_CLICK(g) || !GTK_IS_POPOVER(pop)) return;
   GdkEvent *ev = gtk_gesture_get_last_event(GTK_GESTURE(g),
     gtk_gesture_single_get_current_sequence(GTK_GESTURE_SINGLE(g)));
-  gtk_gesture_set_state(GTK_GESTURE(g), GTK_EVENT_SEQUENCE_CLAIMED);
-  if (ev && gdk_event_triggers_context_menu(ev)) cb_popover_show(pop, x, y);
+  if (ev && gdk_event_triggers_context_menu(ev)) {
+    gtk_gesture_set_state(GTK_GESTURE(g), GTK_EVENT_SEQUENCE_CLAIMED);
+    cb_popover_show(pop, x, y);
+  }
 }
 
-static void cb_on_sel(GtkListBox* list, t_tab *tab) {
-  if (!GTK_IS_LIST_BOX(list) || !tab) return;
-  GList *sel = gtk_list_box_get_selected_rows(GTK_LIST_BOX(list));
-  tab->sel = sel != NULL; g_list_free(sel);
-  cb_menu_update(tab);
+static bool any_list_sel(t_tab *tab) {
+  if (tab) {
+    GtkWidget* list[] = {tab->hdr, tab->dyn, tab->info};
+    for (int i = 0; i < G_N_ELEMENTS(list); i++) if (GTK_IS_LIST_BOX(list[i])) {
+      GList *l = gtk_list_box_get_selected_rows(GTK_LIST_BOX(list[i]));
+      if (l) { g_list_free(l); return true; }
+    }
+  }
+  return false;
 }
+
+static void cb_on_sel(GtkListBox* list, t_tab *tab) { if (tab) { tab->sel = any_list_sel(tab); cb_menu_update(tab); }}
 
 static char* c_strjoinv(const char delim, const char **array) {
   if (!array) return NULL;
@@ -164,10 +172,13 @@ bool clipboard_init(GtkWidget *win, t_tab *tab) {
   g_return_val_if_fail(GTK_IS_POPOVER(tab->pop), false);
   gtk_widget_set_parent(tab->pop, tab->tab);
   g_signal_connect(gest, EV_CLICK, G_CALLBACK(cb_on_click), tab->pop);
-  g_signal_connect(tab->dyn, EV_ROW_CHANGE, G_CALLBACK(cb_on_sel), tab);
+  GtkWidget* list[] = {tab->hdr, tab->dyn, tab->info};
+  for (int i = 0; i < G_N_ELEMENTS(list); i++) if (GTK_IS_LIST_BOX(list[i]))
+    g_signal_connect(list[i], EV_ROW_CHANGE, G_CALLBACK(cb_on_sel), tab);
   gtk_gesture_single_set_button(GTK_GESTURE_SINGLE(gest), 0);
   gtk_gesture_single_set_exclusive(GTK_GESTURE_SINGLE(gest), true);
-  gtk_widget_add_controller(GTK_WIDGET(tab->dyn), GTK_EVENT_CONTROLLER(gest));
+  gtk_widget_add_controller(GTK_WIDGET(tab->tab), GTK_EVENT_CONTROLLER(gest));
+  gtk_event_controller_set_propagation_limit(GTK_EVENT_CONTROLLER(gest), GTK_LIMIT_SAME_NATIVE);
   return true;
 }
 
@@ -205,12 +216,8 @@ void cb_on_sall(GSimpleAction *action, GVariant *var, gpointer data) {
   if (!tab || !GTK_IS_LIST_BOX(tab->dyn)) return;
   NOLOG("%s action %s", tab->name, cb_menu_label(tab->sel));
   GtkWidget* list[] = {tab->hdr, tab->dyn, tab->info};
-  bool sel = false;
-  for (int i = 0; i < G_N_ELEMENTS(list); i++) if (GTK_IS_LIST_BOX(list[i])) {
-    GList *l = gtk_list_box_get_selected_rows(GTK_LIST_BOX(list[i]));
-    if (l) { g_list_free(l); sel = true; break; }
-  }
-  if (sel) {
+  tab->sel = any_list_sel(tab);
+  if (tab->sel) {
     for (int i = 0; i < G_N_ELEMENTS(list); i++)
       if (GTK_IS_LIST_BOX(list[i])) gtk_list_box_unselect_all(GTK_LIST_BOX(list[i]));
   } else {

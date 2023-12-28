@@ -42,10 +42,10 @@ void tab_setup(t_tab *tab) {
       gtk_widget_set_tooltip_text(tab->lab, tab->tip);
     }
   }
-  GtkWidget* arr[] = { tab->hdr, tab->dyn, tab->info };
-  for (int i = 0; i < G_N_ELEMENTS(arr); i++) if (GTK_IS_WIDGET(arr[i])) {
-    gtk_widget_set_can_focus(arr[i], false);
-    if (style_loaded) gtk_widget_add_css_class(arr[i], CSS_BGROUND);
+  GtkWidget* list[] = {tab->hdr, tab->dyn, tab->info};
+  for (int i = 0; i < G_N_ELEMENTS(list); i++) if (GTK_IS_WIDGET(list[i])) {
+    gtk_widget_set_can_focus(list[i], false);
+    if (style_loaded) gtk_widget_add_css_class(list[i], CSS_BGROUND);
   }
   if (GTK_IS_WIDGET(tab->tab) && style_loaded) {
     gtk_widget_add_css_class(tab->tab, CSS_PAD);

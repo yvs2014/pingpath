@@ -1,3 +1,6 @@
+## 0.1.42
+- tune up clipboard popovers
+
 ## 0.1.41
 - compat with earlier gtk4 versions
 - fix refs following gcc analyzer warnings

@@ -31,6 +31,7 @@ static const gchar *css_dark_colors =
 static const gchar *css_common =
   "notebook > header > tabs {padding-left:0px; padding-right:0px;}"
   "notebook > header > tabs > tab {margin-left:0px; margin-right:0px;}"
+  "popover {background:transparent;}"
   "vertical {padding:" PAD16 ";}"
   ".flat {padding:" PAD4 ";}"
   "." CSS_PAD "{padding:" PAD ";}"
