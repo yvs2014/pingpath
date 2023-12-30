@@ -1,3 +1,9 @@
+pingpath (0.1.43) lunar mantic; urgency=low
+
+  * add .deb builder
+
+ -- yvs <VSYakovetsky@gmail.com>  Sat, 30 Dec 2023 04:42:45 +0200
+
 pingpath (0.1.42) lunar mantic; urgency=low
 
   * tune up clipboard popovers

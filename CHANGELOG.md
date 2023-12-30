@@ -1,3 +1,6 @@
+## 0.1.43
+- add .deb builder
+
 ## 0.1.42
 - tune up clipboard popovers
 

@@ -9,13 +9,7 @@
 #include "tabs/ping.h"
 #include "tabs/log.h"
 
-#if GLIB_MAJOR_VERSION == 2
-#if GLIB_MINOR_VERSION < 74
-#define APPFLAGS G_APPLICATION_FLAGS_NONE
-#else
-#define APPFLAGS G_APPLICATION_DEFAULT_FLAGS
-#endif
-#endif
+#define APPFLAGS G_APPLICATION_NON_UNIQUE
 
 static void on_app_exit(GtkWidget *widget, gpointer unused) {
 // note: subprocesses have to be already terminated by system at this point
@@ -46,6 +40,10 @@ static void app_cb(GtkApplication* app, gpointer unused) {
   if (!GTK_IS_WINDOW(win)) APPQUIT("%s", "app window");
   gtk_window_set_default_size(GTK_WINDOW(win), 1280, 720);
   if (style_loaded) gtk_widget_add_css_class(win, CSS_BGROUND);
+  GtkIconTheme *theme = gtk_icon_theme_get_for_display(gdk_display_get_default());
+  if (GTK_IS_ICON_THEME(theme) && gtk_icon_theme_has_icon(theme, APPNAME))
+    gtk_window_set_icon_name(GTK_WINDOW(win), APPNAME);
+  else NOLOG("no '%s' icon", APPNAME);
   if (!appbar_init(app, win)) APPQUIT("%s", "appbar");
   GtkWidget *nb = gtk_notebook_new();
   if (!GTK_IS_NOTEBOOK(nb)) APPQUIT("%s", "notebook");

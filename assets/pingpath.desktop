@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=pingpath
+Comment=Graphical ping wrapper
+Exec=pingpath
+Icon=pingpath
+Terminal=false
+Type=Application
+StartupNotify=true
+Keywords=network;ping;wrapper;
+Categories=Utility;

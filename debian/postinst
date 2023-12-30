@@ -1,0 +1,8 @@
+#! /bin/sh
+
+gtk-update-icon-cache || :
+update-desktop-database -q || :
+
+#DEBHELPER#
+
+exit 0

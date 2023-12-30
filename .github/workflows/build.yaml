@@ -1,0 +1,36 @@
+name: build
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build_deb_and_run_once:
+    name: Build, pack, install
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          ref: main
+      - name: Install mandatory packages for building
+        run: |
+          sudo apt install -y dpkg-dev debhelper pkgconf libgtk-4-dev
+      - name: Create .deb package
+        run: |
+          misc/build_deb.sh
+          sudo dpkg -i debs/pingpath_*_*.deb
+#      - name: Test run
+#        run: ping -c1 google.com && pingpath -r google.com || pingpath -r 127.0.0.1
+      - uses: actions/upload-artifact@v3
+        with:
+          name: assets
+          path: debs/pingpath_*_*.deb
+
