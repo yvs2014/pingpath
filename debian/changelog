@@ -1,3 +1,9 @@
+pingpath (0.1.44) lunar mantic; urgency=low
+
+  * readme and screenshots
+
+ -- yvs <VSYakovetsky@gmail.com>  Sat, 30 Dec 2023 21:55:27 +0200
+
 pingpath (0.1.43) lunar mantic; urgency=low
 
   * add .deb builder
