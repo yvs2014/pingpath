@@ -11,6 +11,7 @@ chk_cmd() {
 }
 chk_cmd dpkg-buildpackage dpkg-dev
 chk_cmd dh debhelper
+chk_cmd pkg-config "pkgconf (or pkg-config on some derives)"
 
 set -e
 command -v git >/dev/null && rev="$(git rev-list HEAD | sed -n '$=')" || rev=

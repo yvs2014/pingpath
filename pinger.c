@@ -99,6 +99,7 @@ static void on_stdout(GObject *stream, GAsyncResult *result, t_proc *p) {
     ERROR("g_input_stream_read_finish(stdout)");
     pinger_stop_nth(p->ndx, "stdin error");
   } else if (size) { // data
+    if (!p->out) return; // possible at external exit
     gssize left = BUFF_SIZE - size;
     p->out[(left > 0) ? size : size - 1] = 0;
     parser_parse(p->ndx, p->out);
@@ -117,6 +118,7 @@ static void on_stderr(GObject *stream, GAsyncResult *result, t_proc *p) {
   if (size < 0) {    // error
     ERROR("g_input_stream_read_finish(stderr)");
   } else if (size) { // data
+    if (!p->err) return; // possible at external exit
     gchar *s = p->err;
     gssize left = BUFF_SIZE - size;
     s[(left > 0) ? size : size - 1] = 0;

@@ -3,7 +3,7 @@ Section: net
 Priority: optional
 Maintainer: yvs <VSYakovetsky@gmail.com>
 Rules-Requires-Root: no
-Build-Depends: dpkg-dev, debhelper, pkgconf, libgtk-4-dev
+Build-Depends: dpkg-dev, debhelper, pkgconf | pkg-config, libgtk-4-dev
 Standards-Version: 4.6.2
 Homepage: https://github.com/yvs2014/pingpath
 

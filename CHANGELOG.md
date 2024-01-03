@@ -1,3 +1,6 @@
+## 0.1.45
+- add a couple check-points at external exit
+
 ## 0.1.44
 - readme and screenshots
 

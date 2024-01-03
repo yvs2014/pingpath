@@ -1,3 +1,9 @@
+pingpath (0.1.45) lunar mantic; urgency=low
+
+  * add a couple check-points at external exit
+
+ -- yvs <VSYakovetsky@gmail.com>  Wed, 03 Jan 2024 20:56:56 +0200
+
 pingpath (0.1.44) lunar mantic; urgency=low
 
   * readme and screenshots

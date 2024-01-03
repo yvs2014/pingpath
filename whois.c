@@ -188,7 +188,7 @@ static t_wq_elem* whois_query_fill(gchar *addr, t_hop *hop, int ndx) {
 static void on_whois_read(GObject *stream, GAsyncResult *result, t_wq_elem *elem);
 
 static bool whois_reset_read(GObject *stream, gssize size, t_wq_elem *elem) {
-  if (!elem || !G_IS_INPUT_STREAM(stream)) return false;
+  if (!elem || !elem->buff || !G_IS_INPUT_STREAM(stream)) return false;
   elem->size += size;
   gssize left = NET_BUFF_SIZE - elem->size;
   bool reset_read = left > 0;
@@ -209,18 +209,21 @@ static void on_whois_read(GObject *stream, GAsyncResult *result, t_wq_elem *elem
   GError *error = NULL;
   gssize size = g_input_stream_read_finish(G_INPUT_STREAM(stream), result, &error);
   if (size < 0) { ERROR("g_input_stream_read_finish()"); }
-  else if (size) { if (whois_reset_read(stream, size, elem)) return; }
-  else { // EOF (size == 0)
-    gchar **welem = elem->data.whois.elem;
-    parser_whois(elem->buff, elem->size, welem);
-    if (welem[WHOIS_AS_NDX] && !welem[WHOIS_AS_NDX][0]) WHOIS_DEBUG("%s unresolved", elem->data.addr);
-    WHOIS_DEBUG("%s(%s) as=%s cc=%s rt=%s desc=%s", __func__, elem->data.addr,
-      welem[WHOIS_AS_NDX], welem[WHOIS_CC_NDX], welem[WHOIS_RT_NDX], welem[WHOIS_DESC_NDX]);
-    PR_WHOIS_Q;
-    whois_cache_update(elem->data.addr, welem);
-    g_slist_foreach(elem->refs, (GFunc)whois_query_complete, elem);
-    whois_query_close(elem);
-    PR_WHOIS_Q;
+  else {
+    if (!elem->buff) return; // possible at external exit
+    if (size) { if (whois_reset_read(stream, size, elem)) return; }
+    else { // EOF (size == 0)
+      gchar **welem = elem->data.whois.elem;
+      parser_whois(elem->buff, elem->size, welem);
+      if (welem[WHOIS_AS_NDX] && !welem[WHOIS_AS_NDX][0]) WHOIS_DEBUG("%s unresolved", elem->data.addr);
+      WHOIS_DEBUG("%s(%s) as=%s cc=%s rt=%s desc=%s", __func__, elem->data.addr,
+        welem[WHOIS_AS_NDX], welem[WHOIS_CC_NDX], welem[WHOIS_RT_NDX], welem[WHOIS_DESC_NDX]);
+      PR_WHOIS_Q;
+      whois_cache_update(elem->data.addr, welem);
+      g_slist_foreach(elem->refs, (GFunc)whois_query_complete, elem);
+      whois_query_close(elem);
+      PR_WHOIS_Q;
+    }
   }
 }
 

@@ -31,6 +31,6 @@ jobs:
 #        run: ping -c1 google.com && pingpath -r google.com || pingpath -r 127.0.0.1
       - uses: actions/upload-artifact@v3
         with:
-          name: assets
+          name: auto-built-pingpath-deb
           path: debs/pingpath_*_*.deb
 
