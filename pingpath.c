@@ -1,5 +1,6 @@
 
 #include "common.h"
+#include "cli.h"
 #include "pinger.h"
 #include "parser.h"
 #include "stat.h"
@@ -71,10 +72,11 @@ static void app_cb(GtkApplication* app, gpointer unused) {
 int main(int argc, char **argv) {
   GtkApplication *app = gtk_application_new("net.tools." APPNAME, APPFLAGS);
   g_return_val_if_fail(GTK_IS_APPLICATION(app), -1);
+  if (!parser_init()) return -2;
+  if (!cli_init(&argc, &argv)) return -3;
   LOG_("app run");
   stat_init(true);
   pinger_init();
-  if (!parser_init()) return -1;
   g_signal_connect(app, EV_ACTIVE, G_CALLBACK(app_cb), NULL);
   int rc = g_application_run(G_APPLICATION(app), argc, argv);
   g_object_unref(app);

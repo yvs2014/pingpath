@@ -170,11 +170,13 @@ static bool create_ping(int at, t_proc *p) {
     p->active = true;
     p->ndx = at;
 #ifdef DEBUGGING
-    gchar* deb_argv[MAX_ARGC];
-    memcpy(deb_argv, argv, sizeof(deb_argv));
-    gchar *deb_argv_s = g_strjoinv(", ", deb_argv);
-    DEBUG("ping[ttl=%d]: argv[%s]", at + 1, deb_argv_s);
-    g_free(deb_argv_s);
+    if (verbose & 2) {
+      gchar* deb_argv[MAX_ARGC];
+      memcpy(deb_argv, argv, sizeof(deb_argv));
+      gchar *deb_argv_s = g_strjoinv(", ", deb_argv);
+      DEBUG("ping[ttl=%d]: argv[%s]", at + 1, deb_argv_s);
+      g_free(deb_argv_s);
+    }
 #endif
     LOG("ping[ttl=%d] started", at + 1);
   } else {

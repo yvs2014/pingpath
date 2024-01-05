@@ -73,7 +73,7 @@ void notifier_inform(const gchar *fmt, ...) {
   va_list ap;
   va_start(ap, fmt);
   gchar *str = g_strdup_vprintf(fmt, ap);
-  if (str) { nt_inform(str); g_free(str); }
+  if (str) { cli ? CLILOG(str) : nt_inform(str); g_free(str); }
   va_end(ap);
 }
 

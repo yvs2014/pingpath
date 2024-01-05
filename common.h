@@ -9,7 +9,7 @@
 #endif
 
 #define APPNAME "pingpath"
-#define VERSION "0.1.45"
+#define VERSION "0.1.46"
 
 #define MAXTTL  30
 #define MAXADDR 10
@@ -53,43 +53,39 @@
 #define MARGIN  8
 #define ACT_DOT 4 // beyond of "app." or "win."
 
-#ifndef RELEASE
+// verbose > 0: log to stdout
+// verbose & 2: common debug
+// verbose & 4: dns debug
+// verbose & 8: whois debug
 #define LOGGING 1
-//#define DEBUGGING 1
-//#define DNS_DEBUGGING 1
-//#define WHOIS_DEBUGGING 1
-#endif
+#define DEBUGGING 1
+#define DNS_DEBUGGING 1
+#define WHOIS_DEBUGGING 1
 
-#define LOG(fmt, ...) { const char *ts = timestampit(); \
-  GLIB_PR("[%s] " fmt "\n", ts, __VA_ARGS__); \
-  log_add("[%s] " fmt     , ts, __VA_ARGS__); \
-}
+#define LOG(fmt, ...) { GLIB_PR(fmt, __VA_ARGS__); log_add("[%s] " fmt, timestampit(), __VA_ARGS__); }
+#define LOG_(mesg) { GLIB_PR("%s", mesg); log_add("[%s] %s", timestampit(), mesg); }
 
-#define LOG_(mesg) { const char *ts = timestampit(); \
-  GLIB_PR("[%s] %s\n", ts, mesg); \
-  log_add("[%s] %s"  , ts, mesg); \
-}
-
-#define NOLOG(fmt, ...) { GLIB_PR("[%s] " fmt "\n", timestampit(), __VA_ARGS__); }
+#define NOLOG(fmt, ...) GLIB_PR(fmt, __VA_ARGS__)
+#define CLILOG(mesg) g_message("%s", mesg)
 
 #ifdef LOGGING
-#define GLIB_PR(fmt, ...) g_print(fmt, __VA_ARGS__)
+#define GLIB_PR(fmt, ...) { if (verbose) g_message(fmt, __VA_ARGS__); }
 #else
 #define GLIB_PR(fmt, ...) {}
 #endif
 
 #ifdef DEBUGGING
-#define DEBUG(fmt, ...) LOG(fmt, __VA_ARGS__)
+#define DEBUG(fmt, ...) { if (verbose & 2) LOG(fmt, __VA_ARGS__); }
 #else
 #define DEBUG(fmt, ...) {}
 #endif
 
 #define WARN(fmt, ...) g_warning("%s: " fmt "\n", __func__, __VA_ARGS__)
 #define WARN_(mesg) g_warning("%s: %s\n", __func__, mesg)
-#define ERROR(what) { if (error) { g_warning("%s: %s: rc=%d, %s\n", __func__, what, error->code, error->message); g_error_free(error); } \
-  else g_warning("%s: %s: %s\n", __func__, what, unkn_error); }
-#define ERRLOG(what) { if (error) { LOG("%s: %s: rc=%d, %s\n", __func__, what, error->code, error->message); g_error_free(error); } \
-  else LOG("%s: %s", what, unkn_error); }
+#define ERROR(what) { if (!error) { g_warning("%s: %s: %s\n", __func__, what, unkn_error); } \
+  else { g_warning("%s: %s: rc=%d, %s\n", __func__, what, error->code, error->message); g_error_free(error); }}
+#define ERRLOG(what) { if (!error) { LOG("%s: %s", what, unkn_error); } \
+  else { LOG("%s: %s: rc=%d, %s\n", __func__, what, error->code, error->message); g_error_free(error); }}
 
 #define STR_EQ(a, b) (!g_strcmp0(a, b))
 #define STR_NEQ(a, b) (g_strcmp0(a, b))
@@ -121,7 +117,7 @@
 #define OPT_TTL_HDR    "TTL"
 #define OPT_QOS_HDR    "QoS"
 #define OPT_PLOAD_HDR  "Payload"
-#define OPT_PLOAD_HDRL OPT_IVAL_HDR ", hex"
+#define OPT_PLOAD_HDRL OPT_PLOAD_HDR ", hex"
 #define OPT_PSIZE_HDR  "Size"
 #define OPT_IPV_HDR    "IP Version"
 #define OPT_IPVA_HDR   "Auto"
@@ -163,6 +159,15 @@
 #define TOGGLE_ON_HDR  "on"
 #define TOGGLE_OFF_HDR "off"
 
+#define CYCLES_MIN 1
+#define CYCLES_MAX 999999
+#define IVAL_MIN   1
+#define IVAL_MAX   9999
+#define PSIZE_MIN  16
+#define PSIZE_MAX  (9000 - 20 - 8)
+#define QOS_MAX    255
+#define LOGMAX_MAX 999
+
 enum { TAB_PING_NDX, TAB_LOG_NDX, TAB_NDX_MAX };
 
 enum { ENT_BOOL_NONE, ENT_BOOL_DNS, ENT_BOOL_HOST, ENT_BOOL_AS, ENT_BOOL_CC, ENT_BOOL_DESC, ENT_BOOL_RT,
@@ -175,6 +180,10 @@ enum { ELEM_NO, ELEM_HOST, ELEM_AS, ELEM_CC, ELEM_DESC, ELEM_RT, ELEM_FILL,
 enum { WHOIS_AS_NDX, WHOIS_CC_NDX, WHOIS_DESC_NDX, WHOIS_RT_NDX, WHOIS_NDX_MAX };
 
 enum { POP_MENU_NDX_COPY, POP_MENU_NDX_SALL, POP_MENU_NDX_MAX };
+
+typedef struct minmax {
+  int min, max;
+} t_minmax;
 
 typedef struct host {
   gchar *addr, *name;
@@ -232,6 +241,9 @@ extern const char *unkn_error;
 extern const char *unkn_field;
 extern const char *unkn_whois;
 extern const char *log_empty;
+
+extern bool cli;
+extern int verbose;
 
 const char *timestampit(void);
 GtkListBoxRow* line_row_new(GtkWidget *child, bool visible);

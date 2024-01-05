@@ -9,10 +9,6 @@
 #define DEF_PPAD  "00"
 #define DEF_PSIZE  56
 
-typedef struct minmax {
-  int min, max;
-} t_minmax;
-
 typedef struct opts {
   gchar *target;
   bool dns;

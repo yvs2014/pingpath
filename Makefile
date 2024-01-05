@@ -28,19 +28,18 @@ endif
 PKGCONFIG = $(shell which pkg-config)
 
 SRC = $(NAME).c common.c
-SRC += pinger.c parser.c stat.c dns.c whois.c
+SRC += pinger.c parser.c stat.c dns.c whois.c cli.c
 SRC += ui/style.c ui/appbar.c ui/action.c ui/option.c
 SRC += ui/clipboard.c ui/notifier.c
 SRC += tabs/ping.c tabs/log.c
 
 OBJS = $(SRC:.c=.o)
 
-release: CFLAGS += -D RELEASE
-release: $(NAME)
-
 define ICO_INST
 mkdir -p $(1) && install -T -m 644 $(2) $(1)/$(NAME).png;
 endef
+
+all: $(NAME)
 
 %.o: %.c %.h common.h
 	$(CC) -c -o $@ $(CFLAGS) $<
@@ -63,6 +62,4 @@ install: $(NAME)
 	@mkdir -p $(SVGICODIR)
 	install -m 644 $(BASEICONAME).svg $(SVGICODIR)
 #	$(foreach sz,$(ICO_SIZES),$(call ICO_INST,$(BASEICODIR)/$(sz)x$(sz)/apps,$(BASEICONAME).$(sz).png))
-
-all: $(NAME)
 

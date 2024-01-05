@@ -58,6 +58,7 @@ static bool add_target_input(GtkWidget *bar) {
   gtk_entry_set_placeholder_text(GTK_ENTRY(entry), hint);
   gtk_editable_set_editable(GTK_EDITABLE(entry), true);
   gtk_editable_set_max_width_chars(GTK_EDITABLE(entry), g_utf8_strlen(hint, MAXHOSTNAME) - 5);
+  if (opts.target) gtk_editable_set_text(GTK_EDITABLE(entry), opts.target);
   g_signal_connect(entry, EV_ACTIVE, G_CALLBACK(target_cb), entry);
   gtk_header_bar_pack_start(GTK_HEADER_BAR(bar), entry);
   return true;

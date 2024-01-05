@@ -26,7 +26,8 @@ typedef struct ent_str {
   int  *pint, idef; // int fields
   char *pstr; int slen; const char *sdef; // str fields
   GtkWidget *box, *input;
-  int len, width;
+  const int len, width;
+  const t_minmax range;
   gchar hint[ENT_BUFF_SIZE];
   gchar buff[ENT_BUFF_SIZE];
 } t_ent_str;
@@ -87,18 +88,24 @@ static t_ent_bool ent_bool[ENT_BOOL_MAX] = {
   [ENT_BOOL_JTTR] = { .en = { .typ = ENT_BOOL_JTTR, .name = ELEM_JTTR_HDRL }, .pval = &statelem[ELEM_JTTR].enable, .prefix = OPT_STAT_HDR  },
 };
 
-static t_ent_str ent_str[ENT_STR_MAX] = {
-  [ENT_STR_CYCLES] = { .len = 6,  .width = 6, .en = { .typ = ENT_STR_CYCLES, .name = OPT_CYCLES_HDR },
+static t_ent_str ent_str[ENT_STR_MAX] = { // TODO: auto .len
+  [ENT_STR_CYCLES] = { .len = 6,  .width = 6, .range = { .min = CYCLES_MIN, .max = CYCLES_MAX },
+    .en = { .typ = ENT_STR_CYCLES, .name = OPT_CYCLES_HDR },
     .pint = &opts.cycles,  .idef = DEF_CYCLES },
-  [ENT_STR_IVAL]   = { .len = 4,  .width = 6, .en = { .typ = ENT_STR_IVAL,   .name = OPT_IVAL_HDRL },
+  [ENT_STR_IVAL]   = { .len = 4,  .width = 6, .range = { .min = IVAL_MIN,   .max = IVAL_MAX },
+    .en = { .typ = ENT_STR_IVAL,   .name = OPT_IVAL_HDRL },
     .pint = &opts.timeout, .idef = DEF_TOUT },
-  [ENT_STR_QOS]    = { .len = 3,  .width = 6, .en = { .typ = ENT_STR_QOS,    .name = OPT_QOS_HDR },
+  [ENT_STR_QOS]    = { .len = 3,  .width = 6, .range = { .max = QOS_MAX },
+    .en = { .typ = ENT_STR_QOS,    .name = OPT_QOS_HDR },
     .pint = &opts.qos,     .idef = DEF_QOS },
-  [ENT_STR_PLOAD]  = { .len = 48, .width = 6, .en = { .typ = ENT_STR_PLOAD,  .name = OPT_PLOAD_HDRL },
+  [ENT_STR_PLOAD]  = { .len = 48, .width = 6,
+    .en = { .typ = ENT_STR_PLOAD,  .name = OPT_PLOAD_HDRL },
     .pstr = opts.pad,      .sdef = DEF_PPAD, .slen = sizeof(opts.pad) },
-  [ENT_STR_PSIZE]  = { .len = 4,  .width = 6, .en = { .typ = ENT_STR_PSIZE,  .name = OPT_PSIZE_HDR },
+  [ENT_STR_PSIZE]  = { .len = 4,  .width = 6, .range = { .min = PSIZE_MIN,  .max = PSIZE_MAX },
+    .en = { .typ = ENT_STR_PSIZE,  .name = OPT_PSIZE_HDR },
     .pint = &opts.size,    .idef = DEF_PSIZE },
-  [ENT_STR_LOGMAX] = { .len = 3,  .width = 6, .en = { .typ = ENT_STR_LOGMAX, .name = OPT_LOGMAX_HDR },
+  [ENT_STR_LOGMAX] = { .len = 3,  .width = 6, .range = { .max = LOGMAX_MAX },
+    .en = { .typ = ENT_STR_LOGMAX, .name = OPT_LOGMAX_HDR },
     .pint = &opts.logmax,  .idef = DEF_LOGMAX },
 };
 
@@ -229,7 +236,7 @@ static void input_cb(GtkWidget *input, t_ent_str *en) {
     case ENT_STR_LOGMAX:
     case ENT_STR_QOS:
     case ENT_STR_PSIZE: {
-      int n = parser_int(got, en->en.typ, en->en.name);
+      int n = parser_int(got, en->en.typ, en->en.name, en->range);
       if (n > 0) {
         if (en->pint) *(en->pint) = n;
         /*extra*/ if (en->en.typ == ENT_STR_IVAL) opts.tout_usec = n * 1000000;

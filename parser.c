@@ -31,10 +31,6 @@
 #define WHOIS_DELIM    ':'
 #define WHOIS_CCDEL    ','
 
-const int tos_max   = 255;
-const int psize_min = 16;
-const int psize_max = 9000 - 20 - 8;
-
 typedef bool parser_cb(int at, GMatchInfo* match, const char *line);
 
 typedef struct parser_regex {
@@ -245,37 +241,32 @@ void parser_parse(int at, char *input) {
   if (lines) g_strfreev(lines);
 }
 
-#define CI_MIN 1
-#define PIERR(fmt, ...) { notifier_inform("%s: " fmt, option, __VA_ARGS__); n = -1; }
-#define PIOUT(min, max) PIERR("out of range[%d,%d]", min, max)
+#define PIERR(fmt, ...) notifier_inform("%s: " fmt, option, __VA_ARGS__)
 
-int parser_int(const gchar *str, int typ, const gchar *option) {
+int parser_int(const gchar *str, int typ, const gchar *option, t_minmax range) {
   GMatchInfo *match = NULL;
   gchar *cpy = g_strdup(str);
   if (!cpy) return -1;
   gchar *val = g_strstrip(cpy);
   bool valid = g_regex_match(str_rx[STR_RX_INT].regex, val, 0, &match);
-  int n = atol(val);
   if (valid) {
+    int n = atol(val);
     g_match_info_free(match);
-    if ((n >= 0) && (n <= INT_MAX)) {
+    int min = (range.min > 0) ? range.min : 0;
+    int max = (range.max < INT_MAX) ? range.max : INT_MAX;
+    if ((n >= min) && (n <= max)) {
       switch (typ) {
         case ENT_STR_CYCLES:
         case ENT_STR_IVAL:
         case ENT_STR_LOGMAX:
-          if (n < CI_MIN) PIERR("less than minimal(%d)", CI_MIN);
-          break;
         case ENT_STR_QOS:
-          if (n > tos_max) PIOUT(0, tos_max);
-          break;
         case ENT_STR_PSIZE:
-          if ((n < psize_min) || (n > psize_max)) PIOUT(psize_min, psize_max);
-          break;
+          return n;
       }
-    } else PIOUT(0, INT_MAX)
+    } else PIERR("out of range[%d,%d]", min, max);
   } else PIERR("no match %s regex", str_rx[STR_RX_INT].pattern);
   g_free(cpy);
-  return n;
+  return -1;
 }
 
 const char* parser_pad(const gchar *str, const gchar *option) {

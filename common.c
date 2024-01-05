@@ -10,6 +10,9 @@ const char *unkn_error = "unknown error";
 const char *unkn_field = ""; // "?" "???" (see notes)
 const char *unkn_whois = "";
 
+bool cli;
+int verbose;
+
 const char *timestampit(void) {
   static char now_ts[32];
   time_t now = time(NULL);
@@ -75,6 +78,7 @@ t_ref* ref_new(t_hop *hop, int ndx) {
 
 #if DNS_DEBUGGING || WHOIS_DEBUGGING
 void print_refs(GSList *refs, const gchar *prefix) {
+  if (verbose < 3) return;
   int i = 0;
   for (GSList* p = refs; p; p = p->next, i++) {
     t_ref *r = p->data; if (!r) continue;

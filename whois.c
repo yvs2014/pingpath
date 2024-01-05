@@ -25,7 +25,7 @@ static GSList *whois_query;
 static GSList *whois_cache;
 
 #ifdef WHOIS_DEBUGGING
-#define WHOIS_DEBUG(fmt, ...) LOG("WHOIS: " fmt, __VA_ARGS__)
+#define WHOIS_DEBUG(fmt, ...) { if (verbose & 8) LOG("WHOIS: " fmt, __VA_ARGS__); }
 #else
 #define WHOIS_DEBUG(...) {}
 #endif
