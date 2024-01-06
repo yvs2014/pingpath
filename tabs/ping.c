@@ -32,7 +32,7 @@ static t_tab pingtab = { .self = &pingtab, .name = "ping-tab", .ico = PING_TAB_I
   .act = { [POP_MENU_NDX_COPY] = { .activate = cb_on_copy_l2 }, [POP_MENU_NDX_SALL] = { .activate = cb_on_sall }},
 };
 
-static void align_elem_label(GtkWidget* label, int max, GtkAlign align, bool expand) {
+static void align_elem_label(GtkWidget* label, int max, GtkAlign align, gboolean expand) {
   gtk_label_set_width_chars(GTK_LABEL(label), max);
   gtk_widget_set_halign(label, align);
   gtk_label_set_xalign(GTK_LABEL(label), align == GTK_ALIGN_END);
@@ -68,7 +68,7 @@ static void set_elem_align(int typ, GtkWidget *label) {
   gtk_widget_set_valign(label, GTK_ALIGN_START);
 }
 
-static bool init_child_elem(const t_stat_elem *elem, t_listline *line, bool visible) {
+static gboolean init_child_elem(const t_stat_elem *elem, t_listline *line, gboolean visible) {
   for (int i = 0; i < ELEM_MAX; i++) {
     GtkWidget *label = line->cells[i] = gtk_label_new(elem[i].name);
     g_return_val_if_fail(GTK_IS_LABEL(label), false);
@@ -80,7 +80,7 @@ static bool init_child_elem(const t_stat_elem *elem, t_listline *line, bool visi
   return true;
 }
 
-static GtkWidget* init_list_box(t_listline *lines, int len, bool vis, bool hdr) {
+static GtkWidget* init_list_box(t_listline *lines, int len, gboolean vis, gboolean hdr) {
   static char stat_no_at_buff[MAXTTL][ELEM_BUFF_SIZE];
   GtkWidget *list = gtk_list_box_new();
   g_return_val_if_fail(GTK_IS_LIST_BOX(list), NULL);
@@ -163,12 +163,12 @@ int pingtab_update(gpointer data) {
           }
         }
   { // no data display
-    bool notyet = (info_mesg == notyet_mesg);
+    gboolean notyet = (info_mesg == notyet_mesg);
     if (pinger_state.gotdata) { if (notyet) pingtab_set_error(NULL); }
     else if (!notyet && !info_mesg && pinger_state.gotdata) pingtab_set_error(notyet_mesg);
   }
   if (pinger_state.gotdata && !pinger_state.reachable) {
-    bool yet = pinger_state.run;
+    gboolean yet = pinger_state.run;
     if (!info_mesg || (!yet && (info_mesg == nopong_mesg[1])))
       pingtab_set_error(nopong_mesg[yet]);
   }
@@ -180,7 +180,7 @@ inline void pingtab_wrap_update(void) { pingtab_update(NULL); }
 void pingtab_vis_rows(int no) {
   LOG("set upto %d visible rows", no);
   for (int i = opts.min; i < MAXTTL; i++) {
-    bool vis = i < no;
+    gboolean vis = i < no;
     t_listline *line = &listbox.lines[i];
     gtk_widget_set_visible(GTK_WIDGET(line->row), vis);
     gtk_widget_set_visible(line->child, vis);
@@ -205,7 +205,7 @@ void pingtab_update_width(int max, int ndx) {
 void pingtab_set_error(const gchar *error) {
   info_mesg = error;
   gtk_label_set_label(GTK_LABEL(listbox.info.child), error);
-  bool vis = error && error[0];
+  gboolean vis = error && error[0];
   gtk_widget_set_visible(GTK_WIDGET(listbox.info.row), vis);
   gtk_widget_set_visible(listbox.info.child, vis);
 }

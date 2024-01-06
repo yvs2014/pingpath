@@ -42,9 +42,9 @@ static const gchar *help_message =
   SPANOPT(OPT_CYCLES_HDR   "\t", "Number of ping cycles [" MSTRSTR(DEF_CYCLES) "]")
   SPANOPT(OPT_IVAL_HDR     "\t", "Gap in seconds between pings [" MSTRSTR(DEF_TOUT) "]")
   SPANOPT(OPT_DNS_HDR      "\t", "IP address resolving [on]")
-  SPANOPT(OPT_INFO_HDR     "\t", "Fields of hop to display:")
+  SPANOPT(OPT_INFO_HDR     "\t", "Hop elements to display:")
     SPANSUB(ELEM_HOST_HDR " " ELEM_AS_HDR " " ELEM_CC_HDR " " ELEM_DESC_HDR " " ELEM_RT_HDR)
-  SPANOPT(OPT_STAT_HDR, "Fields of stats to display:")
+  SPANOPT(OPT_STAT_HDR, "Stat elements to display:")
     SPANSUB(ELEM_LOSS_HDR " " ELEM_SENT_HDR " " ELEM_RECV_HDR " " ELEM_LAST_HDR " " ELEM_BEST_HDR
       " " ELEM_WRST_HDR " " ELEM_AVRG_HDR " " ELEM_JTTR_HDR)
   SPANOPT(OPT_TTL_HDR    "\t\t", "working TTL range [0-" MSTRSTR(MAXTTL) "]")
@@ -155,7 +155,7 @@ static GMenu* action_menu_init(GtkWidget *bar) {
   return menu;
 }
 
-static bool create_action_menu(GtkApplication *app, GtkWidget *win, GtkWidget *bar) {
+static gboolean create_action_menu(GtkApplication *app, GtkWidget *win, GtkWidget *bar) {
   static gpointer appwin[APP_WIN_MAX];
   g_return_val_if_fail(GTK_IS_APPLICATION(app), false);
   g_return_val_if_fail(GTK_IS_WINDOW(win), false);
@@ -177,7 +177,7 @@ static void action_update_internal(GMenu *menu) {
     for (int i = 0; i < ACT_NDX_MAX; i++)
       g_menu_append_item(menu, g_menu_item_new(action_label(i), act_desc[i].name));
   }
-  bool run = pinger_state.run, pause = pinger_state.pause;
+  gboolean run = pinger_state.run, pause = pinger_state.pause;
   SET_SA(act_desc, ACT_NDX_START, opts.target != NULL);
   SET_SA(act_desc, ACT_NDX_PAUSE, pause || (!pause && run));
   SET_SA(act_desc, ACT_NDX_RESET, run);
@@ -186,7 +186,7 @@ static void action_update_internal(GMenu *menu) {
 // pub
 //
 
-bool action_init(GtkApplication *app, GtkWidget* win, GtkWidget* bar) {
+gboolean action_init(GtkApplication *app, GtkWidget* win, GtkWidget* bar) {
   g_return_val_if_fail(GTK_IS_APPLICATION(app), false);
   g_return_val_if_fail(GTK_IS_WINDOW(win), false);
   g_return_val_if_fail(GTK_IS_HEADER_BAR(bar), false);

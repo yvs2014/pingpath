@@ -33,7 +33,7 @@ t_stat_elem statelem[ELEM_MAX] = {
   [ELEM_AVRG] = { .enable = true,  .name = ELEM_AVRG_HDR, .tip = ELEM_AVRG_TIP },
   [ELEM_JTTR] = { .enable = true,  .name = ELEM_JTTR_HDR, .tip = ELEM_JTTR_TIP },
 };
-bool whois_enable; // true if any of {ELEM_AS,ELEM_CC,ELEM_DESC,ELEM_RT} is enabled
+gboolean whois_enable; // true if any of {ELEM_AS,ELEM_CC,ELEM_DESC,ELEM_RT} is enabled
 
 static t_hop hops[MAXTTL];
 static t_host_max host_max;
@@ -54,7 +54,7 @@ static void update_hmax(const gchar* addr, const gchar *name) {
 
 static void update_addrname(int at, t_host *b) { // addr is mandatory, name not
   if (!b) return;
-  bool done;
+  gboolean done;
   int vacant = -1;
   t_hop *hop = &hops[at];
   for (int i = 0; i < MAXADDR; i++) {
@@ -153,7 +153,7 @@ static int calc_rtt(int at, t_tseq *mark) {
   return rtt;
 }
 
-static inline bool seq_accord(int prev, int curr) { return ((curr - prev) == 1); }
+static inline gboolean seq_accord(int prev, int curr) { return ((curr - prev) == 1); }
 
 // Note: name[0] is shortcut for "" test instead of STR_NEQ(name, unkn_field)
 #define ADDRNAME(addr, name) ((name && name[0]) ? (name) : ADDRONLY(addr))
@@ -261,7 +261,7 @@ static void set_initial_maxes(void) {
 
 // pub
 //
-void stat_init(bool clean) { // clean start or on reset
+void stat_init(gboolean clean) { // clean start or on reset
   if (clean) {
     hops_no = MAXTTL;
     visibles = -1;
@@ -297,7 +297,7 @@ void stat_free(void) {
   set_initial_maxes();
 }
 
-void stat_clear(bool clean) {
+void stat_clear(gboolean clean) {
   stat_free();
   stat_init(clean);
   pingtab_set_error(NULL);
@@ -337,7 +337,7 @@ void stat_save_discard(int at, t_ping_discard *data) {
     : update_stat(at, -1, NULL, RX);
   if (data->reason) { // 'unreach' management
     int ttl = at + 1;
-    bool reach = !g_strrstr(data->reason, "nreachable");
+    gboolean reach = !g_strrstr(data->reason, "nreachable");
     if (hops[at].reach != reach) hops[at].reach = reach;
     if (reach) { if (hops_no < ttl) set_hops_no(ttl, "unreachable"); }
     else {
@@ -423,7 +423,7 @@ void stat_check_whois_max(gchar* elem[]) {
 }
 
 void stat_whois_enabler(void) {
-  bool enable = false;
+  gboolean enable = false;
   for (int i = 0; i < ELEM_MAX; i++) switch (i) {
     case ELEM_AS:
     case ELEM_CC:
@@ -443,6 +443,17 @@ void stat_run_whois_resolv(void) {
     t_hop *hop = &hops[at];
     for (int i = 0; i < MAXADDR; i++)
       if (hop->host[i].addr) whois_resolv(hop, i);
+  }
+}
+
+void stat_clean_elems(int typ) {
+  if (typ == ENT_EXP_INFO) {
+    statelem[ELEM_HOST].enable = statelem[ELEM_AS].enable = statelem[ELEM_CC].enable =
+    statelem[ELEM_DESC].enable = statelem[ELEM_RT].enable = false;
+  } else if (typ == ENT_EXP_STAT) {
+    statelem[ELEM_LOSS].enable = statelem[ELEM_SENT].enable = statelem[ELEM_RECV].enable =
+    statelem[ELEM_LAST].enable = statelem[ELEM_BEST].enable = statelem[ELEM_WRST].enable =
+    statelem[ELEM_AVRG].enable = statelem[ELEM_JTTR].enable = false;
   }
 }
 

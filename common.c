@@ -10,8 +10,8 @@ const char *unkn_error = "unknown error";
 const char *unkn_field = ""; // "?" "???" (see notes)
 const char *unkn_whois = "";
 
-bool cli;
-int verbose;
+gboolean cli;
+gint verbose;
 
 const char *timestampit(void) {
   static char now_ts[32];
@@ -20,7 +20,7 @@ const char *timestampit(void) {
   return now_ts;
 }
 
-GtkListBoxRow* line_row_new(GtkWidget *child, bool visible) {
+GtkListBoxRow* line_row_new(GtkWidget *child, gboolean visible) {
   GtkListBoxRow *row = GTK_LIST_BOX_ROW(gtk_list_box_row_new());
   g_return_val_if_fail(GTK_IS_LIST_BOX_ROW(row), NULL);
   gtk_list_box_row_set_child(row, child);

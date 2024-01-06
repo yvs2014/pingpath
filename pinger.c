@@ -23,7 +23,7 @@ guint stat_timer;
 
 typedef struct proc {
   GSubprocess *proc;
-  bool active;     // process state
+  gboolean active; // process state
   int sig;         // signal of own stop
   int ndx;         // index in internal list
   char *out, *err; // stdout, stderr buffers
@@ -44,13 +44,13 @@ static gchar* last_error(void) {
   return NULL;
 }
 
-static void view_updater(bool reset) {
+static void view_updater(gboolean reset) {
   if (stat_timer) { g_source_remove(stat_timer); stat_timer = 0; }
   if (reset) stat_timer = g_timeout_add(opts.timeout * 1000, pingtab_update, NULL);
 }
 
-static bool pinger_active(void) {
-  bool active = false;
+static gboolean pinger_active(void) {
+  gboolean active = false;
   for (int i = opts.min; i < opts.lim; i++) if (pings[i].active) { active = true; break; }
   if (pinger_state.run != active) {
     pinger_state.run = active;
@@ -64,7 +64,7 @@ static void process_stopped(GObject *process, GAsyncResult *result, t_proc *proc
   static gchar *nodata_mesg = "No data";
   if (G_IS_SUBPROCESS(process)) {
     GError *error = NULL;
-    bool okay = g_subprocess_wait_check_finish(G_SUBPROCESS(process), result, &error);
+    gboolean okay = g_subprocess_wait_check_finish(G_SUBPROCESS(process), result, &error);
     int sig = proc ? proc->sig : 0;
     if (!okay && sig) {
       int rc = g_subprocess_get_term_sig(G_SUBPROCESS(process));
@@ -132,7 +132,7 @@ static void on_stderr(GObject *stream, GAsyncResult *result, t_proc *p) {
 
 #define MAX_ARGC 32
 
-static bool create_ping(int at, t_proc *p) {
+static gboolean create_ping(int at, t_proc *p) {
   if (!p->out) p->out = g_malloc0(BUFF_SIZE);
   if (!p->err) p->err = g_malloc0(BUFF_SIZE);
   if (!p->out || !p->err) { WARN("%s(%d): g_malloc0() failed", __func__, at); return false; }
@@ -194,7 +194,7 @@ static bool create_ping(int at, t_proc *p) {
 //
 
 void pinger_init(void) {
-  g_strlcpy(opts.pad, DEF_PPAD, sizeof(opts.pad));
+  if (!opts.pad[0]) g_strlcpy(opts.pad, DEF_PPAD, sizeof(opts.pad));
   for (int i = 0; i < MAXTTL; i++) { pings[i].ndx = -1; pings[i].active = false; }
 }
 
@@ -248,21 +248,21 @@ void pinger_free_errors(void) { for (int i = 0; i < MAXTTL; i++) pinger_free_nth
 
 inline void pinger_free_nth_error(int nth) { UPD_STR(ping_errors[nth], NULL); }
 
-void pinger_clear_data(bool clean) {
+void pinger_clear_data(gboolean clean) {
   pinger_free_errors();
   stat_clear(clean);
   hops_no = opts.lim;
   pingtab_clear();
 }
 
-bool pinger_within_range(int min, int max, int got) { // 1..MAXTTL
+gboolean pinger_within_range(int min, int max, int got) { // 1..MAXTTL
   if (min > max) return false;
   if ((min < 1) || (min > MAXTTL)) return false;
   if ((max < 1) || (max > MAXTTL)) return false;
   return ((min <= got) && (got <= max));
 }
 
-void pinger_on_quit(bool andstop) {
+void pinger_on_quit(gboolean andstop) {
   g_source_remove(datetime_id); datetime_id = 0; // stop timer unless it's already done
   pinger_free();
   dns_cache_free();

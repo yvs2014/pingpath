@@ -10,7 +10,7 @@ typedef struct notifier {
 
 static t_notifier notifier;
 
-static bool nt_autohide(t_notifier *nt) {
+static gboolean nt_autohide(t_notifier *nt) {
   if (nt) {
     if (GTK_IS_REVEALER(nt->reveal)) gtk_revealer_set_reveal_child(GTK_REVEALER(nt->reveal), false);
     nt->autohide = 0;

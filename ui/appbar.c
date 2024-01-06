@@ -14,7 +14,7 @@ guint datetime_id;
 static int update_datetime(gpointer label) {
   static char datetime_label[32]; // note: for 'datetime_id' timer only
   if (datetime_id) {
-    bool is_label = GTK_IS_LABEL(label);
+    gboolean is_label = GTK_IS_LABEL(label);
     if (!is_label) { datetime_id = 0; g_return_val_if_fail(is_label, G_SOURCE_REMOVE); }
     time_t now = time(NULL);
     strftime(datetime_label, sizeof(datetime_label), "%F %T", localtime(&now));
@@ -23,7 +23,7 @@ static int update_datetime(gpointer label) {
   return datetime_id;
 }
 
-static bool start_datetime(GtkWidget *bar) {
+static gboolean start_datetime(GtkWidget *bar) {
   g_return_val_if_fail(GTK_IS_HEADER_BAR(bar), false);
   if (datetime_id) { g_source_remove(datetime_id); datetime_id = 0; }
   GtkWidget *datetime = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
@@ -48,7 +48,7 @@ static void target_cb(GtkWidget *widget, GtkWidget *entry) {
   }
 }
 
-static bool add_target_input(GtkWidget *bar) {
+static gboolean add_target_input(GtkWidget *bar) {
   g_return_val_if_fail(GTK_IS_HEADER_BAR(bar), false);
   GtkWidget *entry = gtk_entry_new();
   g_return_val_if_fail(GTK_IS_ENTRY(entry), false);
@@ -68,13 +68,13 @@ static bool add_target_input(GtkWidget *bar) {
 // pub
 //
 
-bool appbar_init(GtkApplication *app, GtkWidget *win) {
+gboolean appbar_init(GtkApplication *app, GtkWidget *win) {
   g_return_val_if_fail(GTK_IS_APPLICATION(app), false);
   g_return_val_if_fail(GTK_IS_WINDOW(win), false);
   GtkWidget *bar = gtk_header_bar_new();
   g_return_val_if_fail(GTK_IS_HEADER_BAR(bar), false);
   gtk_window_set_titlebar(GTK_WINDOW(win), bar);
-  bool re = true;
+  gboolean re = true;
   if (!action_init(app, win, bar)) re = false; // mandatory element
   option_init(bar);
   if (!add_target_input(bar)) re = false; // mandatory element

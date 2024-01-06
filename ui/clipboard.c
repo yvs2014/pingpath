@@ -52,7 +52,7 @@ static void cb_on_click(GtkGestureClick *g, int n, double x, double y, GtkWidget
   }
 }
 
-static bool any_list_sel(t_tab *tab) {
+static gboolean any_list_sel(t_tab *tab) {
   if (tab) {
     GtkWidget* list[] = {tab->hdr, tab->dyn, tab->info};
     for (int i = 0; i < G_N_ELEMENTS(list); i++) if (GTK_IS_LIST_BOX(list[i])) {
@@ -95,7 +95,7 @@ static gchar* cb_collect_level1(GList *list) {
 #define MAXT2 (MAXTTL * 2)
 
 #define C_NULL2SP(list, n) for (int i = 0; i < MAXT2; i++) { \
-  bool empty = true; \
+  gboolean empty = true; \
   for (int j = 0; j < (ELEM_MAX + 1); j++) if ((list)[i][j]) { empty = false; break; } \
   if (empty) break; \
   for (int j = 0; j < (ELEM_MAX + 1); j++) if ((list)[i][j]) break; else (list)[i][j] = g_strdup_printf("%-*s", (n), ""); \
@@ -164,7 +164,7 @@ static gchar* cb_get_text(GtkWidget* lb, GdkClipboard *cb, int level) {
 // pub
 //
 
-bool clipboard_init(GtkWidget *win, t_tab *tab) {
+gboolean clipboard_init(GtkWidget *win, t_tab *tab) {
   g_return_val_if_fail(GTK_IS_WINDOW(win) && tab && GTK_IS_BOX(tab->tab), false);
   GtkGesture *gest = gtk_gesture_click_new();
   g_return_val_if_fail(GTK_IS_GESTURE_CLICK(gest), false);

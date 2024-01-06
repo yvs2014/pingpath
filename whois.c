@@ -94,7 +94,7 @@ static t_wq_elem* wq_find(gchar* addr) {
   return found ? found->data : NULL;
 }
 
-static bool whois_elems_not_null(gchar **welems) {
+static gboolean whois_elems_not_null(gchar **welems) {
   if (!welems) return false;
   for (int i = 0; i < WHOIS_NDX_MAX; i++) if (!welems[i]) return false;
   return true;
@@ -108,7 +108,7 @@ static void whois_query_close(t_wq_elem *elem) {
   whois_query = g_slist_remove(whois_query, elem);
 }
 
-static void whois_copy_elems(gchar* from[], gchar* to[], bool *wcached) {
+static void whois_copy_elems(gchar* from[], gchar* to[], gboolean *wcached) {
   if (!from || !to) return;
   for (int i = 0; i < WHOIS_NDX_MAX; i++) {
     UPD_NSTR(to[i], from[i], MAXHOSTNAME);
@@ -187,11 +187,11 @@ static t_wq_elem* whois_query_fill(gchar *addr, t_hop *hop, int ndx) {
 
 static void on_whois_read(GObject *stream, GAsyncResult *result, t_wq_elem *elem);
 
-static bool whois_reset_read(GObject *stream, gssize size, t_wq_elem *elem) {
+static gboolean whois_reset_read(GObject *stream, gssize size, t_wq_elem *elem) {
   if (!elem || !elem->buff || !G_IS_INPUT_STREAM(stream)) return false;
   elem->size += size;
   gssize left = NET_BUFF_SIZE - elem->size;
-  bool reset_read = left > 0;
+  gboolean reset_read = left > 0;
   if (reset_read) { // continue unless EOF
     char *off = elem->buff + elem->size;
     *off = 0;

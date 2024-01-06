@@ -30,9 +30,9 @@ typedef struct ping_info {
   gchar* info;
 } t_ping_info;
 
-void stat_init(bool clean);
+void stat_init(gboolean clean);
 void stat_free(void);
-void stat_clear(bool clean);
+void stat_clear(gboolean clean);
 void stat_reset_cache(void);
 void stat_save_success(int at, t_ping_success *data);
 void stat_save_discard(int at, t_ping_discard *data);
@@ -46,14 +46,15 @@ void stat_check_hostname_max(int l);
 void stat_check_whois_max(gchar* elem[]);
 void stat_whois_enabler(void);
 void stat_run_whois_resolv(void);
+void stat_clean_elems(int typ);
 
 typedef struct t_stat_elem {
-  bool enable;
+  gboolean enable;
   gchar *name, *tip;
 } t_stat_elem;
 
 extern int hops_no;
 extern t_stat_elem statelem[ELEM_MAX]; // map indexes to elems
-extern bool whois_enable;
+extern gboolean whois_enable;
 
 #endif

@@ -31,7 +31,7 @@
 #define WHOIS_DELIM    ':'
 #define WHOIS_CCDEL    ','
 
-typedef bool parser_cb(int at, GMatchInfo* match, const char *line);
+typedef gboolean parser_cb(int at, GMatchInfo* match, const char *line);
 
 typedef struct parser_regex {
   char *pattern;
@@ -43,12 +43,10 @@ typedef struct response_regex {
   parser_cb *cb;
 } t_response_regex;
 
-enum { STR_RX_INT, STR_RX_PAD, STR_RX_MAX };
-
-static bool parse_success_match(int at, GMatchInfo* match, const char *line);
-static bool parse_discard_match(int at, GMatchInfo* match, const char *line);
-static bool parse_timeout_match(int at, GMatchInfo* match, const char *line);
-static bool parse_info_match(int at, GMatchInfo* match, const char *line); // like 'success' without 'time'
+static gboolean parse_success_match(int at, GMatchInfo* match, const char *line);
+static gboolean parse_discard_match(int at, GMatchInfo* match, const char *line);
+static gboolean parse_timeout_match(int at, GMatchInfo* match, const char *line);
+static gboolean parse_info_match(int at, GMatchInfo* match, const char *line); // like 'success' without 'time'
 
 static const GRegex *multiline_regex;
 static const GRegex *hostname_char0_regex;
@@ -66,8 +64,10 @@ static t_response_regex regexes[] = {
 };
 
 static t_parser_regex str_rx[STR_RX_MAX] = {
-  [STR_RX_INT] = { .pattern = "^\\d+$" },
-  [STR_RX_PAD] = { .pattern = "^[\\da-fA-F]{1,32}$" },
+  [STR_RX_INT]  = { .pattern = "^\\d+$" },
+  [STR_RX_PAD]  = { .pattern = "^[\\da-fA-F]{1,32}$" },
+  [STR_RX_INFO] = { .pattern = "^[" INFO_PATT "]+$" },
+  [STR_RX_STAT] = { .pattern = "^[" STAT_PATT "]+$" },
 };
 
 static GRegex* compile_regex(const char *pattern, GRegexCompileFlags flags) {
@@ -110,14 +110,14 @@ static int fetch_named_rtt(GMatchInfo* match, char *prop) {
   g_free(s); return (val < 0) ? -1 : floor(val);
 }
 
-static bool valid_mark(GMatchInfo* match, t_tseq *mark) {
+static gboolean valid_mark(GMatchInfo* match, t_tseq *mark) {
   mark->seq = fetch_named_int(match, REN_SEQ); if (mark->seq < 0) return false;
   mark->sec = fetch_named_ll(match, REN_TS_S); if (mark->sec < 0) return false;
   mark->usec = fetch_named_int(match, REN_TS_U); if (mark->usec < 0) mark->usec = 0;
   return true;
 }
 
-static bool valid_markhost(GMatchInfo* match, t_tseq* mark, t_host* host,
+static gboolean valid_markhost(GMatchInfo* match, t_tseq* mark, t_host* host,
     const char *typ, const char *line) {
   if (!valid_mark(match, mark)) { WARN("wrong MARK in %s message: %s", typ, line); return false; }
   host->addr = fetch_named_str(match, REN_ADDR);
@@ -129,7 +129,7 @@ static bool valid_markhost(GMatchInfo* match, t_tseq* mark, t_host* host,
   return true;
 }
 
-static bool parse_success_match(int at, GMatchInfo* match, const char *line) {
+static gboolean parse_success_match(int at, GMatchInfo* match, const char *line) {
   t_ping_success res;
   memset(&res, 0, sizeof(res));
   res.ttl = fetch_named_int(match, REN_TTL);
@@ -143,7 +143,7 @@ static bool parse_success_match(int at, GMatchInfo* match, const char *line) {
   return true;
 }
 
-static bool parse_discard_match(int at, GMatchInfo* match, const char *line) {
+static gboolean parse_discard_match(int at, GMatchInfo* match, const char *line) {
   t_ping_discard res;
   memset(&res, 0, sizeof(res));
   if (!valid_markhost(match, &res.mark, &res.host, "DISCARD", line)) return false;
@@ -153,7 +153,7 @@ static bool parse_discard_match(int at, GMatchInfo* match, const char *line) {
   return true;
 }
 
-static bool parse_timeout_match(int at, GMatchInfo* match, const char *line) {
+static gboolean parse_timeout_match(int at, GMatchInfo* match, const char *line) {
   t_ping_timeout res;
   memset(&res, 0, sizeof(res));
   if (!valid_mark(match, &res.mark)) { WARN("wrong MARK in TIMEOUT message: %s", line); return false; }
@@ -162,7 +162,7 @@ static bool parse_timeout_match(int at, GMatchInfo* match, const char *line) {
   return true;
 }
 
-static bool parse_info_match(int at, GMatchInfo* match, const char *line) {
+static gboolean parse_info_match(int at, GMatchInfo* match, const char *line) {
   t_ping_info res;
   memset(&res, 0, sizeof(res));
   res.ttl = fetch_named_int(match, REN_TTL);
@@ -175,12 +175,12 @@ static bool parse_info_match(int at, GMatchInfo* match, const char *line) {
   return true;
 }
 
-static bool parse_match_wrap(int at, GRegex *re, const char *line, parser_cb parser) {
+static gboolean parse_match_wrap(int at, GRegex *re, const char *line, parser_cb parser) {
   GMatchInfo *match = NULL;
   if (!parser) return false;
-  bool gowith = g_regex_match(re, line, 0, &match);
+  gboolean gowith = g_regex_match(re, line, 0, &match);
   if (match) {
-    bool valid = gowith ? parser(at, match, line) : false;
+    gboolean valid = gowith ? parser(at, match, line) : false;
     g_match_info_free(match);
     return valid;
   }
@@ -202,12 +202,12 @@ static char* split_with_delim(char **ps, int c) {
   return g_strstrip(val);
 }
 
-static inline bool parser_valid_char0(gchar *str) { return g_regex_match(hostname_char0_regex, str, 0, NULL); }
-static inline bool parser_valid_host(gchar *host) { return g_regex_match(hostname_chars_regex, host, 0, NULL); }
+static inline gboolean parser_valid_char0(gchar *str) { return g_regex_match(hostname_char0_regex, str, 0, NULL); }
+static inline gboolean parser_valid_host(gchar *host) { return g_regex_match(hostname_chars_regex, host, 0, NULL); }
 
 #define INV_HN_NOTIFY(cause) notifier_inform("Hostname %s", cause)
 
-static bool target_meet_all_conditions(gchar *s, int len, int max) {
+static gboolean target_meet_all_conditions(gchar *s, int len, int max) {
   // rfc1123,rfc952 restrictions
   if (len > max) { notifier_inform("Hostname: out of length limit (%d > %d)", len, max); return false; }
   if (s[len - 1] == '-') { INV_HN_NOTIFY("cannot end with hyphen"); return false; }
@@ -219,11 +219,11 @@ static bool target_meet_all_conditions(gchar *s, int len, int max) {
 
 // pub
 //
-bool parser_init(void) {
+gboolean parser_init(void) {
   multiline_regex = compile_regex("\\n", G_REGEX_MULTILINE);
   hostname_char0_regex = compile_regex("^[" DIGIT_OR_LETTER "]", 0);
   hostname_chars_regex = compile_regex("^[" DIGIT_OR_LETTER ".-]+$", 0);
-  bool re = multiline_regex && hostname_char0_regex && hostname_chars_regex;
+  gboolean re = multiline_regex && hostname_char0_regex && hostname_chars_regex;
   for (int i = 0; i < G_N_ELEMENTS(regexes); i++) {
     regexes[i].rx.regex = compile_regex(regexes[i].rx.pattern, 0);
     if (!regexes[i].rx.regex) re = false;
@@ -248,7 +248,7 @@ int parser_int(const gchar *str, int typ, const gchar *option, t_minmax range) {
   gchar *cpy = g_strdup(str);
   if (!cpy) return -1;
   gchar *val = g_strstrip(cpy);
-  bool valid = g_regex_match(str_rx[STR_RX_INT].regex, val, 0, &match);
+  gboolean valid = g_regex_match(str_rx[STR_RX_INT].regex, val, 0, &match);
   if (valid) {
     int n = atol(val);
     g_match_info_free(match);
@@ -269,16 +269,16 @@ int parser_int(const gchar *str, int typ, const gchar *option, t_minmax range) {
   return -1;
 }
 
-const char* parser_pad(const gchar *str, const gchar *option) {
-  static char pad_buff[PAD_SIZE];
+const char* parser_str(const gchar *str, const gchar *option, int buff_sz, int rx_ndx) {
+  static char str_buff[128];
   GMatchInfo *match = NULL;
-  g_strlcpy(pad_buff, str, sizeof(pad_buff));
-  char *val = g_strstrip(pad_buff);
-  bool valid = g_regex_match(str_rx[STR_RX_PAD].regex, val, 0, &match);
+  g_strlcpy(str_buff, str, buff_sz);
+  char *val = g_strstrip(str_buff);
+  gboolean valid = g_regex_match(str_rx[rx_ndx].regex, val, 0, &match);
   if (valid) {
     g_match_info_free(match);
     return val;
-  } else notifier_inform("%s: no match %s regex", option, str_rx[STR_RX_PAD].pattern);
+  } else notifier_inform("%s: no match %s regex", option, str_rx[rx_ndx].pattern);
   return NULL;
 }
 
@@ -319,5 +319,17 @@ void parser_whois(gchar *buff, int sz, gchar* elem[]) {
     }
   }
   for (int i = 0; i < WHOIS_NDX_MAX; i++) if (!elem[i]) elem[i] = g_strdup(unkn_whois);
+}
+
+#define RANGE_DELIM ','
+t_minmax parser_range(gchar *range) {
+  t_minmax re = { .min = -1, .max = -1};
+  if (range) {
+    char *min = range;
+    char *max = split_with_delim(&min, RANGE_DELIM);
+    if (min && min[0]) re.min = atoi(min);
+    if (max && max[0]) re.max = atoi(max);
+  }
+  return re;
 }
 

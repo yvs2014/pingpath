@@ -61,7 +61,7 @@ static void app_cb(GtkApplication* app, gpointer unused) {
   g_signal_connect(nb, EV_TAB_SWITCH, G_CALLBACK(on_tab_switch), NULL);
   // nb overlay
   GtkWidget *over = notifier_init(nb);
-  bool with_over = GTK_IS_OVERLAY(over);
+  gboolean with_over = GTK_IS_OVERLAY(over);
   if (!with_over) LOG_("failed to add overlay");
   gtk_window_set_child(GTK_WINDOW(win), with_over ? over : nb);
   //

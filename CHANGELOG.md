@@ -1,3 +1,7 @@
+## 0.1.47
+- cli handlers: step2
+- use only 'gboolean' as boolean to not mess up with sizing
+
 ## 0.1.46
 - cli handlers: step1
 

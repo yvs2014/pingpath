@@ -9,7 +9,7 @@
 #endif
 
 #define APPNAME "pingpath"
-#define VERSION "0.1.46"
+#define VERSION "0.1.47"
 
 #define MAXTTL  30
 #define MAXADDR 10
@@ -25,6 +25,9 @@
 #define NET_BUFF_SIZE 4096  // suppose it's enough (dns or whois data is usually 200-300 bytes)
 #define BUFF_SIZE     1024
 #define PAD_SIZE        48
+
+#define INFO_PATT    "hacdr"
+#define STAT_PATT    "lsrmbwaj"
 
 #define AUTOHIDE_IN 2000    // popup notifications, in milliseconds
 
@@ -170,6 +173,8 @@
 
 enum { TAB_PING_NDX, TAB_LOG_NDX, TAB_NDX_MAX };
 
+enum { ENT_EXP_NONE, ENT_EXP_INFO, ENT_EXP_STAT, ENT_EXP_MAX };
+
 enum { ENT_BOOL_NONE, ENT_BOOL_DNS, ENT_BOOL_HOST, ENT_BOOL_AS, ENT_BOOL_CC, ENT_BOOL_DESC, ENT_BOOL_RT,
   ENT_BOOL_LOSS, ENT_BOOL_SENT, ENT_BOOL_RECV, ENT_BOOL_LAST, ENT_BOOL_BEST, ENT_BOOL_WRST,
   ENT_BOOL_AVRG, ENT_BOOL_JTTR, ENT_BOOL_MAX };
@@ -205,15 +210,15 @@ typedef struct tseq {
 } t_tseq;
 
 typedef struct hop {
-  t_host host[MAXADDR]; bool cached;
-  t_whois whois[MAXADDR]; bool wcached[WHOIS_NDX_MAX];
+  t_host host[MAXADDR]; gboolean cached;
+  t_whois whois[MAXADDR]; gboolean wcached[WHOIS_NDX_MAX];
   int sent, recv, last, prev, best, wrst;
   double loss, avrg, jttr;
   t_tseq mark;
-  bool reach;
-  bool tout; // flag of timeouted seq
+  gboolean reach;
+  gboolean tout; // flag of timeouted seq
   gchar* info;
-  int at;    // useful back reference
+  int at;        // useful back reference
 } t_hop;
 
 typedef struct ref { t_hop *hop; int ndx; } t_ref;
@@ -231,7 +236,7 @@ typedef struct tab {
   const char *ico, *tag, *tip;
   GMenu *menu;       // menu template
   GtkWidget *pop;    // popover menu
-  bool sel;          // flag of selection
+  gboolean sel;      // flag of selection
   t_act_desc desc[POP_MENU_NDX_MAX];
   GActionEntry act[POP_MENU_NDX_MAX];
 } t_tab;
@@ -242,11 +247,11 @@ extern const char *unkn_field;
 extern const char *unkn_whois;
 extern const char *log_empty;
 
-extern bool cli;
-extern int verbose;
+extern gboolean cli;
+extern gint verbose;
 
 const char *timestampit(void);
-GtkListBoxRow* line_row_new(GtkWidget *child, bool visible);
+GtkListBoxRow* line_row_new(GtkWidget *child, gboolean visible);
 void tab_setup(t_tab *tab);
 
 void host_free(t_host *host);

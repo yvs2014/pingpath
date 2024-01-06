@@ -1,8 +1,8 @@
 #ifndef CLI_H
 #define CLI_H
 
-#include <gtk/gtk.h>
+#include "common.h"
 
-bool cli_init(int *pargc, char ***pargv);
+gboolean cli_init(int *pargc, char ***pargv);
 
 #endif

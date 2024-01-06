@@ -7,71 +7,7 @@
 #include "notifier.h"
 #include "tabs/ping.h"
 
-#define ENT_BUFF_SIZE 64
-#define SUBLIST_MAX 16
-
-enum { SPN_AUX_MIN, SPN_AUX_LIM, SPN_AUX_MAX };
-
-enum { ENT_EXP_NONE, ENT_EXP_INFO, ENT_EXP_STAT, ENT_EXP_MAX };
-enum { ENT_SPN_NONE, ENT_SPN_TTL, ENT_SPN_MAX };
-enum { ENT_RAD_NONE, ENT_RAD_IPV, ENT_RAD_MAX };
-
-typedef struct ent_ndx {
-  int typ;
-  const gchar *name;
-} t_ent_ndx;
-
-typedef struct ent_str {
-  t_ent_ndx en;
-  int  *pint, idef; // int fields
-  char *pstr; int slen; const char *sdef; // str fields
-  GtkWidget *box, *input;
-  const int len, width;
-  const t_minmax range;
-  gchar hint[ENT_BUFF_SIZE];
-  gchar buff[ENT_BUFF_SIZE];
-} t_ent_str;
-
-typedef struct ent_bool {
-  t_ent_ndx en;
-  bool *pval;
-  const gchar *prefix;
-} t_ent_bool;
-
-typedef struct ent_exp_common {
-  t_ent_ndx en;
-  GtkWidget *arrow, *box, *sub; // aux widgets
-} t_ent_exp_common;
-
-typedef struct ent_exp {
-  t_ent_exp_common c;
-  int ndxs[SUBLIST_MAX];  // 0 terminated indexes, otherwise max
-} t_ent_exp;
-
-typedef struct ent_spn_aux {
-  int *pval; // indexed: 0 .. lim-1
-  int def;   // not-indexed default: 1 .. lim
-  GtkWidget *spn;
-  GCallback cb;
-} t_ent_spn_aux;
-
-typedef struct ent_spn {
-  t_ent_exp_common c;
-  t_ent_spn_aux aux[SPN_AUX_MAX];
-} t_ent_spn;
-
-typedef struct ent_rad_map {
-  int ndx, val;
-  gchar *str;
-} t_ent_rad_map;
-
-typedef struct ent_rad {
-  t_ent_exp_common c;
-  int *pval;
-  t_ent_rad_map map[SUBLIST_MAX]; // 0 str terminated map, otherwise max
-} t_ent_rad;
-
-static t_ent_bool ent_bool[ENT_BOOL_MAX] = {
+t_ent_bool ent_bool[ENT_BOOL_MAX] = {
   [ENT_BOOL_DNS]  = { .en = { .typ = ENT_BOOL_DNS,  .name = OPT_DNS_HDR },    .pval = &opts.dns },
   [ENT_BOOL_HOST] = { .en = { .typ = ENT_BOOL_HOST, .name = ELEM_HOST_HDR },  .pval = &statelem[ELEM_HOST].enable, .prefix = OPT_INFO_HDR },
   [ENT_BOOL_AS]   = { .en = { .typ = ENT_BOOL_AS,   .name = ELEM_AS_HDR },    .pval = &statelem[ELEM_AS].enable,   .prefix = OPT_INFO_HDR },
@@ -88,7 +24,7 @@ static t_ent_bool ent_bool[ENT_BOOL_MAX] = {
   [ENT_BOOL_JTTR] = { .en = { .typ = ENT_BOOL_JTTR, .name = ELEM_JTTR_HDRL }, .pval = &statelem[ELEM_JTTR].enable, .prefix = OPT_STAT_HDR  },
 };
 
-static t_ent_str ent_str[ENT_STR_MAX] = { // TODO: auto .len
+t_ent_str ent_str[ENT_STR_MAX] = {
   [ENT_STR_CYCLES] = { .len = 6,  .width = 6, .range = { .min = CYCLES_MIN, .max = CYCLES_MAX },
     .en = { .typ = ENT_STR_CYCLES, .name = OPT_CYCLES_HDR },
     .pint = &opts.cycles,  .idef = DEF_CYCLES },
@@ -118,7 +54,7 @@ static t_ent_exp ent_exp[ENT_EXP_MAX] = {
 
 static void min_cb(GtkWidget*, t_ent_spn*);
 static void max_cb(GtkWidget*, t_ent_spn*);
-static t_ent_spn ent_spn[ENT_SPN_MAX] = {
+t_ent_spn ent_spn[ENT_SPN_MAX] = {
   [ENT_SPN_TTL] = { .c = {.en = {.typ = ENT_SPN_TTL, .name = OPT_TTL_HDR }}, .aux = {
     [SPN_AUX_MIN] = {.cb = G_CALLBACK(min_cb), .pval = &opts.min, .def = 1},
     [SPN_AUX_LIM] = {.cb = G_CALLBACK(max_cb), .pval = &opts.lim, .def = MAXTTL}
@@ -136,7 +72,7 @@ static t_ent_rad ent_rad[ENT_RAD_MAX] = {
 };
 
 static void check_bool_val(GtkCheckButton *check, t_ent_bool *en, void (*update)(void)) {
-  bool state = gtk_check_button_get_active(check);
+  gboolean state = gtk_check_button_get_active(check);
   if (en->pval) if (*(en->pval) != state) {
     *(en->pval) = state;
     if (update) update();
@@ -204,7 +140,7 @@ static void radio_cb(GtkCheckButton *check, t_ent_rad_map *map) {
   t_ent_rad *en = &ent_rad[ndx];
   switch (en->c.en.typ) {
     case ENT_RAD_IPV: {
-      bool selected = gtk_check_button_get_active(check);
+      gboolean selected = gtk_check_button_get_active(check);
       if (selected) {
         if (map->val != *(en->pval)) {
           *(en->pval) = map->val;
@@ -219,7 +155,7 @@ static void radio_cb(GtkCheckButton *check, t_ent_rad_map *map) {
 static void arrow_cb(GtkWidget *widget, t_ent_exp_common *en) {
   if (!en) return;
   if (GTK_IS_TOGGLE_BUTTON(en->arrow)) {
-    bool active = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(en->arrow));
+    gboolean active = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(en->arrow));
     g_object_set(G_OBJECT(en->arrow), ICON_PROP, active ? GO_UP_ICON : GO_DOWN_ICON, NULL);
     if (GTK_IS_WIDGET(en->sub)) gtk_widget_set_visible(en->sub, active);
     DEBUG("%s: %d", en->en.name, active);
@@ -244,7 +180,7 @@ static void input_cb(GtkWidget *input, t_ent_str *en) {
       } else set_ed_texthint(en);
     } break;
     case ENT_STR_PLOAD: {
-      const char *pad = parser_pad(got, en->en.name);
+      const char *pad = parser_str(got, en->en.name, PAD_SIZE, STR_RX_PAD);
       if (pad) {
         if (en->pstr) g_strlcpy(en->pstr, pad, en->slen);
         notifier_inform("%s: %s", en->en.name, pad);
@@ -400,9 +336,15 @@ static GtkWidget* add_opt_expand(GtkWidget* list, t_ent_exp *en) {
   return box;
 }
 
-static bool add_minmax(GtkWidget *box, t_ent_spn *en, int ndx) {
+static int spn_mm_or_def(t_ent_spn_aux *aux, int min, int def) {
+  return aux ? (aux->pval ? (*aux->pval + min) : aux->def) : def;
+}
+
+static gboolean add_minmax(GtkWidget *box, t_ent_spn *en, int ndx) {
   if (!en || !GTK_IS_BOX(box)) return false;
-  GtkWidget *spn = gtk_spin_button_new_with_range(en->aux[SPN_AUX_MIN].def, en->aux[SPN_AUX_LIM].def, 1);
+  int min = (ndx == SPN_AUX_MIN) ? en->aux[SPN_AUX_MIN].def : spn_mm_or_def(&en->aux[SPN_AUX_MIN], 1, 1);
+  int max = (ndx == SPN_AUX_LIM) ? en->aux[SPN_AUX_LIM].def : spn_mm_or_def(&en->aux[SPN_AUX_LIM], 0, MAXTTL);
+  GtkWidget *spn = gtk_spin_button_new_with_range(min, max, 1);
   g_return_val_if_fail(GTK_IS_SPIN_BUTTON(spn), false);
   gtk_box_append(GTK_BOX(box), spn);
   int *pval = en->aux[ndx].pval;
@@ -472,7 +414,7 @@ static void gtk_list_box_remove_all(GtkListBox *box) {
 #endif
 #endif
 
-static bool create_optmenu(GtkWidget *bar) {
+static gboolean create_optmenu(GtkWidget *bar) {
   static GtkWidget *optmenu;
   if (optmenu) return true;
   optmenu = gtk_menu_button_new();
@@ -491,7 +433,7 @@ static bool create_optmenu(GtkWidget *bar) {
   gtk_widget_set_halign(list, GTK_ALIGN_FILL);
   gtk_widget_set_hexpand(list, false);
   //
-  bool re = true;
+  gboolean re = true;
   gtk_list_box_remove_all(GTK_LIST_BOX(list));
   EN_PR_INT(ENT_STR_CYCLES);
   EN_PR_INT(ENT_STR_IVAL);
@@ -512,7 +454,7 @@ static bool create_optmenu(GtkWidget *bar) {
 // pub
 //
 
-bool option_init(GtkWidget* bar) {
+gboolean option_init(GtkWidget* bar) {
   g_return_val_if_fail(GTK_IS_HEADER_BAR(bar), false);
   if (!create_optmenu(bar)) return false;
   return true;
@@ -524,7 +466,7 @@ bool option_init(GtkWidget* bar) {
   if (GTK_IS_TOGGLE_BUTTON(arr[i].c.arrow)) gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(arr[i].c.arrow), false); }}
 
 void option_update(void) {
-  bool notrun = !pinger_state.run;
+  gboolean notrun = !pinger_state.run;
   ENT_LOOP_STR(ent_str);
   ENT_LOOP_EXP(ent_spn);
   ENT_LOOP_EXP(ent_rad);
