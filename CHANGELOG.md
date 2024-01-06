@@ -1,3 +1,6 @@
+## 0.1.48
+- add short manual page
+
 ## 0.1.47
 - cli handlers: step2
 - use only 'gboolean' as boolean to not mess up with sizing

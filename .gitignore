@@ -4,7 +4,6 @@
 /.cache/
 
 /pingpath
-/pingpath.1
 .*.swp
 *~
 compile_commands.json

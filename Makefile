@@ -54,9 +54,9 @@ clean:
 install: $(NAME)
 	@mkdir -p $(BASEDIR)/bin
 	install -m 755 $(NAME) $(BASEDIR)/bin
-#	@mkdir -p $(MANDIR)
-#	install -m 644 $(NAME).1 $(MANDIR)/
-#	gzip -f $(MANDIR)/$(NAME).1
+	@mkdir -p $(MANDIR)
+	install -m 644 $(NAME).1 $(MANDIR)/
+	gzip -f $(MANDIR)/$(NAME).1
 	@mkdir -p $(DSCDIR)
 	install -T -m 644 $(DESC_SRC) $(DSCDIR)/$(DESC_DST)
 	@mkdir -p $(SVGICODIR)

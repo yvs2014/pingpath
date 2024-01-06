@@ -155,7 +155,7 @@ gboolean cli_init(int *pargc, char ***pargv) {
     { .long_name = "ttl",      .short_name = 't', .arg = G_OPTION_ARG_CALLBACK, .arg_data = cli_opt_t,
       .arg_description = "<[min][,max]>", .description = OPT_TTL_HDR " range" },
     { .long_name = "qos",      .short_name = 'q', .arg = G_OPTION_ARG_CALLBACK, .arg_data = cli_opt_q,
-      .arg_description = "<bits>", .description = OPT_QOS_HDR "/ToS bytes" },
+      .arg_description = "<bits>", .description = OPT_QOS_HDR "/ToS byte" },
     { .long_name = "size",     .short_name = 's', .arg = G_OPTION_ARG_CALLBACK, .arg_data = cli_opt_s,
       .arg_description = "<in-bytes>", .description = OPT_PLOAD_HDR " size" },
     { .long_name = "payload",  .short_name = 'p', .arg = G_OPTION_ARG_CALLBACK, .arg_data = cli_opt_p,

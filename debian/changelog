@@ -1,3 +1,9 @@
+pingpath (0.1.48) lunar mantic; urgency=low
+
+  * add short manual page
+
+ -- yvs <VSYakovetsky@gmail.com>  Sun, 07 Jan 2024 01:37:33 +0200
+
 pingpath (0.1.47) lunar mantic; urgency=low
 
   * cli handlers: step2

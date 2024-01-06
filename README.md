@@ -3,11 +3,20 @@ PingPath
 
 **pingpath** — system **ping** wrapper for network diagnostic inspired by ncurses **mtr** look
 
+SYNOPSIS
+--------
+
+**pingpath \[-chiInpqsStv46\] [TARGET]**
+
 DESCRIPTION
 -----------
 
 Network diagnostic tool based on parsing system **ping** output with functionality of **traceroute** and look a bit of ncurses **mtr**.
 It's a system ping wrapper written in GTK4.
+
+DETAILS
+-------
+... *see pingpath.1 page*
 
 ------------------------------------------------------------------------
 SCREENSHOTS
