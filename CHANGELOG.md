@@ -1,3 +1,6 @@
+## 0.1.49
+- testing snap and flatpak packaging
+
 ## 0.1.48
 - add short manual page
 

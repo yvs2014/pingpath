@@ -132,6 +132,11 @@ static void on_stderr(GObject *stream, GAsyncResult *result, t_proc *p) {
 
 #define MAX_ARGC 32
 
+#define SANDBOX_MESG "Snap container related:\n" \
+  "if minimal ping's slot (network-observe) is not autoconnected (permission denied),\n" \
+  "it can be allowed and connected with the following command:\n" \
+  "  snap connect pingpath:network-observe :network-observe"
+
 static gboolean create_ping(int at, t_proc *p) {
   if (!p->out) p->out = g_malloc0(BUFF_SIZE);
   if (!p->err) p->err = g_malloc0(BUFF_SIZE);
@@ -158,6 +163,7 @@ static gboolean create_ping(int at, t_proc *p) {
   p->proc = g_subprocess_newv(argv, G_SUBPROCESS_FLAGS_STDOUT_PIPE | G_SUBPROCESS_FLAGS_STDERR_PIPE, &error);
   if (!p->proc) {
     notifier_inform("%s", error ? error->message : unkn_error);
+    if (error->code == 3) notifier_inform("%s", SANDBOX_MESG);
     ERROR("g_subprocess_newv()");
     return false;
   }

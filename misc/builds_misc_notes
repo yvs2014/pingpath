@@ -1,0 +1,33 @@
+
+build .deb:
+  build:
+    misc/build_deb.sh
+  install:
+    dpkg -i debs/pingpath_*.deb
+  run:
+    pingpath
+
+build .snap:
+  needed host packages:
+    snap
+  install snap builder:
+    snap install snapcraft
+  build and install app:
+    snapcraft && snapcraft install pingpath*.snap
+  run:
+    pingpath
+
+build .flatpak ('iputils-ping' runtime is requiered)
+  needed host packages:
+    flatpak flatpak-builder [flatpak-xdg-utils]
+  install gtk4;
+    flatpak install org.gnome.Platform//45 org.gnome.Sdk//45
+  build and install app:
+    flatpak-builder --user --install build-dir flatpak.yaml --force-clean
+  run:
+    flatpak run net.tools.pingpath
+
+build .appimage:
+  make install DESTDIR=AppDir PREFIX=/usr
+  ... not yet
+

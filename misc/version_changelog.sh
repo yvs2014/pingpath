@@ -12,6 +12,8 @@ DEB_CHANGELOG='debian/changelog'
 
 FILE='common.h'
 PATT='#define\sVERSION\s'
+FILE_SNAP='snap/snapcraft.yaml'
+PATT_SNAP='version:\s'
 
 [ $# -lt 1 ] && { echo "Use: $(basename $0) 'string with comment'"; exit 1; }
 
@@ -32,6 +34,8 @@ next=$(($vers + 1))
 vn="$VERPRFX.$next"
 [ -n "$BACKUP" ] && cp "$FILE" "/tmp/$(basename $FILE).bk"
 sed -i "s/^\($PATT\).*/\1\"$vn\"/" "$FILE"
+[ -n "$BACKUP" ] && cp "$FILE_SNAP" "/tmp/$(basename $FILE_SNAP).bk"
+sed -i "s/^\($PATT_SNAP\).*/\1$vn/" "$FILE_SNAP"
 
 ## md format
 [ -n "$BACKUP" ] && cp "$MD_CHANGELOG" "/tmp/$(basename $MD_CHANGELOG).bk"

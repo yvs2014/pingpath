@@ -1,7 +1,7 @@
 PingPath
 --------
 
-**pingpath** — system **ping** wrapper for network diagnostic inspired by ncurses **mtr** look
+**pingpath** — **ping** wrapper for network diagnostic
 
 SYNOPSIS
 --------
@@ -11,12 +11,17 @@ SYNOPSIS
 DESCRIPTION
 -----------
 
-Network diagnostic tool based on parsing system **ping** output with functionality of **traceroute** and look a bit of ncurses **mtr**.
-It's a system ping wrapper written in GTK4.
+Network diagnostic tool based on parsing system **ping** output with functionality of **traceroute**.
+No need set‐root‐uid or raw‐socket‐perms itself to run due to being a wrapper for **ping**.
+Inspired by ncurses look of **mtr** and written in **GTK4**.
 
 DETAILS
 -------
 ... *see pingpath.1 page*
+
+DEB
+-----------
+Autobuilt at [Launchpad](https://ppa.launchpadcontent.net/lrou2014/pingpath/ubuntu/pool/main/p/pingpath/)
 
 ------------------------------------------------------------------------
 SCREENSHOTS

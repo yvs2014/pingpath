@@ -1,0 +1,30 @@
+
+# NOTE: it's just a template, there's no flatpak runtimes that provide 'ping' utility
+
+app-id: net.tools.pingpath
+runtime: org.gnome.Platform
+runtime-version: '45'
+sdk: org.gnome.Sdk
+command: pingpath
+default-branch: main
+rename-icon: pingpath
+finish-args:
+  - --share=network
+  - --share=ipc
+  - --socket=fallback-x11
+  - --socket=wayland
+  - --device=dri
+modules:
+  - name: pingpath
+    buildsystem: simple
+    build-commands:
+      - make
+      - DESTDIR=${FLATPAK_DEST} PREFIX= make install
+    sources:
+      - type: dir
+        path: .
+#      - type: git
+#        url: https://github.com/yvs2014/pingpath
+#        branch: main
+##        commit: "releasetag"
+

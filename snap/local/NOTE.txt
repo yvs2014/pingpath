@@ -1,0 +1,3 @@
+If minimal ping's slot (network-observe) is not autoconnected (permission denied),
+it can be allowed and connected with the following command:
+  snap connect pingpath:network-observe :network-observe

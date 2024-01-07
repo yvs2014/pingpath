@@ -1,0 +1,44 @@
+name: pingpath
+adopt-info: pingpath
+base: core22
+version: 0.1.49
+summary: ping wrapper for network diagnostic
+description: |
+  Network diagnostic tool based on parsing system 'ping' output with functionality of 'traceroute'.
+  Inspired by ncurses look of 'mtr' and written in 'GTK4'.
+
+architectures:
+  - build-on: [amd64]
+  - build-on: [arm64]
+  - build-on: [armhf]
+  - build-on: [ppc64el]
+  - build-on: [s390x]
+grade: stable
+confinement: strict
+
+apps:
+  pingpath:
+    extensions: [gnome]
+    command: usr/bin/pingpath
+    plugs:
+      - network
+      - network-observe # for system 'ping' tool
+
+parts:
+  pingpath:
+    plugin: make
+#    source-type: local
+#    source: .
+    source-type: git
+    source: https://github.com/yvs2014/pingpath
+    build-packages:
+      - build-essential
+      - pkgconf
+    build-environment:
+      - PREFIX: /usr
+    stage-packages:
+      - iputils-ping
+    prime:
+      - usr/bin/pingpath
+      - usr/share/man/man1/pingpath.1.gz
+
