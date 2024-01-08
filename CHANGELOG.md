@@ -1,3 +1,6 @@
+## 0.1.50
+- tune up snap building
+
 ## 0.1.49
 - testing snap and flatpak packaging
 

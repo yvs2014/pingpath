@@ -1,3 +1,9 @@
+pingpath (0.1.50) lunar mantic; urgency=low
+
+  * tune up snap building
+
+ -- yvs <VSYakovetsky@gmail.com>  Tue, 09 Jan 2024 01:16:14 +0200
+
 pingpath (0.1.49) lunar mantic; urgency=low
 
   * testing snap and flatpak packaging

@@ -11,8 +11,8 @@ SYNOPSIS
 DESCRIPTION
 -----------
 
-Network diagnostic tool based on parsing system **ping** output with functionality of **traceroute**.
-No need set‐root‐uid or raw‐socket‐perms itself to run due to being a wrapper for **ping**.
+Network diagnostic tool based on parsing system **ping** output with functionality of **traceroute**.  
+No need set‐root‐uid or raw‐socket‐perms itself to run due to being a wrapper for **ping**.  
 Inspired by ncurses look of **mtr** and written in **GTK4**.
 
 DETAILS
@@ -21,7 +21,7 @@ DETAILS
 
 DEB
 -----------
-Autobuilt at [Launchpad](https://ppa.launchpadcontent.net/lrou2014/pingpath/ubuntu/pool/main/p/pingpath/)
+Autobuilt at [Launchpad](https://launchpad.net/~lrou2014/+archive/ubuntu/pingpath)
 
 ------------------------------------------------------------------------
 SCREENSHOTS

@@ -1,7 +1,7 @@
+
 name: pingpath
-adopt-info: pingpath
 base: core22
-version: 0.1.49
+version: 0.1.50
 summary: ping wrapper for network diagnostic
 description: |
   Network diagnostic tool based on parsing system 'ping' output with functionality of 'traceroute'.
@@ -11,8 +11,9 @@ architectures:
   - build-on: [amd64]
   - build-on: [arm64]
   - build-on: [armhf]
-  - build-on: [ppc64el]
-  - build-on: [s390x]
+#  - build-on: [ppc64el]
+#  - build-on: [s390x]
+  - build-on: [riscv64]
 grade: stable
 confinement: strict
 
@@ -23,6 +24,7 @@ apps:
     plugs:
       - network
       - network-observe # for system 'ping' tool
+      - network-status  # for whois requests
 
 parts:
   pingpath:
