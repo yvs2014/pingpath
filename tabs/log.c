@@ -37,9 +37,9 @@ t_tab* logtab_init(GtkWidget* win) {
   logtab.tab = gtk_box_new(GTK_ORIENTATION_VERTICAL, MARGIN);
   g_return_val_if_fail(GTK_IS_BOX(logtab.tab), NULL);
   logtab.dyn = gtk_list_box_new();
+  g_return_val_if_fail(GTK_IS_LIST_BOX(logtab.dyn), NULL);
   gtk_list_box_set_selection_mode(GTK_LIST_BOX(logtab.dyn), GTK_SELECTION_MULTIPLE);
   gtk_list_box_set_activate_on_single_click(GTK_LIST_BOX(logtab.dyn), false);
-  g_return_val_if_fail(GTK_IS_LIST_BOX(logtab.dyn), NULL);
   gtk_widget_set_halign(logtab.dyn, GTK_ALIGN_FILL);
   gtk_widget_set_hexpand(logtab.dyn, false);
   GtkWidget *box = gtk_box_new(GTK_ORIENTATION_VERTICAL, MARGIN);

@@ -3,7 +3,6 @@
 
 #define CSS_ID_DATETIME  "datetime"
 #define CSS_ID_NOTIFIER  "notifier"
-#define CSS_TAB          "tab"
 #define CSS_BGROUND      "bground"
 #define CSS_BGONBG       "bgonbg"
 #define CSS_LIGHT_BG     "lightbg"

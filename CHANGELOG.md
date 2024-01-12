@@ -1,3 +1,6 @@
+## 0.1.51
+- [in progress] add graph template and base layers
+
 ## 0.1.50
 - tune up snap building
 

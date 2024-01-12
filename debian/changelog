@@ -1,3 +1,9 @@
+pingpath (0.1.51) lunar mantic; urgency=low
+
+  * [in progress] add graph template and base layers
+
+ -- yvs <VSYakovetsky@gmail.com>  Fri, 12 Jan 2024 06:58:09 +0200
+
 pingpath (0.1.50) lunar mantic; urgency=low
 
   * tune up snap building

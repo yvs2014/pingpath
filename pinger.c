@@ -7,6 +7,7 @@
 #include "ui/appbar.h"
 #include "ui/notifier.h"
 #include "tabs/ping.h"
+#include "tabs/graph.h"
 
 #define PING "/bin/ping"
 #define SKIPNAME PING ": "
@@ -44,9 +45,9 @@ static gchar* last_error(void) {
   return NULL;
 }
 
-static void view_updater(gboolean reset) {
+static void tab_updater(gboolean reset) {
   if (stat_timer) { g_source_remove(stat_timer); stat_timer = 0; }
-  if (reset) stat_timer = g_timeout_add(opts.timeout * 1000, pingtab_update, NULL);
+  if (reset) stat_timer = g_timeout_add(opts.timeout * 1000, pinger_update_tabs, NULL);
 }
 
 static gboolean pinger_active(void) {
@@ -54,7 +55,7 @@ static gboolean pinger_active(void) {
   for (int i = opts.min; i < opts.lim; i++) if (pings[i].active) { active = true; break; }
   if (pinger_state.run != active) {
     pinger_state.run = active;
-    view_updater(active);
+    tab_updater(active);
     appbar_update();
   }
   return active;
@@ -84,7 +85,7 @@ static void process_stopped(GObject *process, GAsyncResult *result, t_proc *proc
     CLEAR_G_OBJECT(&p);
   }
   if (!pinger_active()) {
-    pingtab_wrap_update(); // final view update
+    pinger_update_tabs(NULL); // final view update
     if (!pinger_state.gotdata && (!info_mesg || (info_mesg == notyet_mesg))) pingtab_set_error(nodata_mesg);
   }
 }
@@ -259,6 +260,7 @@ void pinger_clear_data(gboolean clean) {
   stat_clear(clean);
   hops_no = opts.lim;
   pingtab_clear();
+  graphtab_clear();
 }
 
 gboolean pinger_within_range(int min, int max, int got) { // 1..MAXTTL
@@ -274,5 +276,11 @@ void pinger_on_quit(gboolean andstop) {
   dns_cache_free();
   whois_cache_free();
   if (andstop) pinger_stop("at exit"); // note: if it's sysexit, subprocesses have to be already terminated by system
+}
+
+int pinger_update_tabs(gpointer unused) {
+  pingtab_update();
+  graphtab_update();
+  return G_SOURCE_CONTINUE;
 }
 

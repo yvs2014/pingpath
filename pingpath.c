@@ -8,6 +8,7 @@
 #include "ui/appbar.h"
 #include "ui/notifier.h"
 #include "tabs/ping.h"
+#include "tabs/graph.h"
 #include "tabs/log.h"
 
 #define APPFLAGS G_APPLICATION_NON_UNIQUE
@@ -16,6 +17,7 @@ static void on_app_exit(GtkWidget *widget, gpointer unused) {
 // note: subprocesses have to be already terminated by system at this point
 // if not, then pinger_on_quit(true);
   logtab_clear();
+  graphtab_clear();
   pinger_on_quit(false);
   LOG_("app quit");
 }
@@ -50,14 +52,19 @@ static void app_cb(GtkApplication* app, gpointer unused) {
   if (!GTK_IS_NOTEBOOK(nb)) APPQUIT("%s", "notebook");
   if (style_loaded) gtk_widget_add_css_class(nb, CSS_BGROUND);
   gtk_notebook_set_tab_pos(GTK_NOTEBOOK(nb), GTK_POS_BOTTOM);
-  t_tab* tabs[TAB_NDX_MAX] = { [TAB_PING_NDX] = pingtab_init(win), [TAB_LOG_NDX] = logtab_init(win) };
+  t_tab* tabs[TAB_NDX_MAX] = {
+    [TAB_PING_NDX]  = pingtab_init(win),
+    [TAB_GRAPH_NDX] = graphtab_init(win),
+    [TAB_LOG_NDX]   = logtab_init(win),
+  };
   for (int i = 0; i < G_N_ELEMENTS(tabs); i++) {
     t_tab *tab = tabs[i]; if (!tab) APPQUIT("tab#%d", i);
-    tab_setup(tab);
+    tab_setup(tab, (i == TAB_GRAPH_NDX) ? CSS_LIGHT_BG : NULL);
     int ndx = gtk_notebook_append_page(GTK_NOTEBOOK(nb), tab->tab, tab->lab);
     if (ndx < 0) APPQUIT("tab page#%d", i);
     gtk_notebook_set_tab_reorderable(GTK_NOTEBOOK(nb), tab->tab, true);
   }
+  gtk_notebook_set_current_page(GTK_NOTEBOOK(nb), TAB_GRAPH_NDX); // TMP for debug
   g_signal_connect(nb, EV_TAB_SWITCH, G_CALLBACK(on_tab_switch), NULL);
   // nb overlay
   GtkWidget *over = notifier_init(nb);

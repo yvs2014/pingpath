@@ -21,8 +21,8 @@ t_stat_elem statelem[ELEM_MAX] = {
   [ELEM_HOST] = { .enable = true,  .name = ELEM_HOST_HDR, .tip = ELEM_HOST_TIP },
   [ELEM_AS]   = { .enable = true,  .name = ELEM_AS_HDR,   .tip = ELEM_AS_TIP   },
   [ELEM_CC]   = { .enable = true,  .name = ELEM_CC_HDR,   .tip = ELEM_CC_TIP   },
-  [ELEM_DESC] = { .enable = false, .name = ELEM_DESC_HDR, .tip = ELEM_DESC_TIP },
-  [ELEM_RT]   = { .enable = false, .name = ELEM_RT_HDR,   .tip = ELEM_RT_TIP   },
+  [ELEM_DESC] = {                  .name = ELEM_DESC_HDR, .tip = ELEM_DESC_TIP },
+  [ELEM_RT]   = {                  .name = ELEM_RT_HDR,   .tip = ELEM_RT_TIP   },
   [ELEM_FILL] = { .enable = true,  .name = "" },
   [ELEM_LOSS] = { .enable = true,  .name = ELEM_LOSS_HDR, .tip = ELEM_LOSS_TIP },
   [ELEM_SENT] = { .enable = true,  .name = ELEM_SENT_HDR, .tip = ELEM_SENT_TIP },
@@ -365,7 +365,7 @@ void stat_last_tx(int at) { // update last 'tx' unless done before
 
 #define IW_RET(elem, ndx) { return (elem) ? info_whois(at, elem, ndx) : NULL; }
 
-const gchar *stat_elem(int at, int typ) {
+const gchar *stat_str_elem(int at, int typ) {
   switch (typ) {
     case ELEM_HOST: return info_host(at);
     case ELEM_AS:   return info_whois(at, WHOIS_AS_NDX);
@@ -383,6 +383,11 @@ const gchar *stat_elem(int at, int typ) {
       return stat_hop(typ, &hops[at]);
   }
   return NULL;
+}
+
+t_stat_data stat_data_at(int at) {
+  t_stat_data sd = { .rtt = hops[at].last, .jttr = hops[at].jttr };
+  return sd;
 }
 
 int stat_elem_max(int typ) {

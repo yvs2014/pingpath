@@ -100,7 +100,7 @@ static void set_ed_texthint(t_ent_str *en) {
 
 static void toggled_dns(void) {
   stat_reset_cache();
-  pingtab_wrap_update();
+  pinger_update_tabs(NULL);
 }
 
 static void toggle_cb(GtkCheckButton *check, t_ent_bool *en) {

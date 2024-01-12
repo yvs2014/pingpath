@@ -37,5 +37,6 @@ void pinger_free_nth_error(int nth);
 void pinger_clear_data(gboolean clean);
 gboolean pinger_within_range(int min, int max, int got);
 void pinger_on_quit(gboolean andstop);
+int pinger_update_tabs(gpointer unused);
 
 #endif

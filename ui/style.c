@@ -9,7 +9,7 @@ int style_loaded;
 
 #define DEF_BGROUND_DARK  "#151515"
 #define APP_BGROUND_DARK  "#2c2c2c"
-#define APP_BGROUND_LIGHT "#f0f0f0"
+#define APP_BGROUND_LIGHT "#f5f5f5"
 
 #define PAD   "8px"
 #define PAD4  "4px"
@@ -39,7 +39,6 @@ static const gchar *css_common =
   "." CSS_CHPAD "{padding-right:" PAD ";}"
   "." CSS_PAD6  "{padding-right:" PAD6 ";}"
   "." CSS_NOFRAME "{border:none;}"
-  "." CSS_TAB "{padding:" PAD ";}"
   "." CSS_ROUNDED "{border-radius:5px; padding:" PAD16 ";}"
   "#" CSS_ID_DATETIME "{font-weight:500;}"
   "#" CSS_ID_NOTIFIER "{ filter: invert(100%); }"
@@ -87,7 +86,7 @@ void style_init(void) {
     if ((prefer_dark >= 0) || theme) { // check out preferences
       if (prefer_dark || (theme ? strcasestr(theme, "dark") : false))
         if (l < sizeof(css_data)) g_strlcpy(css_data + l, css_dark_colors, sizeof(css_data) - l);
-//      LOG("theme=%s prefer-dark=%d", theme, prefer_dark);
+      LOG("theme=%s prefer-dark=%d", theme, prefer_dark);
     }
     g_free(theme);
   }

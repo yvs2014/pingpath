@@ -28,7 +28,7 @@ GtkListBoxRow* line_row_new(GtkWidget *child, gboolean visible) {
   return row;
 }
 
-void tab_setup(t_tab *tab) {
+void tab_setup(t_tab *tab, const char *css) {
   if (!tab) return;
   if (GTK_IS_WIDGET(tab->lab)) {
     gtk_widget_set_hexpand(tab->lab, true);
@@ -48,11 +48,14 @@ void tab_setup(t_tab *tab) {
   GtkWidget* list[] = {tab->hdr, tab->dyn, tab->info};
   for (int i = 0; i < G_N_ELEMENTS(list); i++) if (GTK_IS_WIDGET(list[i])) {
     gtk_widget_set_can_focus(list[i], false);
-    if (style_loaded) gtk_widget_add_css_class(list[i], CSS_BGROUND);
+    if (style_loaded) gtk_widget_add_css_class(list[i], (i && css) ? css: CSS_BGROUND);
   }
   if (GTK_IS_WIDGET(tab->tab) && style_loaded) {
-    gtk_widget_add_css_class(tab->tab, CSS_PAD);
-    gtk_widget_add_css_class(tab->tab, CSS_BGROUND);
+    if (css) gtk_widget_add_css_class(tab->tab, css);
+    else {
+      gtk_widget_add_css_class(tab->tab, css ? css: CSS_PAD);
+      gtk_widget_add_css_class(tab->tab, css ? css: CSS_BGROUND);
+    }
   }
 }
 

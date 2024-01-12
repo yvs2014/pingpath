@@ -149,15 +149,15 @@ void pingtab_clear(void) {
   pinger_free_errors();
 }
 
-int pingtab_update(gpointer data) {
+void pingtab_update(void) {
   static const gchar *nopong_mesg[] = { "Not reached", "Not reached yet"};
   if (!pinger_state.pause)
     for (int i = 0; i < hops_no; i++)
-      for (int j = 0; j < ELEM_MAX; j++)
-        if ((j != ELEM_NO) && statelem[j].enable) {
-          GtkWidget *label = listbox.lines[i].cells[j];
+      for (int typ = 0; typ < ELEM_MAX; typ++)
+        if ((typ != ELEM_NO) && statelem[typ].enable) {
+          GtkWidget *label = listbox.lines[i].cells[typ];
           if (GTK_IS_LABEL(label)) {
-            const gchar *elem = stat_elem(i, j);
+            const gchar *elem = stat_str_elem(i, typ);
             const gchar *cell = gtk_label_get_text(GTK_LABEL(label));
             if (STR_NEQ(elem, cell)) gtk_label_set_text(GTK_LABEL(label), elem);
           }
@@ -172,10 +172,7 @@ int pingtab_update(gpointer data) {
     if (!info_mesg || (!yet && (info_mesg == nopong_mesg[1])))
       pingtab_set_error(nopong_mesg[yet]);
   }
-  return G_SOURCE_CONTINUE;
 }
-
-inline void pingtab_wrap_update(void) { pingtab_update(NULL); }
 
 void pingtab_vis_rows(int no) {
   LOG("set upto %d visible rows", no);
@@ -192,7 +189,7 @@ void pingtab_vis_cols(void) {
   DEBUG("set %s", "visible columns");
   for (int i = 0; i < MAXTTL; i++) set_vis_cells(&listbox.header[i]);
   for (int i = 0; i < MAXTTL; i++) set_vis_cells(&listbox.lines[i]);
-  pingtab_wrap_update();
+  pingtab_update();
 }
 
 void pingtab_update_width(int max, int ndx) {

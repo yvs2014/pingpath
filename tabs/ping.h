@@ -4,8 +4,7 @@
 #include "common.h"
 
 t_tab* pingtab_init(GtkWidget* win);
-int pingtab_update(gpointer data);
-void pingtab_wrap_update(void);
+void pingtab_update(void);
 void pingtab_clear(void);
 void pingtab_vis_rows(int no);
 void pingtab_vis_cols(void);

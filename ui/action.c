@@ -3,7 +3,6 @@
 #include "appbar.h"
 #include "notifier.h"
 #include "pinger.h"
-#include "tabs/ping.h"
 
 #if PANGO_VERSION_MAJOR == 1
 #if PANGO_VERSION_MINOR < 50
@@ -103,7 +102,7 @@ static void on_pauseresume(GSimpleAction *action, GVariant *var, gpointer data) 
   MI_LOG(ACT_NDX_PAUSE);
   pinger_state.pause = !pinger_state.pause;
   action_update();
-  pingtab_wrap_update();
+  pinger_update_tabs(NULL);
 }
 
 static void on_reset(GSimpleAction *action, GVariant *var, gpointer data) {

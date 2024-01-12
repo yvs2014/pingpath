@@ -9,7 +9,7 @@
 #endif
 
 #define APPNAME "pingpath"
-#define VERSION "0.1.50"
+#define VERSION "0.1.51"
 
 #define MAXTTL  30
 #define MAXADDR 10
@@ -38,20 +38,23 @@
 #define EV_ROW_CHANGE "selected-rows-changed"
 #define EV_TAB_SWITCH "switch-page"
 
-#define ICON_PROP     "icon-name"
-#define ACT_MENU_ICON "open-menu-symbolic"
-#define OPT_MENU_ICON "document-properties-symbolic"
-#define GO_UP_ICON    "go-up-symbolic"
-#define GO_DOWN_ICON  "go-down-symbolic"
-#define GO_LEFT_ICON  "go-previous-symbolic"
-#define GO_RIGHT_ICON "go-next-symbolic"
-#define PING_TAB_ICON "format-justify-left-symbolic"
-#define LOG_TAB_ICON  "weather-clear-symbolic"
+#define ICON_PROP      "icon-name"
+#define ACT_MENU_ICON  "open-menu-symbolic"
+#define OPT_MENU_ICON  "document-properties-symbolic"
+#define GO_UP_ICON     "go-up-symbolic"
+#define GO_DOWN_ICON   "go-down-symbolic"
+#define GO_LEFT_ICON   "go-previous-symbolic"
+#define GO_RIGHT_ICON  "go-next-symbolic"
+#define PING_TAB_ICON  "format-justify-left-symbolic"
+#define LOG_TAB_ICON   "weather-clear-symbolic"
+#define GRAPH_TAB_ICON "media-playlist-shuffle-symbolic"
 
-#define PING_TAB_TAG "Trace"
-#define PING_TAB_TIP "Ping path and stats"
-#define LOG_TAB_TAG  "Log"
-#define LOG_TAB_TIP  "Auxiliary logs"
+#define PING_TAB_TAG  "Trace"
+#define PING_TAB_TIP  "Ping path with stats"
+#define LOG_TAB_TAG   "Log"
+#define LOG_TAB_TIP   "Auxiliary logs"
+#define GRAPH_TAB_TAG "Graph"
+#define GRAPH_TAB_TIP "Line graph"
 
 #define MARGIN  8
 #define ACT_DOT 4 // beyond of "app." or "win."
@@ -171,7 +174,7 @@
 #define QOS_MAX    255
 #define LOGMAX_MAX 999
 
-enum { TAB_PING_NDX, TAB_LOG_NDX, TAB_NDX_MAX };
+enum { TAB_PING_NDX, TAB_GRAPH_NDX, TAB_LOG_NDX, TAB_NDX_MAX };
 
 enum { ENT_EXP_NONE, ENT_EXP_INFO, ENT_EXP_STAT, ENT_EXP_MAX };
 
@@ -252,7 +255,7 @@ extern gint verbose;
 
 const char *timestampit(void);
 GtkListBoxRow* line_row_new(GtkWidget *child, gboolean visible);
-void tab_setup(t_tab *tab);
+void tab_setup(t_tab *tab, const char *css);
 
 void host_free(t_host *host);
 int host_cmp(const void *a, const void *b);
