@@ -2,7 +2,7 @@
 Name=pingpath
 Comment=Graphical ping wrapper
 Exec=pingpath
-Icon=${SNAP}/meta/gui/pingpath.png
+Icon=${SNAP}/meta/gui/pingpath.svg
 Terminal=false
 Type=Application
 StartupNotify=true

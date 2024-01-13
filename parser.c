@@ -188,7 +188,8 @@ static gboolean parse_match_wrap(int at, GRegex *re, const char *line, parser_cb
 }
 
 static void analyze_line(int at, const char *line) {
-  for (int i = 0; i < G_N_ELEMENTS(regexes); i++)
+  static int n_regexes = G_N_ELEMENTS(regexes);
+  for (int i = 0; i < n_regexes; i++)
     if (parse_match_wrap(at, regexes[i].rx.regex, line, regexes[i].cb)) return;
   DEBUG("UNKNOWN[at=%d]: %s", at, line);
 }

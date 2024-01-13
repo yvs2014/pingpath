@@ -10,8 +10,9 @@
 #define GR_FONT "monospace"
 #define GRF_RATIO 0.28
 
-#define GR_RTT0 5000 // 5msec
-#define GR_RTT_SCALE 1.1
+#define GR_RTT0 1000 // 1msec
+#define GR_RTT_SCALE 1000. // usec to msec
+#define GR_Y_GAP 1.1
 
 #define GR_LEFT   60
 #define GR_TOP    50
@@ -21,14 +22,21 @@
 #define CELL_SIZE 50
 #define TICK_SIZE 6
 #define DASH_BOLD 0.7
+#define DOT_SIZE  5
+
+#define X_CELL_SEC 5
+#define X_FREQ     2
 
 typedef struct gr_measures {
-  int x, y, w, h, N, M;
+  int x, y, w, h, N, M, fs, no, ymax, at;
 } t_gr_measures;
 
 typedef struct gr_list {
-  GSList* list; int max; // to not calculate length of list
+  GSList* list; int len; // to not calculate length of list
 } t_gr_list;
+
+gboolean graph_enable = true;
+int graph_type = GRAPH_TYPE_DOT;
 
 static t_tab graphtab = { .self = &graphtab, .name = "graph-tab",
   .ico = GRAPH_TAB_ICON, .tag = GRAPH_TAB_TAG, .tip = GRAPH_TAB_TIP,
@@ -37,47 +45,54 @@ static t_tab graphtab = { .self = &graphtab, .name = "graph-tab",
 };
 
 static t_gr_list gr_series[MAXTTL];
-#define GRLS (gr_series[i].list)
-#define GRMX (gr_series[i].max)
-static int gr_max_elems = 10;
-static int gr_max_rtt = GR_RTT0;
+#define GR_LIST (gr_series[i].list)
+#define GR_LEN (gr_series[i].len)
 
 static GtkWidget *gr_grid, *gr_marks, *gr_graph;
 static PangoFontDescription *gr_font;
 
-static t_gr_measures grm = { .x = GR_LEFT, .y = GR_TOP };
+static t_gr_measures grm = { .x = GR_LEFT, .y = GR_TOP, .fs = CELL_SIZE * GRF_RATIO, .ymax = GR_RTT0 };
+
+static double gr_colors[][3] = { // 5x6 is enough for MAXTTL=30
+  {1, 0, 0},     {0, 1, 0},     {0, 0, 1},     {1, 1, 0},         {1, 0, 1},         {0, 1, 1},
+  {0.5, 0, 0},   {0, 0.5, 0},   {0, 0, 0.5},   {0.5, 0.5, 0},     {0.5, 0, 0.5},     {0, 0.5, 0.5},
+  {0.75, 0, 0},  {0, 0.75, 0},  {0, 0, 0.75},  {0.75, 0.75, 0},   {0.75, 0, 0.75},   {0, 0.75, 0.75},
+  {0.25, 0, 0},  {0, 0.25, 0},  {0, 0, 0.25},  {0.25, 0.25, 0},   {0.25, 0, 0.25},   {0, 0.25, 0.25},
+  {0.875, 0, 0}, {0, 0.875, 0}, {0, 0, 0.875}, {0.875, 0.875, 0}, {0.875, 0, 0.875}, {0, 0.875, 0.875},
+};
 
 
 static void gr_scale_max(int max) {
-  gr_max_rtt = max * GR_RTT_SCALE;
+  grm.ymax = max * GR_Y_GAP;
   gtk_widget_queue_draw(gr_marks);
   gtk_widget_set_visible(gr_marks, true);
 }
 
 static int gr_max_in_series(void) {
+  static int n_gr_series = G_N_ELEMENTS(gr_series);
   int max = GR_RTT0;
-  for (int i = 0; i < G_N_ELEMENTS(gr_series); i++) {
-    for (GSList *list = GRLS; list; list = list->next) {
-      if (!list->data) continue;
-      int rtt = ((t_stat_data*)list->data)->rtt;
+  for (int i = 0; i < n_gr_series; i++) {
+    for (GSList *item = GR_LIST; item; item = item->next) {
+      if (!item->data) continue;
+      int rtt = ((t_stat_graph*)item->data)->rtt;
       if (rtt > max) max = rtt;
     }
   }
   return max;
 }
 
-static void gr_save(int i, t_stat_data data) {
-  t_stat_data *sd = g_memdup2(&data, sizeof(data));
-  GRLS = g_slist_prepend(GRLS, sd); GRMX++;
-  if (sd && (sd->rtt > gr_max_rtt)) gr_scale_max(sd->rtt); // up-scale
-  while (GRLS && (GRMX > gr_max_elems)) {
-    GSList *last = g_slist_last(GRLS);
+static void gr_save(int i, t_stat_graph data) {
+  t_stat_graph *sd = g_memdup2(&data, sizeof(data));
+  GR_LIST = g_slist_prepend(GR_LIST, sd); GR_LEN++;
+  if (sd && (sd->rtt > grm.ymax)) gr_scale_max(sd->rtt); // up-scale
+  while (GR_LIST && (GR_LEN > grm.no)) {
+    GSList *last = g_slist_last(GR_LIST);
     if (!last) break;
-    int rtt = last->data ? ((t_stat_data*)last->data)->rtt : 0;
-    GRLS = g_slist_delete_link(GRLS, last); GRMX--;
-    if ((rtt * GR_RTT_SCALE) >= gr_max_rtt) {
+    int rtt = last->data ? ((t_stat_graph*)last->data)->rtt : -1;
+    GR_LIST = g_slist_delete_link(GR_LIST, last); GR_LEN--;
+    if ((rtt * GR_Y_GAP) >= grm.ymax) {
       int max = gr_max_in_series();
-      if ((max * GR_RTT_SCALE) < gr_max_rtt) gr_scale_max(max); // down-scale
+      if (((max * GR_Y_GAP) < grm.ymax) && (max > GR_RTT0)) gr_scale_max(max); // down-scale
     }
   }
 }
@@ -86,18 +101,53 @@ static void gr_set_font(void) {
   gr_font = pango_font_description_new();
   if (gr_font) {
     pango_font_description_set_family(gr_font, GR_FONT);
-    pango_font_description_set_absolute_size(gr_font, grm.y * GRF_RATIO * PANGO_SCALE);
+    int fs = grm.fs ? grm.fs : (CELL_SIZE * GRF_RATIO);
+    pango_font_description_set_absolute_size(gr_font, fs * PANGO_SCALE);
   } else WARN_("Cannot allocate pango font");
+}
+
+static void gr_draw_dots(cairo_t *cr) {
+  static int n_gr_series = G_N_ELEMENTS(gr_series);
+  static int ncol = G_N_ELEMENTS(gr_colors);
+  if (!cr) return;
+  for (int i = 0; i < n_gr_series; i++) {
+    double x = grm.x + grm.w, y0 = grm.y + grm.h;
+    double dx = (MAIN_TIMING_MSEC / 1000.) * ((double)CELL_SIZE / X_CELL_SEC);
+    for (GSList *item = GR_LIST; item; item = item->next, x -= dx) {
+      if (item->data) {
+        double rtt = ((t_stat_graph*)item->data)->rtt;
+        if (rtt > 0) {
+          double y = y0 - rtt / grm.ymax * grm.h;
+          int n = i % ncol;
+          cairo_set_source_rgb(cr, gr_colors[n][0], gr_colors[n][1], gr_colors[n][2]);
+          cairo_set_line_cap(cr, CAIRO_LINE_CAP_ROUND);
+          cairo_set_line_width(cr, DOT_SIZE);
+          cairo_move_to(cr, x, y);
+          cairo_close_path(cr);
+          cairo_stroke(cr);
+        }
+     }
+   }
+ }
+}
+
+static void gr_draw_lines(cairo_t *cr) {
+  if (!cr) return;
+}
+
+static void gr_draw_curves(cairo_t *cr) {
+  if (!cr) return;
 }
 
 static void gr_draw_grid(GtkDrawingArea *area, cairo_t* cr, int w, int h, gpointer unused) {
   static PangoLayout *grid_pango;
   static const double dash_size[] = {1};
-  if (pinger_state.pause || !area) return;
+  if (!GTK_IS_DRAWING_AREA(area) || !cr || !w || !h) return;
   int w0 = w - (grm.x + grm.y), h0 = h - (GR_TOP + GR_BOTTOM);
   grm.N = w0 / CELL_SIZE, grm.M = h0 / CELL_SIZE;
   grm.w = grm.N * CELL_SIZE, grm.h = grm.M * CELL_SIZE;
- // grid lines
+  grm.no = grm.w / ((double)CELL_SIZE / X_CELL_SEC) + 1; // number elems per list
+  // grid lines
   cairo_set_dash(cr, dash_size, 1, 0);
   cairo_set_source_rgb(cr, DASH_BOLD, DASH_BOLD, DASH_BOLD);
   for (int i = 0, x = grm.x + CELL_SIZE; i < grm.N; i++, x += CELL_SIZE) {
@@ -117,24 +167,22 @@ static void gr_draw_grid(GtkDrawingArea *area, cairo_t* cr, int w, int h, gpoint
   cairo_rel_line_to(cr, 0, grm.h + ts);
   cairo_rel_line_to(cr, grm.w + TICK_SIZE - 1, 0);
   // ticks
-  for (int i = 0, x = grm.x + CELL_SIZE; i < grm.N; i++, x += CELL_SIZE) {
-    cairo_move_to(cr, x, grm.y + grm.h);
-    cairo_rel_line_to(cr, 0, TICK_SIZE);
+  for (int i = 0, x = grm.x + CELL_SIZE, y = grm.y + grm.h; i < grm.N; i++, x += CELL_SIZE) {
+    cairo_move_to(cr, x, y); cairo_rel_line_to(cr, 0, TICK_SIZE);
   }
-  for (int j = 0, y = grm.y; j < grm.M; j++, y += CELL_SIZE) {
-    cairo_move_to(cr, grm.x, y);
-    cairo_rel_line_to(cr, -TICK_SIZE, 0);
+  for (int j = 0, x = grm.x, y = grm.y; j < grm.M; j++, y += CELL_SIZE) {
+    cairo_move_to(cr, x, y); cairo_rel_line_to(cr, -TICK_SIZE, 0);
   }
   cairo_stroke(cr);
   // axis names
   if (!grid_pango) grid_pango = pango_cairo_create_layout(cr);
   if (grid_pango) {
     if (gr_font) pango_layout_set_font_description(grid_pango, gr_font);
-    double fs = grm.y * GRF_RATIO, ts = TICK_SIZE * 2;
-    cairo_move_to(cr, grm.x + grm.w + ts, grm.y + grm.h - fs / 2);
+    double ts = TICK_SIZE * 2;
+    cairo_move_to(cr, grm.x + grm.w + ts, grm.y + grm.h - 0.5 * grm.fs);
     pango_layout_set_text(grid_pango, X_AXIS, -1);
     pango_cairo_show_layout(cr, grid_pango);
-    cairo_move_to(cr, grm.x / 4., grm.y - (ts + 1.5 * fs));
+    cairo_move_to(cr, grm.x / 4., grm.y - (ts + 1.5 * grm.fs));
     pango_layout_set_text(grid_pango, Y_AXIS, -1);
     pango_cairo_show_layout(cr, grid_pango);
   }
@@ -142,15 +190,15 @@ static void gr_draw_grid(GtkDrawingArea *area, cairo_t* cr, int w, int h, gpoint
 
 static void gr_draw_marks(GtkDrawingArea *area, cairo_t* cr, int w, int h, gpointer unused) {
   static PangoLayout *mark_pango;
-  if (pinger_state.pause || !area || !gr_font || (grm.y <= 0)) return;
+  if (!GTK_IS_DRAWING_AREA(area) || !cr || !gr_font || (grm.y <= 0)) return;
   if (!mark_pango) mark_pango = pango_cairo_create_layout(cr);
-  if (mark_pango) {
+  if (mark_pango && (grm.M > 0)) {
     if (gr_font) pango_layout_set_font_description(mark_pango, gr_font);
     pango_layout_set_width(mark_pango, (grm.x - 2 * TICK_SIZE) * PANGO_SCALE);
     pango_layout_set_alignment(mark_pango, PANGO_ALIGN_RIGHT);
-    double fs = grm.y * GRF_RATIO, dy = gr_max_rtt / 1000. / grm.M;
-    for (int j = grm.M, y = grm.y - fs * 2 / 3; j >= 0; j--, y += CELL_SIZE) {
-      gchar buff[16];
+    double dy = grm.ymax / GR_RTT_SCALE / grm.M;
+    for (int j = grm.M, y = grm.y - 0.6 * grm.fs; j >= 0; j--, y += CELL_SIZE) {
+      gchar buff[8];
       g_snprintf(buff, sizeof(buff), "%.1f", dy * j);
       cairo_move_to(cr, 0, y);
       pango_layout_set_text(mark_pango, buff, -1);
@@ -160,11 +208,37 @@ static void gr_draw_marks(GtkDrawingArea *area, cairo_t* cr, int w, int h, gpoin
 }
 
 static void gr_draw_graph(GtkDrawingArea *area, cairo_t* cr, int w, int h, gpointer unused) {
-  if (pinger_state.pause || !area) return;
+  static PangoLayout *graph_pango;
+  if (!GTK_IS_DRAWING_AREA(area) || !cr) return;
+  if (!graph_pango) graph_pango = pango_cairo_create_layout(cr);
+  if (graph_pango) {
+    if (gr_font) pango_layout_set_font_description(graph_pango, gr_font);
+    int tsz = (CELL_SIZE - TICK_SIZE) * X_FREQ;
+    pango_layout_set_width(graph_pango, tsz * PANGO_SCALE);
+    pango_layout_set_alignment(graph_pango, PANGO_ALIGN_CENTER);
+    if (pinger_state.run || !grm.at) grm.at = time(NULL) % 3600;
+    for (int i = 0, x = grm.x + grm.w - tsz / 2, y = grm.y + grm.h + grm.fs, t = grm.at;
+        i <= grm.N; i++, x -= CELL_SIZE, t -= X_CELL_SEC) if ((i + 1) % X_FREQ) {
+      gchar buff[8];
+      int mm = t / 60, ss = t % 60;
+      g_snprintf(buff, sizeof(buff), "%02d:%02d", mm, ss);
+      cairo_move_to(cr, x, y);
+      pango_layout_set_text(graph_pango, buff, -1);
+      pango_cairo_show_layout(cr, graph_pango);
+    }
+  }
+  switch (graph_type) {
+    case GRAPH_TYPE_DOT: gr_draw_dots(cr); break;
+    case GRAPH_TYPE_LINE: gr_draw_lines(cr); break;
+    case GRAPH_TYPE_CURVE: gr_draw_curves(cr); break;
+  }
 }
 
 static void graphtab_data_update(void) {
-  for (int i = opts.min; i < opts.lim; i++) gr_save(i, stat_data_at(i));
+  static int n_gr_series = G_N_ELEMENTS(gr_series);
+  t_stat_graph skip = { .rtt = -1, .jttr = -1 };
+  for (int i = 0; i < n_gr_series; i++)
+    gr_save(i, (pinger_state.run && (opts.min <= i) && (i < hops_no)) ? stat_graph_data_at(i) : skip);
 }
 
 
@@ -206,17 +280,17 @@ t_tab* graphtab_init(GtkWidget* win) {
   return &graphtab;
 }
 
-void graphtab_clear(void) {
-  for (int i = 0; i < G_N_ELEMENTS(gr_series); i++) {
-    if (GRLS) { g_slist_free(GRLS); GRLS = NULL; }
-    GRMX = 0;
+void graphtab_free(void) {
+  static int n_gr_series = G_N_ELEMENTS(gr_series);
+  grm.at = 0;
+  for (int i = 0; i < n_gr_series; i++) {
+    GR_LEN = 0; if (GR_LIST) { g_slist_free(GR_LIST); GR_LIST = NULL; }
   }
-  gr_max_rtt = GR_RTT0;
-  if (GTK_IS_WIDGET(gr_marks)) gtk_widget_queue_draw(gr_marks);
 }
 
 inline void graphtab_update(void) {
+  if (!pinger_state.run) return;
   graphtab_data_update();
-  gtk_widget_queue_draw(gr_graph);
+  if (!pinger_state.pause) gtk_widget_queue_draw(gr_graph);
 }
 

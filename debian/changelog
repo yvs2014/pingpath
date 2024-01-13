@@ -1,3 +1,9 @@
+pingpath (0.1.52) lunar mantic; urgency=low
+
+  * [in progress] draw graph dots and add graph states
+
+ -- yvs <VSYakovetsky@gmail.com>  Sat, 13 Jan 2024 05:56:24 +0200
+
 pingpath (0.1.51) lunar mantic; urgency=low
 
   * [in progress] add graph template and base layers

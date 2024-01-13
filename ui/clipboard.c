@@ -55,7 +55,8 @@ static void cb_on_click(GtkGestureClick *g, int n, double x, double y, GtkWidget
 static gboolean any_list_sel(t_tab *tab) {
   if (tab) {
     GtkWidget* list[] = {tab->hdr, tab->dyn, tab->info};
-    for (int i = 0; i < G_N_ELEMENTS(list); i++) if (GTK_IS_LIST_BOX(list[i])) {
+    static int n_alsel = G_N_ELEMENTS(list);
+    for (int i = 0; i < n_alsel; i++) if (GTK_IS_LIST_BOX(list[i])) {
       GList *l = gtk_list_box_get_selected_rows(GTK_LIST_BOX(list[i]));
       if (l) { g_list_free(l); return true; }
     }
@@ -200,13 +201,14 @@ void cb_on_copy_l2(GSimpleAction *action, GVariant *var, gpointer data) {
   if (GDK_IS_CLIPBOARD(cb)) {
     NOLOG("clipoard action %s", ACT_COPY_HDR);
     gchar* arr[4] = { NULL };
+    static int n_cbl2_arr = G_N_ELEMENTS(arr);
     int n = 0;
     arr[n] = cb_get_text(tab->hdr,  cb, DATA_AT_LEVEL2); if (arr[n]) n++;
     arr[n] = cb_get_text(tab->dyn,  cb, DATA_AT_LEVEL2); if (arr[n]) n++;
     arr[n] = cb_get_text(tab->info, cb, DATA_AT_LEVEL1); if (arr[n]) n++;
     if (!n) return;
     char *text = g_strjoinv("\n", arr);
-    for (int i = 0; i < G_N_ELEMENTS(arr); i++) g_free(arr[i]);
+    for (int i = 0; i < n_cbl2_arr; i++) g_free(arr[i]);
     if (text) { gdk_clipboard_set_text(cb, text); g_free(text); }
   }
 }
@@ -216,12 +218,13 @@ void cb_on_sall(GSimpleAction *action, GVariant *var, gpointer data) {
   if (!tab || !GTK_IS_LIST_BOX(tab->dyn)) return;
   NOLOG("%s action %s", tab->name, cb_menu_label(tab->sel));
   GtkWidget* list[] = {tab->hdr, tab->dyn, tab->info};
+  static int n_cbsa_arr = G_N_ELEMENTS(list);
   tab->sel = any_list_sel(tab);
   if (tab->sel) {
-    for (int i = 0; i < G_N_ELEMENTS(list); i++)
+    for (int i = 0; i < n_cbsa_arr; i++)
       if (GTK_IS_LIST_BOX(list[i])) gtk_list_box_unselect_all(GTK_LIST_BOX(list[i]));
   } else {
-    for (int i = 0; i < G_N_ELEMENTS(list); i++)
+    for (int i = 0; i < n_cbsa_arr; i++)
       if (GTK_IS_LIST_BOX(list[i])) gtk_list_box_select_all(GTK_LIST_BOX(list[i]));
   }
 }

@@ -25,7 +25,8 @@ static const gchar *css_dark_colors =
   "headerbar:backdrop {background:" APP_BGROUND_DARK ";}"
   "notebook > header > tabs > tab { background-color:" APP_BGROUND_DARK ";}"
   "." CSS_EXP "{background:" APP_BGROUND_DARK ";}"
-  "." CSS_LIGHT_BG "{background:" APP_BGROUND_LIGHT ";}"
+  "." CSS_DARK_BG "{background:" APP_BGROUND_DARK "; color:" APP_BGROUND_DARK ";}"
+  "." CSS_LIGHT_BG "{background:" APP_BGROUND_LIGHT "; color:" APP_BGROUND_LIGHT ";}"
 ;
 
 static const gchar *css_common =
@@ -41,7 +42,7 @@ static const gchar *css_common =
   "." CSS_NOFRAME "{border:none;}"
   "." CSS_ROUNDED "{border-radius:5px; padding:" PAD16 ";}"
   "#" CSS_ID_DATETIME "{font-weight:500;}"
-  "#" CSS_ID_NOTIFIER "{ filter: invert(100%); }"
+  "#" CSS_ID_NOTIFIER "{filter:invert(100%);}"
 ;
 
 static GValue* get_gval(GtkSettings *gset, const char *key, GValue *val) {

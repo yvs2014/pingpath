@@ -1,3 +1,6 @@
+## 0.1.52
+- [in progress] draw graph dots and add graph states
+
 ## 0.1.51
 - [in progress] add graph template and base layers
 

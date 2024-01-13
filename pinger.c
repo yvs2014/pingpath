@@ -57,6 +57,7 @@ static gboolean pinger_active(void) {
     pinger_state.run = active;
     tab_updater(active);
     appbar_update();
+    if (!active) notifier_inform("%s finished", "Pings");
   }
   return active;
 }
@@ -84,8 +85,8 @@ static void process_stopped(GObject *process, GAsyncResult *result, t_proc *proc
     GObject *p = process;
     CLEAR_G_OBJECT(&p);
   }
-  if (!pinger_active()) {
-    pinger_update_tabs(NULL); // final view update
+  if (!pinger_active()) { // final update
+    pingtab_update();
     if (!pinger_state.gotdata && (!info_mesg || (info_mesg == notyet_mesg))) pingtab_set_error(nodata_mesg);
   }
 }
@@ -208,6 +209,7 @@ void pinger_init(void) {
 void pinger_start(void) {
   if (!opts.target) return;
   stat_clear(true);
+  graphtab_free();
   for (int i = opts.min; i < opts.lim; i++) if (!create_ping(i, &pings[i])) break;
   if (pinger_active()) pinger_clear_data(true);
 }
@@ -260,7 +262,6 @@ void pinger_clear_data(gboolean clean) {
   stat_clear(clean);
   hops_no = opts.lim;
   pingtab_clear();
-  graphtab_clear();
 }
 
 gboolean pinger_within_range(int min, int max, int got) { // 1..MAXTTL
@@ -278,9 +279,5 @@ void pinger_on_quit(gboolean andstop) {
   if (andstop) pinger_stop("at exit"); // note: if it's sysexit, subprocesses have to be already terminated by system
 }
 
-int pinger_update_tabs(gpointer unused) {
-  pingtab_update();
-  graphtab_update();
-  return G_SOURCE_CONTINUE;
-}
+int pinger_update_tabs(gpointer unused) { pingtab_update(); return G_SOURCE_CONTINUE; }
 

@@ -12,17 +12,21 @@
 #include "tabs/log.h"
 
 #define APPFLAGS G_APPLICATION_NON_UNIQUE
+#define TAB_BGTYPE(tab) { bg_light = ((tab) == graphtab_ref); }
+
+static GtkWidget* graphtab_ref;
 
 static void on_app_exit(GtkWidget *widget, gpointer unused) {
 // note: subprocesses have to be already terminated by system at this point
 // if not, then pinger_on_quit(true);
   logtab_clear();
-  graphtab_clear();
+  graphtab_free();
   pinger_on_quit(false);
   LOG_("app quit");
 }
 
 static void on_tab_switch(GtkNotebook *nb, GtkWidget *tab, guint ndx, gpointer unused) {
+  TAB_BGTYPE(tab);
   if (GTK_IS_BOX(tab)) for (GtkWidget *p = gtk_widget_get_first_child(tab); p; p = gtk_widget_get_next_sibling(p)) {
     if (GTK_IS_LIST_BOX(p)) gtk_list_box_unselect_all(GTK_LIST_BOX(p));
     else if (GTK_IS_SCROLLED_WINDOW(p)) {
@@ -57,6 +61,7 @@ static void app_cb(GtkApplication* app, gpointer unused) {
     [TAB_GRAPH_NDX] = graphtab_init(win),
     [TAB_LOG_NDX]   = logtab_init(win),
   };
+  graphtab_ref = tabs[TAB_GRAPH_NDX]->tab;
   for (int i = 0; i < G_N_ELEMENTS(tabs); i++) {
     t_tab *tab = tabs[i]; if (!tab) APPQUIT("tab#%d", i);
     tab_setup(tab, (i == TAB_GRAPH_NDX) ? CSS_LIGHT_BG : NULL);
@@ -64,7 +69,8 @@ static void app_cb(GtkApplication* app, gpointer unused) {
     if (ndx < 0) APPQUIT("tab page#%d", i);
     gtk_notebook_set_tab_reorderable(GTK_NOTEBOOK(nb), tab->tab, true);
   }
-  gtk_notebook_set_current_page(GTK_NOTEBOOK(nb), TAB_GRAPH_NDX); // TMP for debug
+  gtk_notebook_set_current_page(GTK_NOTEBOOK(nb), start_page);
+  TAB_BGTYPE(tabs[start_page]->tab);
   g_signal_connect(nb, EV_TAB_SWITCH, G_CALLBACK(on_tab_switch), NULL);
   // nb overlay
   GtkWidget *over = notifier_init(nb);

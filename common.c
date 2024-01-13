@@ -10,8 +10,8 @@ const char *unkn_error = "unknown error";
 const char *unkn_field = ""; // "?" "???" (see notes)
 const char *unkn_whois = "";
 
-gboolean cli;
-gint verbose;
+gboolean cli, bg_light;
+gint verbose, start_page = TAB_GRAPH_NDX; // TMP: return to TAB_PING_NDX later
 
 const char *timestampit(void) {
   static char now_ts[32];

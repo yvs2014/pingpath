@@ -9,7 +9,7 @@
 #endif
 
 #define APPNAME "pingpath"
-#define VERSION "0.1.51"
+#define VERSION "0.1.52"
 
 #define MAXTTL  30
 #define MAXADDR 10
@@ -165,6 +165,8 @@
 #define TOGGLE_ON_HDR  "on"
 #define TOGGLE_OFF_HDR "off"
 
+#define MAIN_TIMING_MSEC 1000
+
 #define CYCLES_MIN 1
 #define CYCLES_MAX 999999
 #define IVAL_MIN   1
@@ -188,6 +190,8 @@ enum { ELEM_NO, ELEM_HOST, ELEM_AS, ELEM_CC, ELEM_DESC, ELEM_RT, ELEM_FILL,
 enum { WHOIS_AS_NDX, WHOIS_CC_NDX, WHOIS_DESC_NDX, WHOIS_RT_NDX, WHOIS_NDX_MAX };
 
 enum { POP_MENU_NDX_COPY, POP_MENU_NDX_SALL, POP_MENU_NDX_MAX };
+
+enum { GRAPH_TYPE_NONE, GRAPH_TYPE_DOT, GRAPH_TYPE_LINE, GRAPH_TYPE_CURVE, GRAPH_TYPE_MAX };
 
 typedef struct minmax {
   int min, max;
@@ -250,8 +254,8 @@ extern const char *unkn_field;
 extern const char *unkn_whois;
 extern const char *log_empty;
 
-extern gboolean cli;
-extern gint verbose;
+extern gboolean cli, bg_light;
+extern gint verbose, start_page;
 
 const char *timestampit(void);
 GtkListBoxRow* line_row_new(GtkWidget *child, gboolean visible);

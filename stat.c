@@ -385,8 +385,8 @@ const gchar *stat_str_elem(int at, int typ) {
   return NULL;
 }
 
-t_stat_data stat_data_at(int at) {
-  t_stat_data sd = { .rtt = hops[at].last, .jttr = hops[at].jttr };
+t_stat_graph stat_graph_data_at(int at) {
+  t_stat_graph sd = { .rtt = hops[at].last, .jttr = hops[at].jttr };
   return sd;
 }
 

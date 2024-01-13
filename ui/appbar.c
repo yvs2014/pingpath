@@ -6,6 +6,7 @@
 #include "pinger.h"
 #include "parser.h"
 #include "notifier.h"
+#include "tabs/graph.h"
 
 #define ENTER_HINT "Enter hostname or IP address ..."
 
@@ -19,6 +20,7 @@ static int update_datetime(gpointer label) {
     time_t now = time(NULL);
     strftime(datetime_label, sizeof(datetime_label), "%F %T", localtime(&now));
     gtk_label_set_text(GTK_LABEL(label), datetime_label);
+    if (graph_enable) graphtab_update();
   }
   return datetime_id;
 }
@@ -34,7 +36,7 @@ static gboolean start_datetime(GtkWidget *bar) {
   g_return_val_if_fail(GTK_IS_LABEL(label), false);
   gtk_box_append(GTK_BOX(datetime), label);
   gtk_widget_set_visible(label, true);
-  datetime_id = g_timeout_add(1000, update_datetime, label);
+  datetime_id = g_timeout_add(MAIN_TIMING_MSEC, update_datetime, label);
   return true;
 }
 
