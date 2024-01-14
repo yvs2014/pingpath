@@ -42,6 +42,10 @@ static gboolean cli_opt_s(const char *name, const char *value, t_opts *opts, GEr
   return opts ? cli_int_opt(name, value, error, ENT_STR_PSIZE, OPT_PSIZE_HDR, PSIZE_MIN, PSIZE_MAX, &opts->size) : false;
 }
 
+static gboolean cli_opt_g(const char *name, const char *value, t_opts *opts, GError **error) {
+  return opts ? cli_int_opt(name, value, error, ENT_STR_GRAPH, OPT_GRAPH_HDR, 0, GRAPH_TYPE_MAX - 1, &opts->graph) : false;
+}
+
 static gboolean cli_opt_t(const char *name, const char *value, t_opts *opts, GError **error) {
   if (!value || !opts) return false;
   t_ent_spn *en = &ent_spn[ENT_SPN_TTL];
@@ -153,7 +157,7 @@ gboolean cli_init(int *pargc, char ***pargv) {
     { .long_name = "interval", .short_name = 'i', .arg = G_OPTION_ARG_CALLBACK, .arg_data = cli_opt_i,
       .arg_description = "<seconds>", .description = OPT_IVAL_HDR " between pings" },
     { .long_name = "ttl",      .short_name = 't', .arg = G_OPTION_ARG_CALLBACK, .arg_data = cli_opt_t,
-      .arg_description = "<[min][,max]>", .description = OPT_TTL_HDR " range" },
+      .arg_description = "[min][,max]", .description = OPT_TTL_HDR " range" },
     { .long_name = "qos",      .short_name = 'q', .arg = G_OPTION_ARG_CALLBACK, .arg_data = cli_opt_q,
       .arg_description = "<bits>", .description = OPT_QOS_HDR "/ToS byte" },
     { .long_name = "size",     .short_name = 's', .arg = G_OPTION_ARG_CALLBACK, .arg_data = cli_opt_s,
@@ -164,6 +168,8 @@ gboolean cli_init(int *pargc, char ***pargv) {
       .arg_description = "[" INFO_PATT "]", .description = OPT_INFO_HDR " to display" },
     { .long_name = "stat",     .short_name = 'S', .arg = G_OPTION_ARG_CALLBACK, .arg_data = cli_opt_S,
       .arg_description = "[" STAT_PATT "]", .description = OPT_STAT_HDR " to display" },
+    { .long_name = "graph",    .short_name = 'g', .arg = G_OPTION_ARG_CALLBACK, .arg_data = cli_opt_g,
+      .arg_description = "<type>", .description = OPT_GRAPH_HDR " type to draw" },
     { .long_name = "ipv4",     .short_name = '4', .arg = G_OPTION_ARG_NONE,     .arg_data = &ipv4,
       .description = OPT_IPV4_HDR " only" },
     { .long_name = "ipv6",     .short_name = '6', .arg = G_OPTION_ARG_NONE,     .arg_data = &ipv6,

@@ -262,6 +262,7 @@ int parser_int(const gchar *str, int typ, const gchar *option, t_minmax range) {
         case ENT_STR_LOGMAX:
         case ENT_STR_QOS:
         case ENT_STR_PSIZE:
+        case ENT_STR_GRAPH:
           return n;
       }
     } else PIERR("out of range[%d,%d]", min, max);

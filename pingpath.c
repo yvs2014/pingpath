@@ -11,6 +11,8 @@
 #include "tabs/graph.h"
 #include "tabs/log.h"
 
+#define X_RES 1024
+#define Y_RES 720
 #define APPFLAGS G_APPLICATION_NON_UNIQUE
 #define TAB_BGTYPE(tab) { bg_light = ((tab) == graphtab_ref); }
 
@@ -45,7 +47,7 @@ static void app_cb(GtkApplication* app, gpointer unused) {
   style_init();
   GtkWidget *win = gtk_application_window_new(app);
   if (!GTK_IS_WINDOW(win)) APPQUIT("%s", "app window");
-  gtk_window_set_default_size(GTK_WINDOW(win), 1280, 720);
+  gtk_window_set_default_size(GTK_WINDOW(win), X_RES, Y_RES);
   if (style_loaded) gtk_widget_add_css_class(win, CSS_BGROUND);
   GtkIconTheme *theme = gtk_icon_theme_get_for_display(gdk_display_get_default());
   if (GTK_IS_ICON_THEME(theme) && gtk_icon_theme_has_icon(theme, APPNAME))
@@ -70,6 +72,7 @@ static void app_cb(GtkApplication* app, gpointer unused) {
     gtk_notebook_set_tab_reorderable(GTK_NOTEBOOK(nb), tab->tab, true);
   }
   gtk_notebook_set_current_page(GTK_NOTEBOOK(nb), start_page);
+  if (graphtab_ref) gtk_widget_set_visible(graphtab_ref, opts.graph);
   TAB_BGTYPE(tabs[start_page]->tab);
   g_signal_connect(nb, EV_TAB_SWITCH, G_CALLBACK(on_tab_switch), NULL);
   // nb overlay

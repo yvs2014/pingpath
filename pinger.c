@@ -18,7 +18,8 @@
 #define CLEAR_G_OBJECT(obj) g_clear_object(obj) // NOLINT(bugprone-sizeof-expression)
 
 t_opts opts = { .target = NULL, .dns = true, .cycles = DEF_CYCLES, .qos = DEF_QOS, .size = DEF_PSIZE,
-  .min = 0, .lim = MAXTTL, .timeout = DEF_TOUT, .tout_usec = DEF_TOUT * 1000000, .logmax = DEF_LOGMAX };
+  .min = 0, .lim = MAXTTL, .timeout = DEF_TOUT, .tout_usec = DEF_TOUT * 1000000, .logmax = DEF_LOGMAX,
+  .graph = GRAPH_TYPE_LINE };
 t_pinger_state pinger_state;
 guint stat_timer;
 

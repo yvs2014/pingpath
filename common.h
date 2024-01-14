@@ -9,7 +9,7 @@
 #endif
 
 #define APPNAME "pingpath"
-#define VERSION "0.1.52"
+#define VERSION "0.1.53"
 
 #define MAXTTL  30
 #define MAXADDR 10
@@ -130,6 +130,7 @@
 #define OPT_IPV4_HDR   "IPv4"
 #define OPT_IPV6_HDR   "IPv6"
 #define OPT_LOGMAX_HDR "Log lines"
+#define OPT_GRAPH_HDR  "Graph"
 
 #define ELEM_HOST_HDR  "Host"
 #define ELEM_HOST_TIP  "Hostname or IP-address"

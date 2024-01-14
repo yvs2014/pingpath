@@ -20,7 +20,7 @@ static int update_datetime(gpointer label) {
     time_t now = time(NULL);
     strftime(datetime_label, sizeof(datetime_label), "%F %T", localtime(&now));
     gtk_label_set_text(GTK_LABEL(label), datetime_label);
-    if (graph_enable) graphtab_update();
+    if (opts.graph) graphtab_update();
   }
   return datetime_id;
 }

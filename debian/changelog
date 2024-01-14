@@ -1,3 +1,11 @@
+pingpath (0.1.53) lunar mantic; urgency=low
+
+  * [in progress] add line graphs
+
+  * update manual
+
+ -- yvs <VSYakovetsky@gmail.com>  Sun, 14 Jan 2024 02:06:02 +0200
+
 pingpath (0.1.52) lunar mantic; urgency=low
 
   * [in progress] draw graph dots and add graph states

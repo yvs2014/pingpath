@@ -11,7 +11,7 @@ const char *unkn_field = ""; // "?" "???" (see notes)
 const char *unkn_whois = "";
 
 gboolean cli, bg_light;
-gint verbose, start_page = TAB_GRAPH_NDX; // TMP: return to TAB_PING_NDX later
+gint verbose, start_page = TAB_PING_NDX; // TAB_GRAPH_NDX;
 
 const char *timestampit(void) {
   static char now_ts[32];

@@ -1,3 +1,7 @@
+## 0.1.53
+- [in progress] add line graphs
+- update manual
+
 ## 0.1.52
 - [in progress] draw graph dots and add graph states
 

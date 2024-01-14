@@ -12,7 +12,7 @@
 typedef struct opts {
   gchar *target;
   gboolean dns;
-  int cycles, timeout, qos, size, ipv;
+  int cycles, timeout, qos, size, ipv, graph;
   int min, lim;       // TTL range
   char pad[PAD_SIZE]; // 16 x "00."
   int tout_usec;      // internal: timeout in usecs
