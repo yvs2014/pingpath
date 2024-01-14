@@ -1,3 +1,9 @@
+pingpath (0.1.54) lunar mantic; urgency=low
+
+  * [in progress] add splines
+
+ -- yvs <VSYakovetsky@gmail.com>  Sun, 14 Jan 2024 08:12:00 +0200
+
 pingpath (0.1.53) lunar mantic; urgency=low
 
   * [in progress] add line graphs

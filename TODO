@@ -1,0 +1,9 @@
+Graphs:
+  - line legend (Ctrl-L)
+  - graph option menu
+  - show jitter range
+  -? show jitter area
+
+Common:
+  - autostart pings from CLI
+  -? none-interactive run

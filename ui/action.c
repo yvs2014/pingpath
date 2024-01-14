@@ -3,6 +3,7 @@
 #include "appbar.h"
 #include "notifier.h"
 #include "pinger.h"
+#include "tabs/graph.h"
 
 #if PANGO_VERSION_MAJOR == 1
 #if PANGO_VERSION_MINOR < 50
@@ -103,6 +104,7 @@ static void on_pauseresume(GSimpleAction *action, GVariant *var, gpointer data) 
   pinger_state.pause = !pinger_state.pause;
   action_update();
   pinger_update_tabs(NULL);
+  if (opts.graph && !pinger_state.run && !pinger_state.pause) graphtab_force_update();
 }
 
 static void on_reset(GSimpleAction *action, GVariant *var, gpointer data) {

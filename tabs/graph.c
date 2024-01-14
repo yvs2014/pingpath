@@ -126,10 +126,13 @@ static inline void gr_draw_line_at(cairo_t *cr, double x0, double rtt0, double x
   cairo_line_to(cr, x1, rtt2y(rtt1));
 }
 
+#define IS_RTT_DATA(d) ((d) && ((d)->rtt > 0))
+#define RTT_OR_NEG(d) (IS_RTT_DATA(d) ? (d)->rtt : -1)
+
 static inline void gr_draw_dot_loop(int i, cairo_t *cr, double x) {
   for (GSList *item = GR_LIST; item; item = item->next, x -= grm.dx) {
     t_stat_graph *data = item->data;
-    if (data && (data->rtt > 0)) gr_draw_dot_at(cr, x, data->rtt);
+    if (IS_RTT_DATA(data)) gr_draw_dot_at(cr, x, data->rtt);
   }
 }
 
@@ -147,6 +150,65 @@ static void gr_draw_line_loop(int i, cairo_t *cr, double x) {
       } else if (!prev.conn) gr_draw_dot_at(cr, prev.x, prev.rtt);
       prev.x = x; prev.rtt = data->rtt; prev.conn = connected;
     }
+  }
+}
+
+static inline double distance(int x0, int y0, int x1, int y1) {
+  int dx1 = x1 - x0; int dy1 = y1 - y0;
+  return sqrt(dx1 * dx1 + dy1 * dy1);
+}
+
+static inline int centripetal(double d1, double q1, double d2, double q2, int p0, int p1, int p2) {
+  return (d1 * p0 - d2 * p1 + (2 * d1 + 3 * q1 * q2 + d2) * p2) / (3 * q1 * (q1 + q2)) + 0.5;
+}
+
+static inline void gr_draw_curve_prolog(int i, cairo_t *cr, double x0) {
+  if (GR_LIST) {
+    t_stat_graph *data = GR_LIST->data; int r0 = RTT_OR_NEG(data);
+    if (r0 > 0) {
+      data = g_slist_nth_data(GR_LIST, 1); int r1 = RTT_OR_NEG(data);
+      if (r1 > 0) gr_draw_line_at(cr, x0, r0, x0 - grm.dx, r1);
+      else gr_draw_dot_at(cr, x0, r0);
+    }
+  }
+}
+
+static void gr_draw_curve_loop(int i, cairo_t *cr, double x0) {
+  gr_draw_curve_prolog(i, cr, x0);
+  for (GSList *item = GR_LIST; item; item = item->next, x0 -= grm.dx) {
+    int r0, r1, r2, r3;
+    double x1, x2, x3;
+    t_stat_graph *data = item->data;  r0 = RTT_OR_NEG(data);
+    data = g_slist_nth_data(item, 1); r1 = RTT_OR_NEG(data); x1 = x0 - grm.dx;
+    data = g_slist_nth_data(item, 2); r2 = RTT_OR_NEG(data); x2 = x1 - grm.dx;
+    data = g_slist_nth_data(item, 3); r3 = RTT_OR_NEG(data); x3 = x2 - grm.dx;
+    if ((r0 > 0) && (r1 > 0) && (r2 > 0) && (r3 > 0)) {
+      double y0 = rtt2y(r0), y1 = rtt2y(r1), y2 = rtt2y(r2), y3 = rtt2y(r3);
+      double d1 = distance(x0, y0, x1, y1);
+      double d2 = distance(x1, y1, x2, y2);
+      double d3 = distance(x2, y2, x3, y3);
+      if ((d1 != 0) && (d2 != 0) && (d3 != 0)) { // Centripetal Catmull-Rom spline
+        double q1 = sqrt(d1);
+        double q2 = sqrt(d2);
+        double q3 = sqrt(d3);
+        cairo_move_to(cr, x1, y1);
+        cairo_curve_to(cr,
+          centripetal(d1, q1, d2, q2, x2, x0, x1),
+          centripetal(d1, q1, d2, q2, y2, y0, y1),
+          centripetal(d3, q3, d2, q2, x1, x3, x2),
+          centripetal(d3, q3, d2, q2, y1, y3, y2),
+          x2, y2);
+      } else { // Uniform Catmull-Rom spline
+        cairo_move_to(cr, x1, y1);
+        cairo_curve_to(cr,
+          x1 + (x2 - x0) / 6,
+          y1 + (y2 - y0) / 6,
+          x2 - (x3 - x1) / 6,
+          y2 - (y3 - y1) / 6,
+          x2, y2);
+      }
+    } else if ((r1 > 0) && (r2 > 0)) gr_draw_line_at(cr, x1, r1, x2, r2);
+    else if ((r1 > 0) && !(r0 > 0)) gr_draw_dot_at(cr, x1, r1);
   }
 }
 
@@ -261,6 +323,7 @@ static void gr_draw_graph(GtkDrawingArea *area, cairo_t* cr, int w, int h, gpoin
       gr_draw_smth(cr, -1, LINE_SIZE, gr_draw_line_loop);
       break;
     case GRAPH_TYPE_CURVE:
+      gr_draw_smth(cr, -1, LINE_SIZE, gr_draw_curve_loop);
       break;
   }
 }
@@ -324,4 +387,6 @@ inline void graphtab_update(void) {
   graphtab_data_update();
   if (!pinger_state.pause) gtk_widget_queue_draw(gr_graph);
 }
+
+inline void graphtab_force_update(void) { gtk_widget_queue_draw(gr_graph); }
 

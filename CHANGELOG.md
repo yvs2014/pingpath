@@ -1,3 +1,6 @@
+## 0.1.54
+- [in progress] add splines
+
 ## 0.1.53
 - [in progress] add line graphs
 - update manual

@@ -9,7 +9,7 @@
 #endif
 
 #define APPNAME "pingpath"
-#define VERSION "0.1.53"
+#define VERSION "0.1.54"
 
 #define MAXTTL  30
 #define MAXADDR 10
