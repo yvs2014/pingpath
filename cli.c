@@ -169,7 +169,7 @@ gboolean cli_init(int *pargc, char ***pargv) {
     { .long_name = "stat",     .short_name = 'S', .arg = G_OPTION_ARG_CALLBACK, .arg_data = cli_opt_S,
       .arg_description = "[" STAT_PATT "]", .description = OPT_STAT_HDR " to display" },
     { .long_name = "graph",    .short_name = 'g', .arg = G_OPTION_ARG_CALLBACK, .arg_data = cli_opt_g,
-      .arg_description = "<type>", .description = OPT_GRAPH_HDR " type to draw" },
+      .arg_description = "<type>", .description = OPT_GRAPH_HDR " to draw" },
     { .long_name = "ipv4",     .short_name = '4', .arg = G_OPTION_ARG_NONE,     .arg_data = &ipv4,
       .description = OPT_IPV4_HDR " only" },
     { .long_name = "ipv6",     .short_name = '6', .arg = G_OPTION_ARG_NONE,     .arg_data = &ipv6,

@@ -1,3 +1,6 @@
+## 0.1.55
+- [in progress] add graph option menu
+
 ## 0.1.54
 - [in progress] add splines
 

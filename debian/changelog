@@ -1,3 +1,9 @@
+pingpath (0.1.55) lunar mantic; urgency=low
+
+  * [in progress] add graph option menu
+
+ -- yvs <VSYakovetsky@gmail.com>  Mon, 15 Jan 2024 07:42:19 +0200
+
 pingpath (0.1.54) lunar mantic; urgency=low
 
   * [in progress] add splines

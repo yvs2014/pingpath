@@ -19,7 +19,7 @@
 
 t_opts opts = { .target = NULL, .dns = true, .cycles = DEF_CYCLES, .qos = DEF_QOS, .size = DEF_PSIZE,
   .min = 0, .lim = MAXTTL, .timeout = DEF_TOUT, .tout_usec = DEF_TOUT * 1000000, .logmax = DEF_LOGMAX,
-  .graph = GRAPH_TYPE_LINE };
+  .graph = GRAPH_TYPE_CURVE };
 t_pinger_state pinger_state;
 guint stat_timer;
 

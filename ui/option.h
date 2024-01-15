@@ -9,7 +9,7 @@
 enum { SPN_AUX_MIN, SPN_AUX_LIM, SPN_AUX_MAX };
 
 enum { ENT_SPN_NONE, ENT_SPN_TTL, ENT_SPN_MAX };
-enum { ENT_RAD_NONE, ENT_RAD_IPV, ENT_RAD_MAX };
+enum { ENT_RAD_NONE, ENT_RAD_IPV, ENT_RAD_GRAPH, ENT_RAD_MAX };
 
 typedef struct ent_ndx {
   int typ;
@@ -36,6 +36,7 @@ typedef struct ent_bool {
 typedef struct ent_exp_common {
   t_ent_ndx en;
   GtkWidget *arrow, *box, *sub; // aux widgets
+  gboolean atrun;               // active at run
 } t_ent_exp_common;
 
 typedef struct ent_exp {
@@ -51,6 +52,7 @@ typedef struct ent_rad_map {
 typedef struct ent_rad {
   t_ent_exp_common c;
   int *pval;
+  GCallback cb;
   t_ent_rad_map map[SUBLIST_MAX]; // 0 str terminated map, otherwise max
 } t_ent_rad;
 

@@ -6,6 +6,9 @@
 #include "style.h"
 #include "notifier.h"
 #include "tabs/ping.h"
+#include "tabs/graph.h"
+
+typedef gboolean (*optmenu_add_items_fn)(GtkWidget *);
 
 t_ent_bool ent_bool[ENT_BOOL_MAX] = {
   [ENT_BOOL_DNS]  = { .en = { .typ = ENT_BOOL_DNS,  .name = OPT_DNS_HDR },    .pval = &opts.dns },
@@ -61,14 +64,24 @@ t_ent_spn ent_spn[ENT_SPN_MAX] = {
   }},
 };
 
+static void graph_type_cb(void);
+
 static t_ent_rad ent_rad[ENT_RAD_MAX] = {
-  [ENT_RAD_IPV] = { .c = {.en = {.typ = ENT_RAD_IPV, .name = OPT_IPV_HDR }}, .pval = &opts.ipv,
+  [ENT_RAD_IPV] = { .pval = &opts.ipv,
+    .c = {.en = {.typ = ENT_RAD_IPV, .name = OPT_IPV_HDR }},
     .map = {
       {.ndx = ENT_RAD_IPV, .str = OPT_IPVA_HDR},
       {.ndx = ENT_RAD_IPV, .val = 4, .str = OPT_IPV4_HDR},
-      {.ndx = ENT_RAD_IPV, .val = 6, .str = OPT_IPV6_HDR}
-    },
-  },
+      {.ndx = ENT_RAD_IPV, .val = 6, .str = OPT_IPV6_HDR},
+    }},
+  [ENT_RAD_GRAPH] = { .pval = &opts.graph, .cb = graph_type_cb,
+    .c = {.en = {.typ = ENT_RAD_GRAPH, .name = OPT_GRAPH_HDR }, .atrun = true },
+    .map = {
+      {.ndx = ENT_RAD_GRAPH, .val = GRAPH_TYPE_NONE,  .str = OPT_GR_NONE_HDR},
+      {.ndx = ENT_RAD_GRAPH, .val = GRAPH_TYPE_DOT,   .str = OPT_GR_DOT_HDR},
+      {.ndx = ENT_RAD_GRAPH, .val = GRAPH_TYPE_LINE,  .str = OPT_GR_LINE_HDR},
+      {.ndx = ENT_RAD_GRAPH, .val = GRAPH_TYPE_CURVE, .str = OPT_GR_CURVE_HDR},
+    }},
 };
 
 static void check_bool_val(GtkCheckButton *check, t_ent_bool *en, void (*update)(void)) {
@@ -139,13 +152,15 @@ static void radio_cb(GtkCheckButton *check, t_ent_rad_map *map) {
   if ((ndx < 0) || (ndx >= G_N_ELEMENTS(ent_rad[0].map))) return;
   t_ent_rad *en = &ent_rad[ndx];
   switch (en->c.en.typ) {
+    case ENT_RAD_GRAPH:
     case ENT_RAD_IPV: {
       gboolean selected = gtk_check_button_get_active(check);
       if (selected) {
         if (map->val != *(en->pval)) {
           *(en->pval) = map->val;
-         if (map->val) notifier_inform("%s: %d", en->c.en.name, map->val);
-         else notifier_inform("%s: %s", en->c.en.name, map->str);
+          if (en->cb) en->cb();
+          if (map->str) notifier_inform("%s: %s", en->c.en.name, map->str);
+          else notifier_inform("%s: %d", en->c.en.name, map->val);
         }
       }
     }
@@ -239,6 +254,11 @@ static void max_cb(GtkWidget *spin, t_ent_spn *en) {
       }
     }
   } else WARN("out-of-range[%d,%d]: %d", min, MAXTTL, got);
+}
+
+static void graph_type_cb(void) {
+  if (opts.graph == GRAPH_TYPE_NONE) graphtab_free();
+  if (!pinger_state.pause) graphtab_force_update();
 }
 
 static GtkWidget* label_box(const gchar *name) {
@@ -401,7 +421,7 @@ static GtkWidget* add_opt_radio(GtkWidget* list, t_ent_rad *en) {
 }
 
 #define EN_PR_FMT(ndx, fmt, arg) { g_snprintf(ent_str[ndx].hint, sizeof(ent_str[ndx].hint), fmt, arg); \
-  if (!add_opt_enter(list, &ent_str[ndx])) re = false; }
+  if (!add_opt_enter(list, &ent_str[ndx])) okay = false; }
 #define EN_PR_STR(ndx) EN_PR_FMT(ndx, "%s", ent_str[ndx].sdef)
 #define EN_PR_INT(ndx) EN_PR_FMT(ndx, "%d", ent_str[ndx].idef)
 
@@ -414,56 +434,73 @@ static void gtk_list_box_remove_all(GtkListBox *box) {
 #endif
 #endif
 
-static gboolean create_optmenu(GtkWidget *bar) {
-  static GtkWidget *optmenu;
-  if (optmenu) return true;
-  optmenu = gtk_menu_button_new();
-  g_return_val_if_fail(GTK_IS_MENU_BUTTON(optmenu), false);
-  gtk_menu_button_set_icon_name(GTK_MENU_BUTTON(optmenu), OPT_MENU_ICON);
-  gtk_widget_set_tooltip_text(optmenu, OPT_TOOLTIP);
-  gtk_header_bar_pack_start(GTK_HEADER_BAR(bar), optmenu);
+static gboolean create_optmenu(GtkWidget *bar, const char *icon, const char *tooltip, optmenu_add_items_fn fn) {
+  g_return_val_if_fail(GTK_IS_HEADER_BAR(bar), false);
+  GtkWidget *menu = gtk_menu_button_new();
+  g_return_val_if_fail(GTK_IS_MENU_BUTTON(menu), false);
+  gboolean okay = true;
+  gtk_header_bar_pack_start(GTK_HEADER_BAR(bar), menu);
+  if (icon) gtk_menu_button_set_icon_name(GTK_MENU_BUTTON(menu), icon);
+  if (tooltip) gtk_widget_set_tooltip_text(menu, tooltip);
   GtkWidget *popover = gtk_popover_new();
-  g_return_val_if_fail(GTK_IS_POPOVER(popover), false);
-  gtk_menu_button_set_popover(GTK_MENU_BUTTON(optmenu), popover);
-  gtk_popover_present(GTK_POPOVER(popover));
-  GtkWidget *list = gtk_list_box_new();
+  if (GTK_IS_POPOVER(popover)) {
+    gtk_menu_button_set_popover(GTK_MENU_BUTTON(menu), popover);
+    gtk_popover_present(GTK_POPOVER(popover));
+    GtkWidget* list = gtk_list_box_new();
+    if (GTK_IS_LIST_BOX(list)) {
+      gtk_popover_set_child(GTK_POPOVER(popover), list);
+      gtk_list_box_set_selection_mode(GTK_LIST_BOX(list), GTK_SELECTION_NONE);
+      gtk_widget_set_halign(list, GTK_ALIGN_FILL);
+      gtk_widget_set_hexpand(list, false);
+      if (fn) okay = fn(list);
+    } else okay = false;
+  } else okay = false;
+  if (!okay) gtk_header_bar_remove(GTK_HEADER_BAR(bar), menu);
+  return okay;
+}
+
+static gboolean create_ping_optmenu(GtkWidget *list) {
   g_return_val_if_fail(GTK_IS_LIST_BOX(list), false);
-  gtk_popover_set_child(GTK_POPOVER(popover), list);
-  gtk_list_box_set_selection_mode(GTK_LIST_BOX(list), GTK_SELECTION_NONE);
-  gtk_widget_set_halign(list, GTK_ALIGN_FILL);
-  gtk_widget_set_hexpand(list, false);
-  //
-  gboolean re = true;
+  gboolean okay = true;
   gtk_list_box_remove_all(GTK_LIST_BOX(list));
   EN_PR_INT(ENT_STR_CYCLES);
   EN_PR_INT(ENT_STR_IVAL);
-  if (!add_opt_check(list,  &ent_bool[ENT_BOOL_DNS])) re = false;
-  if (!add_opt_expand(list, &ent_exp[ENT_EXP_INFO]))  re = false;
-  if (!add_opt_expand(list, &ent_exp[ENT_EXP_STAT]))  re = false;
-  if (!add_opt_range(list,  &ent_spn[ENT_SPN_TTL]))   re = false;
+  if (!add_opt_check(list,  &ent_bool[ENT_BOOL_DNS])) okay = false;
+  if (!add_opt_expand(list, &ent_exp[ENT_EXP_INFO]))  okay = false;
+  if (!add_opt_expand(list, &ent_exp[ENT_EXP_STAT]))  okay = false;
+  if (!add_opt_range(list,  &ent_spn[ENT_SPN_TTL]))   okay = false;
   EN_PR_INT(ENT_STR_QOS);
   EN_PR_STR(ENT_STR_PLOAD);
   EN_PR_INT(ENT_STR_PSIZE);
-  if (!add_opt_radio(list, &ent_rad[ENT_RAD_IPV]))    re = false;
+  if (!add_opt_radio(list, &ent_rad[ENT_RAD_IPV]))    okay = false;
   EN_PR_INT(ENT_STR_LOGMAX);
-  //
-  return re;
+  return okay;
+}
+
+static gboolean create_graph_optmenu(GtkWidget *list) {
+  g_return_val_if_fail(GTK_IS_LIST_BOX(list), false);
+  gboolean okay = true;
+  gtk_list_box_remove_all(GTK_LIST_BOX(list));
+  if (!add_opt_radio(list, &ent_rad[ENT_RAD_GRAPH])) okay = false;
+  return okay;
 }
 
 
 // pub
 //
 
-gboolean option_init(GtkWidget* bar) {
-  g_return_val_if_fail(GTK_IS_HEADER_BAR(bar), false);
-  if (!create_optmenu(bar)) return false;
+inline gboolean option_init(GtkWidget* bar) {
+  g_return_val_if_fail(create_optmenu(bar, OPT_PING_MENU_ICON,  OPT_PING_TOOLTIP,  create_ping_optmenu), false);
+  if (opts.graph) g_return_val_if_fail(
+    create_optmenu(bar, OPT_GRAPH_MENU_ICON, OPT_GRAPH_TOOLTIP, create_graph_optmenu), false);
   return true;
 }
 
 #define ENT_LOOP_SET(row) { if (GTK_IS_WIDGET(row)) gtk_widget_set_sensitive(row, notrun); }
 #define ENT_LOOP_STR(arr) { for (int i = 0; i < G_N_ELEMENTS(arr); i++) ENT_LOOP_SET(arr[i].box); }
-#define ENT_LOOP_EXP(arr) { for (int i = 0; i < G_N_ELEMENTS(arr); i++) { ENT_LOOP_SET(arr[i].c.box); \
-  if (GTK_IS_TOGGLE_BUTTON(arr[i].c.arrow)) gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(arr[i].c.arrow), false); }}
+#define ENT_LOOP_EXP(arr) { for (int i = 0; i < G_N_ELEMENTS(arr); i++) if (!arr[i].c.atrun) { \
+  ENT_LOOP_SET(arr[i].c.box); if (GTK_IS_TOGGLE_BUTTON(arr[i].c.arrow)) \
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(arr[i].c.arrow), false); }}
 
 void option_update(void) {
   gboolean notrun = !pinger_state.run;

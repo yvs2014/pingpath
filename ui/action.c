@@ -143,17 +143,20 @@ static void on_quit(GSimpleAction *action, GVariant *var, gpointer data) {
 
 static GMenu* action_menu_init(GtkWidget *bar) {
   g_return_val_if_fail(GTK_IS_HEADER_BAR(bar), NULL);
-  GMenu *menu = g_menu_new();
-  g_return_val_if_fail(G_IS_MENU(menu), NULL);
   GtkWidget *button = gtk_menu_button_new();
   g_return_val_if_fail(GTK_IS_MENU_BUTTON(button), NULL);
+  gboolean okay = true;
+  gtk_header_bar_pack_start(GTK_HEADER_BAR(bar), button);
   gtk_menu_button_set_icon_name(GTK_MENU_BUTTON(button), ACT_MENU_ICON);
   gtk_widget_set_tooltip_text(button, ACT_TOOLTIP);
-  gtk_header_bar_pack_start(GTK_HEADER_BAR(bar), button);
-  GtkWidget *popover = gtk_popover_menu_new_from_model(G_MENU_MODEL(menu));
-  g_return_val_if_fail(GTK_IS_POPOVER_MENU(popover), NULL);
-  gtk_menu_button_set_popover(GTK_MENU_BUTTON(button), popover);
-  return menu;
+  GMenu *menu = g_menu_new();
+  if (G_IS_MENU(menu)) {
+    GtkWidget *popover = gtk_popover_menu_new_from_model(G_MENU_MODEL(menu));
+    if (GTK_IS_POPOVER_MENU(popover)) gtk_menu_button_set_popover(GTK_MENU_BUTTON(button), popover);
+    else okay = false;
+  } else okay = false;
+  if (!okay) gtk_header_bar_remove(GTK_HEADER_BAR(bar), button);
+  return okay ? menu : NULL;
 }
 
 static gboolean create_action_menu(GtkApplication *app, GtkWidget *win, GtkWidget *bar) {
@@ -188,9 +191,6 @@ static void action_update_internal(GMenu *menu) {
 //
 
 gboolean action_init(GtkApplication *app, GtkWidget* win, GtkWidget* bar) {
-  g_return_val_if_fail(GTK_IS_APPLICATION(app), false);
-  g_return_val_if_fail(GTK_IS_WINDOW(win), false);
-  g_return_val_if_fail(GTK_IS_HEADER_BAR(bar), false);
   g_return_val_if_fail(create_action_menu(app, win, bar), false);
   return true;
 }
