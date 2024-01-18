@@ -3,6 +3,7 @@
 #include "pinger.h"
 #include "stat.h"
 #include "ui/style.h"
+#include "ui/notifier.h"
 
 #define X_AXIS "time"
 #define Y_AXIS "delay [msec]"
@@ -14,12 +15,6 @@
 #define GR_RTT_SCALE 1000. // usec to msec
 #define GR_Y_GAP 1.1
 
-#define GR_LEFT   60
-#define GR_TOP    50
-#define GR_RIGHT  40
-#define GR_BOTTOM 40
-
-#define CELL_SIZE 50
 #define TICK_SIZE 6
 #define DASH_BOLD 0.7
 #define DOT_SIZE  5
@@ -54,21 +49,13 @@ static t_tab graphtab = { .self = &graphtab, .name = "graph-tab",
 static t_gr_list gr_series[MAXTTL];
 #define GR_LIST (gr_series[i].list)
 #define GR_LEN (gr_series[i].len)
+static const int n_series = G_N_ELEMENTS(gr_series);
 
 static GtkWidget *gr_grid, *gr_marks, *gr_graph;
 static PangoFontDescription *gr_font;
 
-static t_gr_aux_measures grm = { .x = GR_LEFT, .y = GR_TOP, .fs = CELL_SIZE * GRF_RATIO, .ymax = GR_RTT0,
+static t_gr_aux_measures grm = { .x = GRAPH_LEFT, .y = GRAPH_TOP, .fs = CELL_SIZE * GRF_RATIO, .ymax = GR_RTT0,
   .dx = (MAIN_TIMING_MSEC / 1000.) * ((double)CELL_SIZE / X_CELL_SEC) };
-
-static double gr_colors[][3] = { // 5x6 is enough for MAXTTL=30
-  {1, 0, 0},     {0, 1, 0},     {0, 0, 1},     {1, 1, 0},         {1, 0, 1},         {0, 1, 1},
-  {0.5, 0, 0},   {0, 0.5, 0},   {0, 0, 0.5},   {0.5, 0.5, 0},     {0.5, 0, 0.5},     {0, 0.5, 0.5},
-  {0.75, 0, 0},  {0, 0.75, 0},  {0, 0, 0.75},  {0.75, 0.75, 0},   {0.75, 0, 0.75},   {0, 0.75, 0.75},
-  {0.25, 0, 0},  {0, 0.25, 0},  {0, 0, 0.25},  {0.25, 0.25, 0},   {0.25, 0, 0.25},   {0, 0.25, 0.25},
-  {0.875, 0, 0}, {0, 0.875, 0}, {0, 0, 0.875}, {0.875, 0.875, 0}, {0.875, 0, 0.875}, {0, 0.875, 0.875},
-};
-
 
 static void gr_scale_max(int max) {
   grm.ymax = max * GR_Y_GAP;
@@ -77,9 +64,8 @@ static void gr_scale_max(int max) {
 }
 
 static int gr_max_in_series(void) {
-  static int n_gr_series = G_N_ELEMENTS(gr_series);
   int max = GR_RTT0;
-  for (int i = 0; i < n_gr_series; i++) {
+  for (int i = 0; i < n_series; i++) {
     for (GSList *item = GR_LIST; item; item = item->next) {
       if (!item->data) continue;
       int rtt = ((t_stat_graph*)item->data)->rtt;
@@ -213,14 +199,12 @@ static void gr_draw_curve_loop(int i, cairo_t *cr, double x0) {
 }
 
 static void gr_draw_smth(cairo_t *cr, int cap, int width, draw_smth_fn draw) {
-  static int n_gr_ser = G_N_ELEMENTS(gr_series);
-  static int n_gr_col = G_N_ELEMENTS(gr_colors);
   if (!cr || !draw) return;
   if (cap >= 0) cairo_set_line_cap(cr, cap);
   if (width >= 0) cairo_set_line_width(cr, width);
-  for (int i = 0; i < n_gr_ser; i++) {
-    int n = i % n_gr_col;
-    cairo_set_source_rgb(cr, gr_colors[n][0], gr_colors[n][1], gr_colors[n][2]);
+  for (int i = 0; i < n_series; i++) {
+    int n = i % n_colors;
+    cairo_set_source_rgb(cr, colors[n][0], colors[n][1], colors[n][2]);
     draw(i, cr, grm.x1);
     cairo_stroke(cr);
   }
@@ -230,7 +214,7 @@ static void gr_draw_grid(GtkDrawingArea *area, cairo_t* cr, int w, int h, gpoint
   static PangoLayout *grid_pango;
   static const double dash_size[] = {1};
   if (!GTK_IS_DRAWING_AREA(area) || !cr || !w || !h) return;
-  int w0 = w - (grm.x + grm.y), h0 = h - (GR_TOP + GR_BOTTOM);
+  int w0 = w - (GRAPH_LEFT + GRAPH_RIGHT), h0 = h - (GRAPH_TOP + GRAPH_BOTTOM);
   grm.N = w0 / CELL_SIZE, grm.M = h0 / CELL_SIZE;
   grm.w = grm.N * CELL_SIZE, grm.h = grm.M * CELL_SIZE;
   grm.no = grm.w / ((double)CELL_SIZE / X_CELL_SEC) + 1; // number elems per list
@@ -329,9 +313,8 @@ static void gr_draw_graph(GtkDrawingArea *area, cairo_t* cr, int w, int h, gpoin
 }
 
 static void graphtab_data_update(void) {
-  static int n_gr_series = G_N_ELEMENTS(gr_series);
   t_stat_graph skip = { .rtt = -1, .jttr = -1 };
-  for (int i = 0; i < n_gr_series; i++)
+  for (int i = 0; i < n_series; i++)
     gr_save(i, (pinger_state.run && (opts.min <= i) && (i < hops_no)) ? stat_graph_data_at(i) : skip);
 }
 
@@ -369,24 +352,32 @@ t_tab* graphtab_init(GtkWidget* win) {
   gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scroll), over);
   // put into tab
   gtk_widget_set_vexpand(GTK_WIDGET(scroll), true);
-  gtk_box_append(GTK_BOX(graphtab.tab), scroll);
+  GtkWidget* gr_win = notifier_init(NT_GRAPH_NDX, scroll);
+  g_return_val_if_fail(GTK_IS_WIDGET(gr_win), NULL);
+  notifier_set_visible(NT_GRAPH_NDX, false);
+  gtk_box_append(GTK_BOX(graphtab.tab), gr_win);
   gr_set_font();
   return &graphtab;
 }
 
 void graphtab_free(void) {
-  static int n_gr_series = G_N_ELEMENTS(gr_series);
   grm.at = 0;
-  for (int i = 0; i < n_gr_series; i++) {
+  for (int i = 0; i < n_series; i++) {
     GR_LEN = 0; if (GR_LIST) { g_slist_free(GR_LIST); GR_LIST = NULL; }
   }
 }
 
 inline void graphtab_update(void) {
   if (!pinger_state.run) return;
+  if (pinger_state.gotdata && opts.legend && !notifier_get_visible(NT_GRAPH_NDX))
+    notifier_set_visible(NT_GRAPH_NDX, true);
   graphtab_data_update();
-  if (!pinger_state.pause) gtk_widget_queue_draw(gr_graph);
+  if (!pinger_state.pause) {
+    if (opts.legend) notifier_legend_update(NT_GRAPH_NDX);
+    gtk_widget_queue_draw(gr_graph);
+  }
 }
 
 inline void graphtab_force_update(void) { gtk_widget_queue_draw(gr_graph); }
+inline void graphtab_toggle_legend(void) { if (opts.graph) notifier_set_visible(NT_GRAPH_NDX, opts.legend); }
 

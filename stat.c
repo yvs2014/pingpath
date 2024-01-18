@@ -3,7 +3,6 @@
 #include "pinger.h"
 #include "dns.h"
 #include "whois.h"
-#include "tabs/ping.h"
 
 // stat formats
 #define INT_FMT "%d"
@@ -102,7 +101,7 @@ static void stop_pings_behind(int from, const gchar *reason) {
 static void set_hops_no(int no, const char *info) {
   hops_no = no;
   stop_pings_behind(no, info);
-  pingtab_vis_rows(no);
+  pinger_vis_rows(no);
 }
 
 static void uniq_unreach(int at) {
@@ -141,7 +140,7 @@ static void update_stat(int at, int rtt, t_tseq *mark, int rxtx) {
   if (!hops[at].tout) {
     if ((visibles < at) && (at < hops_no)) {
       visibles = at;
-      pingtab_vis_rows(at + 1);
+      pinger_vis_rows(at + 1);
     }
   }
 }
@@ -300,12 +299,12 @@ void stat_free(void) {
 void stat_clear(gboolean clean) {
   stat_free();
   stat_init(clean);
-  pingtab_set_error(NULL);
+  pinger_set_error(NULL);
 }
 
 void stat_reset_cache(void) { // reset 'cached' flags
   for (int i = 0; i < MAXTTL; i++) hops[i].cached = false;
-  pingtab_update_width(opts.dns ? host_max.name : host_max.addr, ELEM_HOST);
+  pinger_update_width(ELEM_HOST, opts.dns ? host_max.name : host_max.addr);
 }
 
 static void stat_up_info(int at, const gchar *info) {
@@ -386,7 +385,10 @@ const gchar *stat_str_elem(int at, int typ) {
 }
 
 t_stat_graph stat_graph_data_at(int at) {
-  t_stat_graph sd = { .rtt = hops[at].last, .jttr = hops[at].jttr };
+  t_stat_graph sd = { .rtt = hops[at].last, .jttr = hops[at].jttr, .name = stat_str_elem(at, ELEM_HOST),
+    .as = stat_str_elem(at, ELEM_AS),   .cc = stat_str_elem(at, ELEM_CC),
+    .av = stat_str_elem(at, ELEM_AVRG), .jt = stat_str_elem(at, ELEM_JTTR),
+  };
   return sd;
 }
 
@@ -402,17 +404,17 @@ int stat_elem_max(int typ) {
   return ELEM_LEN;
 }
 
-void stat_check_hostaddr_max(int l) {
-  if (host_max.addr < l) {
-    host_max.addr = l;
-    if (!opts.dns) pingtab_update_width(l, ELEM_HOST);
+void stat_check_hostaddr_max(int len) {
+  if (host_max.addr < len) {
+    host_max.addr = len;
+    if (!opts.dns) pinger_update_width(ELEM_HOST, len);
   }
 }
 
-void stat_check_hostname_max(int l) {
-  if (host_max.name < l) {
-    host_max.name = l;
-    if (opts.dns) pingtab_update_width(l, ELEM_HOST);
+void stat_check_hostname_max(int len) {
+  if (host_max.name < len) {
+    host_max.name = len;
+    if (opts.dns) pinger_update_width(ELEM_HOST, len);
   }
 }
 
@@ -421,7 +423,7 @@ void stat_check_whois_max(gchar* elem[]) {
     if (elem[i]) {
       int len = g_utf8_strlen(elem[i], MAXHOSTNAME);
       if (len > whois_max[i]) {
-        whois_max[i] = len; pingtab_update_width(len, wndx2endx[i]);
+        whois_max[i] = len; pinger_update_width(wndx2endx[i], len);
       }
     }
   }

@@ -7,7 +7,7 @@
 #include "ui/option.h"
 #include "ui/notifier.h"
 
-#define CLI_MESG(fmt, ...) { cli = true; notifier_inform(fmt, __VA_ARGS__); cli = false; }
+#define CLI_MESG(fmt, ...) { cli = true; PP_NOTIFY(fmt, __VA_ARGS__); cli = false; }
 
 static gboolean cli_int_opt(const char *name, const char *value, GError **error, int typ, const char *hdr,
     int min, int max, int *opt) {
@@ -104,7 +104,7 @@ static const char* cli_opt_infostat(const char *value, int sz, int typ, const gc
     t_ent_bool *en = cli_infostat_entry(*p, typ);
     if (!en) continue;
     if (en->pval) *en->pval = true;
-    notifier_inform("%s: %s: %s", en->prefix, en->en.name, TOGGLE_ON_HDR);
+    PP_NOTIFY("%s: %s: %s", en->prefix, en->en.name, TOGGLE_ON_HDR);
   }
   return str;
 }
@@ -120,7 +120,7 @@ static gboolean cli_opt_elem(const char *name, const char *value, GError **error
       t_ent_str *en = &ent_str[ENT_STR_PLOAD];
       str = parser_str(value, en->en.name, sz, typ);
       if (en->pstr) g_strlcpy(en->pstr, str, en->slen);
-      notifier_inform("%s: %s", en->en.name, str);
+      PP_NOTIFY("%s: %s", en->en.name, str);
     } break;
   }
   cli = false;

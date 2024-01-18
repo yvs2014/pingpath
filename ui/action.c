@@ -1,5 +1,6 @@
 
 #include "action.h"
+#include "option.h"
 #include "appbar.h"
 #include "notifier.h"
 #include "pinger.h"
@@ -20,9 +21,9 @@
 #define MSTRSTR(x) MSTR(x)
 #define MSTR(x) #x
 #define MA_LOG(ndx) LOG("Action %s", action_label(ndx))
-#define MI_LOG(ndx) notifier_inform("Action %s", action_label(ndx))
+#define MI_LOG(ndx) PP_NOTIFY("Action %s", action_label(ndx))
 
-enum { ACT_NDX_START, ACT_NDX_PAUSE, ACT_NDX_RESET, ACT_NDX_HELP, ACT_NDX_QUIT, ACT_NDX_MAX };
+enum { ACT_NDX_START, ACT_NDX_PAUSE, ACT_NDX_RESET, ACT_NDX_HELP, ACT_NDX_QUIT, ACT_NDX_LGND, ACT_NDX_MAX };
 enum { APP_NDX, WIN_NDX, APP_WIN_MAX };
 
 static const char* kb_ctrl_s[] = {"<Ctrl>s", NULL};
@@ -30,6 +31,7 @@ static const char* kb_space[]  = {"space",   NULL};
 static const char* kb_ctrl_r[] = {"<Ctrl>r", NULL};
 static const char* kb_ctrl_h[] = {"<Ctrl>h", NULL};
 static const char* kb_ctrl_x[] = {"<Ctrl>x", NULL};
+static const char* kb_ctrl_l[] = {"<Ctrl>l", NULL};
 
 static const gchar *help_message =
   SPANHDR("Actions")
@@ -61,6 +63,7 @@ static t_act_desc act_desc[ACT_NDX_MAX] = {
   [ACT_NDX_RESET] = { .name = "app.act_reset", .shortcut = kb_ctrl_r },
   [ACT_NDX_HELP]  = { .name = "app.act_help",  .shortcut = kb_ctrl_h },
   [ACT_NDX_QUIT]  = { .name = "app.act_exit",  .shortcut = kb_ctrl_x },
+  [ACT_NDX_LGND]  = { .name = "app.act_lgnd",  .shortcut = kb_ctrl_l, .invisible = true },
 };
 
 static void on_startstop  (GSimpleAction*, GVariant*, gpointer);
@@ -68,6 +71,7 @@ static void on_pauseresume(GSimpleAction*, GVariant*, gpointer);
 static void on_reset      (GSimpleAction*, GVariant*, gpointer);
 static void on_help       (GSimpleAction*, GVariant*, gpointer);
 static void on_quit       (GSimpleAction*, GVariant*, gpointer);
+static void on_legend     (GSimpleAction*, GVariant*, gpointer);
 
 static GActionEntry act_entries[ACT_NDX_MAX] = {
   [ACT_NDX_START] = { .activate = on_startstop },
@@ -75,6 +79,7 @@ static GActionEntry act_entries[ACT_NDX_MAX] = {
   [ACT_NDX_RESET] = { .activate = on_reset },
   [ACT_NDX_HELP]  = { .activate = on_help },
   [ACT_NDX_QUIT]  = { .activate = on_quit },
+  [ACT_NDX_LGND]  = { .activate = on_legend },
 };
 
 static GMenu *action_menu;
@@ -86,6 +91,7 @@ static const char* action_label(int ndx) {
     case ACT_NDX_RESET: return ACT_RESET_HDR;
     case ACT_NDX_HELP:  return ACT_HELP_HDR;
     case ACT_NDX_QUIT:  return ACT_QUIT_HDR;
+    case ACT_NDX_LGND:  return ACT_LGND_HDR;
   }
   return "";
 }
@@ -141,6 +147,13 @@ static void on_quit(GSimpleAction *action, GVariant *var, gpointer data) {
   g_application_quit(G_APPLICATION(app));
 }
 
+static void on_legend(GSimpleAction *action, GVariant *var, gpointer data) {
+  MA_LOG(ACT_NDX_LGND);
+  opts.legend = !opts.legend;
+  option_toggled(ENT_BOOL_LGND);
+  graphtab_toggle_legend();
+}
+
 static GMenu* action_menu_init(GtkWidget *bar) {
   g_return_val_if_fail(GTK_IS_HEADER_BAR(bar), NULL);
   GtkWidget *button = gtk_menu_button_new();
@@ -172,13 +185,14 @@ static gboolean create_action_menu(GtkApplication *app, GtkWidget *win, GtkWidge
   if (!(action_menu = action_menu_init(bar))) return false;
   for (int i = 0; i < ACT_NDX_MAX; i++)
     gtk_application_set_accels_for_action(app, act_desc[i].name, act_desc[i].shortcut);
+  SET_SA(act_desc, ACT_NDX_LGND, opts.graph);
   return true;
 }
 
 static void action_update_internal(GMenu *menu) {
   if (G_IS_MENU(menu)) {
     g_menu_remove_all(menu);
-    for (int i = 0; i < ACT_NDX_MAX; i++)
+    for (int i = 0; i < ACT_NDX_MAX; i++) if (!act_desc[i].invisible)
       g_menu_append_item(menu, g_menu_item_new(action_label(i), act_desc[i].name));
   }
   gboolean run = pinger_state.run, pause = pinger_state.pause;
@@ -186,6 +200,7 @@ static void action_update_internal(GMenu *menu) {
   SET_SA(act_desc, ACT_NDX_PAUSE, pause || (!pause && run));
   SET_SA(act_desc, ACT_NDX_RESET, run);
 }
+
 
 // pub
 //

@@ -46,7 +46,7 @@ static void target_cb(GtkWidget *widget, GtkWidget *entry) {
   if (target) {
     g_free(opts.target); opts.target = target;
     action_update();
-    notifier_inform(ENT_TARGET_HDR " %s", target);
+    PP_NOTIFY(ENT_TARGET_HDR " %s", target);
   }
 }
 

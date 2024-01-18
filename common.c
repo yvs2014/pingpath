@@ -13,6 +13,23 @@ const char *unkn_whois = "";
 gboolean cli, bg_light;
 gint verbose, start_page = TAB_PING_NDX; // TAB_GRAPH_NDX;
 
+const double colors[][3] = { // 5x6 is enough for MAXTTL=30
+  {1, 0, 0},     {0, 1, 0},     {0, 0, 1},     {1, 1, 0},         {1, 0, 1},         {0, 1, 1},
+  {0.5, 0, 0},   {0, 0.5, 0},   {0, 0, 0.5},   {0.5, 0.5, 0},     {0.5, 0, 0.5},     {0, 0.5, 0.5},
+  {0.75, 0, 0},  {0, 0.75, 0},  {0, 0, 0.75},  {0.75, 0.75, 0},   {0.75, 0, 0.75},   {0, 0.75, 0.75},
+  {0.25, 0, 0},  {0, 0.25, 0},  {0, 0, 0.25},  {0.25, 0.25, 0},   {0.25, 0, 0.25},   {0, 0.25, 0.25},
+  {0.875, 0, 0}, {0, 0.875, 0}, {0, 0, 0.875}, {0.875, 0.875, 0}, {0.875, 0, 0.875}, {0, 0.875, 0.875},
+};
+
+const int n_colors = G_N_ELEMENTS(colors);
+
+static unsigned rgb2x(double c) { int n = c * 255; return n % 256; }
+
+gchar* get_nth_color(int i) {
+  int n = i % n_colors;
+  return g_strdup_printf("#%02x%02x%02x", rgb2x(colors[n][0]), rgb2x(colors[n][1]), rgb2x(colors[n][2]));
+}
+
 const char *timestampit(void) {
   static char now_ts[32];
   time_t now = time(NULL);

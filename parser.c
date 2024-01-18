@@ -206,14 +206,14 @@ static char* split_with_delim(char **ps, int c) {
 static inline gboolean parser_valid_char0(gchar *str) { return g_regex_match(hostname_char0_regex, str, 0, NULL); }
 static inline gboolean parser_valid_host(gchar *host) { return g_regex_match(hostname_chars_regex, host, 0, NULL); }
 
-#define INV_HN_NOTIFY(cause) notifier_inform("Hostname %s", cause)
+#define HNAME_ERROR(cause) PP_NOTIFY("Hostname %s", cause)
 
 static gboolean target_meet_all_conditions(gchar *s, int len, int max) {
   // rfc1123,rfc952 restrictions
-  if (len > max) { notifier_inform("Hostname: out of length limit (%d > %d)", len, max); return false; }
-  if (s[len - 1] == '-') { INV_HN_NOTIFY("cannot end with hyphen"); return false; }
-  if (!parser_valid_char0(s)) { INV_HN_NOTIFY("must start with a letter or a digit"); return false; }
-  if (!parser_valid_host(s)) { INV_HN_NOTIFY("contains not allowed characters"); return false; }
+  if (len > max) { PP_NOTIFY("Hostname: out of length limit (%d > %d)", len, max); return false; }
+  if (s[len - 1] == '-') { HNAME_ERROR("cannot end with hyphen"); return false; }
+  if (!parser_valid_char0(s)) { HNAME_ERROR("must start with a letter or a digit"); return false; }
+  if (!parser_valid_host(s)) { HNAME_ERROR("contains not allowed characters"); return false; }
   return true;
 }
 
@@ -242,7 +242,7 @@ void parser_parse(int at, char *input) {
   if (lines) g_strfreev(lines);
 }
 
-#define PIERR(fmt, ...) notifier_inform("%s: " fmt, option, __VA_ARGS__)
+#define PIERR(fmt, ...) PP_NOTIFY("%s: " fmt, option, __VA_ARGS__)
 
 int parser_int(const gchar *str, int typ, const gchar *option, t_minmax range) {
   GMatchInfo *match = NULL;
@@ -280,7 +280,7 @@ const char* parser_str(const gchar *str, const gchar *option, int buff_sz, int r
   if (valid) {
     g_match_info_free(match);
     return val;
-  } else notifier_inform("%s: no match %s regex", option, str_rx[rx_ndx].pattern);
+  } else PP_NOTIFY("%s: no match %s regex", option, str_rx[rx_ndx].pattern);
   return NULL;
 }
 

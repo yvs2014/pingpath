@@ -76,16 +76,17 @@ static void app_cb(GtkApplication* app, gpointer unused) {
   TAB_BGTYPE(tabs[start_page]->tab);
   g_signal_connect(nb, EV_TAB_SWITCH, G_CALLBACK(on_tab_switch), NULL);
   // nb overlay
-  GtkWidget *over = notifier_init(nb);
+  GtkWidget *over = notifier_init(NT_MAIN_NDX, nb);
   gboolean with_over = GTK_IS_OVERLAY(over);
   if (!with_over) LOG_("failed to add overlay");
   gtk_window_set_child(GTK_WINDOW(win), with_over ? over : nb);
   //
-  g_signal_connect_swapped(win, "destroy", G_CALLBACK(on_app_exit), nb);
+  g_signal_connect(win, "destroy", G_CALLBACK(on_app_exit), nb);
   gtk_window_present(GTK_WINDOW(win));
 }
 
 int main(int argc, char **argv) {
+  gtk_init(); // to set locale mainly
   GtkApplication *app = gtk_application_new("net.tools." APPNAME, APPFLAGS);
   g_return_val_if_fail(GTK_IS_APPLICATION(app), -1);
   if (!parser_init()) return -2;

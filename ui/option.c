@@ -25,6 +25,7 @@ t_ent_bool ent_bool[ENT_BOOL_MAX] = {
   [ENT_BOOL_WRST] = { .en = { .typ = ENT_BOOL_WRST, .name = ELEM_WRST_HDRL }, .pval = &statelem[ELEM_WRST].enable, .prefix = OPT_STAT_HDR  },
   [ENT_BOOL_AVRG] = { .en = { .typ = ENT_BOOL_AVRG, .name = ELEM_AVRG_HDRL }, .pval = &statelem[ELEM_AVRG].enable, .prefix = OPT_STAT_HDR  },
   [ENT_BOOL_JTTR] = { .en = { .typ = ENT_BOOL_JTTR, .name = ELEM_JTTR_HDRL }, .pval = &statelem[ELEM_JTTR].enable, .prefix = OPT_STAT_HDR  },
+  [ENT_BOOL_LGND] = { .en = { .typ = ENT_BOOL_LGND, .name = OPT_LGND_HDR },   .pval = &opts.legend },
 };
 
 t_ent_str ent_str[ENT_STR_MAX] = {
@@ -91,8 +92,8 @@ static void check_bool_val(GtkCheckButton *check, t_ent_bool *en, void (*update)
     if (update) update();
   }
   const gchar *onoff = state ? TOGGLE_ON_HDR : TOGGLE_OFF_HDR;
-  if (en->prefix) notifier_inform("%s: %s %s", en->prefix, en->en.name, onoff);
-  else notifier_inform("%s %s", en->en.name, onoff);
+  if (en->prefix) PP_NOTIFY("%s: %s %s", en->prefix, en->en.name, onoff);
+  else PP_NOTIFY("%s %s", en->en.name, onoff);
 }
 
 static void set_ed_texthint(t_ent_str *en) {
@@ -117,8 +118,7 @@ static void toggled_dns(void) {
 }
 
 static void toggle_cb(GtkCheckButton *check, t_ent_bool *en) {
-  if (!en) return;
-  g_return_if_fail(GTK_IS_CHECK_BUTTON(check));
+  if (!GTK_IS_CHECK_BUTTON(check) || !en) return;
   switch (en->en.typ) {
     case ENT_BOOL_DNS:
       check_bool_val(check, en, toggled_dns);
@@ -142,6 +142,9 @@ static void toggle_cb(GtkCheckButton *check, t_ent_bool *en) {
       stat_whois_enabler();
       if (whois_enable) stat_run_whois_resolv();
       break;
+    case ENT_BOOL_LGND:
+      check_bool_val(check, en, graphtab_toggle_legend);
+      break;
   }
 }
 
@@ -159,8 +162,8 @@ static void radio_cb(GtkCheckButton *check, t_ent_rad_map *map) {
         if (map->val != *(en->pval)) {
           *(en->pval) = map->val;
           if (en->cb) en->cb();
-          if (map->str) notifier_inform("%s: %s", en->c.en.name, map->str);
-          else notifier_inform("%s: %d", en->c.en.name, map->val);
+          if (map->str) PP_NOTIFY("%s: %s", en->c.en.name, map->str);
+          else PP_NOTIFY("%s: %d", en->c.en.name, map->val);
         }
       }
     }
@@ -191,14 +194,14 @@ static void input_cb(GtkWidget *input, t_ent_str *en) {
       if (n > 0) {
         if (en->pint) *(en->pint) = n;
         /*extra*/ if (en->en.typ == ENT_STR_IVAL) opts.tout_usec = n * 1000000;
-        notifier_inform("%s: %d", en->en.name, n);
+        PP_NOTIFY("%s: %d", en->en.name, n);
       } else set_ed_texthint(en);
     } break;
     case ENT_STR_PLOAD: {
       const char *pad = parser_str(got, en->en.name, PAD_SIZE, STR_RX_PAD);
       if (pad) {
         if (en->pstr) g_strlcpy(en->pstr, pad, en->slen);
-        notifier_inform("%s: %s", en->en.name, pad);
+        PP_NOTIFY("%s: %s", en->en.name, pad);
       } else set_ed_texthint(en);
     } break;
   }
@@ -216,7 +219,7 @@ static void min_cb(GtkWidget *spin, t_ent_spn *en) {
   int *plim = en->aux[SPN_AUX_LIM].pval;
   int max = plim ? *plim : MAXTTL;
   if (pinger_within_range(1, max, got)) {
-    notifier_inform("%s: %d <=> %d", en->c.en.name, got, max);
+    PP_NOTIFY("%s: %d <=> %d", en->c.en.name, got, max);
     *pmin = val;
     // then adjust right:range
     double cp_min, cp_max;
@@ -241,7 +244,7 @@ static void max_cb(GtkWidget *spin, t_ent_spn *en) {
   int *pmin = en->aux[SPN_AUX_MIN].pval;
   int min = (pmin ? *pmin : 0) + 1;
   if (pinger_within_range(min, MAXTTL, got)) {
-    notifier_inform("%s: %d <=> %d", en->c.en.name, min, got);
+    PP_NOTIFY("%s: %d <=> %d", en->c.en.name, min, got);
     *plim = got;
     // then adjust left:range
     double cp_min, cp_max;
@@ -288,8 +291,9 @@ static GtkWidget* add_opt_check(GtkWidget* list, t_ent_bool *en) {
     gtk_box_append(GTK_BOX(box), check);
     if (style_loaded) gtk_widget_add_css_class(check, CSS_CHPAD);
     gtk_widget_set_halign(check, GTK_ALIGN_END);
-    if (en->pval) gtk_check_button_set_active(GTK_CHECK_BUTTON(check), *(en->pval));
     g_signal_connect(check, EV_TOGGLE, G_CALLBACK(toggle_cb), en);
+    en->check = GTK_CHECK_BUTTON(check);
+    if (en->pval) gtk_check_button_set_active(en->check, *(en->pval));
   }
   return box;
 }
@@ -473,7 +477,6 @@ static gboolean create_ping_optmenu(GtkWidget *list) {
   EN_PR_STR(ENT_STR_PLOAD);
   EN_PR_INT(ENT_STR_PSIZE);
   if (!add_opt_radio(list, &ent_rad[ENT_RAD_IPV]))    okay = false;
-  EN_PR_INT(ENT_STR_LOGMAX);
   return okay;
 }
 
@@ -481,7 +484,9 @@ static gboolean create_graph_optmenu(GtkWidget *list) {
   g_return_val_if_fail(GTK_IS_LIST_BOX(list), false);
   gboolean okay = true;
   gtk_list_box_remove_all(GTK_LIST_BOX(list));
-  if (!add_opt_radio(list, &ent_rad[ENT_RAD_GRAPH])) okay = false;
+  if (!add_opt_radio(list, &ent_rad[ENT_RAD_GRAPH]))  okay = false;
+  if (!add_opt_check(list, &ent_bool[ENT_BOOL_LGND])) okay = false;
+  EN_PR_INT(ENT_STR_LOGMAX);
   return okay;
 }
 
@@ -490,9 +495,9 @@ static gboolean create_graph_optmenu(GtkWidget *list) {
 //
 
 inline gboolean option_init(GtkWidget* bar) {
-  g_return_val_if_fail(create_optmenu(bar, OPT_PING_MENU_ICON,  OPT_PING_TOOLTIP,  create_ping_optmenu), false);
+  g_return_val_if_fail(create_optmenu(bar, OPT_PING_MENU_ICON, OPT_MAIN_TOOLTIP, create_ping_optmenu), false);
   if (opts.graph) g_return_val_if_fail(
-    create_optmenu(bar, OPT_GRAPH_MENU_ICON, OPT_GRAPH_TOOLTIP, create_graph_optmenu), false);
+    create_optmenu(bar, OPT_GRAPH_MENU_ICON, OPT_AUX_TOOLTIP, create_graph_optmenu), false);
   return true;
 }
 
@@ -507,5 +512,12 @@ void option_update(void) {
   ENT_LOOP_STR(ent_str);
   ENT_LOOP_EXP(ent_spn);
   ENT_LOOP_EXP(ent_rad);
+}
+
+void option_toggled(int ndx) {
+  if ((ndx >= 0) && (ndx < ENT_BOOL_MAX)) {
+    t_ent_bool *en = &ent_bool[ndx];
+    if (en->check && en->pval) gtk_check_button_set_active(en->check, *(en->pval));
+  }
 }
 

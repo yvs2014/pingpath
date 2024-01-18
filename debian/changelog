@@ -1,3 +1,9 @@
+pingpath (0.1.56) lunar mantic; urgency=low
+
+  * add graph legend (main graph functionality is done)
+
+ -- yvs <VSYakovetsky@gmail.com>  Thu, 18 Jan 2024 08:01:19 +0200
+
 pingpath (0.1.55) lunar mantic; urgency=low
 
   * [in progress] add graph option menu

@@ -38,6 +38,7 @@ typedef struct t_stat_elem {
 typedef struct t_stat_graph {
   int rtt;
   double jttr;
+  const gchar *name, *as, *cc, *av, *jt;
 } t_stat_graph;
 
 void stat_init(gboolean clean);

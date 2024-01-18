@@ -11,8 +11,8 @@
 #define HDRLINES 1
 
 typedef struct listline {
-  GtkListBoxRow* row;         // row from ListBox
-  GtkWidget* child;           // child
+  GtkListBoxRow *row;         // row from ListBox
+  GtkWidget *child;           // child
   GtkWidget* cells[ELEM_MAX]; // cells inside of child
 } t_listline;
 
@@ -157,9 +157,8 @@ void pingtab_update(void) {
         if ((typ != ELEM_NO) && statelem[typ].enable) {
           GtkWidget *label = listbox.lines[i].cells[typ];
           if (GTK_IS_LABEL(label)) {
-            const gchar *elem = stat_str_elem(i, typ);
-            const gchar *cell = gtk_label_get_text(GTK_LABEL(label));
-            if (STR_NEQ(elem, cell)) gtk_label_set_text(GTK_LABEL(label), elem);
+            const gchar *text = stat_str_elem(i, typ);
+            UPDATE_LABEL(label, text);
           }
         }
   { // no data display
@@ -176,8 +175,8 @@ void pingtab_update(void) {
 
 void pingtab_vis_rows(int no) {
   LOG("set upto %d visible rows", no);
-  for (int i = opts.min; i < MAXTTL; i++) {
-    gboolean vis = i < no;
+  for (int i = 0; i < MAXTTL; i++) {
+    gboolean vis = (i >= opts.min) && (i < no);
     t_listline *line = &listbox.lines[i];
     gtk_widget_set_visible(GTK_WIDGET(line->row), vis);
     gtk_widget_set_visible(line->child, vis);
@@ -192,11 +191,11 @@ void pingtab_vis_cols(void) {
   pingtab_update();
 }
 
-void pingtab_update_width(int max, int ndx) {
+void pingtab_update_width(int typ, int max) {
   for (int i = 0; i < HDRLINES; i++)
-    gtk_label_set_width_chars(GTK_LABEL(listbox.header[i].cells[ndx]), max);
+    gtk_label_set_width_chars(GTK_LABEL(listbox.header[i].cells[typ]), max);
   for (int i = 0; i < MAXTTL; i++)
-    gtk_label_set_width_chars(GTK_LABEL(listbox.lines[i].cells[ndx]), max);
+    gtk_label_set_width_chars(GTK_LABEL(listbox.lines[i].cells[typ]), max);
 }
 
 void pingtab_set_error(const gchar *error) {

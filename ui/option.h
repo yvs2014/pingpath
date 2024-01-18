@@ -31,6 +31,7 @@ typedef struct ent_bool {
   t_ent_ndx en;
   gboolean *pval;
   const gchar *prefix;
+  GtkCheckButton *check;
 } t_ent_bool;
 
 typedef struct ent_exp_common {
@@ -70,6 +71,7 @@ typedef struct ent_spn {
 
 gboolean option_init(GtkWidget* bar);
 void option_update(void);
+void option_toggled(int ndx);
 
 extern t_ent_bool ent_bool[];
 extern t_ent_str  ent_str[];

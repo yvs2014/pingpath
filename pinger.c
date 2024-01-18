@@ -1,5 +1,6 @@
 
 #include "pinger.h"
+#include "common.h"
 #include "parser.h"
 #include "stat.h"
 #include "dns.h"
@@ -19,7 +20,7 @@
 
 t_opts opts = { .target = NULL, .dns = true, .cycles = DEF_CYCLES, .qos = DEF_QOS, .size = DEF_PSIZE,
   .min = 0, .lim = MAXTTL, .timeout = DEF_TOUT, .tout_usec = DEF_TOUT * 1000000, .logmax = DEF_LOGMAX,
-  .graph = GRAPH_TYPE_CURVE };
+  .graph = GRAPH_TYPE_CURVE, .legend = true };
 t_pinger_state pinger_state;
 guint stat_timer;
 
@@ -58,7 +59,7 @@ static gboolean pinger_active(void) {
     pinger_state.run = active;
     tab_updater(active);
     appbar_update();
-    if (!active) notifier_inform("%s finished", "Pings");
+    if (!active) PP_NOTIFY("%s finished", "Pings");
   }
   return active;
 }
@@ -88,7 +89,7 @@ static void process_stopped(GObject *process, GAsyncResult *result, t_proc *proc
   }
   if (!pinger_active()) { // final update
     pingtab_update();
-    if (!pinger_state.gotdata && (!info_mesg || (info_mesg == notyet_mesg))) pingtab_set_error(nodata_mesg);
+    if (!pinger_state.gotdata && (!info_mesg || (info_mesg == notyet_mesg))) pinger_set_error(nodata_mesg);
   }
 }
 
@@ -128,7 +129,7 @@ static void on_stderr(GObject *stream, GAsyncResult *result, t_proc *p) {
     { int l = strlen(SKIPNAME); if (!strncmp(s, SKIPNAME, l)) s += l; } // skip program name
     s = g_strstrip(s); LOG("ERROR: %s", s);
     UPD_STR(ping_errors[p->ndx], s); // save error
-    pingtab_set_error(last_error()); // display the last one
+    pinger_set_error(last_error());  // display the last one
     RESET_ISTREAM(stream, p->err, on_stderr, p);
   } // else EOF
 }
@@ -165,8 +166,8 @@ static gboolean create_ping(int at, t_proc *p) {
   GError *error = NULL;
   p->proc = g_subprocess_newv(argv, G_SUBPROCESS_FLAGS_STDOUT_PIPE | G_SUBPROCESS_FLAGS_STDERR_PIPE, &error);
   if (!p->proc) {
-    notifier_inform("%s", error ? error->message : unkn_error);
-    if (error->code == 3) notifier_inform("%s", SANDBOX_MESG);
+    PP_NOTIFY("%s", error ? error->message : unkn_error);
+    if (error->code == 3) PP_NOTIFY("%s", SANDBOX_MESG);
     ERROR("g_subprocess_newv()");
     return false;
   }
@@ -265,6 +266,8 @@ void pinger_clear_data(gboolean clean) {
   pingtab_clear();
 }
 
+inline void pinger_set_error(const gchar *error) { pingtab_set_error(error); }
+
 gboolean pinger_within_range(int min, int max, int got) { // 1..MAXTTL
   if (min > max) return false;
   if ((min < 1) || (min > MAXTTL)) return false;
@@ -281,4 +284,18 @@ void pinger_on_quit(gboolean andstop) {
 }
 
 int pinger_update_tabs(gpointer unused) { pingtab_update(); return G_SOURCE_CONTINUE; }
+
+void pinger_vis_rows(int no) {
+  pingtab_vis_rows(no);
+  if (opts.graph && opts.legend) notifier_vis_rows(NT_GRAPH_NDX, no);
+}
+
+void pinger_update_width(int typ, int max) {
+  pingtab_update_width(typ, max);
+  if (opts.graph && opts.legend) switch (typ) {
+    case ELEM_HOST:
+    case ELEM_AS:
+      notifier_update_width(typ, NT_GRAPH_NDX, max);
+  }
+}
 

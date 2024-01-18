@@ -1,7 +1,7 @@
 
 name: pingpath
 base: core22
-version: 0.1.55
+version: 0.1.56
 summary: ping wrapper for network diagnostic
 description: |
   Network diagnostic tool based on parsing system 'ping' output with functionality of 'traceroute'.
@@ -33,6 +33,7 @@ parts:
 #    source: .
     source-type: git
     source: https://github.com/yvs2014/pingpath
+    source-depth: 1
     build-packages:
       - build-essential
       - pkgconf

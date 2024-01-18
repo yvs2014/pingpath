@@ -1,3 +1,6 @@
+## 0.1.56
+- add graph legend (main graph functionality is done)
+
 ## 0.1.55
 - [in progress] add graph option menu
 

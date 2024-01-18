@@ -3,7 +3,16 @@
 
 #include "common.h"
 
-GtkWidget* notifier_init(GtkWidget *base);
-void notifier_inform(const gchar *fmt, ...);
+#define PP_NOTIFY(...) notifier_inform(NT_MAIN_NDX, __VA_ARGS__)
+
+enum { NT_MAIN_NDX, NT_GRAPH_NDX, NT_NDX_MAX };
+
+GtkWidget* notifier_init(int ndx, GtkWidget *base);
+void notifier_inform(int ndx, const gchar *fmt, ...);
+gboolean notifier_get_visible(int ndx);
+void notifier_set_visible(int ndx, gboolean visible);
+void notifier_vis_rows(int ndx, int max);
+void notifier_update_width(int typ, int ndx, int max);
+void notifier_legend_update(int ndx);
 
 #endif

@@ -9,7 +9,7 @@
 #endif
 
 #define APPNAME "pingpath"
-#define VERSION "0.1.55"
+#define VERSION "0.1.56"
 
 #define MAXTTL  30
 #define MAXADDR 10
@@ -108,36 +108,38 @@
 #define ACT_RESET_HDR  "Reset"
 #define ACT_HELP_HDR   "Help"
 #define ACT_QUIT_HDR   "Exit"
+#define ACT_LGND_HDR   "Legend"
 #define ACT_COPY_HDR   "Copy"
 #define ACT_SALL_HDR   "Select all"
 #define ACT_UNSALL_HDR "Unselect all"
 
 #define ENT_TARGET_HDR "Target"
 
-#define OPT_PING_TOOLTIP  "Ping options"
-#define OPT_CYCLES_HDR    "Cycles"
-#define OPT_IVAL_HDR      "Interval"
-#define OPT_IVAL_HDRL     OPT_IVAL_HDR ", sec"
-#define OPT_DNS_HDR       "DNS"
-#define OPT_INFO_HDR      "Hop Info"
-#define OPT_STAT_HDR      "Statistics"
-#define OPT_TTL_HDR       "TTL"
-#define OPT_QOS_HDR       "QoS"
-#define OPT_PLOAD_HDR     "Payload"
-#define OPT_PLOAD_HDRL    OPT_PLOAD_HDR ", hex"
-#define OPT_PSIZE_HDR     "Size"
-#define OPT_IPV_HDR       "IP Version"
-#define OPT_IPVA_HDR      "Auto"
-#define OPT_IPV4_HDR      "IPv4"
-#define OPT_IPV6_HDR      "IPv6"
-#define OPT_LOGMAX_HDR    "Log lines"
+#define OPT_MAIN_TOOLTIP "Main options"
+#define OPT_CYCLES_HDR   "Cycles"
+#define OPT_IVAL_HDR     "Interval"
+#define OPT_IVAL_HDRL    OPT_IVAL_HDR ", sec"
+#define OPT_DNS_HDR      "DNS"
+#define OPT_INFO_HDR     "Hop Info"
+#define OPT_STAT_HDR     "Statistics"
+#define OPT_TTL_HDR      "TTL"
+#define OPT_QOS_HDR      "QoS"
+#define OPT_PLOAD_HDR    "Payload"
+#define OPT_PLOAD_HDRL   OPT_PLOAD_HDR ", hex"
+#define OPT_PSIZE_HDR    "Size"
+#define OPT_IPV_HDR      "IP Version"
+#define OPT_IPVA_HDR     "Auto"
+#define OPT_IPV4_HDR     "IPv4"
+#define OPT_IPV6_HDR     "IPv6"
 
-#define OPT_GRAPH_TOOLTIP "Graph options"
-#define OPT_GRAPH_HDR     "Graph type"
-#define OPT_GR_NONE_HDR   "None"
-#define OPT_GR_DOT_HDR    "Dots"
-#define OPT_GR_LINE_HDR   "Lines"
-#define OPT_GR_CURVE_HDR  "Splines"
+#define OPT_AUX_TOOLTIP  "Auxiliary"
+#define OPT_GRAPH_HDR    "Graph type"
+#define OPT_GR_NONE_HDR  "None"
+#define OPT_GR_DOT_HDR   "Dots"
+#define OPT_GR_LINE_HDR  "Lines"
+#define OPT_GR_CURVE_HDR "Splines"
+#define OPT_LGND_HDR     "Graph legend"
+#define OPT_LOGMAX_HDR   "Logging lines"
 
 #define ELEM_HOST_HDR  "Host"
 #define ELEM_HOST_TIP  "Hostname or IP-address"
@@ -184,13 +186,20 @@
 #define QOS_MAX    255
 #define LOGMAX_MAX 999
 
+// graph related
+#define CELL_SIZE    50
+#define GRAPH_LEFT   60
+#define GRAPH_TOP    50
+#define GRAPH_RIGHT  40
+#define GRAPH_BOTTOM 40
+
 enum { TAB_PING_NDX, TAB_GRAPH_NDX, TAB_LOG_NDX, TAB_NDX_MAX };
 
 enum { ENT_EXP_NONE, ENT_EXP_INFO, ENT_EXP_STAT, ENT_EXP_MAX };
 
 enum { ENT_BOOL_NONE, ENT_BOOL_DNS, ENT_BOOL_HOST, ENT_BOOL_AS, ENT_BOOL_CC, ENT_BOOL_DESC, ENT_BOOL_RT,
   ENT_BOOL_LOSS, ENT_BOOL_SENT, ENT_BOOL_RECV, ENT_BOOL_LAST, ENT_BOOL_BEST, ENT_BOOL_WRST,
-  ENT_BOOL_AVRG, ENT_BOOL_JTTR, ENT_BOOL_MAX };
+  ENT_BOOL_AVRG, ENT_BOOL_JTTR, ENT_BOOL_LGND, ENT_BOOL_MAX };
 
 enum { ELEM_NO, ELEM_HOST, ELEM_AS, ELEM_CC, ELEM_DESC, ELEM_RT, ELEM_FILL,
   ELEM_LOSS, ELEM_SENT, ELEM_RECV, ELEM_LAST, ELEM_BEST, ELEM_WRST, ELEM_AVRG, ELEM_JTTR, ELEM_MAX };
@@ -242,6 +251,7 @@ typedef struct t_act_desc {
   GSimpleAction* sa;
   const char *name;
   const char *const *shortcut;
+  const gboolean invisible;
 } t_act_desc;
 
 typedef struct tab {
@@ -265,6 +275,11 @@ extern const char *log_empty;
 extern gboolean cli, bg_light;
 extern gint verbose, start_page;
 
+extern const double colors[][3];
+extern const int n_colors;
+
+gchar* get_nth_color(int i);
+
 const char *timestampit(void);
 GtkListBoxRow* line_row_new(GtkWidget *child, gboolean visible);
 void tab_setup(t_tab *tab, const char *css);
@@ -280,5 +295,8 @@ extern void log_add(const gchar *fmt, ...);
 #define ADD_REF_OR_RET(refs) { \
   if (!list_add_nodup(refs, ref_new(hop, ndx), (GCompareFunc)ref_cmp, REF_MAX)) { \
     WARN("%s: add reference failed", addr); return NULL; }}
+
+#define UPDATE_LABEL(label, str) { const gchar *txt = gtk_label_get_text(GTK_LABEL(label)); \
+  if (STR_NEQ(txt, str)) gtk_label_set_text(GTK_LABEL(label), str); }
 
 #endif
