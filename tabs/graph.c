@@ -51,16 +51,16 @@ static t_gr_list gr_series[MAXTTL];
 #define GR_LEN (gr_series[i].len)
 static const int n_series = G_N_ELEMENTS(gr_series);
 
-static GtkWidget *gr_grid, *gr_marks, *gr_graph;
-static PangoFontDescription *gr_font;
+static GtkWidget *graph_grid, *graph_marks, *graph_graph;
+static PangoFontDescription *graph_font;
 
 static t_gr_aux_measures grm = { .x = GRAPH_LEFT, .y = GRAPH_TOP, .fs = CELL_SIZE * GRF_RATIO, .ymax = GR_RTT0,
   .dx = (MAIN_TIMING_MSEC / 1000.) * ((double)CELL_SIZE / X_CELL_SEC) };
 
 static void gr_scale_max(int max) {
   grm.ymax = max * GR_Y_GAP;
-  gtk_widget_queue_draw(gr_marks);
-  gtk_widget_set_visible(gr_marks, true);
+  gtk_widget_queue_draw(graph_marks);
+  gtk_widget_set_visible(graph_marks, true);
 }
 
 static int gr_max_in_series(void) {
@@ -92,11 +92,11 @@ static void gr_save(int i, t_stat_graph data) {
 }
 
 static void gr_set_font(void) {
-  gr_font = pango_font_description_new();
-  if (gr_font) {
-    pango_font_description_set_family(gr_font, GR_FONT);
+  graph_font = pango_font_description_new();
+  if (graph_font) {
+    pango_font_description_set_family(graph_font, GR_FONT);
     int fs = grm.fs ? grm.fs : (CELL_SIZE * GRF_RATIO);
-    pango_font_description_set_absolute_size(gr_font, fs * PANGO_SCALE);
+    pango_font_description_set_absolute_size(graph_font, fs * PANGO_SCALE);
   } else WARN_("Cannot allocate pango font");
 }
 
@@ -249,7 +249,7 @@ static void gr_draw_grid(GtkDrawingArea *area, cairo_t* cr, int w, int h, gpoint
   // axis names
   if (!grid_pango) grid_pango = pango_cairo_create_layout(cr);
   if (grid_pango) {
-    if (gr_font) pango_layout_set_font_description(grid_pango, gr_font);
+    if (graph_font) pango_layout_set_font_description(grid_pango, graph_font);
     double ts = TICK_SIZE * 2;
     cairo_move_to(cr, grm.x1 + ts, grm.y1 - 0.5 * grm.fs);
     pango_layout_set_text(grid_pango, X_AXIS, -1);
@@ -262,10 +262,10 @@ static void gr_draw_grid(GtkDrawingArea *area, cairo_t* cr, int w, int h, gpoint
 
 static void gr_draw_marks(GtkDrawingArea *area, cairo_t* cr, int w, int h, gpointer unused) {
   static PangoLayout *mark_pango;
-  if (!GTK_IS_DRAWING_AREA(area) || !cr || !gr_font || (grm.y <= 0)) return;
+  if (!GTK_IS_DRAWING_AREA(area) || !cr || !graph_font || (grm.y <= 0)) return;
   if (!mark_pango) mark_pango = pango_cairo_create_layout(cr);
   if (mark_pango && (grm.M > 0)) {
-    if (gr_font) pango_layout_set_font_description(mark_pango, gr_font);
+    if (graph_font) pango_layout_set_font_description(mark_pango, graph_font);
     pango_layout_set_width(mark_pango, (grm.x - 2 * TICK_SIZE) * PANGO_SCALE);
     pango_layout_set_alignment(mark_pango, PANGO_ALIGN_RIGHT);
     double dy = grm.ymax / GR_RTT_SCALE / grm.M;
@@ -284,7 +284,7 @@ static void gr_draw_graph(GtkDrawingArea *area, cairo_t* cr, int w, int h, gpoin
   if (!GTK_IS_DRAWING_AREA(area) || !cr) return;
   if (!graph_pango) graph_pango = pango_cairo_create_layout(cr);
   if (graph_pango) {
-    if (gr_font) pango_layout_set_font_description(graph_pango, gr_font);
+    if (graph_font) pango_layout_set_font_description(graph_pango, graph_font);
     int tsz = (CELL_SIZE - TICK_SIZE) * X_FREQ;
     pango_layout_set_width(graph_pango, tsz * PANGO_SCALE);
     pango_layout_set_alignment(graph_pango, PANGO_ALIGN_CENTER);
@@ -328,21 +328,21 @@ t_tab* graphtab_init(GtkWidget* win) {
   graphtab.dyn = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
   g_return_val_if_fail(GTK_IS_BOX(graphtab.dyn), NULL);
   // create layers
-  gr_grid = gtk_drawing_area_new();
-  g_return_val_if_fail(GTK_IS_DRAWING_AREA(gr_grid), NULL);
-  gtk_drawing_area_set_draw_func(GTK_DRAWING_AREA(gr_grid), gr_draw_grid, NULL, NULL);
-  gr_marks = gtk_drawing_area_new();
-  g_return_val_if_fail(GTK_IS_DRAWING_AREA(gr_marks), NULL);
-  gtk_drawing_area_set_draw_func(GTK_DRAWING_AREA(gr_marks), gr_draw_marks, NULL, NULL);
-  gr_graph = gtk_drawing_area_new();
-  g_return_val_if_fail(GTK_IS_DRAWING_AREA(gr_graph), NULL);
-  gtk_drawing_area_set_draw_func(GTK_DRAWING_AREA(gr_graph), gr_draw_graph, NULL, NULL);
+  graph_grid = gtk_drawing_area_new();
+  g_return_val_if_fail(GTK_IS_DRAWING_AREA(graph_grid), NULL);
+  gtk_drawing_area_set_draw_func(GTK_DRAWING_AREA(graph_grid), gr_draw_grid, NULL, NULL);
+  graph_marks = gtk_drawing_area_new();
+  g_return_val_if_fail(GTK_IS_DRAWING_AREA(graph_marks), NULL);
+  gtk_drawing_area_set_draw_func(GTK_DRAWING_AREA(graph_marks), gr_draw_marks, NULL, NULL);
+  graph_graph = gtk_drawing_area_new();
+  g_return_val_if_fail(GTK_IS_DRAWING_AREA(graph_graph), NULL);
+  gtk_drawing_area_set_draw_func(GTK_DRAWING_AREA(graph_graph), gr_draw_graph, NULL, NULL);
   // merge layers
   GtkWidget *over = gtk_overlay_new();
   g_return_val_if_fail(GTK_IS_OVERLAY(over), NULL);
-  gtk_overlay_add_overlay(GTK_OVERLAY(over), gr_grid);
-  gtk_overlay_add_overlay(GTK_OVERLAY(over), gr_marks);
-  gtk_overlay_add_overlay(GTK_OVERLAY(over), gr_graph);
+  gtk_overlay_add_overlay(GTK_OVERLAY(over), graph_grid);
+  gtk_overlay_add_overlay(GTK_OVERLAY(over), graph_marks);
+  gtk_overlay_add_overlay(GTK_OVERLAY(over), graph_graph);
   gtk_overlay_set_child(GTK_OVERLAY(over), graphtab.dyn);
   // wrap in scroll (not necessary yet)
   graphtab.tab = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
@@ -352,10 +352,8 @@ t_tab* graphtab_init(GtkWidget* win) {
   gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scroll), over);
   // put into tab
   gtk_widget_set_vexpand(GTK_WIDGET(scroll), true);
-  GtkWidget* gr_win = notifier_init(NT_GRAPH_NDX, scroll);
-  g_return_val_if_fail(GTK_IS_WIDGET(gr_win), NULL);
-  notifier_set_visible(NT_GRAPH_NDX, false);
-  gtk_box_append(GTK_BOX(graphtab.tab), gr_win);
+  GtkWidget* graph_win = notifier_init(NT_GRAPH_NDX, scroll);
+  gtk_box_append(GTK_BOX(graphtab.tab), graph_win ? graph_win : scroll);
   gr_set_font();
   return &graphtab;
 }
@@ -374,10 +372,10 @@ inline void graphtab_update(void) {
   graphtab_data_update();
   if (!pinger_state.pause) {
     if (opts.legend) notifier_legend_update(NT_GRAPH_NDX);
-    gtk_widget_queue_draw(gr_graph);
+    gtk_widget_queue_draw(graph_graph);
   }
 }
 
-inline void graphtab_force_update(void) { gtk_widget_queue_draw(gr_graph); }
+inline void graphtab_force_update(void) { gtk_widget_queue_draw(graph_graph); }
 inline void graphtab_toggle_legend(void) { if (opts.graph) notifier_set_visible(NT_GRAPH_NDX, opts.legend); }
 

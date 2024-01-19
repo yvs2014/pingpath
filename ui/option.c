@@ -494,7 +494,7 @@ static gboolean create_graph_optmenu(GtkWidget *list) {
 // pub
 //
 
-inline gboolean option_init(GtkWidget* bar) {
+gboolean option_init(GtkWidget* bar) {
   g_return_val_if_fail(create_optmenu(bar, OPT_PING_MENU_ICON, OPT_MAIN_TOOLTIP, create_ping_optmenu), false);
   if (opts.graph) g_return_val_if_fail(
     create_optmenu(bar, OPT_GRAPH_MENU_ICON, OPT_AUX_TOOLTIP, create_graph_optmenu), false);

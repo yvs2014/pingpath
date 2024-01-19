@@ -1,3 +1,6 @@
+## 0.1.57
+- add more internal checks and warns
+
 ## 0.1.56
 - add graph legend (main graph functionality is done)
 

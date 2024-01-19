@@ -1,4 +1,7 @@
 
+#include <stdlib.h>
+#include <sysexits.h>
+
 #include "common.h"
 #include "cli.h"
 #include "pinger.h"
@@ -17,6 +20,7 @@
 #define TAB_BGTYPE(tab) { bg_light = ((tab) == graphtab_ref); }
 
 static GtkWidget* graphtab_ref;
+static int exit_code = EXIT_SUCCESS;
 
 static void on_app_exit(GtkWidget *widget, gpointer unused) {
 // note: subprocesses have to be already terminated by system at this point
@@ -41,7 +45,7 @@ static void on_tab_switch(GtkNotebook *nb, GtkWidget *tab, guint ndx, gpointer u
 }
 
 #define APPQUIT(fmt, ...) { WARN("init " fmt " failed", __VA_ARGS__); \
-  g_application_quit(G_APPLICATION(app)); }
+  g_application_quit(G_APPLICATION(app)); exit_code = EXIT_FAILURE; return; }
 
 static void app_cb(GtkApplication* app, gpointer unused) {
   style_init();
@@ -60,20 +64,23 @@ static void app_cb(GtkApplication* app, gpointer unused) {
   gtk_notebook_set_tab_pos(GTK_NOTEBOOK(nb), GTK_POS_BOTTOM);
   t_tab* tabs[TAB_NDX_MAX] = {
     [TAB_PING_NDX]  = pingtab_init(win),
-    [TAB_GRAPH_NDX] = graphtab_init(win),
+    [TAB_GRAPH_NDX] = opts.graph ? graphtab_init(win) : NULL,
     [TAB_LOG_NDX]   = logtab_init(win),
   };
-  graphtab_ref = tabs[TAB_GRAPH_NDX]->tab;
+  if (tabs[TAB_GRAPH_NDX]) graphtab_ref = tabs[TAB_GRAPH_NDX]->tab;
   for (int i = 0; i < G_N_ELEMENTS(tabs); i++) {
-    t_tab *tab = tabs[i]; if (!tab) APPQUIT("tab#%d", i);
-    tab_setup(tab, (i == TAB_GRAPH_NDX) ? CSS_LIGHT_BG : NULL);
+    gboolean graph = (i == TAB_GRAPH_NDX);
+    t_tab *tab = tabs[i];
+    if (!tab || !tab->tab || !tab->lab) { if (graph && !opts.graph) continue; else APPQUIT("tab#%d", i); }
+    tab_setup(tab, graph ? CSS_LIGHT_BG : NULL);
     int ndx = gtk_notebook_append_page(GTK_NOTEBOOK(nb), tab->tab, tab->lab);
     if (ndx < 0) APPQUIT("tab page#%d", i);
     gtk_notebook_set_tab_reorderable(GTK_NOTEBOOK(nb), tab->tab, true);
   }
   gtk_notebook_set_current_page(GTK_NOTEBOOK(nb), start_page);
   if (graphtab_ref) gtk_widget_set_visible(graphtab_ref, opts.graph);
-  TAB_BGTYPE(tabs[start_page]->tab);
+  if (start_page != TAB_GRAPH_NDX) TAB_BGTYPE(tabs[start_page]->tab)
+  else if (graphtab_ref) TAB_BGTYPE(graphtab_ref);
   g_signal_connect(nb, EV_TAB_SWITCH, G_CALLBACK(on_tab_switch), NULL);
   // nb overlay
   GtkWidget *over = notifier_init(NT_MAIN_NDX, nb);
@@ -81,22 +88,24 @@ static void app_cb(GtkApplication* app, gpointer unused) {
   if (!with_over) LOG_("failed to add overlay");
   gtk_window_set_child(GTK_WINDOW(win), with_over ? over : nb);
   //
-  g_signal_connect(win, "destroy", G_CALLBACK(on_app_exit), nb);
+  g_signal_connect(win, EV_DESTROY, G_CALLBACK(on_app_exit), NULL);
   gtk_window_present(GTK_WINDOW(win));
+  LOG("GTK: %d.%d.%d", GTK_MAJOR_VERSION, GTK_MINOR_VERSION, GTK_MICRO_VERSION);
+  LOG("Pango: %d.%d.%d", PANGO_VERSION_MAJOR, PANGO_VERSION_MINOR, PANGO_VERSION_MICRO);
 }
 
 int main(int argc, char **argv) {
   gtk_init(); // to set locale mainly
   GtkApplication *app = gtk_application_new("net.tools." APPNAME, APPFLAGS);
-  g_return_val_if_fail(GTK_IS_APPLICATION(app), -1);
-  if (!parser_init()) return -2;
-  if (!cli_init(&argc, &argv)) return -3;
+  g_return_val_if_fail(GTK_IS_APPLICATION(app), EX_UNAVAILABLE);
+  g_return_val_if_fail(parser_init(), EX_SOFTWARE);
+  g_return_val_if_fail(cli_init(&argc, &argv), EX_USAGE);
   LOG_("app run");
   stat_init(true);
   pinger_init();
   g_signal_connect(app, EV_ACTIVE, G_CALLBACK(app_cb), NULL);
   int rc = g_application_run(G_APPLICATION(app), argc, argv);
   g_object_unref(app);
-  return rc;
+  return exit_code || rc;
 }
 

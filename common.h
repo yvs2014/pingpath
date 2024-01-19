@@ -9,7 +9,7 @@
 #endif
 
 #define APPNAME "pingpath"
-#define VERSION "0.1.56"
+#define VERSION "0.1.57"
 
 #define MAXTTL  30
 #define MAXADDR 10
@@ -32,11 +32,13 @@
 #define AUTOHIDE_IN 2000    // popup notifications, in milliseconds
 
 #define EV_ACTIVE     "activate"
+#define EV_DESTROY    "destroy"
 #define EV_TOGGLE     "toggled"
 #define EV_CLICK      "pressed"
 #define EV_VAL_CHANGE "value-changed"
 #define EV_ROW_CHANGE "selected-rows-changed"
 #define EV_TAB_SWITCH "switch-page"
+#define EV_GET_POS    "get-child-position"
 
 #define ICON_PROP      "icon-name"
 #define ACT_MENU_ICON  "open-menu-symbolic"
@@ -87,10 +89,10 @@
 #define DEBUG(fmt, ...) {}
 #endif
 
-#define WARN(fmt, ...) g_warning("%s: " fmt "\n", __func__, __VA_ARGS__)
-#define WARN_(mesg) g_warning("%s: %s\n", __func__, mesg)
-#define ERROR(what) { if (!error) { g_warning("%s: %s: %s\n", __func__, what, unkn_error); } \
-  else { g_warning("%s: %s: rc=%d, %s\n", __func__, what, error->code, error->message); g_error_free(error); }}
+#define WARN(fmt, ...) g_warning("%s: " fmt, __func__, __VA_ARGS__)
+#define WARN_(mesg) g_warning("%s: %s", __func__, mesg)
+#define ERROR(what) { if (!error) { g_warning("%s: %s: %s", __func__, what, unkn_error); } \
+  else { g_warning("%s: %s: rc=%d, %s", __func__, what, error->code, error->message); g_error_free(error); }}
 #define ERRLOG(what) { if (!error) { LOG("%s: %s", what, unkn_error); } \
   else { LOG("%s: %s: rc=%d, %s\n", __func__, what, error->code, error->message); g_error_free(error); }}
 

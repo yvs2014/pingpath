@@ -77,9 +77,9 @@ gboolean appbar_init(GtkApplication *app, GtkWidget *win) {
   g_return_val_if_fail(GTK_IS_HEADER_BAR(bar), false);
   gtk_window_set_titlebar(GTK_WINDOW(win), bar);
   gboolean re = true;
-  if (!action_init(app, win, bar)) re = false; // mandatory element
-  option_init(bar);
-  if (!add_target_input(bar)) re = false; // mandatory element
+  if (!action_init(app, win, bar)) re = false;
+  if (!option_init(bar))           re = false;
+  if (!add_target_input(bar))      re = false;
   start_datetime(bar);
   appbar_update();
   return re;

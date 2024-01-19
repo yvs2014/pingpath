@@ -36,8 +36,6 @@ static gboolean nt_set_visible(t_notifier *nt, gboolean visible) {
   if (nt && (nt->visible != visible)) {
     if (GTK_IS_REVEALER(nt->reveal)) gtk_revealer_set_reveal_child(GTK_REVEALER(nt->reveal), visible);
     nt->visible = visible;
-    if (GTK_IS_LIST_BOX(nt->inbox)) {
-    }
   }
   return G_SOURCE_REMOVE;
 }
@@ -62,10 +60,19 @@ static void nt_inform(t_notifier *nt, gchar *mesg) {
 }
 
 static gboolean nt_legend_pos_cb(GtkOverlay *overlay, GtkWidget *widget, GdkRectangle *r, t_notifier *nt) {
-  if (!GTK_IS_OVERLAY(overlay) || !r || !nt) return false;
-  r->x = nt->x; r->y = nt->y;
-  return true;
+  if (GTK_IS_OVERLAY(overlay) && r && nt) {
+    if (GTK_IS_WIDGET(widget) /* && gtk_widget_get_resize_needed(widget) */) {
+      int unused;
+      gtk_widget_measure(widget, GTK_ORIENTATION_HORIZONTAL, -1, &unused, NULL, NULL, NULL);
+      gtk_widget_measure(widget, GTK_ORIENTATION_VERTICAL,   -1, &unused, NULL, NULL, NULL);
+    }
+    r->x = nt->x; r->y = nt->y;
+    return true;
+  }
+  return false;
 }
+
+#define GRL_WARN(what) WARN("graph legend %s failed", what)
 
 static void nt_add_label_and_align(GtkWidget *label, GtkWidget *line, int align, int max) {
   if (GTK_IS_LABEL(label) && GTK_BOX(line)) {
@@ -76,7 +83,14 @@ static void nt_add_label_and_align(GtkWidget *label, GtkWidget *line, int align,
       if (max > 0) gtk_label_set_width_chars(GTK_LABEL(label), max);
     }
     if (style_loaded) gtk_widget_add_css_class(label, CSS_LEGEND_TEXT);
-  } else WARN("%s failed", "gtk_label_new()");
+  } else GRL_WARN("gtk_label_new()");
+}
+
+static void nt_reveal_sets(GtkWidget *reveal, int align, int transition) {
+  if (!GTK_IS_REVEALER(reveal)) return;
+  gtk_widget_set_halign(reveal, align);
+  gtk_widget_set_valign(reveal, align);
+  gtk_revealer_set_transition_type(GTK_REVEALER(reveal), transition);
 }
 
 static GtkWidget* nt_init(GtkWidget *base, t_notifier *nt) {
@@ -97,32 +111,36 @@ static GtkWidget* nt_init(GtkWidget *base, t_notifier *nt) {
     case NT_MAIN_NDX: {
       inbox = gtk_label_new(NULL);
       if (GTK_IS_LABEL(inbox) && style_loaded && nt->dyn_css) gtk_widget_add_css_class(inbox, CSS_INVERT);
+      else WARN("action notifier %s failed", "gtk_label_new()");
     } break;
     case NT_GRAPH_NDX: {
       inbox = gtk_list_box_new();
-      if (style_loaded) gtk_widget_add_css_class(inbox, CSS_LIGHT_BG);
-      if (GTK_IS_LIST_BOX(inbox)) for (int i = 0; i < MAXTTL; i++) {
-        GtkWidget *line = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, MARGIN);
-        if (GTK_IS_BOX(line)) {
-          // right aligned numbers
-          GtkWidget *l = gtk_label_new(g_strdup_printf("%d", i + 1)); nt_add_label_and_align(l, line, GTK_ALIGN_END, 2);
-          // colored line
-          gchar *col = get_nth_color(i);
-          gchar *dash = g_strdup_printf(col ? "<span color=\"%s\" font_weight=\"ultrabold\">—</span>" : "—", col);
-          l = gtk_label_new(dash); nt_add_label_and_align(l, line, -1, -1);
-          if (l && col) gtk_label_set_use_markup(GTK_LABEL(l), true);
-          g_free(col); g_free(dash);
-          // hopname cc:as avrg±jttr
-          GtkWidget *hn = gtk_label_new(NULL); nt_add_label_and_align(hn, line, GTK_ALIGN_START, -1);
-          GtkWidget *ca = gtk_label_new(NULL); nt_add_label_and_align(ca, line, GTK_ALIGN_START, 1);
-          GtkWidget *aj = gtk_label_new(NULL); nt_add_label_and_align(aj, line, GTK_ALIGN_START, -1);
-          //
-          GtkListBoxRow *row = line_row_new(line, false);
-          if (GTK_IS_LIST_BOX_ROW(row)) gtk_list_box_append(GTK_LIST_BOX(inbox), GTK_WIDGET(row));
-          t_nt_extra *ex = nt->extra ? &(nt->extra[i]) : NULL;
-          if (ex) { ex->row = row; ex->box = line; ex->hn = hn; ex->ca = ca; ex->aj = aj; }
-        } else WARN("%s failed", "gtk_box_new()");
-      }
+      if (GTK_IS_LIST_BOX(inbox)) {
+        if (style_loaded) gtk_widget_add_css_class(inbox, CSS_LIGHT_BG);
+        for (int i = 0; i < MAXTTL; i++) {
+          GtkWidget *line = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, MARGIN);
+          if (GTK_IS_BOX(line)) {
+            // right aligned numbers
+            GtkWidget *l = gtk_label_new(g_strdup_printf("%d", i + 1)); nt_add_label_and_align(l, line, GTK_ALIGN_END, 2);
+            // colored line
+            gchar *col = get_nth_color(i);
+            gchar *dash = g_strdup_printf(col ? "<span color=\"%s\" font_weight=\"ultrabold\">—</span>" : "—", col);
+            l = gtk_label_new(dash); nt_add_label_and_align(l, line, -1, -1);
+            if (GTK_IS_WIDGET(l) && col) gtk_label_set_use_markup(GTK_LABEL(l), true);
+            g_free(col); g_free(dash);
+            // hopname cc:as avrg±jttr
+            GtkWidget *hn = gtk_label_new(NULL); nt_add_label_and_align(hn, line, GTK_ALIGN_START, -1);
+            GtkWidget *ca = gtk_label_new(NULL); nt_add_label_and_align(ca, line, GTK_ALIGN_START, 1);
+            GtkWidget *aj = gtk_label_new(NULL); nt_add_label_and_align(aj, line, GTK_ALIGN_START, -1);
+            //
+            GtkListBoxRow *row = line_row_new(line, false);
+            if (GTK_IS_LIST_BOX_ROW(row)) gtk_list_box_append(GTK_LIST_BOX(inbox), GTK_WIDGET(row));
+            else WARN("graph legend %s failed", "gtk_list_box_new()");
+            t_nt_extra *ex = nt->extra ? &(nt->extra[i]) : NULL;
+            if (ex) { ex->row = row; ex->box = line; ex->hn = hn; ex->ca = ca; ex->aj = aj; }
+          } else GRL_WARN("gtk_box_new()");
+        }
+      } else GRL_WARN("gtk_list_box_new()");
     } break;
   }
   g_return_val_if_fail(GTK_IS_WIDGET(inbox), NULL);
@@ -133,20 +151,14 @@ static GtkWidget* nt_init(GtkWidget *base, t_notifier *nt) {
   gtk_widget_set_valign(inbox, GTK_ALIGN_CENTER);
   GtkWidget *reveal = gtk_revealer_new();
   g_return_val_if_fail(GTK_IS_REVEALER(reveal), NULL);
+  gtk_revealer_set_reveal_child(GTK_REVEALER(reveal), false);
   gtk_widget_set_visible(reveal, true);
   gtk_widget_set_can_focus(reveal, false);
   gtk_widget_set_hexpand(reveal, true);
   if ((nt->x > 0) && (nt->y > 0)) {
-    gtk_widget_set_halign(reveal, GTK_ALIGN_START);
-    gtk_widget_set_valign(reveal, GTK_ALIGN_START);
-    g_signal_connect(over, "get-child-position", G_CALLBACK(nt_legend_pos_cb), nt);
-    gtk_revealer_set_transition_type(GTK_REVEALER(reveal), GTK_REVEALER_TRANSITION_TYPE_CROSSFADE);
-  } else {
-    gtk_widget_set_halign(reveal, GTK_ALIGN_CENTER);
-    gtk_widget_set_valign(reveal, GTK_ALIGN_CENTER);
-    gtk_revealer_set_transition_type(GTK_REVEALER(reveal), GTK_REVEALER_TRANSITION_TYPE_SWING_LEFT);
-  }
-  gtk_revealer_set_reveal_child(GTK_REVEALER(reveal), false);
+    nt_reveal_sets(reveal, GTK_ALIGN_START, GTK_REVEALER_TRANSITION_TYPE_CROSSFADE);
+    g_signal_connect(over, EV_GET_POS, G_CALLBACK(nt_legend_pos_cb), nt);
+  } else nt_reveal_sets(reveal, GTK_ALIGN_CENTER, GTK_REVEALER_TRANSITION_TYPE_SWING_LEFT);
   // link widgets together
   gtk_box_append(GTK_BOX(box), inbox);
   gtk_revealer_set_child(GTK_REVEALER(reveal), box);
@@ -187,11 +199,11 @@ void notifier_vis_rows(int ndx, int max) {
     t_nt_extra *ex = notifier[ndx].extra;
     if (ex) for (int i = 0; i < MAXTTL; i++, ex++) {
       gboolean vis = (i >= opts.min) && (i < max);
-      gtk_widget_set_visible(GTK_WIDGET(ex->row), vis);
-      gtk_widget_set_visible(ex->box, vis);
-      gtk_widget_set_visible(ex->hn, vis);
-      gtk_widget_set_visible(ex->ca, vis && whois_enable);
-      gtk_widget_set_visible(ex->aj, vis);
+      if (GTK_IS_WIDGET(ex->row)) gtk_widget_set_visible(GTK_WIDGET(ex->row), vis);
+      if (GTK_IS_WIDGET(ex->box)) gtk_widget_set_visible(ex->box, vis);
+      if (GTK_IS_WIDGET(ex->hn))  gtk_widget_set_visible(ex->hn, vis);
+      if (GTK_IS_WIDGET(ex->ca))  gtk_widget_set_visible(ex->ca, vis && whois_enable);
+      if (GTK_IS_WIDGET(ex->aj))  gtk_widget_set_visible(ex->aj, vis);
     }
   }
 }
@@ -199,10 +211,14 @@ void notifier_vis_rows(int ndx, int max) {
 void notifier_update_width(int typ, int ndx, int max) {
   if ((ndx >= 0) && (ndx < NT_NDX_MAX)) {
     t_nt_extra *ex = notifier[ndx].extra;
-    if (ex && GTK_IS_LABEL(ex->hn)) for (int i = 0; i < MAXTTL; i++, ex++) {
+    if (ex) for (int i = 0; i < MAXTTL; i++, ex++) {
       switch (typ) {
-        case ELEM_HOST: gtk_label_set_width_chars(GTK_LABEL(ex->hn), max - 4); break; // - dots
-        case ELEM_AS:   gtk_label_set_width_chars(GTK_LABEL(ex->ca), max + 3); break; // + cc:
+        case ELEM_HOST:
+          if (GTK_IS_LABEL(ex->hn)) gtk_label_set_width_chars(GTK_LABEL(ex->hn), max - 4); // dots
+	  break;
+        case ELEM_AS:
+          if (GTK_IS_LABEL(ex->ca)) gtk_label_set_width_chars(GTK_LABEL(ex->ca), max + 3); // + cc:
+          break;
       }
     }
   }

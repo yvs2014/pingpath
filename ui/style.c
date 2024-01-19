@@ -86,7 +86,7 @@ void style_init(void) {
   gchar** cs = g_new0(gchar*, 3);
   if (cs) {
     cs[0] = g_strdup(css_common);
-    if (!settings) { LOG_("no default settings"); }
+    if (!settings) { cs[1] = g_strdup(css_dark_colors); LOG_("no default settings"); }
     else { // try to prefer dark theme, otherwise leave default
       g_object_set(G_OBJECT(settings), PROP_PREFER, TRUE, NULL);
       int prefer_dark = get_gset_bool_by_key(settings, PROP_PREFER);
@@ -107,6 +107,6 @@ void style_init(void) {
       GTK_STYLE_PROVIDER(css_provider), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
     g_object_unref(css_provider);
     style_loaded = true;
-  }
+  } else WARN("no CSS data: %s failed", "g_strjoinv()");
 }
 

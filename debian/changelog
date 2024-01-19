@@ -1,3 +1,9 @@
+pingpath (0.1.57) lunar mantic; urgency=low
+
+  * add more internal checks and warns
+
+ -- yvs <VSYakovetsky@gmail.com>  Fri, 19 Jan 2024 05:29:20 +0200
+
 pingpath (0.1.56) lunar mantic; urgency=low
 
   * add graph legend (main graph functionality is done)

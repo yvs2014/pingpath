@@ -260,6 +260,7 @@ static void set_initial_maxes(void) {
 
 // pub
 //
+
 void stat_init(gboolean clean) { // clean start or on reset
   if (clean) {
     hops_no = MAXTTL;
