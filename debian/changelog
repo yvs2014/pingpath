@@ -1,3 +1,9 @@
+pingpath (0.1.58) lunar mantic; urgency=low
+
+  * update screenshots to display graphs
+
+ -- yvs <VSYakovetsky@gmail.com>  Fri, 19 Jan 2024 09:20:59 +0200
+
 pingpath (0.1.57) lunar mantic; urgency=low
 
   * add more internal checks and warns

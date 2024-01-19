@@ -1,3 +1,6 @@
+## 0.1.58
+- update screenshots to display graphs
+
 ## 0.1.57
 - add more internal checks and warns
 
