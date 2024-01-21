@@ -54,6 +54,10 @@ static const gchar *help_message =
   SPANOPT(OPT_PLOAD_HDR    "\t", "Up to 16 bytes in hex format [" DEF_PPAD "]")
   SPANOPT(OPT_PSIZE_HDR  "\t\t", "ICMP data size [" MSTRSTR(DEF_PSIZE) "]")
   SPANOPT(OPT_IPV_HDR, "either " OPT_IPVA_HDR ", or " OPT_IPV4_HDR ", or " OPT_IPV6_HDR)
+  SPANHDR("Auxiliary")
+  SPANOPT(OPT_GRAPH_HDR, "either " OPT_GR_NONE_HDR ", or " OPT_GR_DOT_HDR ", or " OPT_GR_LINE_HDR ", or " OPT_GR_CURVE_HDR)
+  SPANOPT(OPT_LGFL_HDR, "to display:")
+    SPANSUB(LGFL_DASH_HDR " " LGFL_AVJT_HDR " " LGFL_CCAS_HDR " " LGFL_LGHN_HDR)
   SPANOPT(OPT_LOGMAX_HDR       , "Max rows in log tab [" MSTRSTR(DEF_LOGMAX) "]")
 ;
 

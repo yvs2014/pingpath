@@ -55,7 +55,11 @@ static GtkWidget *graph_grid, *graph_marks, *graph_graph;
 static PangoFontDescription *graph_font;
 
 static t_gr_aux_measures grm = { .x = GRAPH_LEFT, .y = GRAPH_TOP, .fs = CELL_SIZE * GRF_RATIO, .ymax = GR_RTT0,
-  .dx = (MAIN_TIMING_MSEC / 1000.) * ((double)CELL_SIZE / X_CELL_SEC) };
+  .dx = (MAIN_TIMING_MSEC / 1000.) * ((double)CELL_SIZE / X_CELL_SEC),
+  .no = X_RES / ((double)CELL_SIZE / X_CELL_SEC) + 1, // to start keeping data w/o knowing drawing area width
+};
+
+//
 
 static void gr_scale_max(int max) {
   grm.ymax = max * GR_Y_GAP;
@@ -117,6 +121,7 @@ static inline void gr_draw_line_at(cairo_t *cr, double x0, double rtt0, double x
 
 static inline void gr_draw_dot_loop(int i, cairo_t *cr, double x) {
   for (GSList *item = GR_LIST; item; item = item->next, x -= grm.dx) {
+    if (x < grm.x) break;
     t_stat_graph *data = item->data;
     if (IS_RTT_DATA(data)) gr_draw_dot_at(cr, x, data->rtt);
   }
@@ -125,6 +130,7 @@ static inline void gr_draw_dot_loop(int i, cairo_t *cr, double x) {
 static void gr_draw_line_loop(int i, cairo_t *cr, double x) {
   t_gr_point_desc prev = { .rtt = -1, .conn = true };
   for (GSList *item = GR_LIST; item; item = item->next, x -= grm.dx) {
+    if (x < grm.x) break;
     t_stat_graph *data = item->data;
     if (data) {
       gboolean connected = false;
@@ -168,6 +174,7 @@ static void gr_draw_curve_loop(int i, cairo_t *cr, double x0) {
     data = g_slist_nth_data(item, 1); r1 = RTT_OR_NEG(data); x1 = x0 - grm.dx;
     data = g_slist_nth_data(item, 2); r2 = RTT_OR_NEG(data); x2 = x1 - grm.dx;
     data = g_slist_nth_data(item, 3); r3 = RTT_OR_NEG(data); x3 = x2 - grm.dx;
+    if (x2 < grm.x) break;
     if ((r0 > 0) && (r1 > 0) && (r2 > 0) && (r3 > 0)) {
       double y0 = rtt2y(r0), y1 = rtt2y(r1), y2 = rtt2y(r2), y3 = rtt2y(r3);
       double d1 = distance(x0, y0, x1, y1);
@@ -359,7 +366,7 @@ t_tab* graphtab_init(GtkWidget* win) {
 }
 
 void graphtab_free(void) {
-  grm.at = 0;
+  grm.at = 0; grm.ymax = GR_RTT0;
   for (int i = 0; i < n_series; i++) {
     GR_LEN = 0; if (GR_LIST) { g_slist_free(GR_LIST); GR_LIST = NULL; }
   }

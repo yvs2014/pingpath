@@ -1,3 +1,6 @@
+## 0.1.59
+- add selector of legend elements
+
 ## 0.1.58
 - update screenshots to display graphs
 

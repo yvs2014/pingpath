@@ -32,7 +32,6 @@ t_stat_elem statelem[ELEM_MAX] = {
   [ELEM_AVRG] = { .enable = true,  .name = ELEM_AVRG_HDR, .tip = ELEM_AVRG_TIP },
   [ELEM_JTTR] = { .enable = true,  .name = ELEM_JTTR_HDR, .tip = ELEM_JTTR_TIP },
 };
-gboolean whois_enable; // true if any of {ELEM_AS,ELEM_CC,ELEM_DESC,ELEM_RT} is enabled
 
 static t_hop hops[MAXTTL];
 static t_host_max host_max;
@@ -86,7 +85,7 @@ static void update_addrname(int at, t_host *b) { // addr is mandatory, name not
       }
       LOG("set addrname[%d]: %s %s", at, b->addr, b->name ? b->name : "");
       if (!b->name && opts.dns) dns_lookup(hop, vacant); // run dns lookup
-      if (whois_enable) whois_resolv(hop, vacant);       // run whois resolv
+      if (opts.whois) whois_resolv(hop, vacant);         // run whois resolv
     }
   }
   // cleanup dups
@@ -440,8 +439,8 @@ void stat_whois_enabler(void) {
       if (statelem[i].enable && !enable) enable = true;
       break;
   }
-  if (enable != whois_enable) {
-    whois_enable = enable;
+  if (enable != opts.whois) {
+    opts.whois = enable;
     LOG("whois %sabled", enable ? "en" : "dis");
   }
 }

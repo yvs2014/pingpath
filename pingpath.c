@@ -14,8 +14,6 @@
 #include "tabs/graph.h"
 #include "tabs/log.h"
 
-#define X_RES 1024
-#define Y_RES 720
 #define APPFLAGS G_APPLICATION_NON_UNIQUE
 #define TAB_BGTYPE(tab) { bg_light = ((tab) == graphtab_ref); }
 

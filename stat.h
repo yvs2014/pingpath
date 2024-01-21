@@ -30,17 +30,6 @@ typedef struct ping_info {
   gchar* info;
 } t_ping_info;
 
-typedef struct t_stat_elem {
-  gboolean enable;
-  gchar *name, *tip;
-} t_stat_elem;
-
-typedef struct t_stat_graph {
-  int rtt;
-  double jttr;
-  const gchar *name, *as, *cc, *av, *jt;
-} t_stat_graph;
-
 void stat_init(gboolean clean);
 void stat_free(void);
 void stat_clear(gboolean clean);
@@ -62,6 +51,5 @@ void stat_clean_elems(int typ);
 
 extern int hops_no;
 extern t_stat_elem statelem[ELEM_MAX]; // map indexes to elems
-extern gboolean whois_enable;
 
 #endif

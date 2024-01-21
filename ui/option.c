@@ -11,21 +11,44 @@
 typedef gboolean (*optmenu_add_items_fn)(GtkWidget *);
 
 t_ent_bool ent_bool[ENT_BOOL_MAX] = {
-  [ENT_BOOL_DNS]  = { .en = { .typ = ENT_BOOL_DNS,  .name = OPT_DNS_HDR },    .pval = &opts.dns },
-  [ENT_BOOL_HOST] = { .en = { .typ = ENT_BOOL_HOST, .name = ELEM_HOST_HDR },  .pval = &statelem[ELEM_HOST].enable, .prefix = OPT_INFO_HDR },
-  [ENT_BOOL_AS]   = { .en = { .typ = ENT_BOOL_AS,   .name = ELEM_AS_HDR },    .pval = &statelem[ELEM_AS].enable,   .prefix = OPT_INFO_HDR },
-  [ENT_BOOL_CC]   = { .en = { .typ = ENT_BOOL_CC,   .name = ELEM_CC_HDR },    .pval = &statelem[ELEM_CC].enable,   .prefix = OPT_INFO_HDR  },
-  [ENT_BOOL_DESC] = { .en = { .typ = ENT_BOOL_DESC, .name = ELEM_DESC_HDR },  .pval = &statelem[ELEM_DESC].enable, .prefix = OPT_INFO_HDR  },
-  [ENT_BOOL_RT]   = { .en = { .typ = ENT_BOOL_RT,   .name = ELEM_RT_HDR },    .pval = &statelem[ELEM_RT].enable,   .prefix = OPT_INFO_HDR  },
-  [ENT_BOOL_LOSS] = { .en = { .typ = ENT_BOOL_LOSS, .name = ELEM_LOSS_HDRL},  .pval = &statelem[ELEM_LOSS].enable, .prefix = OPT_STAT_HDR  },
-  [ENT_BOOL_SENT] = { .en = { .typ = ENT_BOOL_SENT, .name = ELEM_SENT_HDR },  .pval = &statelem[ELEM_SENT].enable, .prefix = OPT_STAT_HDR  },
-  [ENT_BOOL_RECV] = { .en = { .typ = ENT_BOOL_RECV, .name = ELEM_RECV_HDR },  .pval = &statelem[ELEM_RECV].enable, .prefix = OPT_STAT_HDR  },
-  [ENT_BOOL_LAST] = { .en = { .typ = ENT_BOOL_LAST, .name = ELEM_LAST_HDR },  .pval = &statelem[ELEM_LAST].enable, .prefix = OPT_STAT_HDR  },
-  [ENT_BOOL_BEST] = { .en = { .typ = ENT_BOOL_BEST, .name = ELEM_BEST_HDR },  .pval = &statelem[ELEM_BEST].enable, .prefix = OPT_STAT_HDR  },
-  [ENT_BOOL_WRST] = { .en = { .typ = ENT_BOOL_WRST, .name = ELEM_WRST_HDRL }, .pval = &statelem[ELEM_WRST].enable, .prefix = OPT_STAT_HDR  },
-  [ENT_BOOL_AVRG] = { .en = { .typ = ENT_BOOL_AVRG, .name = ELEM_AVRG_HDRL }, .pval = &statelem[ELEM_AVRG].enable, .prefix = OPT_STAT_HDR  },
-  [ENT_BOOL_JTTR] = { .en = { .typ = ENT_BOOL_JTTR, .name = ELEM_JTTR_HDRL }, .pval = &statelem[ELEM_JTTR].enable, .prefix = OPT_STAT_HDR  },
-  [ENT_BOOL_LGND] = { .en = { .typ = ENT_BOOL_LGND, .name = OPT_LGND_HDR },   .pval = &opts.legend },
+  [ENT_BOOL_DNS]  = { .en = { .typ = ENT_BOOL_DNS,  .name = OPT_DNS_HDR },
+    .pval = &opts.dns },
+  [ENT_BOOL_HOST] = { .en = { .typ = ENT_BOOL_HOST, .name = ELEM_HOST_HDR },
+    .pval = &statelem[ELEM_HOST].enable, .prefix = OPT_INFO_HDR },
+  [ENT_BOOL_AS]   = { .en = { .typ = ENT_BOOL_AS,   .name = ELEM_AS_HDR },
+    .pval = &statelem[ELEM_AS].enable,   .prefix = OPT_INFO_HDR },
+  [ENT_BOOL_CC]   = { .en = { .typ = ENT_BOOL_CC,   .name = ELEM_CC_HDR },
+    .pval = &statelem[ELEM_CC].enable,   .prefix = OPT_INFO_HDR  },
+  [ENT_BOOL_DESC] = { .en = { .typ = ENT_BOOL_DESC, .name = ELEM_DESC_HDR },
+    .pval = &statelem[ELEM_DESC].enable, .prefix = OPT_INFO_HDR  },
+  [ENT_BOOL_RT]   = { .en = { .typ = ENT_BOOL_RT,   .name = ELEM_RT_HDR },
+    .pval = &statelem[ELEM_RT].enable,   .prefix = OPT_INFO_HDR  },
+  [ENT_BOOL_LOSS] = { .en = { .typ = ENT_BOOL_LOSS, .name = ELEM_LOSS_HEADER},
+    .pval = &statelem[ELEM_LOSS].enable, .prefix = OPT_STAT_HDR  },
+  [ENT_BOOL_SENT] = { .en = { .typ = ENT_BOOL_SENT, .name = ELEM_SENT_HDR },
+    .pval = &statelem[ELEM_SENT].enable, .prefix = OPT_STAT_HDR  },
+  [ENT_BOOL_RECV] = { .en = { .typ = ENT_BOOL_RECV, .name = ELEM_RECV_HDR },
+    .pval = &statelem[ELEM_RECV].enable, .prefix = OPT_STAT_HDR  },
+  [ENT_BOOL_LAST] = { .en = { .typ = ENT_BOOL_LAST, .name = ELEM_LAST_HDR },
+    .pval = &statelem[ELEM_LAST].enable, .prefix = OPT_STAT_HDR  },
+  [ENT_BOOL_BEST] = { .en = { .typ = ENT_BOOL_BEST, .name = ELEM_BEST_HDR },
+    .pval = &statelem[ELEM_BEST].enable, .prefix = OPT_STAT_HDR  },
+  [ENT_BOOL_WRST] = { .en = { .typ = ENT_BOOL_WRST, .name = ELEM_WRST_HEADER },
+    .pval = &statelem[ELEM_WRST].enable, .prefix = OPT_STAT_HDR  },
+  [ENT_BOOL_AVRG] = { .en = { .typ = ENT_BOOL_AVRG, .name = ELEM_AVRG_HEADER },
+    .pval = &statelem[ELEM_AVRG].enable, .prefix = OPT_STAT_HDR  },
+  [ENT_BOOL_JTTR] = { .en = { .typ = ENT_BOOL_JTTR, .name = ELEM_JTTR_HEADER },
+    .pval = &statelem[ELEM_JTTR].enable, .prefix = OPT_STAT_HDR  },
+  [ENT_BOOL_LGND] = { .en = { .typ = ENT_BOOL_LGND, .name = OPT_LGND_HDR },
+    .pval = &opts.legend },
+  [ENT_BOOL_DASH] = { .en = { .typ = ENT_BOOL_DASH, .name = LGFL_DASH_HEADER },
+    .pval = &lgndelem[LGFL_DASH].enable, .prefix = OPT_LGFL_HDR  },
+  [ENT_BOOL_AVJT] = { .en = { .typ = ENT_BOOL_AVJT, .name = LGFL_AVJT_HEADER },
+    .pval = &lgndelem[LGFL_AVJT].enable, .prefix = OPT_LGFL_HDR  },
+    [ENT_BOOL_CCAS] = { .en = { .typ = ENT_BOOL_CCAS, .name = LGFL_CCAS_HEADER },
+    .pval = &lgndelem[LGFL_CCAS].enable, .prefix = OPT_LGFL_HDR  },
+  [ENT_BOOL_LGHN] = { .en = { .typ = ENT_BOOL_LGHN, .name = LGFL_LGHN_HDR },
+    .pval = &lgndelem[LGFL_LGHN].enable, .prefix = OPT_LGFL_HDR  },
 };
 
 t_ent_str ent_str[ENT_STR_MAX] = {
@@ -33,13 +56,13 @@ t_ent_str ent_str[ENT_STR_MAX] = {
     .en = { .typ = ENT_STR_CYCLES, .name = OPT_CYCLES_HDR },
     .pint = &opts.cycles,  .idef = DEF_CYCLES },
   [ENT_STR_IVAL]   = { .len = 4,  .width = 6, .range = { .min = IVAL_MIN,   .max = IVAL_MAX },
-    .en = { .typ = ENT_STR_IVAL,   .name = OPT_IVAL_HDRL },
+    .en = { .typ = ENT_STR_IVAL,   .name = OPT_IVAL_HEADER },
     .pint = &opts.timeout, .idef = DEF_TOUT },
   [ENT_STR_QOS]    = { .len = 3,  .width = 6, .range = { .max = QOS_MAX },
     .en = { .typ = ENT_STR_QOS,    .name = OPT_QOS_HDR },
     .pint = &opts.qos,     .idef = DEF_QOS },
   [ENT_STR_PLOAD]  = { .len = 48, .width = 6,
-    .en = { .typ = ENT_STR_PLOAD,  .name = OPT_PLOAD_HDRL },
+    .en = { .typ = ENT_STR_PLOAD,  .name = OPT_PLOAD_HEADER },
     .pstr = opts.pad,      .sdef = DEF_PPAD, .slen = sizeof(opts.pad) },
   [ENT_STR_PSIZE]  = { .len = 4,  .width = 6, .range = { .min = PSIZE_MIN,  .max = PSIZE_MAX },
     .en = { .typ = ENT_STR_PSIZE,  .name = OPT_PSIZE_HDR },
@@ -50,10 +73,13 @@ t_ent_str ent_str[ENT_STR_MAX] = {
 };
 
 static t_ent_exp ent_exp[ENT_EXP_MAX] = {
-  [ENT_EXP_INFO] = { .c = {.en = {.typ = ENT_EXP_INFO, .name = OPT_INFO_HDR }}, .ndxs = {ENT_BOOL_HOST,
-    ENT_BOOL_AS, ENT_BOOL_CC, ENT_BOOL_DESC, ENT_BOOL_RT }},
-  [ENT_EXP_STAT] = { .c = {.en = {.typ = ENT_EXP_STAT, .name = OPT_STAT_HDR }}, .ndxs = {ENT_BOOL_LOSS,
-    ENT_BOOL_SENT, ENT_BOOL_RECV, ENT_BOOL_LAST, ENT_BOOL_BEST, ENT_BOOL_WRST, ENT_BOOL_AVRG, ENT_BOOL_JTTR }},
+  [ENT_EXP_INFO] = { .c = {.en = {.typ = ENT_EXP_INFO, .name = OPT_INFO_HDR }},
+    .ndxs = {ENT_BOOL_HOST, ENT_BOOL_AS, ENT_BOOL_CC, ENT_BOOL_DESC, ENT_BOOL_RT }},
+  [ENT_EXP_STAT] = { .c = {.en = {.typ = ENT_EXP_STAT, .name = OPT_STAT_HDR }},
+    .ndxs = {ENT_BOOL_LOSS, ENT_BOOL_SENT, ENT_BOOL_RECV, ENT_BOOL_LAST,
+      ENT_BOOL_BEST, ENT_BOOL_WRST, ENT_BOOL_AVRG, ENT_BOOL_JTTR }},
+  [ENT_EXP_LGFL] = { .c = {.en = {.typ = ENT_EXP_LGFL, .name = OPT_LGFL_HDR }},
+    .ndxs = {ENT_BOOL_DASH, ENT_BOOL_AVJT, ENT_BOOL_CCAS, ENT_BOOL_LGHN }},
 };
 
 static void min_cb(GtkWidget*, t_ent_spn*);
@@ -140,10 +166,17 @@ static void toggle_cb(GtkCheckButton *check, t_ent_bool *en) {
     case ENT_BOOL_RT:
       check_bool_val(check, en, pingtab_vis_cols);
       stat_whois_enabler();
-      if (whois_enable) stat_run_whois_resolv();
+      if (opts.whois) stat_run_whois_resolv();
       break;
     case ENT_BOOL_LGND:
       check_bool_val(check, en, graphtab_toggle_legend);
+      break;
+    case ENT_BOOL_DASH:
+    case ENT_BOOL_AVJT:
+    case ENT_BOOL_CCAS:
+    case ENT_BOOL_LGHN:
+      check_bool_val(check, en, NULL);
+      notifier_vis_rows(NT_GRAPH_NDX, -1);
       break;
   }
 }
@@ -484,8 +517,9 @@ static gboolean create_graph_optmenu(GtkWidget *list) {
   g_return_val_if_fail(GTK_IS_LIST_BOX(list), false);
   gboolean okay = true;
   gtk_list_box_remove_all(GTK_LIST_BOX(list));
-  if (!add_opt_radio(list, &ent_rad[ENT_RAD_GRAPH]))  okay = false;
-  if (!add_opt_check(list, &ent_bool[ENT_BOOL_LGND])) okay = false;
+  if (!add_opt_radio(list,  &ent_rad[ENT_RAD_GRAPH]))  okay = false;
+  if (!add_opt_check(list,  &ent_bool[ENT_BOOL_LGND])) okay = false;
+  if (!add_opt_expand(list, &ent_exp[ENT_EXP_LGFL]))   okay = false;
   EN_PR_INT(ENT_STR_LOGMAX);
   return okay;
 }

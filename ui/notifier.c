@@ -6,9 +6,9 @@
 #include "stat.h"
 
 typedef struct nt_extra {
-  GtkListBoxRow *row;      // row
-  GtkWidget *box;          // box in row
-  GtkWidget *hn, *ca, *aj; // hopname, cc:as, avrg±jttr
+  GtkListBoxRow *row;        // row
+  GtkWidget *box;            // box in row
+  GtkWidget *elem[LGFL_MAX]; // dash, cc:as, avrg±jttr, cc:as, hopname
 } t_nt_extra;
 
 typedef struct notifier {
@@ -31,6 +31,15 @@ static t_notifier notifier[NT_NDX_MAX] = {
 
 static gboolean nt_bglight;
 
+t_stat_elem lgndelem[LGFL_MAX] = {
+  [LGFL_NO]   = { .enable = true, .name = "" },
+  [LGFL_DASH] = { .enable = true, .name = LGFL_DASH_HEADER, .tip = LGFL_DASH_TIP },
+  [LGFL_AVJT] = { .enable = true, .name = LGFL_AVJT_HEADER, .tip = LGFL_AVJT_TIP },
+  [LGFL_CCAS] = { .enable = true, .name = LGFL_CCAS_HEADER, .tip = LGFL_CCAS_TIP },
+  [LGFL_LGHN] = { .enable = true, .name = LGFL_LGHN_HDR,    .tip = LGFL_LGHN_TIP },
+};
+
+//
 
 static gboolean nt_set_visible(t_notifier *nt, gboolean visible) {
   if (nt && (nt->visible != visible)) {
@@ -74,8 +83,9 @@ static gboolean nt_legend_pos_cb(GtkOverlay *overlay, GtkWidget *widget, GdkRect
 
 #define GRL_WARN(what) WARN("graph legend %s failed", what)
 
-static void nt_add_label_and_align(GtkWidget *label, GtkWidget *line, int align, int max) {
+static void nt_add_label_and_align(GtkWidget *label, GtkWidget *line, int align, int max, gboolean visible) {
   if (GTK_IS_LABEL(label) && GTK_BOX(line)) {
+    gtk_widget_set_visible(label, visible);
     gtk_box_append(GTK_BOX(line), label);
     if (align >= 0) {
       gtk_widget_set_halign(label, align);
@@ -92,6 +102,9 @@ static void nt_reveal_sets(GtkWidget *reveal, int align, int transition) {
   gtk_widget_set_valign(reveal, align);
   gtk_revealer_set_transition_type(GTK_REVEALER(reveal), transition);
 }
+
+#define NT_LG_LABEL(lab, txt, align, chars, visible) { lab = gtk_label_new(txt); \
+  nt_add_label_and_align(lab, ex->box, align, chars, visible); }
 
 static GtkWidget* nt_init(GtkWidget *base, t_notifier *nt) {
   if (!nt || !GTK_IS_WIDGET(base)) return NULL;
@@ -118,26 +131,24 @@ static GtkWidget* nt_init(GtkWidget *base, t_notifier *nt) {
       if (GTK_IS_LIST_BOX(inbox)) {
         if (style_loaded) gtk_widget_add_css_class(inbox, CSS_LIGHT_BG);
         for (int i = 0; i < MAXTTL; i++) {
-          GtkWidget *line = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, MARGIN);
-          if (GTK_IS_BOX(line)) {
-            // right aligned numbers
-            GtkWidget *l = gtk_label_new(g_strdup_printf("%d", i + 1)); nt_add_label_and_align(l, line, GTK_ALIGN_END, 2);
-            // colored line
-            gchar *col = get_nth_color(i);
-            gchar *dash = g_strdup_printf(col ? "<span color=\"%s\" font_weight=\"ultrabold\">—</span>" : "—", col);
-            l = gtk_label_new(dash); nt_add_label_and_align(l, line, -1, -1);
-            if (GTK_IS_WIDGET(l) && col) gtk_label_set_use_markup(GTK_LABEL(l), true);
-            g_free(col); g_free(dash);
-            // hopname cc:as avrg±jttr
-            GtkWidget *hn = gtk_label_new(NULL); nt_add_label_and_align(hn, line, GTK_ALIGN_START, -1);
-            GtkWidget *ca = gtk_label_new(NULL); nt_add_label_and_align(ca, line, GTK_ALIGN_START, 1);
-            GtkWidget *aj = gtk_label_new(NULL); nt_add_label_and_align(aj, line, GTK_ALIGN_START, -1);
-            //
-            GtkListBoxRow *row = line_row_new(line, false);
-            if (GTK_IS_LIST_BOX_ROW(row)) gtk_list_box_append(GTK_LIST_BOX(inbox), GTK_WIDGET(row));
-            else WARN("graph legend %s failed", "gtk_list_box_new()");
-            t_nt_extra *ex = nt->extra ? &(nt->extra[i]) : NULL;
-            if (ex) { ex->row = row; ex->box = line; ex->hn = hn; ex->ca = ca; ex->aj = aj; }
+          t_nt_extra *ex = nt->extra ? &(nt->extra[i]) : NULL;
+          if (!ex) continue;
+          ex->box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, MARGIN);
+          if (GTK_IS_BOX(ex->box)) { // number, color dash, avrg±jttr, cc:as, hopname
+            ex->row = line_row_new(ex->box, false);
+            if (GTK_IS_LIST_BOX_ROW(ex->row)) {
+              gtk_list_box_append(GTK_LIST_BOX(inbox), GTK_WIDGET(ex->row));
+              gtk_widget_set_sensitive(GTK_WIDGET(ex->row), false);
+              NT_LG_LABEL(ex->elem[LGFL_NO], g_strdup_printf("%d", i + 1), GTK_ALIGN_END, 2, true);
+              gchar *col = get_nth_color(i);
+              gchar *span = g_strdup_printf(col ? "<span color=\"%s\" font_weight=\"ultrabold\">—</span>" : "—", col);
+              NT_LG_LABEL(ex->elem[LGFL_DASH], span, -1, -1, lgndelem[LGFL_DASH].enable);
+              if (GTK_IS_WIDGET(ex->elem[LGFL_DASH]) && col) gtk_label_set_use_markup(GTK_LABEL(ex->elem[LGFL_DASH]), true);
+              g_free(col); g_free(span);
+              NT_LG_LABEL(ex->elem[LGFL_AVJT], NULL, GTK_ALIGN_START, -1, lgndelem[LGFL_AVJT].enable);
+              NT_LG_LABEL(ex->elem[LGFL_CCAS], NULL, GTK_ALIGN_START, -1,  lgndelem[LGFL_CCAS].enable);
+              NT_LG_LABEL(ex->elem[LGFL_LGHN], NULL, GTK_ALIGN_START, -1, lgndelem[LGFL_LGHN].enable);
+            } else WARN("graph legend %s failed", "gtk_list_box_new()");
           } else GRL_WARN("gtk_box_new()");
         }
       } else GRL_WARN("gtk_list_box_new()");
@@ -168,6 +179,27 @@ static GtkWidget* nt_init(GtkWidget *base, t_notifier *nt) {
   return over;
 }
 
+static void nt_fill_legend_elem(GtkWidget* label, const gchar *f1, const gchar *f2, const gchar *delim, int *max) {
+  if (GTK_IS_LABEL(label)) {
+    gchar *str =((f1) && (f1)[0])
+      ? g_strdup_printf("%s%s%s", (f2) ? (f2) : "", delim ? delim : "", f1)
+      : ((f2) ? g_strdup_printf("%s", f2) : NULL);
+    UPDATE_LABEL(label, str);
+    if (str) {
+      if (max) { int len = g_utf8_strlen(str, MAXHOSTNAME); if (len > *max) *max = len; }
+      g_free(str);
+    }
+  }
+}
+
+static void nt_update_legend_width(int typ, int ndx, int max) {
+  if ((typ >= 0) && (typ < NT_NDX_MAX) && (ndx >= 0) && (ndx < LGFL_MAX)) {
+    t_nt_extra *ex = notifier[typ].extra;
+    if (ex) for (int i = 0; i < MAXTTL; i++, ex++)
+      if (GTK_IS_LABEL(ex->elem[ndx])) gtk_label_set_width_chars(GTK_LABEL(ex->elem[ndx]), max);
+  }
+}
+
 
 // pub
 //
@@ -194,56 +226,50 @@ inline void notifier_set_visible(int ndx, gboolean visible) {
   if ((ndx >= 0) && (ndx < NT_NDX_MAX)) nt_set_visible(&notifier[ndx], visible);
 }
 
+#define NT_LG_ELEM_VIS(ndx, extra_cond) { if (GTK_IS_WIDGET(ex->elem[ndx])) \
+  gtk_widget_set_visible(ex->elem[ndx], vis && lgndelem[ndx].enable && extra_cond); }
+
 void notifier_vis_rows(int ndx, int max) {
+  static int nt_known_max[NT_NDX_MAX];
   if ((ndx >= 0) && (ndx < NT_NDX_MAX)) {
     t_nt_extra *ex = notifier[ndx].extra;
+    if (max < 0) max = nt_known_max[ndx];
+    else nt_known_max[ndx] = max;
     if (ex) for (int i = 0; i < MAXTTL; i++, ex++) {
       gboolean vis = (i >= opts.min) && (i < max);
       if (GTK_IS_WIDGET(ex->row)) gtk_widget_set_visible(GTK_WIDGET(ex->row), vis);
       if (GTK_IS_WIDGET(ex->box)) gtk_widget_set_visible(ex->box, vis);
-      if (GTK_IS_WIDGET(ex->hn))  gtk_widget_set_visible(ex->hn, vis);
-      if (GTK_IS_WIDGET(ex->ca))  gtk_widget_set_visible(ex->ca, vis && whois_enable);
-      if (GTK_IS_WIDGET(ex->aj))  gtk_widget_set_visible(ex->aj, vis);
+      NT_LG_ELEM_VIS(LGFL_DASH, true);
+      NT_LG_ELEM_VIS(LGFL_AVJT, true);
+      NT_LG_ELEM_VIS(LGFL_CCAS, opts.whois);
+      NT_LG_ELEM_VIS(LGFL_LGHN, true);
     }
   }
 }
-
-void notifier_update_width(int typ, int ndx, int max) {
-  if ((ndx >= 0) && (ndx < NT_NDX_MAX)) {
-    t_nt_extra *ex = notifier[ndx].extra;
-    if (ex) for (int i = 0; i < MAXTTL; i++, ex++) {
-      switch (typ) {
-        case ELEM_HOST:
-          if (GTK_IS_LABEL(ex->hn)) gtk_label_set_width_chars(GTK_LABEL(ex->hn), max - 4); // dots
-	  break;
-        case ELEM_AS:
-          if (GTK_IS_LABEL(ex->ca)) gtk_label_set_width_chars(GTK_LABEL(ex->ca), max + 3); // + cc:
-          break;
-      }
-    }
-  }
-}
-
-#define NT_FILL_LEGEND_ELEM(label, f1, f2, delim) { if (GTK_IS_LABEL(label)) { \
-  gchar *str =((f1) && (f1)[0]) ? g_strdup_printf("%s" delim "%s", (f2) ? (f2) : "", f1) : \
-    ((f2) ? g_strdup_printf("%s", f2) : NULL); \
-  UPDATE_LABEL(label, str); if (str) g_free(str); \
-}}
 
 #define LIMIT_BY_NL(str) { if (str) { char *nl = strchr(str, '\n'); if (nl) *nl = 0; }}
 
+#define LGFL_CHK_MAX(ndx, max) { if (max != nt_lgfl_max[ndx]) { \
+  nt_lgfl_max[ndx] = max; nt_update_legend_width(NT_GRAPH_NDX, ndx, max); }}
+
 void notifier_legend_update(int ndx) {
+  static int nt_lgfl_max[LGFL_MAX];
   if ((ndx >= 0) && (ndx < NT_NDX_MAX)) {
     t_nt_extra *ex = notifier[ndx].extra;
-    if (ex) for (int i = 0; i < hops_no; i++, ex++) {
-      t_stat_graph data = stat_graph_data_at(i);
-      if (data.name) {
-        LIMIT_BY_NL(data.name);
-        if (GTK_IS_LABEL(ex->hn)) UPDATE_LABEL(ex->hn, data.name);
+    if (ex) {
+      int aj_max = -1, ca_max = -1;
+      for (int i = 0; i < hops_no; i++, ex++) {
+        t_stat_graph data = stat_graph_data_at(i);
+        if (data.name) {
+          LIMIT_BY_NL(data.name);
+          if (GTK_IS_LABEL(ex->elem[LGFL_LGHN])) UPDATE_LABEL(ex->elem[LGFL_LGHN], data.name);
+        }
+        LIMIT_BY_NL(data.as); LIMIT_BY_NL(data.cc);
+        nt_fill_legend_elem(ex->elem[LGFL_AVJT], data.jt, data.av, "±", &aj_max);
+        nt_fill_legend_elem(ex->elem[LGFL_CCAS], data.as, data.cc, ":", &ca_max);
       }
-      LIMIT_BY_NL(data.as); LIMIT_BY_NL(data.cc);
-      NT_FILL_LEGEND_ELEM(ex->ca, data.as, data.cc, ":");
-      NT_FILL_LEGEND_ELEM(ex->aj, data.jt, data.av, "±");
+      LGFL_CHK_MAX(LGFL_AVJT, aj_max);
+      LGFL_CHK_MAX(LGFL_CCAS, ca_max);
     }
   }
 }

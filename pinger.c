@@ -18,7 +18,7 @@
 
 #define CLEAR_G_OBJECT(obj) g_clear_object(obj) // NOLINT(bugprone-sizeof-expression)
 
-t_opts opts = { .target = NULL, .dns = true, .cycles = DEF_CYCLES, .qos = DEF_QOS, .size = DEF_PSIZE,
+t_opts opts = { .target = NULL, .dns = true, .whois = true, .cycles = DEF_CYCLES, .qos = DEF_QOS, .size = DEF_PSIZE,
   .min = 0, .lim = MAXTTL, .timeout = DEF_TOUT, .tout_usec = DEF_TOUT * 1000000, .logmax = DEF_LOGMAX,
   .graph = GRAPH_TYPE_CURVE, .legend = true };
 t_pinger_state pinger_state;
@@ -292,10 +292,5 @@ void pinger_vis_rows(int no) {
 
 void pinger_update_width(int typ, int max) {
   pingtab_update_width(typ, max);
-  if (opts.graph && opts.legend) switch (typ) {
-    case ELEM_HOST:
-    case ELEM_AS:
-      notifier_update_width(typ, NT_GRAPH_NDX, max);
-  }
 }
 
