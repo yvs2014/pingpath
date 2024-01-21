@@ -1,3 +1,6 @@
+## 0.1.60
+- revert set sensitive(false) for legend label row
+
 ## 0.1.59
 - add selector of legend elements
 

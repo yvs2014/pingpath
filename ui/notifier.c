@@ -138,7 +138,8 @@ static GtkWidget* nt_init(GtkWidget *base, t_notifier *nt) {
             ex->row = line_row_new(ex->box, false);
             if (GTK_IS_LIST_BOX_ROW(ex->row)) {
               gtk_list_box_append(GTK_LIST_BOX(inbox), GTK_WIDGET(ex->row));
-              gtk_widget_set_sensitive(GTK_WIDGET(ex->row), false);
+//              gtk_widget_set_sensitive(GTK_WIDGET(ex->row), false);
+              if (style_loaded) gtk_widget_add_css_class(GTK_WIDGET(ex->row), CSS_LEGEND_TEXT);
               NT_LG_LABEL(ex->elem[LGFL_NO], g_strdup_printf("%d", i + 1), GTK_ALIGN_END, 2, true);
               gchar *col = get_nth_color(i);
               gchar *span = g_strdup_printf(col ? "<span color=\"%s\" font_weight=\"ultrabold\">—</span>" : "—", col);
@@ -146,7 +147,7 @@ static GtkWidget* nt_init(GtkWidget *base, t_notifier *nt) {
               if (GTK_IS_WIDGET(ex->elem[LGFL_DASH]) && col) gtk_label_set_use_markup(GTK_LABEL(ex->elem[LGFL_DASH]), true);
               g_free(col); g_free(span);
               NT_LG_LABEL(ex->elem[LGFL_AVJT], NULL, GTK_ALIGN_START, -1, lgndelem[LGFL_AVJT].enable);
-              NT_LG_LABEL(ex->elem[LGFL_CCAS], NULL, GTK_ALIGN_START, -1,  lgndelem[LGFL_CCAS].enable);
+              NT_LG_LABEL(ex->elem[LGFL_CCAS], NULL, GTK_ALIGN_START, -1, lgndelem[LGFL_CCAS].enable);
               NT_LG_LABEL(ex->elem[LGFL_LGHN], NULL, GTK_ALIGN_START, -1, lgndelem[LGFL_LGHN].enable);
             } else WARN("graph legend %s failed", "gtk_list_box_new()");
           } else GRL_WARN("gtk_box_new()");

@@ -1,3 +1,9 @@
+pingpath (0.1.60) lunar mantic; urgency=low
+
+  * revert set sensitive(false) for legend label row
+
+ -- yvs <VSYakovetsky@gmail.com>  Sun, 21 Jan 2024 21:12:58 +0200
+
 pingpath (0.1.59) lunar mantic; urgency=low
 
   * add selector of legend elements

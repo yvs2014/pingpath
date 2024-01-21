@@ -45,7 +45,7 @@ t_ent_bool ent_bool[ENT_BOOL_MAX] = {
     .pval = &lgndelem[LGFL_DASH].enable, .prefix = OPT_LGFL_HDR  },
   [ENT_BOOL_AVJT] = { .en = { .typ = ENT_BOOL_AVJT, .name = LGFL_AVJT_HEADER },
     .pval = &lgndelem[LGFL_AVJT].enable, .prefix = OPT_LGFL_HDR  },
-    [ENT_BOOL_CCAS] = { .en = { .typ = ENT_BOOL_CCAS, .name = LGFL_CCAS_HEADER },
+  [ENT_BOOL_CCAS] = { .en = { .typ = ENT_BOOL_CCAS, .name = LGFL_CCAS_HEADER },
     .pval = &lgndelem[LGFL_CCAS].enable, .prefix = OPT_LGFL_HDR  },
   [ENT_BOOL_LGHN] = { .en = { .typ = ENT_BOOL_LGHN, .name = LGFL_LGHN_HDR },
     .pval = &lgndelem[LGFL_LGHN].enable, .prefix = OPT_LGFL_HDR  },

@@ -40,7 +40,7 @@ static const gchar *help_message =
   SPANOPT(ACT_RESET_HDR  "\t\t", "ping statistics")
   SPANOPT(ACT_QUIT_HDR "\t\t\t", "stop and quit")
   "\n"
-  SPANHDR("Options")
+  SPANHDR("Main Options")
   SPANOPT(OPT_CYCLES_HDR   "\t", "Number of ping cycles [" MSTRSTR(DEF_CYCLES) "]")
   SPANOPT(OPT_IVAL_HDR     "\t", "Gap in seconds between pings [" MSTRSTR(DEF_TOUT) "]")
   SPANOPT(OPT_DNS_HDR      "\t", "IP address resolving [on]")
@@ -54,11 +54,12 @@ static const gchar *help_message =
   SPANOPT(OPT_PLOAD_HDR    "\t", "Up to 16 bytes in hex format [" DEF_PPAD "]")
   SPANOPT(OPT_PSIZE_HDR  "\t\t", "ICMP data size [" MSTRSTR(DEF_PSIZE) "]")
   SPANOPT(OPT_IPV_HDR, "either " OPT_IPVA_HDR ", or " OPT_IPV4_HDR ", or " OPT_IPV6_HDR)
+  "\n"
   SPANHDR("Auxiliary")
   SPANOPT(OPT_GRAPH_HDR, "either " OPT_GR_NONE_HDR ", or " OPT_GR_DOT_HDR ", or " OPT_GR_LINE_HDR ", or " OPT_GR_CURVE_HDR)
   SPANOPT(OPT_LGFL_HDR, "to display:")
     SPANSUB(LGFL_DASH_HDR " " LGFL_AVJT_HDR " " LGFL_CCAS_HDR " " LGFL_LGHN_HDR)
-  SPANOPT(OPT_LOGMAX_HDR       , "Max rows in log tab [" MSTRSTR(DEF_LOGMAX) "]")
+//  SPANOPT(OPT_LOGMAX_HDR       , "Max rows in log tab [" MSTRSTR(DEF_LOGMAX) "]")
 ;
 
 static t_act_desc act_desc[ACT_NDX_MAX] = {
