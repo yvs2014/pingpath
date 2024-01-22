@@ -49,6 +49,8 @@ t_ent_bool ent_bool[ENT_BOOL_MAX] = {
     .pval = &lgndelem[LGFL_CCAS].enable, .prefix = OPT_LGFL_HDR  },
   [ENT_BOOL_LGHN] = { .en = { .typ = ENT_BOOL_LGHN, .name = LGFL_LGHN_HDR },
     .pval = &lgndelem[LGFL_LGHN].enable, .prefix = OPT_LGFL_HDR  },
+  [ENT_BOOL_MEAN] = { .en = { .typ = ENT_BOOL_MEAN, .name = OPT_MEAN_HDR },
+    .pval = &opts.mean },
 };
 
 t_ent_str ent_str[ENT_STR_MAX] = {
@@ -111,15 +113,16 @@ static t_ent_rad ent_rad[ENT_RAD_MAX] = {
     }},
 };
 
-static void check_bool_val(GtkCheckButton *check, t_ent_bool *en, void (*update)(void)) {
-  gboolean state = gtk_check_button_get_active(check);
+static gboolean check_bool_val(GtkCheckButton *check, t_ent_bool *en, void (*update)(void)) {
+  gboolean state = gtk_check_button_get_active(check), re = false;
   if (en->pval) if (*(en->pval) != state) {
-    *(en->pval) = state;
+    *(en->pval) = state; re = true;
     if (update) update();
   }
   const gchar *onoff = state ? TOGGLE_ON_HDR : TOGGLE_OFF_HDR;
   if (en->prefix) PP_NOTIFY("%s: %s %s", en->prefix, en->en.name, onoff);
   else PP_NOTIFY("%s %s", en->en.name, onoff);
+  return re;
 }
 
 static void set_ed_texthint(t_ent_str *en) {
@@ -175,8 +178,10 @@ static void toggle_cb(GtkCheckButton *check, t_ent_bool *en) {
     case ENT_BOOL_AVJT:
     case ENT_BOOL_CCAS:
     case ENT_BOOL_LGHN:
-      check_bool_val(check, en, NULL);
-      notifier_vis_rows(NT_GRAPH_NDX, -1);
+      if (check_bool_val(check, en, NULL)) notifier_vis_rows(NT_GRAPH_NDX, -1);
+      break;
+    case ENT_BOOL_MEAN:
+      check_bool_val(check, en, graphtab_force_update);
       break;
   }
 }
@@ -520,6 +525,7 @@ static gboolean create_graph_optmenu(GtkWidget *list) {
   if (!add_opt_radio(list,  &ent_rad[ENT_RAD_GRAPH]))  okay = false;
   if (!add_opt_check(list,  &ent_bool[ENT_BOOL_LGND])) okay = false;
   if (!add_opt_expand(list, &ent_exp[ENT_EXP_LGFL]))   okay = false;
+  if (!add_opt_check(list,  &ent_bool[ENT_BOOL_MEAN])) okay = false;
   EN_PR_INT(ENT_STR_LOGMAX);
   return okay;
 }

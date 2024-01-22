@@ -114,19 +114,18 @@ static void uniq_unreach(int at) {
   if (hops_no != (i + 1)) set_hops_no(i + 1, "unreachable duplicates");
 }
 
+#define STAT_AVERAGE(count, avrg, val) { count++; \
+  if (count > 0) { if (avrg < 0) avrg = 0; avrg += (val - avrg) / count; }}
+
 static void update_stat(int at, int rtt, t_tseq *mark, int rxtx) {
   if (rxtx & RX) hops[at].recv++;
   if (rxtx & TX) hops[at].sent++;
   if (rxtx && hops[at].sent) hops[at].loss = (hops[at].sent - hops[at].recv) * 100. / hops[at].sent;
-  if (rtt >= 0) {
+  if (rtt > 0) {
     if ((rtt < hops[at].best) || (hops[at].best < 0)) hops[at].best = rtt;
     if ((rtt > hops[at].wrst) || (hops[at].wrst < 0)) hops[at].wrst = rtt;
-    if (hops[at].avrg < 0) hops[at].avrg = 0; // initiate avrg
-    if (hops[at].recv > 0) hops[at].avrg += (rtt - hops[at].avrg) / hops[at].recv;
-    if ((hops[at].prev > 0) && (hops[at].recv > 1)) {
-      if (hops[at].jttr < 0) hops[at].jttr = 0; // initiate jttr
-      hops[at].jttr += (abs(rtt - hops[at].prev) - hops[at].jttr) / (hops[at].recv - 1);
-    }
+    STAT_AVERAGE(hops[at].known_rtts, hops[at].avrg, rtt);
+    if (hops[at].prev > 0) STAT_AVERAGE(hops[at].known_jttrs, hops[at].jttr, abs(rtt - hops[at].prev));
     hops[at].prev = hops[at].last;
     hops[at].last = rtt;
   }
@@ -282,7 +281,7 @@ void stat_free(void) {
   for (int at = 0; at < MAXTTL; at++) { // clear all except of mark and tout
     t_hop *hop = &hops[at];
     // clear statdata
-    hop->sent = hop->recv = hop->prev = 0;
+    hop->sent = hop->recv = hop->prev = hop->known_rtts = hop->known_jttrs = 0;
     hop->last = hop->best = hop->wrst = -1; // NA(-1) at init too
     hop->loss = hop->avrg = hop->jttr = -1;
     // clear strings
@@ -382,6 +381,21 @@ const gchar *stat_str_elem(int at, int typ) {
       return stat_hop(typ, &hops[at]);
   }
   return NULL;
+}
+
+double stat_dbl_elem(int at, int typ) {
+  double re = -1;
+  switch (typ) {
+    case ELEM_LOSS: re = hops[at].loss; break;
+    case ELEM_SENT: re = hops[at].sent; break;
+    case ELEM_RECV: re = hops[at].recv; break;
+    case ELEM_LAST: re = hops[at].last; break;
+    case ELEM_BEST: re = hops[at].best; break;
+    case ELEM_WRST: re = hops[at].wrst; break;
+    case ELEM_AVRG: re = hops[at].avrg; break;
+    case ELEM_JTTR: re = hops[at].jttr; break;
+  }
+  return re;
 }
 
 t_stat_graph stat_graph_data_at(int at) {

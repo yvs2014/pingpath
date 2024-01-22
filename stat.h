@@ -40,6 +40,7 @@ void stat_save_timeout(int at, t_ping_timeout *data);
 void stat_save_info(int at, t_ping_info *data);
 void stat_last_tx(int at);
 const gchar *stat_str_elem(int at, int typ);
+double stat_dbl_elem(int at, int typ);
 t_stat_graph stat_graph_data_at(int at);
 int stat_elem_max(int typ);
 void stat_check_hostaddr_max(int l);

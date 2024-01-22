@@ -1,3 +1,7 @@
+## 0.1.61
+- fix (more accurate) calculation of averages
+- add average lines to graphs
+
 ## 0.1.60
 - revert set sensitive(false) for legend label row
 

@@ -9,7 +9,7 @@
 #endif
 
 #define APPNAME "pingpath"
-#define VERSION "0.1.60"
+#define VERSION "0.1.61"
 
 #define X_RES 1024
 #define Y_RES 720
@@ -145,7 +145,8 @@
 #define OPT_GR_CURVE_HDR "Splines"
 #define OPT_LGND_HDR     "Graph legend"
 #define OPT_LGFL_HDR     "Legend fields"
-#define OPT_LOGMAX_HDR   "Logging lines"
+#define OPT_MEAN_HDR     "Average line"
+#define OPT_LOGMAX_HDR   "LogTab rows"
 
 #define ELEM_HOST_HDR  "Host"
 #define ELEM_HOST_TIP  "Hostname or IP-address"
@@ -217,7 +218,7 @@ enum { ENT_EXP_NONE, ENT_EXP_INFO, ENT_EXP_STAT, ENT_EXP_LGFL, ENT_EXP_MAX };
 
 enum { ENT_BOOL_NONE, ENT_BOOL_DNS, ENT_BOOL_HOST, ENT_BOOL_AS, ENT_BOOL_CC, ENT_BOOL_DESC, ENT_BOOL_RT,
   ENT_BOOL_LOSS, ENT_BOOL_SENT, ENT_BOOL_RECV, ENT_BOOL_LAST, ENT_BOOL_BEST, ENT_BOOL_WRST, ENT_BOOL_AVRG, ENT_BOOL_JTTR,
-  ENT_BOOL_LGND, ENT_BOOL_DASH, ENT_BOOL_AVJT, ENT_BOOL_CCAS, ENT_BOOL_LGHN, ENT_BOOL_MAX };
+  ENT_BOOL_LGND, ENT_BOOL_DASH, ENT_BOOL_AVJT, ENT_BOOL_CCAS, ENT_BOOL_LGHN, ENT_BOOL_MEAN, ENT_BOOL_MAX };
 
 enum { ELEM_NO, ELEM_HOST, ELEM_AS, ELEM_CC, ELEM_DESC, ELEM_RT, ELEM_FILL,
   ELEM_LOSS, ELEM_SENT, ELEM_RECV, ELEM_LAST, ELEM_BEST, ELEM_WRST, ELEM_AVRG, ELEM_JTTR, ELEM_MAX };
@@ -263,6 +264,7 @@ typedef struct hop {
   gboolean tout; // flag of timeouted seq
   gchar* info;
   int at;        // useful back reference
+  int known_rtts, known_jttrs; // for more accurate calculations
 } t_hop;
 
 typedef struct ref { t_hop *hop; int ndx; } t_ref;

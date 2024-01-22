@@ -286,6 +286,22 @@ static void gr_draw_marks(GtkDrawingArea *area, cairo_t* cr, int w, int h, gpoin
   }
 }
 
+static void gr_draw_mean(cairo_t *cr, int width) {
+  if (!cr) return;
+  if (width >= 0) cairo_set_line_width(cr, width);
+  int lim = (hops_no > n_series) ? n_series : hops_no;
+  for (int i = opts.min; i < lim; i++) {
+    double avrg = stat_dbl_elem(i, ELEM_AVRG);
+    if (avrg > 0) {
+      int n = i % n_colors;
+      cairo_set_source_rgba(cr, colors[n][0], colors[n][1], colors[n][2], 0.6);
+      double x0 = (GR_LEN > 0) ? grm.x1 - grm.dx * (GR_LEN - 1) : grm.x;
+      gr_draw_line_at(cr, grm.x1, avrg, (x0 < grm.x) ? grm.x : x0, avrg);
+      cairo_stroke(cr);
+    }
+  }
+}
+
 static void gr_draw_graph(GtkDrawingArea *area, cairo_t* cr, int w, int h, gpointer unused) {
   static PangoLayout *graph_pango;
   if (!GTK_IS_DRAWING_AREA(area) || !cr) return;
@@ -306,6 +322,7 @@ static void gr_draw_graph(GtkDrawingArea *area, cairo_t* cr, int w, int h, gpoin
       pango_cairo_show_layout(cr, graph_pango);
     }
   }
+  if (opts.mean) gr_draw_mean(cr, 1);
   switch (opts.graph) {
     case GRAPH_TYPE_DOT:
       gr_draw_smth(cr, CAIRO_LINE_CAP_ROUND, DOT_SIZE, gr_draw_dot_loop);
