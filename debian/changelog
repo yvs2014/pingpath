@@ -1,3 +1,9 @@
+pingpath (0.1.62) lunar mantic; urgency=low
+
+  * sysicons as a set with backup names
+
+ -- yvs <VSYakovetsky@gmail.com>  Tue, 23 Jan 2024 13:01:14 +0200
+
 pingpath (0.1.61) lunar mantic; urgency=low
 
   * fix (more accurate) calculation of averages

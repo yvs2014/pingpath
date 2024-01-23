@@ -71,9 +71,8 @@ static void nt_inform(t_notifier *nt, gchar *mesg) {
 static gboolean nt_legend_pos_cb(GtkOverlay *overlay, GtkWidget *widget, GdkRectangle *r, t_notifier *nt) {
   if (GTK_IS_OVERLAY(overlay) && r && nt) {
     if (GTK_IS_WIDGET(widget) /* && gtk_widget_get_resize_needed(widget) */) {
-      int unused;
-      gtk_widget_measure(widget, GTK_ORIENTATION_HORIZONTAL, -1, &unused, NULL, NULL, NULL);
-      gtk_widget_measure(widget, GTK_ORIENTATION_VERTICAL,   -1, &unused, NULL, NULL, NULL);
+      gtk_widget_measure(widget, GTK_ORIENTATION_HORIZONTAL, -1, NULL, NULL, NULL, NULL);
+      gtk_widget_measure(widget, GTK_ORIENTATION_VERTICAL,   -1, NULL, NULL, NULL, NULL);
     }
     r->x = nt->x; r->y = nt->y;
     return true;

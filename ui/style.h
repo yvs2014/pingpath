@@ -1,6 +1,8 @@
 #ifndef UI_STYLE_H
 #define UI_STYLE_H
 
+#include "common.h"
+
 #define CSS_ID_DATETIME "datetime"
 #define CSS_BGROUND     "bground"
 #define CSS_BGONBG      "bgonbg"
@@ -18,6 +20,8 @@
 #define CSS_LEGEND_TEXT "lgndtxt"
 
 void style_init(void);
+const char* is_sysicon(const char **icon);
 extern int style_loaded;
+extern gboolean ub_theme;
 
 #endif

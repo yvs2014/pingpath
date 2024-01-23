@@ -1,6 +1,5 @@
 
 #include "style.h"
-#include "common.h"
 
 int style_loaded;
 
@@ -16,6 +15,8 @@ int style_loaded;
 #define PAD4  "4px"
 #define PAD6  "6px"
 #define PAD16 "16px"
+
+static GdkDisplay *display;
 
 static const gchar *css_dark_colors = " \
   ." CSS_BGROUND " {background:" DEF_BGROUND_DARK ";} \
@@ -79,9 +80,14 @@ static gchar* get_gset_str_by_key(GtkSettings *sets, const char *key) {
 #endif
 #endif
 
+
+// pub
+//
+
+gboolean ub_theme;
+
 void style_init(void) {
-  GdkDisplay *display = gdk_display_get_default();
-  if (!display) { WARN_("no default display"); return; }
+  if (!display) { display = gdk_display_get_default(); if (!display) { WARN_("no default display"); return; }}
   GtkSettings *settings = gtk_settings_get_default();
   gchar** cs = g_new0(gchar*, 3);
   if (cs) {
@@ -96,6 +102,9 @@ void style_init(void) {
         LOG("theme=%s prefer-dark=%d", theme, prefer_dark);
       }
       g_free(theme);
+      theme = get_gset_str_by_key(settings, PROP_THEME);
+      ub_theme = theme ? (strcasestr(theme, "Yaru") != NULL) : false;
+      g_free(theme);
     }
   }
   gchar *css_data = g_strjoinv("\n", cs); g_strfreev(cs);
@@ -108,5 +117,14 @@ void style_init(void) {
     g_object_unref(css_provider);
     style_loaded = true;
   } else WARN("no CSS data: %s failed", "g_strjoinv()");
+}
+
+const char* is_sysicon(const char **icon) {
+  static GtkIconTheme *icon_theme;
+  if (!icon_theme && display) icon_theme = gtk_icon_theme_get_for_display(display);
+  if (GTK_IS_ICON_THEME(icon_theme) && icon)
+    for (int i = 0; (i < MAX_ICONS) && *icon; i++, icon++)
+      if (gtk_icon_theme_has_icon(icon_theme, *icon)) return *icon;
+  return NULL;
 }
 

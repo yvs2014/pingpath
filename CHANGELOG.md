@@ -1,3 +1,6 @@
+## 0.1.62
+- sysicons as a set with backup names
+
 ## 0.1.61
 - fix (more accurate) calculation of averages
 - add average lines to graphs

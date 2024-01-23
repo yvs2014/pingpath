@@ -9,7 +9,7 @@
 #endif
 
 #define APPNAME "pingpath"
-#define VERSION "0.1.61"
+#define VERSION "0.1.62"
 
 #define X_RES 1024
 #define Y_RES 720
@@ -43,17 +43,26 @@
 #define EV_TAB_SWITCH "switch-page"
 #define EV_GET_POS    "get-child-position"
 
+#define MAX_ICONS      4
 #define ICON_PROP      "icon-name"
 #define ACT_MENU_ICON  "open-menu-symbolic"
-#define OPT_PING_MENU_ICON  "application-x-executable-symbolic"
+#define ACT_MENU_ICOA  "view-more-symbolic"
+#define OPT_PING_MENU_ICON  "emblem-system-symbolic"
+#define OPT_PING_MENU_ICOA  "application-x-executable-symbolic"
 #define OPT_GRAPH_MENU_ICON "media-playlist-consecutive-symbolic"
+#define OPT_GRAPH_MENU_ICOA "go-next-symbolic"
 #define GO_UP_ICON     "go-up-symbolic"
 #define GO_DOWN_ICON   "go-down-symbolic"
 #define GO_LEFT_ICON   "go-previous-symbolic"
 #define GO_RIGHT_ICON  "go-next-symbolic"
 #define PING_TAB_ICON  "format-justify-left-symbolic"
+#define PING_TAB_ICOA  "view-continuous-symbolic"
+#define PING_TAB_ICOB  "view-list-symbolic"
+#define GRAPH_TAB_ICON "utilities-system-monitor-symbolic"
+#define GRAPH_TAB_ICOA "media-playlist-shuffle-symbolic"
+#define GRAPH_TAB_ICOB "media-playlist-repeat-symbolic"
 #define LOG_TAB_ICON   "system-search-symbolic"
-#define GRAPH_TAB_ICON "media-playlist-shuffle-symbolic"
+#define LOG_TAB_ICOA   "edit-find-symbolic"
 
 #define PING_TAB_TAG  "Trace"
 #define PING_TAB_TIP  "Ping path with stats"
@@ -280,7 +289,7 @@ typedef struct tab {
   struct tab *self;
   const char *name;
   GtkWidget *tab, *lab, *dyn, *hdr, *info;
-  const char *ico, *tag, *tip;
+  const char *tag, *tip, *ico[MAX_ICONS];
   GMenu *menu;       // menu template
   GtkWidget *pop;    // popover menu
   gboolean sel;      // flag of selection

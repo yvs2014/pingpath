@@ -51,10 +51,10 @@ void tab_setup(t_tab *tab, const char *css) {
     gtk_widget_set_hexpand(tab->lab, true);
     if (style_loaded) gtk_widget_add_css_class(tab->lab, CSS_PAD);
     if (GTK_IS_BOX(tab->lab)) {
-      if (tab->ico) {
-        GtkWidget *image = gtk_image_new_from_icon_name(tab->ico);
-        if (GTK_IS_IMAGE(image)) gtk_box_append(GTK_BOX(tab->lab), image);
-      }
+      const char *ico = is_sysicon(tab->ico);
+      if (!ico) WARN("No icon found for %s", tab->name);
+      GtkWidget *image = gtk_image_new_from_icon_name(ico);
+      if (GTK_IS_IMAGE(image)) gtk_box_append(GTK_BOX(tab->lab), image);
       if (tab->tag) {
         GtkWidget *tag = gtk_label_new(tab->tag);
         if (GTK_IS_LABEL(tag)) gtk_box_append(GTK_BOX(tab->lab), tag);

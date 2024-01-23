@@ -41,7 +41,7 @@ typedef struct gr_point_desc {
 typedef void (*draw_smth_fn)(int i, cairo_t *cr, double x);
 
 static t_tab graphtab = { .self = &graphtab, .name = "graph-tab",
-  .ico = GRAPH_TAB_ICON, .tag = GRAPH_TAB_TAG, .tip = GRAPH_TAB_TIP,
+  .tag = GRAPH_TAB_TAG, .tip = GRAPH_TAB_TIP, .ico = {GRAPH_TAB_ICON, GRAPH_TAB_ICOA, GRAPH_TAB_ICOB},
 //  .desc = { [POP_MENU_NDX_COPY] = { .name = "win.graph_menu_copy" }, [POP_MENU_NDX_SALL] = { .name = "win.graph_menu_sall" }},
 //  .act = { [POP_MENU_NDX_COPY] = { .activate = cb_on_copy_l1 },  [POP_MENU_NDX_SALL] = { .activate = cb_on_sall }},
 };

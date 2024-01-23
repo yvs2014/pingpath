@@ -476,13 +476,15 @@ static void gtk_list_box_remove_all(GtkListBox *box) {
 #endif
 #endif
 
-static gboolean create_optmenu(GtkWidget *bar, const char *icon, const char *tooltip, optmenu_add_items_fn fn) {
+static gboolean create_optmenu(GtkWidget *bar, const char **icons, const char *tooltip, optmenu_add_items_fn fn) {
   g_return_val_if_fail(GTK_IS_HEADER_BAR(bar), false);
   GtkWidget *menu = gtk_menu_button_new();
   g_return_val_if_fail(GTK_IS_MENU_BUTTON(menu), false);
   gboolean okay = true;
   gtk_header_bar_pack_start(GTK_HEADER_BAR(bar), menu);
-  if (icon) gtk_menu_button_set_icon_name(GTK_MENU_BUTTON(menu), icon);
+  const char *ico = is_sysicon(icons);
+  if (!ico) WARN("No icon found for %s", "option menu");
+  else gtk_menu_button_set_icon_name(GTK_MENU_BUTTON(menu), ico);
   if (tooltip) gtk_widget_set_tooltip_text(menu, tooltip);
   GtkWidget *popover = gtk_popover_new();
   if (GTK_IS_POPOVER(popover)) {
@@ -535,9 +537,12 @@ static gboolean create_graph_optmenu(GtkWidget *list) {
 //
 
 gboolean option_init(GtkWidget* bar) {
-  g_return_val_if_fail(create_optmenu(bar, OPT_PING_MENU_ICON, OPT_MAIN_TOOLTIP, create_ping_optmenu), false);
-  if (opts.graph) g_return_val_if_fail(
-    create_optmenu(bar, OPT_GRAPH_MENU_ICON, OPT_AUX_TOOLTIP, create_graph_optmenu), false);
+  const char *icons[] = { ub_theme ? OPT_PING_MENU_ICOA : OPT_PING_MENU_ICON, OPT_PING_MENU_ICOA, NULL};
+  g_return_val_if_fail(create_optmenu(bar, icons, OPT_MAIN_TOOLTIP, create_ping_optmenu), false);
+  if (opts.graph) {
+    const char *icons[] = { OPT_GRAPH_MENU_ICON, OPT_GRAPH_MENU_ICOA, NULL};
+    g_return_val_if_fail(create_optmenu(bar, icons, OPT_AUX_TOOLTIP, create_graph_optmenu), false);
+  }
   return true;
 }
 

@@ -5,6 +5,7 @@
 #include "notifier.h"
 #include "pinger.h"
 #include "tabs/graph.h"
+#include "ui/style.h"
 
 #if PANGO_VERSION_MAJOR == 1
 #if PANGO_VERSION_MINOR < 50
@@ -59,7 +60,7 @@ static const gchar *help_message =
   SPANOPT(OPT_GRAPH_HDR, "either " OPT_GR_NONE_HDR ", or " OPT_GR_DOT_HDR ", or " OPT_GR_LINE_HDR ", or " OPT_GR_CURVE_HDR)
   SPANOPT(OPT_LGFL_HDR, "to display:")
     SPANSUB(LGFL_DASH_HDR " " LGFL_AVJT_HDR " " LGFL_CCAS_HDR " " LGFL_LGHN_HDR)
-  SPANOPT(OPT_MEAN_HDR         , "Average lines on graphs")
+  SPANOPT(OPT_MEAN_HDR         , "Averages on graphs")
   SPANOPT(OPT_LOGMAX_HDR       , "Max rows in log tab [" MSTRSTR(DEF_LOGMAX) "]")
 ;
 
@@ -166,7 +167,10 @@ static GMenu* action_menu_init(GtkWidget *bar) {
   g_return_val_if_fail(GTK_IS_MENU_BUTTON(button), NULL);
   gboolean okay = true;
   gtk_header_bar_pack_start(GTK_HEADER_BAR(bar), button);
-  gtk_menu_button_set_icon_name(GTK_MENU_BUTTON(button), ACT_MENU_ICON);
+  const char *icons[] = {ACT_MENU_ICON, ACT_MENU_ICOA, NULL};
+  const char *ico = is_sysicon(icons);
+  if (!ico) WARN("No icon found for %s", "action menu");
+  else gtk_menu_button_set_icon_name(GTK_MENU_BUTTON(button), ico);
   gtk_widget_set_tooltip_text(button, ACT_TOOLTIP);
   GMenu *menu = g_menu_new();
   if (G_IS_MENU(menu)) {

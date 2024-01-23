@@ -51,10 +51,11 @@ static void app_cb(GtkApplication* app, gpointer unused) {
   if (!GTK_IS_WINDOW(win)) APPQUIT("%s", "app window");
   gtk_window_set_default_size(GTK_WINDOW(win), X_RES, Y_RES);
   if (style_loaded) gtk_widget_add_css_class(win, CSS_BGROUND);
-  GtkIconTheme *theme = gtk_icon_theme_get_for_display(gdk_display_get_default());
-  if (GTK_IS_ICON_THEME(theme) && gtk_icon_theme_has_icon(theme, APPNAME))
-    gtk_window_set_icon_name(GTK_WINDOW(win), APPNAME);
-  else NOLOG("no '%s' icon", APPNAME);
+  { const char *icons[] = {APPNAME, NULL};
+    const char *ico = is_sysicon(icons);
+    if (ico) gtk_window_set_icon_name(GTK_WINDOW(win), ico);
+    else NOLOG("no '%s' icon", APPNAME);
+  }
   if (!appbar_init(app, win)) APPQUIT("%s", "appbar");
   GtkWidget *nb = gtk_notebook_new();
   if (!GTK_IS_NOTEBOOK(nb)) APPQUIT("%s", "notebook");

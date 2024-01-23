@@ -6,7 +6,8 @@
 const char *log_empty  = "<empty>";
 static int loglines;
 
-static t_tab logtab = { .self = &logtab, .name = "log-tab", .ico = LOG_TAB_ICON, .tag = LOG_TAB_TAG, .tip = LOG_TAB_TIP,
+static t_tab logtab = { .self = &logtab, .name = "log-tab",
+  .tag = LOG_TAB_TAG, .tip = LOG_TAB_TIP, .ico = {LOG_TAB_ICON, LOG_TAB_ICOA},
   .desc = { [POP_MENU_NDX_COPY] = { .name = "win.log_menu_copy" }, [POP_MENU_NDX_SALL] = { .name = "win.log_menu_sall" }},
   .act = { [POP_MENU_NDX_COPY] = { .activate = cb_on_copy_l1 },  [POP_MENU_NDX_SALL] = { .activate = cb_on_sall }},
 };
