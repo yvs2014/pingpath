@@ -20,7 +20,7 @@
 #define DOT_SIZE  5
 #define LINE_SIZE 2
 
-#define X_CELL_SEC 5
+#define X_IN_TIME_TICKS 5
 #define X_FREQ     2
 
 typedef struct gr_aux_measures {
@@ -46,17 +46,20 @@ static t_tab graphtab = { .self = &graphtab, .name = "graph-tab",
 //  .act = { [POP_MENU_NDX_COPY] = { .activate = cb_on_copy_l1 },  [POP_MENU_NDX_SALL] = { .activate = cb_on_sall }},
 };
 
-static t_gr_list gr_series[MAXTTL];
+static t_gr_list gr_series[MAXTTL], gr_series_kept[MAXTTL];
 #define GR_LIST (gr_series[i].list)
 #define GR_LEN (gr_series[i].len)
+#define GR_LIST_CP (gr_series_kept[i].list)
+#define GR_LEN_CP (gr_series_kept[i].len)
 static const int n_series = G_N_ELEMENTS(gr_series);
+static gboolean gr_series_lock;
 
 static GtkWidget *graph_grid, *graph_marks, *graph_graph;
 static PangoFontDescription *graph_font;
 
 static t_gr_aux_measures grm = { .x = GRAPH_LEFT, .y = GRAPH_TOP, .fs = CELL_SIZE * GRF_RATIO, .ymax = GR_RTT0,
-  .dx = (MAIN_TIMING_MSEC / 1000.) * ((double)CELL_SIZE / X_CELL_SEC),
-  .no = X_RES / ((double)CELL_SIZE / X_CELL_SEC) + 1, // to start keeping data w/o knowing drawing area width
+  .dx = (MAIN_TIMING_MSEC / 1000.) * ((double)CELL_SIZE / X_IN_TIME_TICKS),
+  .no = X_RES / ((double)CELL_SIZE / X_IN_TIME_TICKS) + 1, // to start keeping data w/o knowing drawing area width
 };
 
 //
@@ -72,22 +75,27 @@ static int gr_max_in_series(void) {
   for (int i = 0; i < n_series; i++) {
     for (GSList *item = GR_LIST; item; item = item->next) {
       if (!item->data) continue;
-      int rtt = ((t_stat_graph*)item->data)->rtt;
+      int rtt = ((t_graph_data*)item->data)->rtt;
       if (rtt > max) max = rtt;
     }
   }
   return max;
 }
 
-static void gr_save(int i, t_stat_graph data) {
-  t_stat_graph *sd = g_memdup2(&data, sizeof(data));
-  GR_LIST = g_slist_prepend(GR_LIST, sd); GR_LEN++;
+#define GR_ACTUAL_LIST (series[i].list)
+#define GR_ACTUAL_LEN (series[i].len)
+
+static void gr_save(int i, t_graph_data *stat) {
+  if (gr_series_lock || !stat) return;
+  t_gr_list* series = pinger_state.pause ? gr_series_kept : gr_series;
+  t_graph_data *sd = g_memdup2(stat, sizeof(*stat));
+  GR_ACTUAL_LIST = g_slist_prepend(GR_ACTUAL_LIST, sd); GR_ACTUAL_LEN++;
   if (sd && (sd->rtt > grm.ymax)) gr_scale_max(sd->rtt); // up-scale
-  while (GR_LIST && (GR_LEN > grm.no)) {
-    GSList *last = g_slist_last(GR_LIST);
+  while (GR_ACTUAL_LIST && (GR_ACTUAL_LEN > grm.no)) {
+    GSList *last = g_slist_last(GR_ACTUAL_LIST);
     if (!last) break;
-    int rtt = last->data ? ((t_stat_graph*)last->data)->rtt : -1;
-    GR_LIST = g_slist_delete_link(GR_LIST, last); GR_LEN--;
+    int rtt = last->data ? ((t_graph_data*)last->data)->rtt : -1;
+    GR_ACTUAL_LIST = g_slist_delete_link(GR_ACTUAL_LIST, last); GR_ACTUAL_LEN--;
     if ((rtt * GR_Y_GAP) >= grm.ymax) {
       int max = gr_max_in_series();
       if (((max * GR_Y_GAP) < grm.ymax) && (max > GR_RTT0)) gr_scale_max(max); // down-scale
@@ -105,6 +113,7 @@ static void gr_set_font(void) {
 }
 
 static inline double rtt2y(double rtt) { return grm.y1 - rtt / grm.ymax * grm.h; }
+static inline double yscaled(double rtt) { return rtt / grm.ymax * grm.h; }
 
 static inline void gr_draw_dot_at(cairo_t *cr, double x, double rtt) {
   cairo_move_to(cr, x, rtt2y(rtt));
@@ -122,26 +131,42 @@ static inline void gr_draw_line_at(cairo_t *cr, double x0, double rtt0, double x
 static inline void gr_draw_dot_loop(int i, cairo_t *cr, double x) {
   for (GSList *item = GR_LIST; item; item = item->next, x -= grm.dx) {
     if (x < grm.x) break;
-    t_stat_graph *data = item->data;
+    t_graph_data *data = item->data;
     if (IS_RTT_DATA(data)) gr_draw_dot_at(cr, x, data->rtt);
   }
 }
 
+#if 0
+static void _gr_print_serie(int i) {
+  g_print(">>> serie_main[%d] len=%d:", i, GR_LEN);
+  for (GSList *item = GR_LIST; item; item = item->next)
+    if (item->data) g_print(" %d", ((t_graph_data*)item->data)->rtt);
+  g_print("\n");
+  g_print(">>> serie_kept[%d] len=%d:", i, GR_LEN_CP);
+  for (GSList *item = GR_LIST_CP; item; item = item->next)
+    if (item->data) g_print(" %d", ((t_graph_data*)item->data)->rtt);
+  g_print("\n");
+}
+#endif
+
+#define FULL_DRAW_DOT(x, rtt) { cairo_stroke(cr); cairo_set_line_width(cr, DOT_SIZE); \
+  gr_draw_dot_at(cr, x, rtt); cairo_stroke(cr); cairo_set_line_width(cr, line_width); }
+
 static void gr_draw_line_loop(int i, cairo_t *cr, double x) {
+  double line_width = cairo_get_line_width(cr);
   t_gr_point_desc prev = { .rtt = -1, .conn = true };
   for (GSList *item = GR_LIST; item; item = item->next, x -= grm.dx) {
     if (x < grm.x) break;
-    t_stat_graph *data = item->data;
-    if (data) {
-      gboolean connected = false;
-      if (prev.rtt > 0) {
-        if (data->rtt > 0) {
-          gr_draw_line_at(cr, prev.x, prev.rtt, x, data->rtt);
-          connected = true;
-        }
-      } else if (!prev.conn) gr_draw_dot_at(cr, prev.x, prev.rtt);
-      prev.x = x; prev.rtt = data->rtt; prev.conn = connected;
+    t_graph_data *data = item->data;
+    if (!data) continue;
+    gboolean connected = false;
+    if (prev.rtt > 0) {
+      if (data->rtt > 0) {
+        gr_draw_line_at(cr, prev.x, prev.rtt, x, data->rtt);
+        connected = true;
+      } else if (!prev.conn) FULL_DRAW_DOT(prev.x, prev.rtt);
     }
+    prev.x = x; prev.rtt = data->rtt; prev.conn = connected;
   }
 }
 
@@ -154,23 +179,17 @@ static inline int centripetal(double d1, double q1, double d2, double q2, int p0
   return (d1 * p0 - d2 * p1 + (2 * d1 + 3 * q1 * q2 + d2) * p2) / (3 * q1 * (q1 + q2)) + 0.5;
 }
 
-static inline void gr_draw_curve_prolog(int i, cairo_t *cr, double x0) {
-  if (GR_LIST) {
-    t_stat_graph *data = GR_LIST->data; int r0 = RTT_OR_NEG(data);
-    if (r0 > 0) {
-      data = g_slist_nth_data(GR_LIST, 1); int r1 = RTT_OR_NEG(data);
-      if (r1 > 0) gr_draw_line_at(cr, x0, r0, x0 - grm.dx, r1);
-      else gr_draw_dot_at(cr, x0, r0);
-    }
-  }
-}
+#define DRAW_CURVE_PROLOG { if (GR_LIST) { t_graph_data *data = GR_LIST->data; int r0 = RTT_OR_NEG(data); \
+  if (r0 > 0) { data = g_slist_nth_data(GR_LIST, 1); int r1 = RTT_OR_NEG(data); \
+    if (r1 > 0) gr_draw_line_at(cr, x0, r0, x0 - grm.dx, r1); else FULL_DRAW_DOT(x0, r0); }}}
 
 static void gr_draw_curve_loop(int i, cairo_t *cr, double x0) {
-  gr_draw_curve_prolog(i, cr, x0);
+  double line_width = cairo_get_line_width(cr);
+  DRAW_CURVE_PROLOG;
   for (GSList *item = GR_LIST; item; item = item->next, x0 -= grm.dx) {
     int r0, r1, r2, r3;
     double x1, x2, x3;
-    t_stat_graph *data = item->data;  r0 = RTT_OR_NEG(data);
+    t_graph_data *data = item->data;  r0 = RTT_OR_NEG(data);
     data = g_slist_nth_data(item, 1); r1 = RTT_OR_NEG(data); x1 = x0 - grm.dx;
     data = g_slist_nth_data(item, 2); r2 = RTT_OR_NEG(data); x2 = x1 - grm.dx;
     data = g_slist_nth_data(item, 3); r3 = RTT_OR_NEG(data); x3 = x2 - grm.dx;
@@ -201,15 +220,16 @@ static void gr_draw_curve_loop(int i, cairo_t *cr, double x0) {
           x2, y2);
       }
     } else if ((r1 > 0) && (r2 > 0)) gr_draw_line_at(cr, x1, r1, x2, r2);
-    else if ((r1 > 0) && !(r0 > 0)) gr_draw_dot_at(cr, x1, r1);
+    else if ((r1 > 0) && !(r0 > 0)) FULL_DRAW_DOT(x1, r1);
   }
 }
 
-static void gr_draw_smth(cairo_t *cr, int cap, int width, draw_smth_fn draw) {
+static void gr_draw_smth(cairo_t *cr, double width, draw_smth_fn draw) {
   if (!cr || !draw) return;
-  if (cap >= 0) cairo_set_line_cap(cr, cap);
+  cairo_set_line_cap(cr, CAIRO_LINE_CAP_ROUND);
   if (width >= 0) cairo_set_line_width(cr, width);
-  for (int i = 0; i < n_series; i++) {
+  int lim = (hops_no > n_series) ? n_series : hops_no;
+  for (int i = opts.min; i < lim; i++) {
     int n = i % n_colors;
     cairo_set_source_rgb(cr, colors[n][0], colors[n][1], colors[n][2]);
     draw(i, cr, grm.x1);
@@ -224,7 +244,7 @@ static void gr_draw_grid(GtkDrawingArea *area, cairo_t* cr, int w, int h, gpoint
   int w0 = w - (GRAPH_LEFT + GRAPH_RIGHT), h0 = h - (GRAPH_TOP + GRAPH_BOTTOM);
   grm.N = w0 / CELL_SIZE, grm.M = h0 / CELL_SIZE;
   grm.w = grm.N * CELL_SIZE, grm.h = grm.M * CELL_SIZE;
-  grm.no = grm.w / ((double)CELL_SIZE / X_CELL_SEC) + 1; // number elems per list
+  grm.no = grm.w / ((double)CELL_SIZE / X_IN_TIME_TICKS) + 1; // number elems per list
   grm.x1 = grm.x + grm.w; grm.y1 = grm.y + grm.h;
   // grid lines
   cairo_set_dash(cr, dash_size, 1, 0);
@@ -311,10 +331,12 @@ static void gr_draw_graph(GtkDrawingArea *area, cairo_t* cr, int w, int h, gpoin
     int tsz = (CELL_SIZE - TICK_SIZE) * X_FREQ;
     pango_layout_set_width(graph_pango, tsz * PANGO_SCALE);
     pango_layout_set_alignment(graph_pango, PANGO_ALIGN_CENTER);
-    if (pinger_state.run || !grm.at) grm.at = time(NULL) % 3600;
+    if (!grm.at || (pinger_state.run && !pinger_state.pause)) grm.at = time(NULL) % 3600;
+    int dt = X_IN_TIME_TICKS; if (opts.timeout > 0) dt *= opts.timeout;
     for (int i = 0, x = grm.x1 - tsz / 2, y = grm.y1 + grm.fs, t = grm.at;
-        i <= grm.N; i++, x -= CELL_SIZE, t -= X_CELL_SEC) if ((i + 1) % X_FREQ) {
+        i <= grm.N; i++, x -= CELL_SIZE, t -= dt) if ((i + 1) % X_FREQ) {
       gchar buff[8];
+      if (t < 0) t += 3600;
       int mm = t / 60, ss = t % 60;
       g_snprintf(buff, sizeof(buff), "%02d:%02d", mm, ss);
       cairo_move_to(cr, x, y);
@@ -325,21 +347,47 @@ static void gr_draw_graph(GtkDrawingArea *area, cairo_t* cr, int w, int h, gpoin
   if (opts.mean) gr_draw_mean(cr, 1);
   switch (opts.graph) {
     case GRAPH_TYPE_DOT:
-      gr_draw_smth(cr, CAIRO_LINE_CAP_ROUND, DOT_SIZE, gr_draw_dot_loop);
+      gr_draw_smth(cr, DOT_SIZE, gr_draw_dot_loop);
       break;
     case GRAPH_TYPE_LINE:
-      gr_draw_smth(cr, -1, LINE_SIZE, gr_draw_line_loop);
+      gr_draw_smth(cr, LINE_SIZE, gr_draw_line_loop);
       break;
     case GRAPH_TYPE_CURVE:
-      gr_draw_smth(cr, -1, LINE_SIZE, gr_draw_curve_loop);
+      gr_draw_smth(cr, LINE_SIZE, gr_draw_curve_loop);
       break;
   }
 }
 
 static void graphtab_data_update(void) {
-  t_stat_graph skip = { .rtt = -1, .jttr = -1 };
-  for (int i = 0; i < n_series; i++)
-    gr_save(i, (pinger_state.run && (opts.min <= i) && (i < hops_no)) ? stat_graph_data_at(i) : skip);
+  t_graph_data skip = { .rtt = -1, .seq = -1 };
+  for (int i = 0; i < n_series; i++) {
+    if (pinger_state.run && (opts.min <= i) && (i < hops_no)) {
+      t_rseq rseq; stat_rseq(i, &rseq);
+      t_graph_data data = { .rtt = rseq.rtt, .seq = rseq.seq };
+      gr_save(i, &data);
+    } else gr_save(i, &skip);
+  }
+}
+
+gpointer gr_dup_stat_graph(gconstpointer src, gpointer data) { return g_memdup2(src, sizeof(t_graph_data)); }
+
+static void gr_freeze_data(void) {
+  gr_series_lock = true;
+  for (int i = 0; i < n_series; i++) { // keep current data
+    GR_LIST_CP = GR_LIST ? g_slist_copy_deep(GR_LIST, gr_dup_stat_graph, NULL) : NULL;
+    GR_LEN_CP = g_slist_length(GR_LIST_CP);
+  }
+  gr_series_lock = false;
+}
+
+static void gr_unfreeze_data(void) {
+  gr_series_lock = true;
+  for (int i = 0; i < n_series; i++) { // clean current data, copy kept references
+    if (GR_LIST) g_slist_free_full(GR_LIST, g_free);
+    GR_LIST = GR_LIST_CP; GR_LEN = GR_LEN_CP;
+    GR_LEN_CP = 0; GR_LIST_CP = NULL;
+  }
+  gr_series_lock = false;
 }
 
 
@@ -385,21 +433,26 @@ t_tab* graphtab_init(GtkWidget* win) {
 void graphtab_free(void) {
   grm.at = 0; grm.ymax = GR_RTT0;
   for (int i = 0; i < n_series; i++) {
-    GR_LEN = 0; if (GR_LIST) { g_slist_free(GR_LIST); GR_LIST = NULL; }
+    GR_LEN = 0; if (GR_LIST) { g_slist_free_full(GR_LIST, g_free); GR_LIST = NULL; }
+    GR_LEN_CP = 0; if (GR_LIST_CP) { g_slist_free_full(GR_LIST_CP, g_free); GR_LIST_CP = NULL; }
   }
 }
 
-inline void graphtab_update(void) {
+void graphtab_update(gboolean retrieve) {
   if (!pinger_state.run) return;
   if (pinger_state.gotdata && opts.legend && !notifier_get_visible(NT_GRAPH_NDX))
     notifier_set_visible(NT_GRAPH_NDX, true);
-  graphtab_data_update();
+  if (retrieve) graphtab_data_update();
   if (!pinger_state.pause) {
     if (opts.legend) notifier_legend_update(NT_GRAPH_NDX);
-    gtk_widget_queue_draw(graph_graph);
+    if (GTK_IS_WIDGET(graph_graph)) gtk_widget_queue_draw(graph_graph);
   }
 }
 
-inline void graphtab_force_update(void) { gtk_widget_queue_draw(graph_graph); }
 inline void graphtab_toggle_legend(void) { if (opts.graph) notifier_set_visible(NT_GRAPH_NDX, opts.legend); }
+
+void graphtab_force_update(gboolean pause_toggled) {
+  if (GTK_IS_WIDGET(graph_graph)) gtk_widget_queue_draw(graph_graph);
+  if (pause_toggled) { if (pinger_state.pause) gr_freeze_data(); else gr_unfreeze_data(); }
+}
 

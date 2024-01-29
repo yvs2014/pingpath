@@ -56,7 +56,7 @@ static gboolean cli_opt_t(const char *name, const char *value, t_opts *opts, GEr
     int *pmin = en->aux[SPN_AUX_MIN].pval;
     int *plim = en->aux[SPN_AUX_LIM].pval;
     int min = 0, lim = MAXTTL;
-    t_minmax r = parser_range(cp);
+    t_minmax r = parser_range(cp, OPT_TTL_HDR);
     if ((r.min >= 0) && (r.max >= 0)) {
       okay = pinger_within_range(1, r.max, r.min) && pinger_within_range(r.min, MAXTTL, r.max);
       if (okay) {
@@ -100,7 +100,7 @@ static t_ent_bool* cli_infostat_entry(int c, int typ) {
 
 static const char* cli_opt_infostat(const char *value, int sz, int typ, const gchar *hdr) {
   const char *str = parser_str(value, hdr, sz, typ);
-  for (const char *p = str; *p; p++) {
+  if (str) for (const char *p = str; *p; p++) {
     t_ent_bool *en = cli_infostat_entry(*p, typ);
     if (!en) continue;
     if (en->pval) *en->pval = true;

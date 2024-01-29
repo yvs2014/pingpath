@@ -1,6 +1,5 @@
 
 #include "notifier.h"
-#include "common.h"
 #include "style.h"
 #include "pinger.h"
 #include "stat.h"
@@ -259,14 +258,14 @@ void notifier_legend_update(int ndx) {
     if (ex) {
       int aj_max = -1, ca_max = -1;
       for (int i = 0; i < hops_no; i++, ex++) {
-        t_stat_graph data = stat_graph_data_at(i);
-        if (data.name) {
-          LIMIT_BY_NL(data.name);
-          if (GTK_IS_LABEL(ex->elem[LGFL_LGHN])) UPDATE_LABEL(ex->elem[LGFL_LGHN], data.name);
+        t_legend legend; stat_legend(i, &legend);
+        if (legend.name) {
+          LIMIT_BY_NL(legend.name);
+          if (GTK_IS_LABEL(ex->elem[LGFL_LGHN])) UPDATE_LABEL(ex->elem[LGFL_LGHN], legend.name);
         }
-        LIMIT_BY_NL(data.as); LIMIT_BY_NL(data.cc);
-        nt_fill_legend_elem(ex->elem[LGFL_AVJT], data.jt, data.av, "±", &aj_max);
-        nt_fill_legend_elem(ex->elem[LGFL_CCAS], data.as, data.cc, ":", &ca_max);
+        LIMIT_BY_NL(legend.as); LIMIT_BY_NL(legend.cc);
+        nt_fill_legend_elem(ex->elem[LGFL_AVJT], legend.jt, legend.av, "±", &aj_max);
+        nt_fill_legend_elem(ex->elem[LGFL_CCAS], legend.as, legend.cc, ":", &ca_max);
       }
       LGFL_CHK_MAX(LGFL_AVJT, aj_max);
       LGFL_CHK_MAX(LGFL_CCAS, ca_max);

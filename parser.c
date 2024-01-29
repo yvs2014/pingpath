@@ -217,6 +217,17 @@ static gboolean target_meet_all_conditions(gchar *s, int len, int max) {
   return true;
 }
 
+#define PIERR(fmt, ...) { WARN("%s: " fmt, option, __VA_ARGS__); PP_NOTIFY("%s: " fmt, option, __VA_ARGS__); }
+
+static gchar* parser_valid_int(const gchar *option, const gchar *str) {
+  gchar *cpy = g_strdup(str);
+  if (!cpy) return NULL;
+  gchar *val = g_strstrip(cpy);
+  gboolean valid = g_regex_match(str_rx[STR_RX_INT].regex, val, 0, NULL);
+  if (!valid) { PIERR("no match %s regex", str_rx[STR_RX_INT].pattern); g_free(cpy); val = NULL; }
+  return val;
+}
+
 
 // pub
 //
@@ -237,50 +248,41 @@ gboolean parser_init(void) {
 }
 
 void parser_parse(int at, char *input) {
-  gchar **lines = g_regex_split(multiline_regex, input, 0);
-  for (gchar **s = lines; *s; s++) if ((*s)[0]) analyze_line(at, *s);
-  if (lines) g_strfreev(lines);
+  if (input) {
+    gchar **lines = g_regex_split(multiline_regex, input, 0);
+    if (lines) {
+      for (gchar **s = lines; *s; s++) if ((*s)[0]) analyze_line(at, *s);
+      g_strfreev(lines);
+    }
+  }
 }
 
-#define PIERR(fmt, ...) PP_NOTIFY("%s: " fmt, option, __VA_ARGS__)
-
-int parser_int(const gchar *str, int typ, const gchar *option, t_minmax range) {
-  GMatchInfo *match = NULL;
-  gchar *cpy = g_strdup(str);
-  if (!cpy) return -1;
-  gchar *val = g_strstrip(cpy);
-  gboolean valid = g_regex_match(str_rx[STR_RX_INT].regex, val, 0, &match);
-  if (valid) {
-    int n = atol(val);
-    g_match_info_free(match);
-    int min = (range.min > 0) ? range.min : 0;
-    int max = (range.max < INT_MAX) ? range.max : INT_MAX;
-    if ((n >= min) && (n <= max)) {
-      switch (typ) {
-        case ENT_STR_CYCLES:
-        case ENT_STR_IVAL:
-        case ENT_STR_LOGMAX:
-        case ENT_STR_QOS:
-        case ENT_STR_PSIZE:
-        case ENT_STR_GRAPH:
-          return n;
-      }
-    } else PIERR("out of range[%d,%d]", min, max);
-  } else PIERR("no match %s regex", str_rx[STR_RX_INT].pattern);
-  g_free(cpy);
+int parser_int(const gchar *str, int typ, const gchar *option, t_minmax mm) {
+  gchar *val = parser_valid_int(option, str);
+  if (!val) return -1;
+  int n = atol(val); g_free(val);
+  int min = (mm.min > 0) ? mm.min : 0;
+  int max = (mm.max < INT_MAX) ? mm.max : INT_MAX;
+  if ((n < min) || (n > max)) PIERR("out of range[%d,%d]", min, max)
+  else switch (typ) {
+    case ENT_STR_CYCLES:
+    case ENT_STR_IVAL:
+    case ENT_STR_LOGMAX:
+    case ENT_STR_QOS:
+    case ENT_STR_PSIZE:
+    case ENT_STR_GRAPH:
+      return n;
+  }
   return -1;
 }
 
 const char* parser_str(const gchar *str, const gchar *option, int buff_sz, int rx_ndx) {
   static char str_buff[128];
-  GMatchInfo *match = NULL;
   g_strlcpy(str_buff, str, buff_sz);
   char *val = g_strstrip(str_buff);
-  gboolean valid = g_regex_match(str_rx[rx_ndx].regex, val, 0, &match);
-  if (valid) {
-    g_match_info_free(match);
-    return val;
-  } else PP_NOTIFY("%s: no match %s regex", option, str_rx[rx_ndx].pattern);
+  gboolean valid = g_regex_match(str_rx[rx_ndx].regex, val, 0, NULL);
+  if (valid) return val;
+  else PP_NOTIFY("%s: no match %s regex", option, str_rx[rx_ndx].pattern);
   return NULL;
 }
 
@@ -324,13 +326,23 @@ void parser_whois(gchar *buff, int sz, gchar* elem[]) {
 }
 
 #define RANGE_DELIM ','
-t_minmax parser_range(gchar *range) {
+t_minmax parser_range(gchar *range, const gchar *option) {
   t_minmax re = { .min = -1, .max = -1};
   if (range) {
-    char *min = range;
-    char *max = split_with_delim(&min, RANGE_DELIM);
-    if (min && min[0]) re.min = atoi(min);
-    if (max && max[0]) re.max = atoi(max);
+    gchar *min = range;
+    gchar *max = split_with_delim(&min, RANGE_DELIM);
+    int min_val = -1, max_val = -1;
+    if (min && min[0]) {
+      min = parser_valid_int(option, min);
+      if (min && min[0]) min_val = atoi(min);
+      else return re;
+    }
+    if (max && max[0]) {
+      max = parser_valid_int(option, max);
+      if (max && max[0]) max_val = atoi(max);
+      else return re;
+    }
+    re.min = min_val; re.min = max_val;
   }
   return re;
 }

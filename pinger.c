@@ -1,6 +1,5 @@
 
 #include "pinger.h"
-#include "common.h"
 #include "parser.h"
 #include "stat.h"
 #include "dns.h"
@@ -48,8 +47,9 @@ static gchar* last_error(void) {
 }
 
 static void tab_updater(gboolean reset) {
+  static int ping_seq;
   if (stat_timer) { g_source_remove(stat_timer); stat_timer = 0; }
-  if (reset) stat_timer = g_timeout_add(opts.timeout * 1000, pinger_update_tabs, NULL);
+  if (reset) { ping_seq = 0; stat_timer = g_timeout_add(opts.timeout * 1000, (GSourceFunc)pinger_update_tabs, &ping_seq); }
 }
 
 static gboolean pinger_active(void) {
@@ -210,10 +210,11 @@ void pinger_init(void) {
 
 void pinger_start(void) {
   if (!opts.target) return;
-  stat_clear(true);
-  graphtab_free();
   for (int i = opts.min; i < opts.lim; i++) if (!create_ping(i, &pings[i])) break;
-  if (pinger_active()) pinger_clear_data(true);
+  if (!pinger_active()) return;
+  stat_clear(true);
+  pinger_clear_data(true);
+  graphtab_free();
 }
 
 void pinger_stop_nth(int nth, const gchar* reason) {
@@ -257,7 +258,7 @@ void pinger_free(void) {
 
 void pinger_free_errors(void) { for (int i = 0; i < MAXTTL; i++) pinger_free_nth_error(i); }
 
-inline void pinger_free_nth_error(int nth) { UPD_STR(ping_errors[nth], NULL); }
+inline void pinger_free_nth_error(int nth) { if (ping_errors[nth]) UPD_STR(ping_errors[nth], NULL); }
 
 void pinger_clear_data(gboolean clean) {
   pinger_free_errors();
@@ -283,7 +284,12 @@ void pinger_on_quit(gboolean andstop) {
   if (andstop) pinger_stop("at exit"); // note: if it's sysexit, subprocesses have to be already terminated by system
 }
 
-int pinger_update_tabs(gpointer unused) { pingtab_update(); return G_SOURCE_CONTINUE; }
+int pinger_update_tabs(int *pseq) {
+  if (pseq) (*pseq)++;
+  pingtab_update();
+  if (opts.graph) graphtab_update(pseq != NULL);
+  return G_SOURCE_CONTINUE;
+}
 
 void pinger_vis_rows(int no) {
   pingtab_vis_rows(no);

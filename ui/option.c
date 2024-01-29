@@ -51,6 +51,8 @@ t_ent_bool ent_bool[ENT_BOOL_MAX] = {
     .pval = &lgndelem[LGFL_LGHN].enable, .prefix = OPT_LGFL_HDR  },
   [ENT_BOOL_MEAN] = { .en = { .typ = ENT_BOOL_MEAN, .name = OPT_MEAN_HDR },
     .pval = &opts.mean },
+  [ENT_BOOL_JRNG] = { .en = { .typ = ENT_BOOL_JRNG, .name = OPT_JRNG_HDR },
+    .pval = &opts.jrng },
 };
 
 t_ent_str ent_str[ENT_STR_MAX] = {
@@ -146,6 +148,8 @@ static void toggled_dns(void) {
   pinger_update_tabs(NULL);
 }
 
+static void toggle_graph_update(void) { graphtab_force_update(false); }
+
 static void toggle_cb(GtkCheckButton *check, t_ent_bool *en) {
   if (!GTK_IS_CHECK_BUTTON(check) || !en) return;
   switch (en->en.typ) {
@@ -181,7 +185,8 @@ static void toggle_cb(GtkCheckButton *check, t_ent_bool *en) {
       if (check_bool_val(check, en, NULL)) notifier_vis_rows(NT_GRAPH_NDX, -1);
       break;
     case ENT_BOOL_MEAN:
-      check_bool_val(check, en, graphtab_force_update);
+//    case ENT_BOOL_JRNG:
+      check_bool_val(check, en, toggle_graph_update);
       break;
   }
 }
@@ -299,7 +304,7 @@ static void max_cb(GtkWidget *spin, t_ent_spn *en) {
 
 static void graph_type_cb(void) {
   if (opts.graph == GRAPH_TYPE_NONE) graphtab_free();
-  if (!pinger_state.pause) graphtab_force_update();
+  if (!pinger_state.pause) graphtab_force_update(false);
 }
 
 static GtkWidget* label_box(const gchar *name) {
@@ -528,6 +533,7 @@ static gboolean create_graph_optmenu(GtkWidget *list) {
   if (!add_opt_check(list,  &ent_bool[ENT_BOOL_LGND])) okay = false;
   if (!add_opt_expand(list, &ent_exp[ENT_EXP_LGFL]))   okay = false;
   if (!add_opt_check(list,  &ent_bool[ENT_BOOL_MEAN])) okay = false;
+//  if (!add_opt_check(list,  &ent_bool[ENT_BOOL_JRNG])) okay = false;
   EN_PR_INT(ENT_STR_LOGMAX);
   return okay;
 }

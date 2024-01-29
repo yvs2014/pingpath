@@ -61,6 +61,7 @@ static const gchar *help_message =
   SPANOPT(OPT_LGFL_HDR, "to display:")
     SPANSUB(LGFL_DASH_HDR " " LGFL_AVJT_HDR " " LGFL_CCAS_HDR " " LGFL_LGHN_HDR)
   SPANOPT(OPT_MEAN_HDR         , "Averages on graphs")
+//  SPANOPT(OPT_JRNG_HDR         , "Fill jitter range on graphs")
   SPANOPT(OPT_LOGMAX_HDR       , "Max rows in log tab [" MSTRSTR(DEF_LOGMAX) "]")
 ;
 
@@ -117,7 +118,7 @@ static void on_pauseresume(GSimpleAction *action, GVariant *var, gpointer data) 
   pinger_state.pause = !pinger_state.pause;
   action_update();
   pinger_update_tabs(NULL);
-  if (opts.graph && !pinger_state.run && !pinger_state.pause) graphtab_force_update();
+  if (opts.graph) graphtab_force_update(true);
 }
 
 static void on_reset(GSimpleAction *action, GVariant *var, gpointer data) {

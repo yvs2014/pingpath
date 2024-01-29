@@ -1,3 +1,8 @@
+## 0.1.63
+- keep graph data in pause
+- graph time marks depending on interval
+- small other fixes
+
 ## 0.1.62
 - sysicons as a set with backup names
 

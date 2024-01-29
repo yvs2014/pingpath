@@ -9,7 +9,7 @@
 #endif
 
 #define APPNAME "pingpath"
-#define VERSION "0.1.62"
+#define VERSION "0.1.63"
 
 #define X_RES 1024
 #define Y_RES 720
@@ -58,8 +58,8 @@
 #define PING_TAB_ICON  "format-justify-left-symbolic"
 #define PING_TAB_ICOA  "view-continuous-symbolic"
 #define PING_TAB_ICOB  "view-list-symbolic"
-#define GRAPH_TAB_ICON "utilities-system-monitor-symbolic"
-#define GRAPH_TAB_ICOA "media-playlist-shuffle-symbolic"
+#define GRAPH_TAB_ICON "media-playlist-shuffle-symbolic"
+#define GRAPH_TAB_ICOA "utilities-system-monitor-symbolic"
 #define GRAPH_TAB_ICOB "media-playlist-repeat-symbolic"
 #define LOG_TAB_ICON   "system-search-symbolic"
 #define LOG_TAB_ICOA   "edit-find-symbolic"
@@ -155,6 +155,7 @@
 #define OPT_LGND_HDR     "Graph legend"
 #define OPT_LGFL_HDR     "Legend fields"
 #define OPT_MEAN_HDR     "Average line"
+#define OPT_JRNG_HDR     "Jitter range"
 #define OPT_LOGMAX_HDR   "LogTab rows"
 
 #define ELEM_HOST_HDR  "Host"
@@ -227,7 +228,7 @@ enum { ENT_EXP_NONE, ENT_EXP_INFO, ENT_EXP_STAT, ENT_EXP_LGFL, ENT_EXP_MAX };
 
 enum { ENT_BOOL_NONE, ENT_BOOL_DNS, ENT_BOOL_HOST, ENT_BOOL_AS, ENT_BOOL_CC, ENT_BOOL_DESC, ENT_BOOL_RT,
   ENT_BOOL_LOSS, ENT_BOOL_SENT, ENT_BOOL_RECV, ENT_BOOL_LAST, ENT_BOOL_BEST, ENT_BOOL_WRST, ENT_BOOL_AVRG, ENT_BOOL_JTTR,
-  ENT_BOOL_LGND, ENT_BOOL_DASH, ENT_BOOL_AVJT, ENT_BOOL_CCAS, ENT_BOOL_LGHN, ENT_BOOL_MEAN, ENT_BOOL_MAX };
+  ENT_BOOL_LGND, ENT_BOOL_DASH, ENT_BOOL_AVJT, ENT_BOOL_CCAS, ENT_BOOL_LGHN, ENT_BOOL_MEAN, ENT_BOOL_JRNG, ENT_BOOL_MAX };
 
 enum { ELEM_NO, ELEM_HOST, ELEM_AS, ELEM_CC, ELEM_DESC, ELEM_RT, ELEM_FILL,
   ELEM_LOSS, ELEM_SENT, ELEM_RECV, ELEM_LAST, ELEM_BEST, ELEM_WRST, ELEM_AVRG, ELEM_JTTR, ELEM_MAX };
@@ -266,14 +267,13 @@ typedef struct tseq {
 typedef struct hop {
   t_host host[MAXADDR]; gboolean cached;
   t_whois whois[MAXADDR]; gboolean wcached[WHOIS_NDX_MAX];
-  int sent, recv, last, prev, best, wrst;
+  int sent, recv, last, best, wrst;
   double loss, avrg, jttr;
+  // internal
+  int at, prev, known_rtts, known_jttrs;
+  gboolean reach, tout;
   t_tseq mark;
-  gboolean reach;
-  gboolean tout; // flag of timeouted seq
   gchar* info;
-  int at;        // useful back reference
-  int known_rtts, known_jttrs; // for more accurate calculations
 } t_hop;
 
 typedef struct ref { t_hop *hop; int ndx; } t_ref;
@@ -302,11 +302,17 @@ typedef struct t_stat_elem {
   gchar *name, *tip;
 } t_stat_elem;
 
-typedef struct t_stat_graph {
-  int rtt;
-  double jttr;
+typedef struct t_legend {
   const gchar *name, *as, *cc, *av, *jt;
-} t_stat_graph;
+} t_legend;
+
+typedef struct t_graph_data {
+  int rtt, seq;
+} t_graph_data;
+
+typedef struct t_rseq {
+  int rtt, seq;
+} t_rseq;
 
 extern const char *appver;
 extern const char *unkn_error;

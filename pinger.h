@@ -11,7 +11,7 @@
 
 typedef struct opts {
   gchar *target;
-  gboolean dns, whois, legend, mean;
+  gboolean dns, whois, legend, mean, jrng;
   int cycles, timeout, qos, size, ipv, graph;
   int min, lim;       // TTL range
   char pad[PAD_SIZE]; // 16 x "00."
@@ -38,7 +38,7 @@ void pinger_clear_data(gboolean clean);
 void pinger_set_error(const gchar *error);
 gboolean pinger_within_range(int min, int max, int got);
 void pinger_on_quit(gboolean andstop);
-int pinger_update_tabs(gpointer unused);
+int pinger_update_tabs(int *pseq);
 void pinger_vis_rows(int no);
 void pinger_update_width(int typ, int max);
 

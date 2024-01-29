@@ -130,17 +130,9 @@ static void update_stat(int at, int rtt, t_tseq *mark, int rxtx) {
     hops[at].last = rtt;
   }
   if (mark) hops[at].mark = *mark;
-  // update timeouted flag
-  if (rxtx == TX) hops[at].tout = true;
-  else if (rxtx != NONE) hops[at].tout = false;
-  // update global gotdata flag
   if (!pinger_state.gotdata) pinger_state.gotdata = true;
-  if (!hops[at].tout) {
-    if ((visibles < at) && (at < hops_no)) {
-      visibles = at;
-      pinger_vis_rows(at + 1);
-    }
-  }
+  { if (rxtx == TX) hops[at].tout = true; else if (rxtx != NONE) hops[at].tout = false; }
+  if (!hops[at].tout && (visibles < at) && (at < hops_no)) { visibles = at; pinger_vis_rows(at + 1); }
 }
 
 static int calc_rtt(int at, t_tseq *mark) {
@@ -226,23 +218,23 @@ static const gchar* fill_stat_rtt(int usec, gchar* buff, int size) {
 }
 
 static const gchar *stat_hop(int typ, t_hop *hop) {
-  static gchar loss[NUM_BUFF_SZ];
-  static gchar sent[NUM_BUFF_SZ];
-  static gchar recv[NUM_BUFF_SZ];
-  static gchar last[NUM_BUFF_SZ];
-  static gchar best[NUM_BUFF_SZ];
-  static gchar wrst[NUM_BUFF_SZ];
-  static gchar avrg[NUM_BUFF_SZ];
-  static gchar jttr[NUM_BUFF_SZ];
+  static gchar buff_loss[NUM_BUFF_SZ];
+  static gchar buff_sent[NUM_BUFF_SZ];
+  static gchar buff_recv[NUM_BUFF_SZ];
+  static gchar buff_last[NUM_BUFF_SZ];
+  static gchar buff_best[NUM_BUFF_SZ];
+  static gchar buff_wrst[NUM_BUFF_SZ];
+  static gchar buff_avrg[NUM_BUFF_SZ];
+  static gchar buff_jttr[NUM_BUFF_SZ];
   switch (typ) {
-    case ELEM_LOSS: return fill_stat_dbl(hop->loss, loss, sizeof(loss), "%", 0);
-    case ELEM_SENT: return fill_stat_int(hop->sent, sent, sizeof(sent));
-    case ELEM_RECV: return fill_stat_int(hop->recv, recv, sizeof(recv));
-    case ELEM_LAST: return fill_stat_rtt(hop->last, last, sizeof(last));
-    case ELEM_BEST: return fill_stat_rtt(hop->best, best, sizeof(best));
-    case ELEM_WRST: return fill_stat_rtt(hop->wrst, wrst, sizeof(wrst));
-    case ELEM_AVRG: return fill_stat_dbl(hop->avrg, avrg, sizeof(avrg), NULL, 1000);
-    case ELEM_JTTR: return fill_stat_dbl(hop->jttr, jttr, sizeof(jttr), NULL, 1000);
+    case ELEM_LOSS: return fill_stat_dbl(hop->loss, buff_loss, sizeof(buff_loss), "%", 0);
+    case ELEM_SENT: return fill_stat_int(hop->sent, buff_sent, sizeof(buff_sent));
+    case ELEM_RECV: return fill_stat_int(hop->recv, buff_recv, sizeof(buff_recv));
+    case ELEM_LAST: return fill_stat_rtt(hop->last, buff_last, sizeof(buff_last));
+    case ELEM_BEST: return fill_stat_rtt(hop->best, buff_best, sizeof(buff_best));
+    case ELEM_WRST: return fill_stat_rtt(hop->wrst, buff_wrst, sizeof(buff_wrst));
+    case ELEM_AVRG: return fill_stat_dbl(hop->avrg, buff_avrg, sizeof(buff_avrg), NULL, 1000);
+    case ELEM_JTTR: return fill_stat_dbl(hop->jttr, buff_jttr, sizeof(buff_jttr), NULL, 1000);
   }
   return NULL;
 }
@@ -253,6 +245,11 @@ static void set_initial_maxes(void) {
   whois_max[WHOIS_CC_NDX]   = g_utf8_strlen(ELEM_CC_HDR,   MAXHOSTNAME);
   whois_max[WHOIS_DESC_NDX] = g_utf8_strlen(ELEM_DESC_HDR, MAXHOSTNAME);
   whois_max[WHOIS_RT_NDX]   = g_utf8_strlen(ELEM_RT_HDR,   MAXHOSTNAME);
+}
+
+static void stat_nth_hop_NA(t_hop *hop) { // NA(<0)
+  hop->last = hop->best = hop->wrst = hop->prev = -1;
+  hop->loss = hop->avrg = hop->jttr = -1;
 }
 
 
@@ -269,8 +266,7 @@ void stat_init(gboolean clean) { // clean start or on reset
   }
   for (int i = 0; i < MAXTTL; i++) {
     if (clean) hops[i].reach = true;
-    hops[i].last = hops[i].best = hops[i].wrst = -1;
-    hops[i].loss = hops[i].avrg = hops[i].jttr = -1;
+    stat_nth_hop_NA(&hops[i]);
     hops[i].at = i;
   }
   set_initial_maxes();
@@ -281,9 +277,8 @@ void stat_free(void) {
   for (int at = 0; at < MAXTTL; at++) { // clear all except of mark and tout
     t_hop *hop = &hops[at];
     // clear statdata
-    hop->sent = hop->recv = hop->prev = hop->known_rtts = hop->known_jttrs = 0;
-    hop->last = hop->best = hop->wrst = -1; // NA(-1) at init too
-    hop->loss = hop->avrg = hop->jttr = -1;
+    hop->sent = hop->recv = hop->known_rtts = hop->known_jttrs = 0;
+    stat_nth_hop_NA(hop);
     // clear strings
     for (int i = 0; i < MAXADDR; i++) {
       UPD_STR(hop->host[i].addr, NULL);
@@ -330,10 +325,10 @@ void stat_save_success(int at, t_ping_success *data) {
 
 void stat_save_discard(int at, t_ping_discard *data) {
   update_addrname(at, &data->host);
-  seq_accord(hops[at].mark.seq, data->mark.seq)
-    ? update_stat(at, calc_rtt(at, &data->mark), &data->mark, RXTX)
-    : update_stat(at, -1, NULL, RX);
-  if (data->reason) { // 'unreach' management
+  if ((data->mark.seq - hops[at].mark.seq) != 1) update_stat(at, -1, NULL, RX);
+  else update_stat(at, calc_rtt(at, &data->mark), &data->mark, RXTX);
+  // 'unreach' management
+  if (data->reason) {
     int ttl = at + 1;
     gboolean reach = !g_strrstr(data->reason, "nreachable");
     if (hops[at].reach != reach) hops[at].reach = reach;
@@ -398,12 +393,17 @@ double stat_dbl_elem(int at, int typ) {
   return re;
 }
 
-t_stat_graph stat_graph_data_at(int at) {
-  t_stat_graph sd = { .rtt = hops[at].last, .jttr = hops[at].jttr, .name = stat_str_elem(at, ELEM_HOST),
-    .as = stat_str_elem(at, ELEM_AS),   .cc = stat_str_elem(at, ELEM_CC),
-    .av = stat_str_elem(at, ELEM_AVRG), .jt = stat_str_elem(at, ELEM_JTTR),
-  };
-  return sd;
+void stat_rseq(int at, t_rseq *data) {
+  if (data && (at >= 0) && (at < MAXTTL)) { data->rtt = hops[at].last; data->seq = hops[at].mark.seq; }
+}
+
+void stat_legend(int at, t_legend *data) {
+  if (!data) return;
+  data->name = stat_str_elem(at, ELEM_HOST);
+  data->as = stat_str_elem(at, ELEM_AS);
+  data->cc = stat_str_elem(at, ELEM_CC);
+  data->av = stat_str_elem(at, ELEM_AVRG);
+  data->jt = stat_str_elem(at, ELEM_JTTR);
 }
 
 int stat_elem_max(int typ) {

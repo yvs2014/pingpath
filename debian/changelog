@@ -1,3 +1,13 @@
+pingpath (0.1.63) lunar mantic; urgency=low
+
+  * keep graph data in pause
+
+  * graph time marks depending on interval
+
+  * small other fixes
+
+ -- yvs <VSYakovetsky@gmail.com>  Mon, 29 Jan 2024 11:08:20 +0200
+
 pingpath (0.1.62) lunar mantic; urgency=low
 
   * sysicons as a set with backup names

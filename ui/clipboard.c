@@ -124,11 +124,13 @@ static gchar* cb_collect_level2(GList *list) {
         if (!*str) elems[i][j] = (l > 0) ? g_strdup_printf("%-*s", l, str) : g_strdup(str);
         else {
           gchar **multi = g_strsplit(str, "\n", MAXADDR);
-          int ii = i;
-          for (gchar **s = multi; *s && (ii < MAXT2); s++) // put '\n'-elems ahead
-            elems[ii++][j] = (l > 0) ? g_strdup_printf("%-*s", l, *s) : g_strdup(*s);
-          g_strfreev(multi);
-          if ((ii - i) > di) di = ii - i;
+          if (multi) {
+            int ii = i;
+            for (gchar **s = multi; *s && (ii < MAXT2); s++) // put '\n'-elems ahead
+              elems[ii++][j] = (l > 0) ? g_strdup_printf("%-*s", l, *s) : g_strdup(*s);
+            g_strfreev(multi);
+            if ((ii - i) > di) di = ii - i;
+          }
         }
         j++;
       }
