@@ -64,7 +64,7 @@ static void nt_inform(t_notifier *nt, gchar *mesg) {
     gtk_widget_add_css_class(nt->box, nt_bglight ? CSS_LIGHT_BG : CSS_DARK_BG);
   }
   gtk_revealer_set_reveal_child(GTK_REVEALER(nt->reveal), true);
-  if (nt->autohide) nt->visible = g_timeout_add(AUTOHIDE_IN, (GSourceFunc)nt_hide, nt);
+  if (nt->autohide) nt->visible = g_timeout_add_seconds(AUTOHIDE_IN, (GSourceFunc)nt_hide, nt);
 }
 
 static gboolean nt_legend_pos_cb(GtkOverlay *overlay, GtkWidget *widget, GdkRectangle *r, t_notifier *nt) {

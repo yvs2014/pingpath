@@ -21,7 +21,7 @@ t_opts opts = { .target = NULL, .dns = true, .whois = true, .cycles = DEF_CYCLES
   .min = 0, .lim = MAXTTL, .timeout = DEF_TOUT, .tout_usec = DEF_TOUT * 1000000, .logmax = DEF_LOGMAX,
   .graph = GRAPH_TYPE_CURVE, .legend = true };
 t_pinger_state pinger_state;
-guint stat_timer;
+guint stat_timer, exp_timer;
 
 typedef struct proc {
   GSubprocess *proc;
@@ -49,7 +49,7 @@ static gchar* last_error(void) {
 static void tab_updater(gboolean reset) {
   static int ping_seq;
   if (stat_timer) { g_source_remove(stat_timer); stat_timer = 0; }
-  if (reset) { ping_seq = 0; stat_timer = g_timeout_add(opts.timeout * 1000, (GSourceFunc)pinger_update_tabs, &ping_seq); }
+  if (reset) { ping_seq = 0; stat_timer = g_timeout_add_seconds(opts.timeout, (GSourceFunc)pinger_update_tabs, &ping_seq); }
 }
 
 static gboolean pinger_active(void) {
@@ -199,6 +199,14 @@ static gboolean create_ping(int at, t_proc *p) {
   return p->active;
 }
 
+static int pinger_check_expired(gpointer unused) {
+  for (int i = 0; i < MAXTTL; i++) if (pings[i].active) {
+    LOG("proc(%d) is still active after expire time, stopping..", i);
+    pinger_stop_nth(i, "runtime expired");
+  }
+  exp_timer = 0; return G_SOURCE_REMOVE;
+}
+
 
 // pub
 //
@@ -215,6 +223,11 @@ void pinger_start(void) {
   stat_clear(true);
   pinger_clear_data(true);
   graphtab_free();
+  // schedule expiration check out
+  if (exp_timer) { g_source_remove(exp_timer); exp_timer = 0; }
+  guint exp_in = round(opts.cycles * (opts.timeout * 1.024)) + opts.timeout * 2; // ~24msec of possible ping time resolution
+  exp_timer = g_timeout_add_seconds(exp_in, pinger_check_expired, NULL);
+  LOG("expiration set to %d seconds for %d cycles", exp_in, opts.cycles);
 }
 
 void pinger_stop_nth(int nth, const gchar* reason) {
@@ -277,7 +290,11 @@ gboolean pinger_within_range(int min, int max, int got) { // 1..MAXTTL
 }
 
 void pinger_on_quit(gboolean andstop) {
-  g_source_remove(datetime_id); datetime_id = 0; // stop timer unless it's already done
+  // stop timers unless it's already done
+  g_source_remove(datetime_id); datetime_id = 0;
+  if (exp_timer) { g_source_remove(exp_timer); exp_timer = 0; }
+  if (stat_timer) { g_source_remove(stat_timer); stat_timer = 0; }
+  // free resources
   pinger_free();
   dns_cache_free();
   whois_cache_free();

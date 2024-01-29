@@ -1,3 +1,7 @@
+## 0.1.64
+- switch timers to more efficient g_timeout_add_seconds()
+- set expiration pings' runtime to deal with https://github.com/iputils/iputils/issues/480 issue
+
 ## 0.1.63
 - keep graph data in pause
 - graph time marks depending on interval

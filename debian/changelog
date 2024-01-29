@@ -1,3 +1,11 @@
+pingpath (0.1.64) lunar mantic; urgency=low
+
+  * switch timers to more efficient g_timeout_add_seconds()
+
+  * set expiration pings' runtime to deal with https://github.com/iputils/iputils/issues/480 issue
+
+ -- yvs <VSYakovetsky@gmail.com>  Mon, 29 Jan 2024 13:50:25 +0200
+
 pingpath (0.1.63) lunar mantic; urgency=low
 
   * keep graph data in pause

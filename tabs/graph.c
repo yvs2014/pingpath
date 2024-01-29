@@ -58,7 +58,7 @@ static GtkWidget *graph_grid, *graph_marks, *graph_graph;
 static PangoFontDescription *graph_font;
 
 static t_gr_aux_measures grm = { .x = GRAPH_LEFT, .y = GRAPH_TOP, .fs = CELL_SIZE * GRF_RATIO, .ymax = GR_RTT0,
-  .dx = (MAIN_TIMING_MSEC / 1000.) * ((double)CELL_SIZE / X_IN_TIME_TICKS),
+  .dx = MAIN_TIMING_SEC * ((double)CELL_SIZE / X_IN_TIME_TICKS),
   .no = X_RES / ((double)CELL_SIZE / X_IN_TIME_TICKS) + 1, // to start keeping data w/o knowing drawing area width
 };
 

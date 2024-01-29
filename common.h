@@ -9,7 +9,7 @@
 #endif
 
 #define APPNAME "pingpath"
-#define VERSION "0.1.63"
+#define VERSION "0.1.64"
 
 #define X_RES 1024
 #define Y_RES 720
@@ -24,6 +24,9 @@
 #define WHOIS_CACHE_MAX MAXTTL
 #define DEF_LOGMAX      500 // max lines in log-tab
 
+#define MAIN_TIMING_SEC 1
+#define AUTOHIDE_IN     2   // popup notifications, in seconds
+
 #define MAXHOSTNAME     63  // in chars: must 63, should 255
 #define NET_BUFF_SIZE 4096  // suppose it's enough (dns or whois data is usually 200-300 bytes)
 #define BUFF_SIZE     1024
@@ -31,8 +34,6 @@
 
 #define INFO_PATT    "hacdr"
 #define STAT_PATT    "lsrmbwaj"
-
-#define AUTOHIDE_IN 2000    // popup notifications, in milliseconds
 
 #define EV_ACTIVE     "activate"
 #define EV_DESTROY    "destroy"
@@ -203,8 +204,6 @@
 
 #define TOGGLE_ON_HDR  "on"
 #define TOGGLE_OFF_HDR "off"
-
-#define MAIN_TIMING_MSEC 1000
 
 #define CYCLES_MIN 1
 #define CYCLES_MAX 999999

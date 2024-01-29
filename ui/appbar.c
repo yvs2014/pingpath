@@ -34,7 +34,7 @@ static gboolean start_datetime(GtkWidget *bar) {
   g_return_val_if_fail(GTK_IS_LABEL(label), false);
   gtk_box_append(GTK_BOX(datetime), label);
   gtk_widget_set_visible(label, true);
-  datetime_id = g_timeout_add(MAIN_TIMING_MSEC, update_datetime, label);
+  datetime_id = g_timeout_add_seconds(MAIN_TIMING_SEC, update_datetime, label);
   return true;
 }
 
