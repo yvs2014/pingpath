@@ -171,7 +171,7 @@ static void toggle_cb(GtkCheckButton *check, t_ent_bool *en) {
     case ENT_BOOL_CC:
     case ENT_BOOL_DESC:
     case ENT_BOOL_RT:
-      check_bool_val(check, en, pingtab_vis_cols);
+      if (check_bool_val(check, en, pingtab_vis_cols)) notifier_vis_rows(NT_GRAPH_NDX, -1);
       stat_whois_enabler();
       if (opts.whois) stat_run_whois_resolv();
       break;

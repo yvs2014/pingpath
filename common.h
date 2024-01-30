@@ -9,7 +9,7 @@
 #endif
 
 #define APPNAME "pingpath"
-#define VERSION "0.1.64"
+#define VERSION "0.1.65"
 
 #define X_RES 1024
 #define Y_RES 720
@@ -263,15 +263,22 @@ typedef struct tseq {
   int usec;
 } t_tseq;
 
+typedef struct t_rseq {
+  int rtt, seq;
+} t_rseq;
+
 typedef struct hop {
-  t_host host[MAXADDR]; gboolean cached;
-  t_whois whois[MAXADDR]; gboolean wcached[WHOIS_NDX_MAX];
   int sent, recv, last, best, wrst;
   double loss, avrg, jttr;
+  t_host host[MAXADDR];
+  gboolean cached, cached_nl;
+  t_whois whois[MAXADDR];
+  gboolean wcached[WHOIS_NDX_MAX], wcached_nl[WHOIS_NDX_MAX];
   // internal
   int at, prev, known_rtts, known_jttrs;
   gboolean reach, tout;
   t_tseq mark;
+  t_rseq rseq[2];
   gchar* info;
 } t_hop;
 
@@ -304,14 +311,6 @@ typedef struct t_stat_elem {
 typedef struct t_legend {
   const gchar *name, *as, *cc, *av, *jt;
 } t_legend;
-
-typedef struct t_graph_data {
-  int rtt, seq;
-} t_graph_data;
-
-typedef struct t_rseq {
-  int rtt, seq;
-} t_rseq;
 
 extern const char *appver;
 extern const char *unkn_error;

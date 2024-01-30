@@ -2,7 +2,6 @@
 #include "graph.h"
 #include "pinger.h"
 #include "stat.h"
-#include "ui/style.h"
 #include "ui/notifier.h"
 
 #define X_AXIS "time"
@@ -75,7 +74,7 @@ static int gr_max_in_series(void) {
   for (int i = 0; i < n_series; i++) {
     for (GSList *item = GR_LIST; item; item = item->next) {
       if (!item->data) continue;
-      int rtt = ((t_graph_data*)item->data)->rtt;
+      int rtt = ((t_rseq*)item->data)->rtt;
       if (rtt > max) max = rtt;
     }
   }
@@ -85,16 +84,17 @@ static int gr_max_in_series(void) {
 #define GR_ACTUAL_LIST (series[i].list)
 #define GR_ACTUAL_LEN (series[i].len)
 
-static void gr_save(int i, t_graph_data *stat) {
-  if (gr_series_lock || !stat) return;
+static void gr_save(int i, t_rseq *data) {
+  if (gr_series_lock || !data) return;
+  t_rseq *copy = g_memdup2(data, sizeof(*data));
+  if (!copy) return; // unlikely
   t_gr_list* series = pinger_state.pause ? gr_series_kept : gr_series;
-  t_graph_data *sd = g_memdup2(stat, sizeof(*stat));
-  GR_ACTUAL_LIST = g_slist_prepend(GR_ACTUAL_LIST, sd); GR_ACTUAL_LEN++;
-  if (sd && (sd->rtt > grm.ymax)) gr_scale_max(sd->rtt); // up-scale
+  GR_ACTUAL_LIST = g_slist_prepend(GR_ACTUAL_LIST, copy); GR_ACTUAL_LEN++;
+  if (data->rtt > grm.ymax) gr_scale_max(data->rtt); // up-scale
   while (GR_ACTUAL_LIST && (GR_ACTUAL_LEN > grm.no)) {
     GSList *last = g_slist_last(GR_ACTUAL_LIST);
     if (!last) break;
-    int rtt = last->data ? ((t_graph_data*)last->data)->rtt : -1;
+    int rtt = last->data ? ((t_rseq*)last->data)->rtt : -1;
     GR_ACTUAL_LIST = g_slist_delete_link(GR_ACTUAL_LIST, last); GR_ACTUAL_LEN--;
     if ((rtt * GR_Y_GAP) >= grm.ymax) {
       int max = gr_max_in_series();
@@ -113,7 +113,7 @@ static void gr_set_font(void) {
 }
 
 static inline double rtt2y(double rtt) { return grm.y1 - rtt / grm.ymax * grm.h; }
-static inline double yscaled(double rtt) { return rtt / grm.ymax * grm.h; }
+//static inline double yscaled(double rtt) { return rtt / grm.ymax * grm.h; }
 
 static inline void gr_draw_dot_at(cairo_t *cr, double x, double rtt) {
   cairo_move_to(cr, x, rtt2y(rtt));
@@ -131,20 +131,19 @@ static inline void gr_draw_line_at(cairo_t *cr, double x0, double rtt0, double x
 static inline void gr_draw_dot_loop(int i, cairo_t *cr, double x) {
   for (GSList *item = GR_LIST; item; item = item->next, x -= grm.dx) {
     if (x < grm.x) break;
-    t_graph_data *data = item->data;
+    t_rseq *data = item->data;
     if (IS_RTT_DATA(data)) gr_draw_dot_at(cr, x, data->rtt);
   }
 }
 
 #if 0
+#define PR_RSEQ_GR_ITEM { if (item->data) g_print(" #%d:%d", ((t_rseq*)item->data)->seq, ((t_rseq*)item->data)->rtt); }
 static void _gr_print_serie(int i) {
   g_print(">>> serie_main[%d] len=%d:", i, GR_LEN);
-  for (GSList *item = GR_LIST; item; item = item->next)
-    if (item->data) g_print(" %d", ((t_graph_data*)item->data)->rtt);
+  for (GSList *item = GR_LIST; item; item = item->next) PR_RSEQ_GR_ITEM;
   g_print("\n");
   g_print(">>> serie_kept[%d] len=%d:", i, GR_LEN_CP);
-  for (GSList *item = GR_LIST_CP; item; item = item->next)
-    if (item->data) g_print(" %d", ((t_graph_data*)item->data)->rtt);
+  for (GSList *item = GR_LIST_CP; item; item = item->next) PR_RSEQ_GR_ITEM;
   g_print("\n");
 }
 #endif
@@ -157,7 +156,7 @@ static void gr_draw_line_loop(int i, cairo_t *cr, double x) {
   t_gr_point_desc prev = { .rtt = -1, .conn = true };
   for (GSList *item = GR_LIST; item; item = item->next, x -= grm.dx) {
     if (x < grm.x) break;
-    t_graph_data *data = item->data;
+    t_rseq *data = item->data;
     if (!data) continue;
     gboolean connected = false;
     if (prev.rtt > 0) {
@@ -179,7 +178,7 @@ static inline int centripetal(double d1, double q1, double d2, double q2, int p0
   return (d1 * p0 - d2 * p1 + (2 * d1 + 3 * q1 * q2 + d2) * p2) / (3 * q1 * (q1 + q2)) + 0.5;
 }
 
-#define DRAW_CURVE_PROLOG { if (GR_LIST) { t_graph_data *data = GR_LIST->data; int r0 = RTT_OR_NEG(data); \
+#define DRAW_CURVE_PROLOG { if (GR_LIST) { t_rseq *data = GR_LIST->data; int r0 = RTT_OR_NEG(data); \
   if (r0 > 0) { data = g_slist_nth_data(GR_LIST, 1); int r1 = RTT_OR_NEG(data); \
     if (r1 > 0) gr_draw_line_at(cr, x0, r0, x0 - grm.dx, r1); else FULL_DRAW_DOT(x0, r0); }}}
 
@@ -189,7 +188,7 @@ static void gr_draw_curve_loop(int i, cairo_t *cr, double x0) {
   for (GSList *item = GR_LIST; item; item = item->next, x0 -= grm.dx) {
     int r0, r1, r2, r3;
     double x1, x2, x3;
-    t_graph_data *data = item->data;  r0 = RTT_OR_NEG(data);
+    t_rseq *data = item->data;        r0 = RTT_OR_NEG(data);
     data = g_slist_nth_data(item, 1); r1 = RTT_OR_NEG(data); x1 = x0 - grm.dx;
     data = g_slist_nth_data(item, 2); r2 = RTT_OR_NEG(data); x2 = x1 - grm.dx;
     data = g_slist_nth_data(item, 3); r3 = RTT_OR_NEG(data); x3 = x2 - grm.dx;
@@ -358,18 +357,31 @@ static void gr_draw_graph(GtkDrawingArea *area, cairo_t* cr, int w, int h, gpoin
   }
 }
 
+#define GR_LAST_SEQ ((GR_ACTUAL_LEN && GR_ACTUAL_LIST && GR_ACTUAL_LIST->data) ? ((t_rseq*)GR_ACTUAL_LIST->data)->seq : 0)
+
 static void graphtab_data_update(void) {
-  t_graph_data skip = { .rtt = -1, .seq = -1 };
+  if (gr_series_lock) return;
+  t_gr_list* series = pinger_state.pause ? gr_series_kept : gr_series;
+  t_rseq skip = { .rtt = -1, .seq = 0 };
   for (int i = 0; i < n_series; i++) {
-    if (pinger_state.run && (opts.min <= i) && (i < hops_no)) {
-      t_rseq rseq; stat_rseq(i, &rseq);
-      t_graph_data data = { .rtt = rseq.rtt, .seq = rseq.seq };
-      gr_save(i, &data);
+    if ((opts.min <= i) && (i < hops_no)) {
+      int seq = GR_LAST_SEQ + 1;
+      t_rseq data = { .seq = seq };
+      stat_rseq(i, &data);
+      if (data.seq > 0) gr_save(i, &data);
+      else /* sync seq */ if (data.seq < 0) { // rarely
+        data.seq = -data.seq;
+        if (data.seq < seq) DEBUG("sync back: req#%d got#%d", seq, data.seq)
+        else { // unlikely, just in case
+          gr_save(i, &data);
+          DEBUG("sync forward: req#%d got#%d", seq, data.seq);
+        }
+      }
     } else gr_save(i, &skip);
   }
 }
 
-gpointer gr_dup_stat_graph(gconstpointer src, gpointer data) { return g_memdup2(src, sizeof(t_graph_data)); }
+gpointer gr_dup_stat_graph(gconstpointer src, gpointer data) { return g_memdup2(src, sizeof(t_rseq)); }
 
 static void gr_freeze_data(void) {
   gr_series_lock = true;
@@ -443,6 +455,14 @@ void graphtab_update(gboolean retrieve) {
   if (pinger_state.gotdata && opts.legend && !notifier_get_visible(NT_GRAPH_NDX))
     notifier_set_visible(NT_GRAPH_NDX, true);
   if (retrieve) graphtab_data_update();
+  if (!pinger_state.pause) {
+    if (opts.legend) notifier_legend_update(NT_GRAPH_NDX);
+    if (GTK_IS_WIDGET(graph_graph)) gtk_widget_queue_draw(graph_graph);
+  }
+}
+
+void graphtab_final_update(void) {
+  graphtab_data_update();
   if (!pinger_state.pause) {
     if (opts.legend) notifier_legend_update(NT_GRAPH_NDX);
     if (GTK_IS_WIDGET(graph_graph)) gtk_widget_queue_draw(graph_graph);

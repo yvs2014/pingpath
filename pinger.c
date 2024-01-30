@@ -90,6 +90,7 @@ static void process_stopped(GObject *process, GAsyncResult *result, t_proc *proc
   if (!pinger_active()) { // final update
     pingtab_update();
     if (!pinger_state.gotdata && (!info_mesg || (info_mesg == notyet_mesg))) pinger_set_error(nodata_mesg);
+    if (opts.graph) graphtab_final_update();
   }
 }
 

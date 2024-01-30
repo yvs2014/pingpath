@@ -108,11 +108,12 @@ static void whois_query_close(t_wq_elem *elem) {
   whois_query = g_slist_remove(whois_query, elem);
 }
 
-static void whois_copy_elems(gchar* from[], gchar* to[], gboolean *wcached) {
+static void whois_copy_elems(gchar* from[], gchar* to[], gboolean *wcached, gboolean *wcached_nl) {
   if (!from || !to) return;
   for (int i = 0; i < WHOIS_NDX_MAX; i++) {
     UPD_NSTR(to[i], from[i], MAXHOSTNAME);
     if (wcached) wcached[i] = false;
+    if (wcached_nl) wcached_nl[i] = false;
   }
 }
 
@@ -125,7 +126,7 @@ static void whois_query_complete(t_ref *ref, t_wq_elem *elem) {
     gchar *addr = elem->data.addr;
     if (STR_EQ(orig, addr)) {
       gchar **elems = hop->whois[ndx].elem;
-      whois_copy_elems(elem->data.whois.elem, elems, hop->wcached);
+      whois_copy_elems(elem->data.whois.elem, elems, hop->wcached, hop->wcached_nl);
       stat_check_whois_max(elems);
     } else LOG("whois(%s) origin is changed: %s", addr, orig);
   }
@@ -135,7 +136,7 @@ static void whois_cache_update(gchar *addr, gchar* welem[]) {
   if (!addr) return;
   t_wc_elem *cache = wc_find(addr);
   if (cache) {
-    whois_copy_elems(welem, cache->whois.elem, NULL);
+    whois_copy_elems(welem, cache->whois.elem, NULL, NULL);
     PR_WHOIS_C; return;
   }
   cache = g_malloc0(sizeof(t_wc_elem));
@@ -267,7 +268,7 @@ void whois_resolv(t_hop *hop, int ndx) {
   PR_WHOIS_C;
   t_wc_elem *cached = wc_find(addr);
   if (cached) { // update with cached data and return
-    whois_copy_elems(cached->whois.elem, hop->whois[ndx].elem, hop->wcached);
+    whois_copy_elems(cached->whois.elem, hop->whois[ndx].elem, hop->wcached, hop->wcached_nl);
     WHOIS_DEBUG("cache hit[%d,%d]: addr=%s -> as=%s cc=%s rt=%s desc=%s", hop->at, ndx, addr,
       cached->whois.elem[WHOIS_AS_NDX], cached->whois.elem[WHOIS_CC_NDX],
       cached->whois.elem[WHOIS_RT_NDX], cached->whois.elem[WHOIS_DESC_NDX]);

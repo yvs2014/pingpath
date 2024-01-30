@@ -64,7 +64,7 @@ static void update_addrname(int at, t_host *b) { // addr is mandatory, name not
         if (b->name) { // add first resolved hostname to not change it back-n-forth
           UPD_STR(a->name, b->name);
           update_hmax(NULL, b->name);
-          hops[at].cached = false;
+          hops[at].cached = hops[at].cached_nl = false;
           LOG("set hostname[%d]: %s", at, b->name);
         } else if (opts.dns) dns_lookup(hop, i); // otherwise run dns lookup
       }
@@ -78,10 +78,10 @@ static void update_addrname(int at, t_host *b) { // addr is mandatory, name not
       UPD_STR(a->addr, b->addr);
       UPD_STR(a->name, b->name);
       update_hmax(b->addr, b->name);
-      hops[at].cached = false;
+      hops[at].cached = hops[at].cached_nl = false;
       for (int j = 0; j < WHOIS_NDX_MAX; j++) {
         UPD_STR(hop->whois[vacant].elem[j], NULL);
-        hops[at].wcached[j] = false;
+        hops[at].wcached[j] = hops[at].wcached_nl[j] = false;
       }
       LOG("set addrname[%d]: %s %s", at, b->addr, b->name ? b->name : "");
       if (!b->name && opts.dns) dns_lookup(hop, vacant); // run dns lookup
@@ -117,6 +117,8 @@ static void uniq_unreach(int at) {
 #define STAT_AVERAGE(count, avrg, val) { count++; \
   if (count > 0) { if (avrg < 0) avrg = 0; avrg += (val - avrg) / count; }}
 
+enum { PREV, CURR };
+
 static void update_stat(int at, int rtt, t_tseq *mark, int rxtx) {
   if (rxtx & RX) hops[at].recv++;
   if (rxtx & TX) hops[at].sent++;
@@ -129,7 +131,13 @@ static void update_stat(int at, int rtt, t_tseq *mark, int rxtx) {
     hops[at].prev = hops[at].last;
     hops[at].last = rtt;
   }
-  if (mark) hops[at].mark = *mark;
+  if (mark) {
+    hops[at].mark = *mark;
+    if (mark->seq != hops[at].rseq[CURR].seq) {
+      hops[at].rseq[PREV] = hops[at].rseq[CURR];
+      hops[at].rseq[CURR].rtt = rtt; hops[at].rseq[CURR].seq = mark->seq;
+    }
+  }
   if (!pinger_state.gotdata) pinger_state.gotdata = true;
   { if (rxtx == TX) hops[at].tout = true; else if (rxtx != NONE) hops[at].tout = false; }
   if (!hops[at].tout && (visibles < at) && (at < hops_no)) { visibles = at; pinger_vis_rows(at + 1); }
@@ -141,8 +149,6 @@ static int calc_rtt(int at, t_tseq *mark) {
   rtt = (rtt > opts.tout_usec) ? -1 : rtt; // skip timeouted responses
   return rtt;
 }
-
-static inline gboolean seq_accord(int prev, int curr) { return ((curr - prev) == 1); }
 
 // Note: name[0] is shortcut for "" test instead of STR_NEQ(name, unkn_field)
 #define ADDRNAME(addr, name) ((name && name[0]) ? (name) : ADDRONLY(addr))
@@ -171,6 +177,21 @@ static const gchar *info_host(int at) {
   return NULL;
 }
 
+static const gchar *info_host_nl(int at) {
+  static gchar hostinfo_nl_cache[MAXTTL][MAXHOSTNAME];
+  t_hop *hop = &hops[at];
+  t_host *host = hop->host;
+  if (host[0].addr) { // as a marker
+    if (hop->cached_nl) return hostinfo_nl_cache[at];
+    gchar *s = hostinfo_nl_cache[at];
+    g_snprintf(s, BUFF_SIZE, "%s", addrname(0, host));
+    hop->cached_nl = true;
+    LOG("hostinfo_nl cache[%d] updated with %s", at, (s && s[0]) ? s : log_empty);
+    return s;
+  }
+  return NULL;
+}
+
 static const gchar *info_whois(int at, int wtyp) {
   static gchar whois_cache[MAXTTL][WHOIS_NDX_MAX][BUFF_SIZE];
   t_whois *whois = hops[at].whois;
@@ -186,6 +207,22 @@ static const gchar *info_whois(int at, int wtyp) {
       }
       hops[at].wcached[wtyp] = true;
       LOG("whois cache[%d,%d] updated with %s", at, wtyp, (s && s[0]) ? s : log_empty);
+    }
+    return s;
+  }
+  return NULL;
+}
+
+static const gchar *info_whois_nl(int at, int wtyp) {
+  static gchar whois_nl_cache[MAXTTL][WHOIS_NDX_MAX][MAXHOSTNAME];
+  t_whois *whois = hops[at].whois;
+  gchar *elem = whois[0].elem[wtyp];
+  if (elem) { // as a marker
+    gchar *s = whois_nl_cache[at][wtyp];
+    if (!hops[at].wcached_nl[wtyp]) {
+      g_snprintf(s, MAXHOSTNAME, "%s", elem);
+      hops[at].wcached_nl[wtyp] = true;
+      LOG("whois_nl cache[%d,%d] updated with %s", at, wtyp, (s && s[0]) ? s : log_empty);
     }
     return s;
   }
@@ -250,6 +287,8 @@ static void set_initial_maxes(void) {
 static void stat_nth_hop_NA(t_hop *hop) { // NA(<0)
   hop->last = hop->best = hop->wrst = hop->prev = -1;
   hop->loss = hop->avrg = hop->jttr = -1;
+  hop->rseq[PREV].rtt = hop->rseq[CURR].rtt = -1;
+  hop->rseq[PREV].seq = hop->rseq[CURR].seq = 0;
 }
 
 
@@ -297,7 +336,7 @@ void stat_clear(gboolean clean) {
 }
 
 void stat_reset_cache(void) { // reset 'cached' flags
-  for (int i = 0; i < MAXTTL; i++) hops[i].cached = false;
+  for (int i = 0; i < MAXTTL; i++) hops[i].cached = hops[i].cached_nl = false;
   pinger_update_width(ELEM_HOST, opts.dns ? host_max.name : host_max.addr);
 }
 
@@ -378,6 +417,15 @@ const gchar *stat_str_elem(int at, int typ) {
   return NULL;
 }
 
+static const gchar *stat_strnl_elem(int at, int typ) {
+  switch (typ) {
+    case ELEM_HOST: return info_host_nl(at);
+    case ELEM_AS:   return info_whois_nl(at, WHOIS_AS_NDX);
+    case ELEM_CC:   return info_whois_nl(at, WHOIS_CC_NDX);
+  }
+  return NULL;
+}
+
 double stat_dbl_elem(int at, int typ) {
   double re = -1;
   switch (typ) {
@@ -393,15 +441,24 @@ double stat_dbl_elem(int at, int typ) {
   return re;
 }
 
-void stat_rseq(int at, t_rseq *data) {
-  if (data && (at >= 0) && (at < MAXTTL)) { data->rtt = hops[at].last; data->seq = hops[at].mark.seq; }
+#define RSEQ_FOR_SYNC(which) { data->rtt = hops[at].rseq[which].rtt; data->seq = -hops[at].rseq[which].seq; }
+
+void stat_rseq(int at, t_rseq *data) { // assert('at' within range)
+  if (data) {
+    if (!data->seq || (data->seq == hops[at].rseq[CURR].seq)) *data = hops[at].rseq[CURR];
+    else if (data->seq == hops[at].rseq[PREV].seq) *data = hops[at].rseq[PREV];
+    else { /* for sync */
+      if (data->seq > hops[at].rseq[CURR].seq) RSEQ_FOR_SYNC(CURR) // rarely, but possible
+      else RSEQ_FOR_SYNC(PREV); // unlikely with iputils-ping
+   }
+  }
 }
 
 void stat_legend(int at, t_legend *data) {
   if (!data) return;
-  data->name = stat_str_elem(at, ELEM_HOST);
-  data->as = stat_str_elem(at, ELEM_AS);
-  data->cc = stat_str_elem(at, ELEM_CC);
+  data->name = stat_strnl_elem(at, ELEM_HOST);
+  data->as = stat_strnl_elem(at, ELEM_AS);
+  data->cc = stat_strnl_elem(at, ELEM_CC);
   data->av = stat_str_elem(at, ELEM_AVRG);
   data->jt = stat_str_elem(at, ELEM_JTTR);
 }

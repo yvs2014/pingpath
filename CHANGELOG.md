@@ -1,3 +1,7 @@
+## 0.1.65
+- graph: switch to SEQuential data requests to (un)display drops
+- graph: add separate cache to legend elems with NL chars
+
 ## 0.1.64
 - switch timers to more efficient g_timeout_add_seconds()
 - set expiration pings' runtime to deal with https://github.com/iputils/iputils/issues/480 issue

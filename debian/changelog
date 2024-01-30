@@ -1,3 +1,11 @@
+pingpath (0.1.65) lunar mantic; urgency=low
+
+  * graph: switch to SEQuential data requests to (un)display drops
+
+  * graph: add separate cache to legend elems with NL chars
+
+ -- yvs <VSYakovetsky@gmail.com>  Tue, 30 Jan 2024 18:29:16 +0200
+
 pingpath (0.1.64) lunar mantic; urgency=low
 
   * switch timers to more efficient g_timeout_add_seconds()

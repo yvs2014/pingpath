@@ -246,8 +246,6 @@ void notifier_vis_rows(int ndx, int max) {
   }
 }
 
-#define LIMIT_BY_NL(str) { if (str) { char *nl = strchr(str, '\n'); if (nl) *nl = 0; }}
-
 #define LGFL_CHK_MAX(ndx, max) { if (max != nt_lgfl_max[ndx]) { \
   nt_lgfl_max[ndx] = max; nt_update_legend_width(NT_GRAPH_NDX, ndx, max); }}
 
@@ -259,11 +257,7 @@ void notifier_legend_update(int ndx) {
       int aj_max = -1, ca_max = -1;
       for (int i = 0; i < hops_no; i++, ex++) {
         t_legend legend; stat_legend(i, &legend);
-        if (legend.name) {
-          LIMIT_BY_NL(legend.name);
-          if (GTK_IS_LABEL(ex->elem[LGFL_LGHN])) UPDATE_LABEL(ex->elem[LGFL_LGHN], legend.name);
-        }
-        LIMIT_BY_NL(legend.as); LIMIT_BY_NL(legend.cc);
+        if (legend.name && GTK_IS_LABEL(ex->elem[LGFL_LGHN])) UPDATE_LABEL(ex->elem[LGFL_LGHN], legend.name);
         nt_fill_legend_elem(ex->elem[LGFL_AVJT], legend.jt, legend.av, "±", &aj_max);
         nt_fill_legend_elem(ex->elem[LGFL_CCAS], legend.as, legend.cc, ":", &ca_max);
       }
