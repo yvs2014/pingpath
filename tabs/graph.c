@@ -18,8 +18,11 @@
 #define DASH_BOLD 0.7
 #define DOT_SIZE  5
 #define LINE_SIZE 2
-#define JRNG_SIZE 1
-#define ALPHA     0.6
+#define THIN_SIZE 1
+#define JRNG_MIN  4  // LINE_SIZE * 2
+
+#define LINE_ALPHA 0.6
+#define AREA_ALPHA 0.2
 
 #define X_IN_TIME_TICKS 5
 #define X_FREQ          2
@@ -139,9 +142,9 @@ static void gr_draw_dot_loop(int i, cairo_t *cr, double x) {
   }
 }
 
-static void gr_draw_dot_range_loop(int i, cairo_t *cr, double x) {
-  double jttr = stat_dbl_elem(i, ELEM_JTTR); if (jttr <= 0) return;
-  double dy = yscaled(jttr); if (dy <= DOT_SIZE) return;
+static void gr_draw_dot_scope_loop(int i, cairo_t *cr, double x) {
+  double dy = stat_dbl_elem(i, ELEM_JTTR); if (dy <= 0) return;
+  dy = yscaled(dy); if (dy <= JRNG_MIN) return;
   for (GSList *item = GR_LIST; item; item = item->next, x -= grm.dx) {
     if (x < grm.x) break;
     t_rseq *data = item->data;
@@ -158,24 +161,12 @@ static void gr_draw_dot_range_loop(int i, cairo_t *cr, double x) {
   }
 }
 
-#if 0
-#define PR_RSEQ_GR_ITEM { if (item->data) g_print(" #%d:%d", ((t_rseq*)item->data)->seq, ((t_rseq*)item->data)->rtt); }
-static void _gr_print_serie(int i) {
-  g_print(">>> serie_main[%d] len=%d:", i, GR_LEN);
-  for (GSList *item = GR_LIST; item; item = item->next) PR_RSEQ_GR_ITEM;
-  g_print("\n");
-  g_print(">>> serie_kept[%d] len=%d:", i, GR_LEN_CP);
-  for (GSList *item = GR_LIST_CP; item; item = item->next) PR_RSEQ_GR_ITEM;
-  g_print("\n");
-}
-#endif
-
 #define FULL_DRAW_DOT(x, rtt) { cairo_stroke(cr); cairo_set_line_width(cr, DOT_SIZE); \
   gr_draw_dot_at(cr, x, rtt); cairo_stroke(cr); cairo_set_line_width(cr, line_width); }
 
 static void gr_draw_line_loop(int i, cairo_t *cr, double x) {
   double line_width = cairo_get_line_width(cr);
-  t_gr_point_desc prev = { .rtt = -1, .conn = true };
+  t_gr_point_desc prev = { .rtt = 0, .conn = true };
   for (GSList *item = GR_LIST; item; item = item->next, x -= grm.dx) {
     if (x < grm.x) break;
     t_rseq *data = item->data;
@@ -328,17 +319,36 @@ static void gr_draw_marks(GtkDrawingArea *area, cairo_t* cr, int w, int h, gpoin
   }
 }
 
-static void gr_draw_mean(cairo_t *cr, int width) {
+static void gr_draw_mean(cairo_t *cr, gboolean mean, gboolean area) {
   if (!cr) return;
-  if (width >= 0) cairo_set_line_width(cr, width);
   int lim = (hops_no > n_series) ? n_series : hops_no;
   for (int i = opts.min; i < lim; i++) {
-    double avrg = stat_dbl_elem(i, ELEM_AVRG);
-    if (avrg > 0) {
-      int n = i % n_colors;
-      cairo_set_source_rgba(cr, colors[n][0], colors[n][1], colors[n][2], ALPHA);
-      double x0 = (GR_LEN > 0) ? grm.x1 - grm.dx * (GR_LEN - 1) : grm.x;
-      gr_draw_line_at(cr, grm.x1, avrg, (x0 < grm.x) ? grm.x : x0, avrg);
+    double y = stat_dbl_elem(i, ELEM_AVRG); if (y <= 0) continue;
+    y = rtt2y(y);
+    double x0 = (GR_LEN > 0) ? grm.x1 - grm.dx * (GR_LEN - 1) : grm.x; if (x0 < grm.x) x0 = grm.x;
+    int n = i % n_colors;
+    if (area) {
+      double dy = stat_dbl_elem(i, ELEM_JTTR);
+      if (dy > 0) {
+        dy = yscaled(dy);
+        if (dy > JRNG_MIN) {
+          cairo_set_source_rgba(cr, colors[n][0], colors[n][1], colors[n][2], AREA_ALPHA);
+          double y0 = y - dy; if (y0 < grm.y)  y0 = grm.y;
+          double y1 = y + dy; if (y1 > grm.y1) y1 = grm.y1;
+          cairo_move_to(cr, x0, y0);
+          cairo_line_to(cr, grm.x1, y0);
+          cairo_line_to(cr, grm.x1, y1);
+          cairo_line_to(cr, x0, y1);
+          cairo_close_path(cr);
+          cairo_fill(cr);
+        }
+      }
+    }
+    if (mean) {
+      cairo_set_source_rgba(cr, colors[n][0], colors[n][1], colors[n][2], LINE_ALPHA);
+      cairo_set_line_width(cr, THIN_SIZE);
+      cairo_move_to(cr, grm.x1, y);
+      cairo_line_to(cr, x0, y);
       cairo_stroke(cr);
     }
   }
@@ -366,8 +376,10 @@ static void gr_draw_graph(GtkDrawingArea *area, cairo_t* cr, int w, int h, gpoin
       pango_cairo_show_layout(cr, graph_pango);
     }
   }
-  if (opts.mean) gr_draw_mean(cr, 1);
-  if (opts.jrng) gr_draw_smth(cr, JRNG_SIZE, ALPHA, gr_draw_dot_range_loop);
+  { gboolean mean = graphelem[GREL_MEAN].enable, area = graphelem[GREL_AREA].enable, scope = graphelem[GREL_JRNG].enable;
+    if (mean || area) gr_draw_mean(cr, mean, area);
+    if (scope) gr_draw_smth(cr, THIN_SIZE, LINE_ALPHA, gr_draw_dot_scope_loop);
+  }
   switch (opts.graph) {
     case GRAPH_TYPE_DOT:
       gr_draw_smth(cr, DOT_SIZE, -1, gr_draw_dot_loop);

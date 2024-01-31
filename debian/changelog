@@ -1,3 +1,9 @@
+pingpath (0.1.67) lunar mantic; urgency=low
+
+  * graph: jitter area background
+
+ -- yvs <VSYakovetsky@gmail.com>  Wed, 31 Jan 2024 18:31:15 +0200
+
 pingpath (0.1.66) lunar mantic; urgency=low
 
   * graph: add jitter range marks

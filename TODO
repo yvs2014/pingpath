@@ -1,7 +1,6 @@
 Graphs:
+  - selectable hops
   -? draggable legend
-  - show jitter range
-  -? show jitter area
 
 Common:
   - autostart pings from CLI

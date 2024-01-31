@@ -1,3 +1,6 @@
+## 0.1.67
+- graph: jitter area background
+
 ## 0.1.66
 - graph: add jitter range marks
 

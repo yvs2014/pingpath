@@ -23,6 +23,17 @@ const double colors[][3] = { // 5x6 is enough for MAXTTL=30
 
 const int n_colors = G_N_ELEMENTS(colors);
 
+t_stat_elem graphelem[GREL_MAX] = {
+  [GRLG_NO]   = { .enable = true, .name = "" },
+  [GRLG_DASH] = { .enable = true, .name = GRLG_DASH_HEADER },
+  [GRLG_AVJT] = { .enable = true, .name = GRLG_AVJT_HEADER },
+  [GRLG_CCAS] = { .enable = true, .name = GRLG_CCAS_HEADER },
+  [GRLG_LGHN] = { .enable = true, .name = GRLG_LGHN_HDR    },
+  [GREL_MEAN] = {                 .name = GREX_MEAN_HDR    },
+  [GREL_JRNG] = {                 .name = GREX_JRNG_HDR    },
+  [GREL_AREA] = {                 .name = GREX_AREA_HDR    },
+};
+
 static unsigned rgb2x(double c) { int n = c * 255; return n % 256; }
 
 gchar* get_nth_color(int i) {

@@ -11,7 +11,7 @@
 
 typedef struct opts {
   gchar *target;
-  gboolean dns, whois, legend, mean, jrng;
+  gboolean dns, whois, legend;
   int cycles, timeout, qos, size, ipv, graph;
   int min, lim;       // TTL range
   char pad[PAD_SIZE]; // 16 x "00."

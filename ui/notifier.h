@@ -14,6 +14,4 @@ void notifier_set_visible(int ndx, gboolean visible);
 void notifier_vis_rows(int ndx, int max);
 void notifier_legend_update(int ndx);
 
-extern t_stat_elem lgndelem[LGFL_MAX]; // map legend indexes to elems
-
 #endif

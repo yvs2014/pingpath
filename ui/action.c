@@ -58,10 +58,10 @@ static const gchar *help_message =
   "\n"
   SPANHDR("Auxiliary")
   SPANOPT(OPT_GRAPH_HDR, "either " OPT_GR_NONE_HDR ", or " OPT_GR_DOT_HDR ", or " OPT_GR_LINE_HDR ", or " OPT_GR_CURVE_HDR)
-  SPANOPT(OPT_LGFL_HDR, "to display:")
-    SPANSUB(LGFL_DASH_HDR " " LGFL_AVJT_HDR " " LGFL_CCAS_HDR " " LGFL_LGHN_HDR)
-  SPANOPT(OPT_MEAN_HDR         , "Averages on graphs")
-  SPANOPT(OPT_JRNG_HDR         , "Show jitter range on graphs")
+  SPANOPT(OPT_GRLG_HDR, "to display:")
+    SPANSUB(GRLG_DASH_HDR " " GRLG_AVJT_HDR " " GRLG_CCAS_HDR " " GRLG_LGHN_HDR)
+  SPANOPT(OPT_GREX_HDR, "to display:")
+    SPANSUB(GREX_MEAN_HDR " " GREX_JRNG_HDR " " GREX_AREA_HDR)
   SPANOPT(OPT_LOGMAX_HDR       , "Max rows in log tab [" MSTRSTR(DEF_LOGMAX) "]")
 ;
 

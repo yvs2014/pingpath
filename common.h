@@ -9,7 +9,7 @@
 #endif
 
 #define APPNAME "pingpath"
-#define VERSION "0.1.66"
+#define VERSION "0.1.67"
 
 #define X_RES 1024
 #define Y_RES 720
@@ -154,9 +154,8 @@
 #define OPT_GR_LINE_HDR  "Lines"
 #define OPT_GR_CURVE_HDR "Splines"
 #define OPT_LGND_HDR     "Graph legend"
-#define OPT_LGFL_HDR     "Legend fields"
-#define OPT_MEAN_HDR     "Average line"
-#define OPT_JRNG_HDR     "Jitter range"
+#define OPT_GRLG_HDR     "Legend fields"
+#define OPT_GREX_HDR     "Extra graph elements"
 #define OPT_LOGMAX_HDR   "LogTab rows"
 
 #define ELEM_HOST_HDR  "Host"
@@ -190,17 +189,20 @@
 #define ELEM_JTTR_HEADER "Jitter"
 #define ELEM_JTTR_TIP  "Ping jitter (variation in delay)"
 
-#define LGFL_DASH_HDR    "Color"
-#define LGFL_DASH_HEADER "Color dash"
-#define LGFL_DASH_TIP    "Colored line"
-#define LGFL_AVJT_HDR    "RTT±Jitter"
-#define LGFL_AVJT_HEADER "Average RTT ± Jitter"
-#define LGFL_AVJT_TIP    "RTT and its deviation, msec"
-#define LGFL_CCAS_HDR    "CC:ASN"
-#define LGFL_CCAS_HEADER "Country Code : AS Number"
-#define LGFL_CCAS_TIP    "Registrant's CC and ASN"
-#define LGFL_LGHN_HDR    "Hopname"
-#define LGFL_LGHN_TIP    "Hop's hostname or IP-address"
+#define GRLG_DASH_HDR    "Color"
+#define GRLG_DASH_HEADER "Color dash"
+#define GRLG_AVJT_HDR    "RTT±Jitter"
+#define GRLG_AVJT_HEADER "Average RTT ± Jitter"
+#define GRLG_CCAS_HDR    "CC:ASN"
+#define GRLG_CCAS_HEADER "Country Code : AS Number"
+#define GRLG_LGHN_HDR    "Hopname"
+
+#define GREX_MEAN_HDR    "Midline"
+#define GREX_MEAN_HEADER "Average line"
+#define GREX_JRNG_HDR    "Scopes"
+#define GREX_JRNG_HEADER "Jitter range"
+#define GREX_AREA_HDR    "JArea"
+#define GREX_AREA_HEADER "Jitter area"
 
 #define TOGGLE_ON_HDR  "on"
 #define TOGGLE_OFF_HDR "off"
@@ -223,16 +225,17 @@
 
 enum { TAB_PING_NDX, TAB_GRAPH_NDX, TAB_LOG_NDX, TAB_NDX_MAX };
 
-enum { ENT_EXP_NONE, ENT_EXP_INFO, ENT_EXP_STAT, ENT_EXP_LGFL, ENT_EXP_MAX };
+enum { ENT_EXP_NONE, ENT_EXP_INFO, ENT_EXP_STAT, ENT_EXP_LGFL, ENT_EXP_GREX, ENT_EXP_MAX };
 
 enum { ENT_BOOL_NONE, ENT_BOOL_DNS, ENT_BOOL_HOST, ENT_BOOL_AS, ENT_BOOL_CC, ENT_BOOL_DESC, ENT_BOOL_RT,
   ENT_BOOL_LOSS, ENT_BOOL_SENT, ENT_BOOL_RECV, ENT_BOOL_LAST, ENT_BOOL_BEST, ENT_BOOL_WRST, ENT_BOOL_AVRG, ENT_BOOL_JTTR,
-  ENT_BOOL_LGND, ENT_BOOL_DASH, ENT_BOOL_AVJT, ENT_BOOL_CCAS, ENT_BOOL_LGHN, ENT_BOOL_MEAN, ENT_BOOL_JRNG, ENT_BOOL_MAX };
+  ENT_BOOL_LGND, ENT_BOOL_DASH, ENT_BOOL_AVJT, ENT_BOOL_CCAS, ENT_BOOL_LGHN, ENT_BOOL_MEAN, ENT_BOOL_JRNG, ENT_BOOL_AREA,
+  ENT_BOOL_MAX };
 
 enum { ELEM_NO, ELEM_HOST, ELEM_AS, ELEM_CC, ELEM_DESC, ELEM_RT, ELEM_FILL,
   ELEM_LOSS, ELEM_SENT, ELEM_RECV, ELEM_LAST, ELEM_BEST, ELEM_WRST, ELEM_AVRG, ELEM_JTTR, ELEM_MAX };
 
-enum { LGFL_NO, LGFL_DASH, LGFL_AVJT, LGFL_CCAS, LGFL_LGHN, LGFL_MAX };
+enum { GRLG_NO, GRLG_DASH, GRLG_AVJT, GRLG_CCAS, GRLG_LGHN, GRLG_MAX, GREL_MEAN, GREL_JRNG, GREL_AREA, GREL_MAX };
 
 enum { WHOIS_AS_NDX, WHOIS_CC_NDX, WHOIS_DESC_NDX, WHOIS_RT_NDX, WHOIS_NDX_MAX };
 
@@ -325,6 +328,7 @@ extern gint verbose, start_page;
 
 extern const double colors[][3];
 extern const int n_colors;
+extern t_stat_elem graphelem[GREL_MAX];
 
 gchar* get_nth_color(int i);
 

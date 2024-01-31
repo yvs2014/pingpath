@@ -41,18 +41,20 @@ t_ent_bool ent_bool[ENT_BOOL_MAX] = {
     .pval = &statelem[ELEM_JTTR].enable, .prefix = OPT_STAT_HDR  },
   [ENT_BOOL_LGND] = { .en = { .typ = ENT_BOOL_LGND, .name = OPT_LGND_HDR },
     .pval = &opts.legend },
-  [ENT_BOOL_DASH] = { .en = { .typ = ENT_BOOL_DASH, .name = LGFL_DASH_HEADER },
-    .pval = &lgndelem[LGFL_DASH].enable, .prefix = OPT_LGFL_HDR  },
-  [ENT_BOOL_AVJT] = { .en = { .typ = ENT_BOOL_AVJT, .name = LGFL_AVJT_HEADER },
-    .pval = &lgndelem[LGFL_AVJT].enable, .prefix = OPT_LGFL_HDR  },
-  [ENT_BOOL_CCAS] = { .en = { .typ = ENT_BOOL_CCAS, .name = LGFL_CCAS_HEADER },
-    .pval = &lgndelem[LGFL_CCAS].enable, .prefix = OPT_LGFL_HDR  },
-  [ENT_BOOL_LGHN] = { .en = { .typ = ENT_BOOL_LGHN, .name = LGFL_LGHN_HDR },
-    .pval = &lgndelem[LGFL_LGHN].enable, .prefix = OPT_LGFL_HDR  },
-  [ENT_BOOL_MEAN] = { .en = { .typ = ENT_BOOL_MEAN, .name = OPT_MEAN_HDR },
-    .pval = &opts.mean },
-  [ENT_BOOL_JRNG] = { .en = { .typ = ENT_BOOL_JRNG, .name = OPT_JRNG_HDR },
-    .pval = &opts.jrng },
+  [ENT_BOOL_DASH] = { .en = { .typ = ENT_BOOL_DASH, .name = GRLG_DASH_HEADER },
+    .pval = &graphelem[GRLG_DASH].enable, .prefix = OPT_GRLG_HDR  },
+  [ENT_BOOL_AVJT] = { .en = { .typ = ENT_BOOL_AVJT, .name = GRLG_AVJT_HEADER },
+    .pval = &graphelem[GRLG_AVJT].enable, .prefix = OPT_GRLG_HDR  },
+  [ENT_BOOL_CCAS] = { .en = { .typ = ENT_BOOL_CCAS, .name = GRLG_CCAS_HEADER },
+    .pval = &graphelem[GRLG_CCAS].enable, .prefix = OPT_GRLG_HDR  },
+  [ENT_BOOL_LGHN] = { .en = { .typ = ENT_BOOL_LGHN, .name = GRLG_LGHN_HDR },
+    .pval = &graphelem[GRLG_LGHN].enable, .prefix = OPT_GRLG_HDR  },
+  [ENT_BOOL_MEAN] = { .en = { .typ = ENT_BOOL_MEAN, .name = GREX_MEAN_HEADER },
+    .pval = &graphelem[GREL_MEAN].enable, .prefix = OPT_GREX_HDR  },
+  [ENT_BOOL_JRNG] = { .en = { .typ = ENT_BOOL_JRNG, .name = GREX_JRNG_HEADER },
+    .pval = &graphelem[GREL_JRNG].enable, .prefix = OPT_GREX_HDR  },
+  [ENT_BOOL_AREA] = { .en = { .typ = ENT_BOOL_AREA, .name = GREX_AREA_HEADER },
+    .pval = &graphelem[GREL_AREA].enable, .prefix = OPT_GREX_HDR  },
 };
 
 t_ent_str ent_str[ENT_STR_MAX] = {
@@ -82,8 +84,10 @@ static t_ent_exp ent_exp[ENT_EXP_MAX] = {
   [ENT_EXP_STAT] = { .c = {.en = {.typ = ENT_EXP_STAT, .name = OPT_STAT_HDR }},
     .ndxs = {ENT_BOOL_LOSS, ENT_BOOL_SENT, ENT_BOOL_RECV, ENT_BOOL_LAST,
       ENT_BOOL_BEST, ENT_BOOL_WRST, ENT_BOOL_AVRG, ENT_BOOL_JTTR }},
-  [ENT_EXP_LGFL] = { .c = {.en = {.typ = ENT_EXP_LGFL, .name = OPT_LGFL_HDR }},
+  [ENT_EXP_LGFL] = { .c = {.en = {.typ = ENT_EXP_LGFL, .name = OPT_GRLG_HDR }},
     .ndxs = {ENT_BOOL_DASH, ENT_BOOL_AVJT, ENT_BOOL_CCAS, ENT_BOOL_LGHN }},
+  [ENT_EXP_GREX] = { .c = {.en = {.typ = ENT_EXP_GREX, .name = OPT_GREX_HDR }},
+    .ndxs = {ENT_BOOL_MEAN, ENT_BOOL_JRNG, ENT_BOOL_AREA }},
 };
 
 static void min_cb(GtkWidget*, t_ent_spn*);
@@ -186,6 +190,7 @@ static void toggle_cb(GtkCheckButton *check, t_ent_bool *en) {
       break;
     case ENT_BOOL_MEAN:
     case ENT_BOOL_JRNG:
+    case ENT_BOOL_AREA:
       check_bool_val(check, en, toggle_graph_update);
       break;
   }
@@ -532,8 +537,7 @@ static gboolean create_graph_optmenu(GtkWidget *list) {
   if (!add_opt_radio(list,  &ent_rad[ENT_RAD_GRAPH]))  okay = false;
   if (!add_opt_check(list,  &ent_bool[ENT_BOOL_LGND])) okay = false;
   if (!add_opt_expand(list, &ent_exp[ENT_EXP_LGFL]))   okay = false;
-  if (!add_opt_check(list,  &ent_bool[ENT_BOOL_MEAN])) okay = false;
-  if (!add_opt_check(list,  &ent_bool[ENT_BOOL_JRNG])) okay = false;
+  if (!add_opt_expand(list, &ent_exp[ENT_EXP_GREX]))   okay = false;
   EN_PR_INT(ENT_STR_LOGMAX);
   return okay;
 }
