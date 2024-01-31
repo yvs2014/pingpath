@@ -1,3 +1,6 @@
+## 0.1.68
+- fix some sanitizer warnings
+
 ## 0.1.67
 - graph: jitter area background
 

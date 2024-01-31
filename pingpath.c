@@ -2,6 +2,10 @@
 #include <stdlib.h>
 #include <sysexits.h>
 
+#ifdef FCFINI
+#include <fontconfig/fontconfig.h>
+#endif
+
 #include "common.h"
 #include "cli.h"
 #include "pinger.h"
@@ -27,6 +31,9 @@ static void on_app_exit(GtkWidget *widget, gpointer unused) {
   graphtab_free();
   pinger_on_quit(false);
   LOG_("app quit");
+#ifdef FCFINI
+  FcFini();
+#endif
 }
 
 static void on_tab_switch(GtkNotebook *nb, GtkWidget *tab, guint ndx, gpointer unused) {

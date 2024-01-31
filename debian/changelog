@@ -1,3 +1,9 @@
+pingpath (0.1.68) lunar mantic; urgency=low
+
+  * fix some sanitizer warnings
+
+ -- yvs <VSYakovetsky@gmail.com>  Thu, 01 Feb 2024 00:17:44 +0200
+
 pingpath (0.1.67) lunar mantic; urgency=low
 
   * graph: jitter area background

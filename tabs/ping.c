@@ -95,14 +95,13 @@ static GtkWidget* init_list_box(t_listline *lines, int len, gboolean vis, gboole
     gtk_widget_set_visible(c, vis);
     GtkListBoxRow *row = lines[i].row = line_row_new(c, vis);
     g_return_val_if_fail(GTK_IS_LIST_BOX_ROW(row), NULL);
-    t_stat_elem *arr;
-    if (hdr) arr = statelem; else {
+    if (hdr) { if (!init_child_elem(statelem, &lines[i], vis)) return NULL; }
+    else {
       char *s = stat_no_at_buff[i];
       g_snprintf(s, ELEM_BUFF_SIZE, "%d.", i + 1);
-      t_stat_elem str[ELEM_MAX] = {[ELEM_NO] = { .enable = statelem[i].enable, .name = s }};
-      arr = str;
+      t_stat_elem bodyelem[ELEM_MAX] = {[ELEM_NO] = { .enable = statelem[ELEM_NO].enable, .name = s }};
+      if (!init_child_elem(bodyelem, &lines[i], vis)) return NULL;
     }
-    if (!init_child_elem(arr, &lines[i], vis)) return NULL;
     gtk_list_box_append(GTK_LIST_BOX(list), GTK_WIDGET(row));
   }
   gtk_list_box_set_selection_mode(GTK_LIST_BOX(list), GTK_SELECTION_MULTIPLE);

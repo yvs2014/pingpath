@@ -20,10 +20,31 @@ LIBS += -lm
 CFLAGS = -I.
 CFLAGS += $(shell $(PKGCONFIG) --cflags gtk4)
 CFLAGS += -Wall
+
+ifdef FCFINI
+CFLAGS += -DFCFINI
+LIBS += -lfontconfig
+endif
+
 ifeq ($(CC),gcc)
 CFLAGS += -fanalyzer
 endif
-#CFLAGS += -g
+
+ifdef DEBUG
+CFLAGS += -g
+endif
+
+ifeq ($(DEBUG),asan)
+LIBS += -lasan
+CFLAGS += -fsanitize=address
+#CFLAGS += -fsanitize=undefined
+#CFLAGS += -fsanitize=thread
+#CFLAGS += -fsanitize=float-divide-by-zero
+#CFLAGS += -fsanitize=float-cast-overflow
+#ifeq ($(CC),clang)
+#CFLAGS += -fsanitize=memory
+#endif
+endif
 
 PKGCONFIG = $(shell which pkg-config)
 
