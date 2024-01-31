@@ -1,3 +1,6 @@
+## 0.1.66
+- graph: add jitter range marks
+
 ## 0.1.65
 - graph: switch to SEQuential data requests to (un)display drops
 - graph: add separate cache to legend elems with NL chars

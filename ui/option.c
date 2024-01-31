@@ -123,7 +123,7 @@ static gboolean check_bool_val(GtkCheckButton *check, t_ent_bool *en, void (*upd
   }
   const gchar *onoff = state ? TOGGLE_ON_HDR : TOGGLE_OFF_HDR;
   if (en->prefix) PP_NOTIFY("%s: %s %s", en->prefix, en->en.name, onoff);
-  else PP_NOTIFY("%s %s", en->en.name, onoff);
+  else PP_NOTIFY("%s: %s", en->en.name, onoff);
   return re;
 }
 
@@ -185,7 +185,7 @@ static void toggle_cb(GtkCheckButton *check, t_ent_bool *en) {
       if (check_bool_val(check, en, NULL)) notifier_vis_rows(NT_GRAPH_NDX, -1);
       break;
     case ENT_BOOL_MEAN:
-//    case ENT_BOOL_JRNG:
+    case ENT_BOOL_JRNG:
       check_bool_val(check, en, toggle_graph_update);
       break;
   }
@@ -533,7 +533,7 @@ static gboolean create_graph_optmenu(GtkWidget *list) {
   if (!add_opt_check(list,  &ent_bool[ENT_BOOL_LGND])) okay = false;
   if (!add_opt_expand(list, &ent_exp[ENT_EXP_LGFL]))   okay = false;
   if (!add_opt_check(list,  &ent_bool[ENT_BOOL_MEAN])) okay = false;
-//  if (!add_opt_check(list,  &ent_bool[ENT_BOOL_JRNG])) okay = false;
+  if (!add_opt_check(list,  &ent_bool[ENT_BOOL_JRNG])) okay = false;
   EN_PR_INT(ENT_STR_LOGMAX);
   return okay;
 }

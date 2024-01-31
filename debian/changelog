@@ -1,3 +1,9 @@
+pingpath (0.1.66) lunar mantic; urgency=low
+
+  * graph: add jitter range marks
+
+ -- yvs <VSYakovetsky@gmail.com>  Wed, 31 Jan 2024 10:08:18 +0200
+
 pingpath (0.1.65) lunar mantic; urgency=low
 
   * graph: switch to SEQuential data requests to (un)display drops

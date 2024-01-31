@@ -343,7 +343,7 @@ t_minmax parser_range(gchar *range, const gchar *option) {
       if (max && max[0]) max_val = atoi(max);
       else return re;
     }
-    re.min = min_val; re.min = max_val;
+    re.min = min_val; re.max = max_val;
   }
   return re;
 }

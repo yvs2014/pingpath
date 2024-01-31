@@ -61,7 +61,7 @@ static const gchar *help_message =
   SPANOPT(OPT_LGFL_HDR, "to display:")
     SPANSUB(LGFL_DASH_HDR " " LGFL_AVJT_HDR " " LGFL_CCAS_HDR " " LGFL_LGHN_HDR)
   SPANOPT(OPT_MEAN_HDR         , "Averages on graphs")
-//  SPANOPT(OPT_JRNG_HDR         , "Fill jitter range on graphs")
+  SPANOPT(OPT_JRNG_HDR         , "Show jitter range on graphs")
   SPANOPT(OPT_LOGMAX_HDR       , "Max rows in log tab [" MSTRSTR(DEF_LOGMAX) "]")
 ;
 

@@ -9,7 +9,7 @@
 #endif
 
 #define APPNAME "pingpath"
-#define VERSION "0.1.65"
+#define VERSION "0.1.66"
 
 #define X_RES 1024
 #define Y_RES 720
@@ -270,6 +270,8 @@ typedef struct t_rseq {
 typedef struct hop {
   int sent, recv, last, best, wrst;
   double loss, avrg, jttr;
+  // Note: 'jttr' used here is the average distance between consecutive points
+  //       which depicts the range in which RTT varies
   t_host host[MAXADDR];
   gboolean cached, cached_nl;
   t_whois whois[MAXADDR];

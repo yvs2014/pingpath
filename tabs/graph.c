@@ -18,9 +18,12 @@
 #define DASH_BOLD 0.7
 #define DOT_SIZE  5
 #define LINE_SIZE 2
+#define JRNG_SIZE 1
+#define ALPHA     0.6
 
 #define X_IN_TIME_TICKS 5
-#define X_FREQ     2
+#define X_FREQ          2
+#define X_JRNG_TICK     2
 
 typedef struct gr_aux_measures {
   int x, y, x1, y1, w, h, N, M, fs, no, ymax, at;
@@ -113,7 +116,7 @@ static void gr_set_font(void) {
 }
 
 static inline double rtt2y(double rtt) { return grm.y1 - rtt / grm.ymax * grm.h; }
-//static inline double yscaled(double rtt) { return rtt / grm.ymax * grm.h; }
+static inline double yscaled(double rtt) { return rtt / grm.ymax * grm.h; }
 
 static inline void gr_draw_dot_at(cairo_t *cr, double x, double rtt) {
   cairo_move_to(cr, x, rtt2y(rtt));
@@ -128,11 +131,30 @@ static inline void gr_draw_line_at(cairo_t *cr, double x0, double rtt0, double x
 #define IS_RTT_DATA(d) ((d) && ((d)->rtt > 0))
 #define RTT_OR_NEG(d) (IS_RTT_DATA(d) ? (d)->rtt : -1)
 
-static inline void gr_draw_dot_loop(int i, cairo_t *cr, double x) {
+static void gr_draw_dot_loop(int i, cairo_t *cr, double x) {
   for (GSList *item = GR_LIST; item; item = item->next, x -= grm.dx) {
     if (x < grm.x) break;
     t_rseq *data = item->data;
     if (IS_RTT_DATA(data)) gr_draw_dot_at(cr, x, data->rtt);
+  }
+}
+
+static void gr_draw_dot_range_loop(int i, cairo_t *cr, double x) {
+  double jttr = stat_dbl_elem(i, ELEM_JTTR); if (jttr <= 0) return;
+  double dy = yscaled(jttr); if (dy <= DOT_SIZE) return;
+  for (GSList *item = GR_LIST; item; item = item->next, x -= grm.dx) {
+    if (x < grm.x) break;
+    t_rseq *data = item->data;
+    if (IS_RTT_DATA(data)) {
+      double x0 = x - X_JRNG_TICK; if (x0 < grm.x)  x0 = grm.x;
+      double x1 = x + X_JRNG_TICK; if (x1 > grm.x1) x1 = grm.x1;
+      double y = rtt2y(data->rtt);
+      double y0 = y - dy; if (y0 < grm.y)  y0 = grm.y;
+      double y1 = y + dy; if (y1 > grm.y1) y1 = grm.y1;
+      cairo_move_to(cr, x,  y0); cairo_line_to(cr, x,  y1);
+      cairo_move_to(cr, x0, y0); cairo_line_to(cr, x1, y0);
+      cairo_move_to(cr, x0, y1); cairo_line_to(cr, x1, y1);
+    }
   }
 }
 
@@ -223,14 +245,15 @@ static void gr_draw_curve_loop(int i, cairo_t *cr, double x0) {
   }
 }
 
-static void gr_draw_smth(cairo_t *cr, double width, draw_smth_fn draw) {
+static void gr_draw_smth(cairo_t *cr, double width, double a, draw_smth_fn draw) {
   if (!cr || !draw) return;
   cairo_set_line_cap(cr, CAIRO_LINE_CAP_ROUND);
   if (width >= 0) cairo_set_line_width(cr, width);
   int lim = (hops_no > n_series) ? n_series : hops_no;
   for (int i = opts.min; i < lim; i++) {
     int n = i % n_colors;
-    cairo_set_source_rgb(cr, colors[n][0], colors[n][1], colors[n][2]);
+    if (a < 0) cairo_set_source_rgb(cr, colors[n][0], colors[n][1], colors[n][2]);
+    else cairo_set_source_rgba(cr, colors[n][0], colors[n][1], colors[n][2], a);
     draw(i, cr, grm.x1);
     cairo_stroke(cr);
   }
@@ -313,7 +336,7 @@ static void gr_draw_mean(cairo_t *cr, int width) {
     double avrg = stat_dbl_elem(i, ELEM_AVRG);
     if (avrg > 0) {
       int n = i % n_colors;
-      cairo_set_source_rgba(cr, colors[n][0], colors[n][1], colors[n][2], 0.6);
+      cairo_set_source_rgba(cr, colors[n][0], colors[n][1], colors[n][2], ALPHA);
       double x0 = (GR_LEN > 0) ? grm.x1 - grm.dx * (GR_LEN - 1) : grm.x;
       gr_draw_line_at(cr, grm.x1, avrg, (x0 < grm.x) ? grm.x : x0, avrg);
       cairo_stroke(cr);
@@ -344,15 +367,16 @@ static void gr_draw_graph(GtkDrawingArea *area, cairo_t* cr, int w, int h, gpoin
     }
   }
   if (opts.mean) gr_draw_mean(cr, 1);
+  if (opts.jrng) gr_draw_smth(cr, JRNG_SIZE, ALPHA, gr_draw_dot_range_loop);
   switch (opts.graph) {
     case GRAPH_TYPE_DOT:
-      gr_draw_smth(cr, DOT_SIZE, gr_draw_dot_loop);
+      gr_draw_smth(cr, DOT_SIZE, -1, gr_draw_dot_loop);
       break;
     case GRAPH_TYPE_LINE:
-      gr_draw_smth(cr, LINE_SIZE, gr_draw_line_loop);
+      gr_draw_smth(cr, LINE_SIZE, -1, gr_draw_line_loop);
       break;
     case GRAPH_TYPE_CURVE:
-      gr_draw_smth(cr, LINE_SIZE, gr_draw_curve_loop);
+      gr_draw_smth(cr, LINE_SIZE, -1, gr_draw_curve_loop);
       break;
   }
 }
