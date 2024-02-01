@@ -24,6 +24,12 @@
 #define MA_LOG(ndx) LOG("Action %s", action_label(ndx))
 #define MI_LOG(ndx) PP_NOTIFY("Action %s", action_label(ndx))
 
+#define OKAY_BUTTON "Okay"
+
+typedef struct help_dialog_in {
+  GtkWidget *win, *box, *hdr, *scroll, *body, *btn;
+} t_help_dialog_in;
+
 enum { ACT_NDX_START, ACT_NDX_PAUSE, ACT_NDX_RESET, ACT_NDX_HELP, ACT_NDX_QUIT, ACT_NDX_LGND, ACT_NDX_MAX };
 enum { APP_NDX, WIN_NDX, APP_WIN_MAX };
 
@@ -104,7 +110,7 @@ static const char* action_label(int ndx) {
   return "";
 }
 
-static void on_startstop(GSimpleAction *action, GVariant *var, gpointer data) {
+static void on_startstop(GSimpleAction *action, GVariant *var, gpointer unused) {
   if (opts.target) {
     MI_LOG(ACT_NDX_START);
     if (!stat_timer) pinger_start();
@@ -113,7 +119,7 @@ static void on_startstop(GSimpleAction *action, GVariant *var, gpointer data) {
   }
 }
 
-static void on_pauseresume(GSimpleAction *action, GVariant *var, gpointer data) {
+static void on_pauseresume(GSimpleAction *action, GVariant *var, gpointer unused) {
   MI_LOG(ACT_NDX_PAUSE);
   pinger_state.pause = !pinger_state.pause;
   action_update();
@@ -121,41 +127,96 @@ static void on_pauseresume(GSimpleAction *action, GVariant *var, gpointer data) 
   if (opts.graph) graphtab_force_update(true);
 }
 
-static void on_reset(GSimpleAction *action, GVariant *var, gpointer data) {
+static void on_reset(GSimpleAction *action, GVariant *var, gpointer unused) {
   MI_LOG(ACT_NDX_RESET);
   pinger_clear_data(false);
 }
 
+static void hide_help_cb(GtkWidget *button, GtkWidget *dialog) {
+  if (GTK_IS_WIDGET(dialog)) gtk_widget_set_visible(dialog, false);
+}
+
+static gboolean help_dialog_cb(GtkEventControllerKey *c, guint val, guint code, guint mo, GtkButton *btn) {
+  if ((val != GDK_KEY_Escape) || mo || !GTK_IS_BUTTON(btn)) return false;
+  g_signal_emit_by_name(btn, EV_CLICK);
+  return true;
+}
+
+static gboolean show_help_dialog(GtkWidget *win) {
+  if (!GTK_IS_WIDGET(win)) return false;
+  MA_LOG(ACT_NDX_HELP); gtk_widget_set_visible(win, true); return true;
+}
+
 static void on_help(GSimpleAction *action, GVariant *var, gpointer data) {
+  static t_help_dialog_in help_dialog;
   if (!data) return;
-  GtkWidget *win = ((gpointer*)data)[WIN_NDX];
-  g_return_if_fail(GTK_IS_WINDOW(win));
-  GtkWidget *help = g_object_new(GTK_TYPE_MESSAGE_DIALOG,
-    "transient-for", win,
-    "destroy-with-parent", true,
-    "modal", true,
-    "text", appver,
-    "secondary-text", help_message,
-    "secondary-use-markup", true,
-    "buttons", GTK_BUTTONS_OK,
-    NULL);
-  if (GTK_IS_WINDOW(help)) {
-    MA_LOG(ACT_NDX_HELP);
-    g_signal_connect(help, "response", G_CALLBACK(gtk_window_destroy), NULL);
-    gtk_window_present(GTK_WINDOW(help));
+  GtkWidget *win = ((gpointer*)data)[WIN_NDX]; g_return_if_fail(GTK_IS_WINDOW(win));
+  if (show_help_dialog(help_dialog.win)) return;
+  //
+  if (!GTK_IS_WINDOW(help_dialog.win)) {
+    help_dialog.win = gtk_window_new();
+    g_return_if_fail(GTK_IS_WINDOW(help_dialog.win));
+    gtk_window_set_hide_on_close(GTK_WINDOW(help_dialog.win), true);
+    gtk_window_set_decorated(GTK_WINDOW(help_dialog.win), false);
+    gtk_window_set_modal(GTK_WINDOW(help_dialog.win), true);
+    gtk_window_set_transient_for(GTK_WINDOW(help_dialog.win), GTK_WINDOW(win));
+    if (style_loaded) gtk_widget_add_css_class(help_dialog.win, CSS_ROUNDG);
   }
+  //
+  if (!GTK_IS_BOX(help_dialog.box)) {
+    help_dialog.box = gtk_box_new(GTK_ORIENTATION_VERTICAL, MARGIN);
+    g_return_if_fail(GTK_IS_BOX(help_dialog.box));
+    gtk_window_set_child(GTK_WINDOW(help_dialog.win), help_dialog.box);
+  }
+  //
+  if (!GTK_IS_LABEL(help_dialog.hdr)) {
+    help_dialog.hdr = gtk_label_new(appver);
+    g_return_if_fail(GTK_IS_LABEL(help_dialog.hdr));
+    if (style_loaded) gtk_widget_add_css_class(help_dialog.hdr, CSS_PAD6);
+    gtk_box_append(GTK_BOX(help_dialog.box), help_dialog.hdr);
+    GtkWidget *div = gtk_separator_new(GTK_ORIENTATION_HORIZONTAL);
+    if (GTK_IS_SEPARATOR(div)) gtk_box_append(GTK_BOX(help_dialog.box), div);
+  }
+  //
+  if (!GTK_IS_SCROLLED_WINDOW(help_dialog.scroll)) {
+    help_dialog.scroll = gtk_scrolled_window_new();
+    g_return_if_fail(GTK_IS_SCROLLED_WINDOW(help_dialog.scroll));
+    gtk_widget_set_size_request(help_dialog.scroll, X_RES * 0.47, Y_RES * 0.76);
+    gtk_box_append(GTK_BOX(help_dialog.box), help_dialog.scroll);
+  }
+  //
+  if (!GTK_IS_BUTTON(help_dialog.btn)) {
+    help_dialog.btn = gtk_button_new_with_label(OKAY_BUTTON);
+    g_return_if_fail(GTK_IS_BUTTON(help_dialog.btn));
+    g_signal_connect(help_dialog.btn, EV_CLICK, G_CALLBACK(hide_help_cb), help_dialog.win);
+    gtk_box_append(GTK_BOX(help_dialog.box), help_dialog.btn);
+    GtkEventController *kcntrl = gtk_event_controller_key_new();
+    if (GTK_IS_EVENT_CONTROLLER(kcntrl)) { // optional
+      g_signal_connect(kcntrl, EV_KEY, G_CALLBACK(help_dialog_cb), help_dialog.btn);
+      gtk_widget_add_controller(help_dialog.win, kcntrl);
+    }
+  }
+  //
+  if (!GTK_IS_LABEL(help_dialog.body)) {
+    help_dialog.body = gtk_label_new(help_message);
+    g_return_if_fail(GTK_IS_LABEL(help_dialog.body));
+    gtk_label_set_use_markup(GTK_LABEL(help_dialog.body), true);
+    gtk_label_set_selectable(GTK_LABEL(help_dialog.body), false);
+    gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(help_dialog.scroll), help_dialog.body);
+  }
+  //
+  show_help_dialog(help_dialog.win);
 }
 
 static void on_quit(GSimpleAction *action, GVariant *var, gpointer data) {
   if (!data) return;
-  GtkWidget *app = ((gpointer*)data)[APP_NDX];
-  g_return_if_fail(G_IS_APPLICATION(app));
+  GtkWidget *app = ((gpointer*)data)[APP_NDX]; g_return_if_fail(G_IS_APPLICATION(app));
   MA_LOG(ACT_NDX_QUIT);
   pinger_on_quit(true);
   g_application_quit(G_APPLICATION(app));
 }
 
-static void on_legend(GSimpleAction *action, GVariant *var, gpointer data) {
+static void on_legend(GSimpleAction *action, GVariant *var, gpointer unused) {
   MA_LOG(ACT_NDX_LGND);
   opts.legend = !opts.legend;
   option_toggled(ENT_BOOL_LGND);

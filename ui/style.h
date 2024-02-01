@@ -15,6 +15,7 @@
 #define CSS_CHPAD       "chpad"
 #define CSS_NOFRAME     "noframe"
 #define CSS_ROUNDED     "rounded"
+#define CSS_ROUNDG      "roundg"
 #define CSS_INVERT      "invtxt"
 #define CSS_LEGEND      "legend"
 #define CSS_LEGEND_TEXT "lgndtxt"

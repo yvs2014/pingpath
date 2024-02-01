@@ -42,7 +42,7 @@ static void cb_popover_show(GtkWidget *popover, double x, double y) {
   gtk_popover_popup(GTK_POPOVER(popover));
 }
 
-static void cb_on_click(GtkGestureClick *g, int n, double x, double y, GtkWidget *pop) {
+static void cb_on_press(GtkGestureClick *g, int n, double x, double y, GtkWidget *pop) {
   if (!GTK_IS_GESTURE_CLICK(g) || !GTK_IS_POPOVER(pop)) return;
   GdkEvent *ev = gtk_gesture_get_last_event(GTK_GESTURE(g),
     gtk_gesture_single_get_current_sequence(GTK_GESTURE_SINGLE(g)));
@@ -174,7 +174,7 @@ gboolean clipboard_init(GtkWidget *win, t_tab *tab) {
   tab->pop = cb_popover_init(win, tab);
   g_return_val_if_fail(GTK_IS_POPOVER(tab->pop), false);
   gtk_widget_set_parent(tab->pop, tab->tab);
-  g_signal_connect(gest, EV_CLICK, G_CALLBACK(cb_on_click), tab->pop);
+  g_signal_connect(gest, EV_PRESS, G_CALLBACK(cb_on_press), tab->pop);
   GtkWidget* list[] = {tab->hdr, tab->dyn, tab->info};
   for (int i = 0; i < G_N_ELEMENTS(list); i++) if (GTK_IS_LIST_BOX(list[i]))
     g_signal_connect(list[i], EV_ROW_CHANGE, G_CALLBACK(cb_on_sel), tab);

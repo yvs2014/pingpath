@@ -33,27 +33,27 @@ static t_tab pingtab = { .self = &pingtab, .name = "ping-tab",
   .act = { [POP_MENU_NDX_COPY] = { .activate = cb_on_copy_l2 }, [POP_MENU_NDX_SALL] = { .activate = cb_on_sall }},
 };
 
-static void align_elem_label(GtkWidget* label, int max, GtkAlign align, gboolean expand) {
+static void pt_align_elem_label(GtkWidget* label, int max, GtkAlign align, gboolean expand) {
   gtk_label_set_width_chars(GTK_LABEL(label), max);
   gtk_widget_set_halign(label, align);
   gtk_label_set_xalign(GTK_LABEL(label), align == GTK_ALIGN_END);
   gtk_widget_set_hexpand(label, expand);
 }
 
-static void set_elem_align(int typ, GtkWidget *label) {
+static void pt_set_elem_align(int typ, GtkWidget *label) {
   switch (typ) {
     case ELEM_NO:
-      align_elem_label(label, HOPNO_MAX_CHARS, GTK_ALIGN_END, false);
+      pt_align_elem_label(label, HOPNO_MAX_CHARS, GTK_ALIGN_END, false);
       break;
     case ELEM_HOST:
     case ELEM_AS:
     case ELEM_CC:
     case ELEM_DESC:
     case ELEM_RT:
-      align_elem_label(label, stat_elem_max(typ), GTK_ALIGN_START, false);
+      pt_align_elem_label(label, stat_elem_max(typ), GTK_ALIGN_START, false);
       break;
     case ELEM_FILL:
-      align_elem_label(label, stat_elem_max(typ), GTK_ALIGN_START, true);
+      pt_align_elem_label(label, stat_elem_max(typ), GTK_ALIGN_START, true);
       break;
     case ELEM_LOSS:
     case ELEM_SENT:
@@ -63,17 +63,17 @@ static void set_elem_align(int typ, GtkWidget *label) {
     case ELEM_WRST:
     case ELEM_AVRG:
     case ELEM_JTTR:
-      align_elem_label(label, stat_elem_max(typ), GTK_ALIGN_END, false);
+      pt_align_elem_label(label, stat_elem_max(typ), GTK_ALIGN_END, false);
       break;
   }
   gtk_widget_set_valign(label, GTK_ALIGN_START);
 }
 
-static gboolean init_child_elem(const t_stat_elem *elem, t_listline *line, gboolean visible) {
+static gboolean pt_init_line_elems(const t_stat_elem *elem, t_listline *line, gboolean visible) {
   for (int i = 0; i < ELEM_MAX; i++) {
     GtkWidget *label = line->cells[i] = gtk_label_new(elem[i].name);
     g_return_val_if_fail(GTK_IS_LABEL(label), false);
-    set_elem_align(i, label);
+    pt_set_elem_align(i, label);
     gtk_widget_set_visible(label, visible && elem[i].enable);
     gtk_widget_set_tooltip_text(label, elem[i].tip);
     gtk_box_append(GTK_BOX(line->child), label);
@@ -81,26 +81,27 @@ static gboolean init_child_elem(const t_stat_elem *elem, t_listline *line, gbool
   return true;
 }
 
-static GtkWidget* init_list_box(t_listline *lines, int len, gboolean vis, gboolean hdr) {
+static GtkWidget* pt_init_list_box(t_listline *lines, int len, const t_stat_elem *elem) {
   static char stat_no_at_buff[MAXTTL][ELEM_BUFF_SIZE];
   GtkWidget *list = gtk_list_box_new();
   g_return_val_if_fail(GTK_IS_LIST_BOX(list), NULL);
   gtk_list_box_set_show_separators(GTK_LIST_BOX(list), true);
   gtk_widget_set_halign(list, GTK_ALIGN_FILL);
   gtk_widget_set_hexpand(list, false);
+  t_stat_elem bodyelem[ELEM_MAX]; memcpy(bodyelem, statelem, sizeof(bodyelem));
   for (int i = 0; i < len; i++) {
     GtkWidget *c = lines[i].child = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, MARGIN);
     g_return_val_if_fail(GTK_IS_BOX(c), NULL);
     if (style_loaded) gtk_widget_add_css_class(c, CSS_PAD6);
-    gtk_widget_set_visible(c, vis);
-    GtkListBoxRow *row = lines[i].row = line_row_new(c, vis);
+    gtk_widget_set_visible(c, elem != NULL);
+    GtkListBoxRow *row = lines[i].row = line_row_new(c, elem != NULL);
     g_return_val_if_fail(GTK_IS_LIST_BOX_ROW(row), NULL);
-    if (hdr) { if (!init_child_elem(statelem, &lines[i], vis)) return NULL; }
-    else {
-      char *s = stat_no_at_buff[i];
-      g_snprintf(s, ELEM_BUFF_SIZE, "%d.", i + 1);
-      t_stat_elem bodyelem[ELEM_MAX] = {[ELEM_NO] = { .enable = statelem[ELEM_NO].enable, .name = s }};
-      if (!init_child_elem(bodyelem, &lines[i], vis)) return NULL;
+    if (elem) { // header
+      if (!pt_init_line_elems(elem, &lines[i], true)) return NULL;
+    } else {    // line with number
+      char *s = stat_no_at_buff[i]; g_snprintf(s, ELEM_BUFF_SIZE, "%d.", i + 1);
+      bodyelem[ELEM_NO].name = s;
+      if (!pt_init_line_elems(bodyelem, &lines[i], false)) return NULL;
     }
     gtk_list_box_append(GTK_LIST_BOX(list), GTK_WIDGET(row));
   }
@@ -109,7 +110,7 @@ static GtkWidget* init_list_box(t_listline *lines, int len, gboolean vis, gboole
   return list;
 }
 
-static GtkWidget* init_info(void) {
+static GtkWidget* pt_init_info(void) {
   GtkWidget *list = gtk_list_box_new();
   g_return_val_if_fail(GTK_IS_LIST_BOX(list), NULL);
   gtk_list_box_set_selection_mode(GTK_LIST_BOX(list), GTK_SELECTION_MULTIPLE);
@@ -125,7 +126,7 @@ static GtkWidget* init_info(void) {
   return list;
 }
 
-static void set_vis_cells(t_listline *line) {
+static void pt_set_vis_cells(t_listline *line) {
   if (line) for (int i = 0; i < ELEM_MAX; i++) gtk_widget_set_visible(line->cells[i], statelem[i].enable);
 }
 
@@ -186,8 +187,8 @@ void pingtab_vis_rows(int no) {
 
 void pingtab_vis_cols(void) {
   DEBUG("set %s", "visible columns");
-  for (int i = 0; i < MAXTTL; i++) set_vis_cells(&listbox.header[i]);
-  for (int i = 0; i < MAXTTL; i++) set_vis_cells(&listbox.lines[i]);
+  for (int i = 0; i < HDRLINES; i++) pt_set_vis_cells(&listbox.header[i]);
+  for (int i = 0; i < MAXTTL; i++)  pt_set_vis_cells(&listbox.lines[i]);
   pingtab_update();
 }
 
@@ -211,15 +212,15 @@ t_tab* pingtab_init(GtkWidget* win) {
   g_return_val_if_fail(GTK_IS_BOX(pingtab.lab), NULL);
   pingtab.tab = gtk_box_new(GTK_ORIENTATION_VERTICAL, MARGIN);
   g_return_val_if_fail(GTK_IS_BOX(pingtab.tab), NULL);
-  pingtab.hdr = init_list_box(listbox.header, HDRLINES, true, true);
+  pingtab.hdr = pt_init_list_box(listbox.header, HDRLINES, statelem);
   gtk_box_append(GTK_BOX(pingtab.tab), pingtab.hdr);
-  pingtab.dyn = init_list_box(listbox.lines, MAXTTL, false, false);
+  pingtab.dyn = pt_init_list_box(listbox.lines, MAXTTL, NULL);
   g_return_val_if_fail(GTK_IS_LIST_BOX(pingtab.dyn), NULL);
   //
   GtkWidget *box = gtk_box_new(GTK_ORIENTATION_VERTICAL, MARGIN);
   g_return_val_if_fail(GTK_IS_BOX(box), NULL);
   gtk_box_append(GTK_BOX(box), pingtab.dyn);
-  pingtab.info = init_info();
+  pingtab.info = pt_init_info();
   g_return_val_if_fail(GTK_IS_WIDGET(pingtab.info), NULL);
   gtk_box_append(GTK_BOX(box), pingtab.info);
   //

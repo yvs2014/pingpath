@@ -1,3 +1,7 @@
+## 0.1.69
+- make helpdialog scrollable
+- tune up a bit init() of pingtab's lists
+
 ## 0.1.68
 - fix some sanitizer warnings
 

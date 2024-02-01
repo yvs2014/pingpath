@@ -44,6 +44,7 @@ static const gchar *css_common = " \
   ." CSS_PAD6  " {padding-right:" PAD6 ";} \
   ." CSS_NOFRAME " {border:none;} \
   ." CSS_ROUNDED " {border-radius:5px; padding:" PAD16 ";} \
+  ." CSS_ROUNDG " {border-radius:7px; padding:" PAD ";} \
   ." CSS_INVERT " {filter:invert(100%);} \
   ." CSS_LEGEND " {background:" APP_BGROUND_LIGHT "; color:" APP_BGROUND_DARK \
     "; border: 1px outset " LEGEND_BORDER "; padding: " PAD4 " " PAD6 " " PAD4 " " PAD4 ";} \

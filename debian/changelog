@@ -1,3 +1,11 @@
+pingpath (0.1.69) lunar mantic; urgency=low
+
+  * make helpdialog scrollable
+
+  * tune up a bit init() of pingtab's lists
+
+ -- yvs <VSYakovetsky@gmail.com>  Thu, 01 Feb 2024 21:08:48 +0200
+
 pingpath (0.1.68) lunar mantic; urgency=low
 
   * fix some sanitizer warnings
