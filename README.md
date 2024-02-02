@@ -44,3 +44,9 @@ SCREENSHOTS
 ## graphs with legend
 ![pp-screenshot06](https://raw.githubusercontent.com/yvs2014/pingpath/main/img/pp-screenshot06.png)
 
+## ordinary graph area
+![pp-screenshot06](https://raw.githubusercontent.com/yvs2014/pingpath/main/img/pp-screenshot07.png)
+
+## the same with jitter area to clear display big-distance hops
+![pp-screenshot06](https://raw.githubusercontent.com/yvs2014/pingpath/main/img/pp-screenshot08.png)
+

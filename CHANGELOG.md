@@ -1,3 +1,6 @@
+## 0.1.70
+- a bit of polish up: github action up-to-date, modifier mask for keyevents, a couple more screenshots
+
 ## 0.1.69
 - make helpdialog scrollable
 - tune up a bit init() of pingtab's lists

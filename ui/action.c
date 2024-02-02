@@ -137,7 +137,7 @@ static void hide_help_cb(GtkWidget *button, GtkWidget *dialog) {
 }
 
 static gboolean help_dialog_cb(GtkEventControllerKey *c, guint val, guint code, guint mo, GtkButton *btn) {
-  if ((val != GDK_KEY_Escape) || mo || !GTK_IS_BUTTON(btn)) return false;
+  if ((val != GDK_KEY_Escape) || (mo & GDK_MODIFIER_MASK) || !GTK_IS_BUTTON(btn)) return false;
   g_signal_emit_by_name(btn, EV_CLICK);
   return true;
 }

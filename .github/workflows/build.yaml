@@ -16,9 +16,9 @@ jobs:
     name: Build, pack, install
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 1
           ref: main
       - name: Install mandatory packages for building
         run: |
@@ -29,7 +29,7 @@ jobs:
           sudo dpkg -i debs/pingpath_*_*.deb
 #      - name: Test run
 #        run: ping -c1 google.com && pingpath -r google.com || pingpath -r 127.0.0.1
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: auto-built-pingpath-deb
           path: debs/pingpath_*_*.deb

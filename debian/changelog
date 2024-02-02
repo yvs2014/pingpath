@@ -1,3 +1,9 @@
+pingpath (0.1.70) lunar mantic; urgency=low
+
+  * a bit of polish up: github action up-to-date, modifier mask for keyevents, a couple more screenshots
+
+ -- yvs <VSYakovetsky@gmail.com>  Fri, 02 Feb 2024 14:56:35 +0200
+
 pingpath (0.1.69) lunar mantic; urgency=low
 
   * make helpdialog scrollable
