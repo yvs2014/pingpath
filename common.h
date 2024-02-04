@@ -9,7 +9,7 @@
 #endif
 
 #define APPNAME "pingpath"
-#define VERSION "0.1.70"
+#define VERSION "0.1.71"
 
 #define X_RES 1024
 #define Y_RES 720
@@ -43,6 +43,7 @@
 #define EV_KEY        "key-released"
 #define EV_VAL_CHANGE "value-changed"
 #define EV_ROW_CHANGE "selected-rows-changed"
+#define EV_ROW_ACTIVE "row-activated"
 #define EV_TAB_SWITCH "switch-page"
 #define EV_GET_POS    "get-child-position"
 

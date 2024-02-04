@@ -3,6 +3,16 @@
 #include "style.h"
 #include "pinger.h"
 #include "stat.h"
+#include "tabs/graph.h"
+
+#define DASH_CHAR "—"
+#define LGND_ROW_DEF_STATE true
+#define LGND_DIS_MARK_FMT "<span strikethrough='true' strikethrough_color='#ff0000'>%d</span>"
+#define LGND_DASH_DEF_FMT "<span weight='800'>%s</span>"
+#define LGND_DASH_COL_FMT "<span weight='800' color='%s'>%s</span>"
+#define LGND_LINE_TOGGLE_TIP "show/hide graph #%d"
+
+#define GRL_WARN(what) WARN("graph legend %s failed", what)
 
 typedef struct nt_extra {
   GtkListBoxRow *row;        // row
@@ -71,19 +81,16 @@ static gboolean nt_legend_pos_cb(GtkOverlay *overlay, GtkWidget *widget, GdkRect
   return false;
 }
 
-#define GRL_WARN(what) WARN("graph legend %s failed", what)
-
-static void nt_add_label_and_align(GtkWidget *label, GtkWidget *line, int align, int max, gboolean visible) {
-  if (GTK_IS_LABEL(label) && GTK_BOX(line)) {
-    gtk_widget_set_visible(label, visible);
-    gtk_box_append(GTK_BOX(line), label);
-    if (align >= 0) {
-      gtk_widget_set_halign(label, align);
-      gtk_label_set_xalign(GTK_LABEL(label), align == GTK_ALIGN_END);
-      if (max > 0) gtk_label_set_width_chars(GTK_LABEL(label), max);
-    }
-    if (style_loaded) gtk_widget_add_css_class(label, CSS_LEGEND_TEXT);
-  } else GRL_WARN("gtk_label_new()");
+static void nt_add_lgelem(GtkWidget *widget, GtkWidget *box, int align, int max, gboolean visible) {
+  if (!GTK_IS_BOX(box) || !GTK_IS_WIDGET(widget)) { GRL_WARN("gtk_widget_new()"); return; }
+  gtk_widget_set_visible(widget, visible);
+  gtk_box_append(GTK_BOX(box), widget);
+  if (GTK_IS_LABEL(widget) && (align >= 0)) {
+    gtk_widget_set_halign(widget, align);
+    gtk_label_set_xalign(GTK_LABEL(widget), align == GTK_ALIGN_END);
+    if (max > 0) gtk_label_set_width_chars(GTK_LABEL(widget), max);
+  }
+  if (style_loaded) gtk_widget_add_css_class(widget, CSS_LEGEND_TEXT);
 }
 
 static void nt_reveal_sets(GtkWidget *reveal, int align, int transition) {
@@ -93,8 +100,40 @@ static void nt_reveal_sets(GtkWidget *reveal, int align, int transition) {
   gtk_revealer_set_transition_type(GTK_REVEALER(reveal), transition);
 }
 
+static gchar* nb_lgnd_nth_state(int n, gboolean enable) {
+  static gchar nb_lgnd_state_buff[100]; n++;
+  if (enable) g_snprintf(nb_lgnd_state_buff, sizeof(nb_lgnd_state_buff), "%d", n);
+  else g_snprintf(nb_lgnd_state_buff, sizeof(nb_lgnd_state_buff), LGND_DIS_MARK_FMT, n);
+  return nb_lgnd_state_buff;
+}
+
+static void nt_lgnd_row_cb(GtkListBox* self, GtkListBoxRow* row, gpointer data) {
+  if (GTK_IS_LIST_BOX_ROW(row)) {
+    GtkWidget *box = gtk_list_box_row_get_child(row);
+    if (GTK_IS_BOX(box)) {
+      GtkWidget *no = gtk_widget_get_first_child(box);
+      if (GTK_IS_LABEL(no)) {
+        const gchar *txt = gtk_label_get_text(GTK_LABEL(no));
+        if (txt) {
+          int n = atoi(txt); n--;
+          if ((n >= opts.min) && (n < opts.lim)) {
+            gboolean en = !gtk_list_box_row_get_selectable(row);
+            if (en) lgnd_excl_mask &= ~(en << n); else lgnd_excl_mask |= (!en << n);
+            gtk_label_set_text(GTK_LABEL(no), nb_lgnd_nth_state(n, en));
+            gtk_label_set_use_markup(GTK_LABEL(no), true);
+            gtk_list_box_row_set_selectable(row, en);
+            gtk_widget_set_opacity(GTK_WIDGET(row), en ? 1 : 0.5);
+            if (pinger_state.gotdata && !pinger_state.run) graphtab_force_update(false);
+            LOG("graph exclusion mask: 0x%x", lgnd_excl_mask);
+          }
+        }
+      }
+    }
+  }
+}
+
 #define NT_LG_LABEL(lab, txt, align, chars, visible) { lab = gtk_label_new(txt); \
-  nt_add_label_and_align(lab, ex->box, align, chars, visible); }
+  nt_add_lgelem(lab, ex->box, align, chars, visible); }
 
 static GtkWidget* nt_init(GtkWidget *base, t_notifier *nt) {
   if (!nt || !GTK_IS_WIDGET(base)) return NULL;
@@ -119,23 +158,29 @@ static GtkWidget* nt_init(GtkWidget *base, t_notifier *nt) {
     case NT_GRAPH_NDX: {
       inbox = gtk_list_box_new();
       if (GTK_IS_LIST_BOX(inbox)) {
+        g_signal_connect(inbox, EV_ROW_ACTIVE, G_CALLBACK(nt_lgnd_row_cb), NULL);
         if (style_loaded) gtk_widget_add_css_class(inbox, CSS_LIGHT_BG);
         for (int i = 0; i < MAXTTL; i++) {
           t_nt_extra *ex = nt->extra ? &(nt->extra[i]) : NULL;
           if (!ex) continue;
           ex->box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, MARGIN);
           if (GTK_IS_BOX(ex->box)) { // number, color dash, avrg±jttr, cc:as, hopname
+            gchar span[100]; g_snprintf(span, sizeof(span), LGND_LINE_TOGGLE_TIP, i + 1);
+            gtk_widget_set_tooltip_text(ex->box, span);
             ex->row = line_row_new(ex->box, false);
             if (GTK_IS_LIST_BOX_ROW(ex->row)) {
               gtk_list_box_append(GTK_LIST_BOX(inbox), GTK_WIDGET(ex->row));
-//              gtk_widget_set_sensitive(GTK_WIDGET(ex->row), false);
+              gtk_list_box_row_set_selectable(GTK_LIST_BOX_ROW(ex->row), LGND_ROW_DEF_STATE);
               if (style_loaded) gtk_widget_add_css_class(GTK_WIDGET(ex->row), CSS_LEGEND_TEXT);
-              NT_LG_LABEL(ex->elem[GRLG_NO], g_strdup_printf("%d", i + 1), GTK_ALIGN_END, 2, true);
-              gchar *col = get_nth_color(i);
-              gchar *span = g_strdup_printf(col ? "<span color=\"%s\" font_weight=\"ultrabold\">—</span>" : "—", col);
-              NT_LG_LABEL(ex->elem[GRLG_DASH], span, -1, -1, graphelem[GRLG_DASH].enable);
-              if (GTK_IS_WIDGET(ex->elem[GRLG_DASH]) && col) gtk_label_set_use_markup(GTK_LABEL(ex->elem[GRLG_DASH]), true);
-              g_free(col); g_free(span);
+              NT_LG_LABEL(ex->elem[GRLG_NO], nb_lgnd_nth_state(i, LGND_ROW_DEF_STATE), GTK_ALIGN_END, 2, true);
+              if (GTK_IS_WIDGET(ex->elem[GRLG_NO])) gtk_label_set_use_markup(GTK_LABEL(ex->elem[GRLG_NO]), true);
+              { // colored dash
+                gchar *col = get_nth_color(i);
+                if (col) g_snprintf(span, sizeof(span), LGND_DASH_COL_FMT, col, DASH_CHAR);
+                else g_snprintf(span, sizeof(span), LGND_DASH_DEF_FMT, DASH_CHAR);
+                NT_LG_LABEL(ex->elem[GRLG_DASH], span, -1, -1, graphelem[GRLG_DASH].enable);
+                if (GTK_IS_WIDGET(ex->elem[GRLG_DASH]) && col) gtk_label_set_use_markup(GTK_LABEL(ex->elem[GRLG_DASH]), true);
+                g_free(col); }
               NT_LG_LABEL(ex->elem[GRLG_AVJT], NULL, GTK_ALIGN_START, -1, graphelem[GRLG_AVJT].enable);
               NT_LG_LABEL(ex->elem[GRLG_CCAS], NULL, GTK_ALIGN_START, -1, graphelem[GRLG_CCAS].enable);
               NT_LG_LABEL(ex->elem[GRLG_LGHN], NULL, GTK_ALIGN_START, -1, graphelem[GRLG_LGHN].enable);
@@ -258,4 +303,6 @@ void notifier_legend_update(int ndx) {
     }
   }
 }
+
+unsigned lgnd_excl_mask; // enough for MAXTTL(30) bitmask
 

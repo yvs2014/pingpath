@@ -236,6 +236,8 @@ static void gr_draw_curve_loop(int i, cairo_t *cr, double x0) {
   }
 }
 
+#define SKIP_EXCLUDED { if (lgnd_excl_mask && (lgnd_excl_mask & (1 << n))) continue; }
+
 static void gr_draw_smth(cairo_t *cr, double width, double a, draw_smth_fn draw) {
   if (!cr || !draw) return;
   cairo_set_line_cap(cr, CAIRO_LINE_CAP_ROUND);
@@ -243,6 +245,7 @@ static void gr_draw_smth(cairo_t *cr, double width, double a, draw_smth_fn draw)
   int lim = (hops_no > n_series) ? n_series : hops_no;
   for (int i = opts.min; i < lim; i++) {
     int n = i % n_colors;
+    SKIP_EXCLUDED;
     if (a < 0) cairo_set_source_rgb(cr, colors[n][0], colors[n][1], colors[n][2]);
     else cairo_set_source_rgba(cr, colors[n][0], colors[n][1], colors[n][2], a);
     draw(i, cr, grm.x1);
@@ -323,10 +326,11 @@ static void gr_draw_mean(cairo_t *cr, gboolean mean, gboolean area) {
   if (!cr) return;
   int lim = (hops_no > n_series) ? n_series : hops_no;
   for (int i = opts.min; i < lim; i++) {
+    int n = i % n_colors;
+    SKIP_EXCLUDED;
     double y = stat_dbl_elem(i, ELEM_AVRG); if (y <= 0) continue;
     y = rtt2y(y);
     double x0 = (GR_LEN > 0) ? grm.x1 - grm.dx * (GR_LEN - 1) : grm.x; if (x0 < grm.x) x0 = grm.x;
-    int n = i % n_colors;
     if (area) {
       double dy = stat_dbl_elem(i, ELEM_JTTR);
       if (dy > 0) {

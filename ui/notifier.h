@@ -14,4 +14,6 @@ void notifier_set_visible(int ndx, gboolean visible);
 void notifier_vis_rows(int ndx, int max);
 void notifier_legend_update(int ndx);
 
+extern unsigned lgnd_excl_mask;
+
 #endif

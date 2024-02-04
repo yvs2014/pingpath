@@ -1,3 +1,6 @@
+## 0.1.71
+- show/hide certain graphs by clicking
+
 ## 0.1.70
 - a bit of polish up: github action up-to-date, modifier mask for keyevents, a couple more screenshots
 

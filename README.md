@@ -44,9 +44,12 @@ SCREENSHOTS
 ## graphs with legend
 ![pp-screenshot06](https://raw.githubusercontent.com/yvs2014/pingpath/main/img/pp-screenshot06.png)
 
+## choose graphs to show/hide by clicking
+![pp-screenshot07-1](https://raw.githubusercontent.com/yvs2014/pingpath/main/img/pp-screenshot07-1.png)
+
 ## ordinary graph area
-![pp-screenshot06](https://raw.githubusercontent.com/yvs2014/pingpath/main/img/pp-screenshot07.png)
+![pp-screenshot07](https://raw.githubusercontent.com/yvs2014/pingpath/main/img/pp-screenshot07.png)
 
 ## the same with jitter area to clear display big-distance hops
-![pp-screenshot06](https://raw.githubusercontent.com/yvs2014/pingpath/main/img/pp-screenshot08.png)
+![pp-screenshot08](https://raw.githubusercontent.com/yvs2014/pingpath/main/img/pp-screenshot08.png)
 

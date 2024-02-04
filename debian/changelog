@@ -1,3 +1,9 @@
+pingpath (0.1.71) lunar mantic; urgency=low
+
+  * show/hide certain graphs by clicking
+
+ -- yvs <VSYakovetsky@gmail.com>  Sun, 04 Feb 2024 02:19:03 +0200
+
 pingpath (0.1.70) lunar mantic; urgency=low
 
   * a bit of polish up: github action up-to-date, modifier mask for keyevents, a couple more screenshots
