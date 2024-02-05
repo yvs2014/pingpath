@@ -265,43 +265,40 @@ inline void notifier_set_visible(int ndx, gboolean visible) {
 #define NT_LG_ELEM_VIS(ndx, extra_cond) { if (GTK_IS_WIDGET(ex->elem[ndx])) \
   gtk_widget_set_visible(ex->elem[ndx], vis && graphelem[ndx].enable && extra_cond); }
 
-void notifier_vis_rows(int ndx, int max) {
-  static int nt_known_max[NT_NDX_MAX];
-  if ((ndx >= 0) && (ndx < NT_NDX_MAX)) {
-    t_nt_extra *ex = notifier[ndx].extra;
-    if (max < 0) max = nt_known_max[ndx];
-    else nt_known_max[ndx] = max;
-    if (ex) for (int i = 0; i < MAXTTL; i++, ex++) {
-      gboolean vis = (i >= opts.min) && (i < max);
-      if (GTK_IS_WIDGET(ex->row)) gtk_widget_set_visible(GTK_WIDGET(ex->row), vis);
-      if (GTK_IS_WIDGET(ex->box)) gtk_widget_set_visible(ex->box, vis);
-      NT_LG_ELEM_VIS(GRLG_DASH, true);
-      NT_LG_ELEM_VIS(GRLG_AVJT, true);
-      NT_LG_ELEM_VIS(GRLG_CCAS, opts.whois);
-      NT_LG_ELEM_VIS(GRLG_LGHN, true);
-    }
+void notifier_legend_vis_rows(int max) {
+  static int nt_lgnd_max;
+  if (max < 0) max = nt_lgnd_max; else nt_lgnd_max = max;
+  t_nt_extra *ex = notifier[NT_GRAPH_NDX].extra;
+  if (ex) for (int i = 0; i < MAXTTL; i++, ex++) {
+    gboolean vis = (i >= opts.min) && (i < max);
+    if (GTK_IS_WIDGET(ex->row)) gtk_widget_set_visible(GTK_WIDGET(ex->row), vis);
+    if (GTK_IS_WIDGET(ex->box)) gtk_widget_set_visible(ex->box, vis);
+    NT_LG_ELEM_VIS(GRLG_DASH, true);
+    NT_LG_ELEM_VIS(GRLG_AVJT, true);
+    NT_LG_ELEM_VIS(GRLG_CCAS, opts.whois);
+    NT_LG_ELEM_VIS(GRLG_LGHN, true);
   }
+  gboolean vis = notifier_get_visible(NT_GRAPH_NDX);
+  if (opts.legend && !vis) notifier_set_visible(NT_GRAPH_NDX, true);
+  if (!opts.legend && vis) notifier_set_visible(NT_GRAPH_NDX, false);
 }
 
 #define LGFL_CHK_MAX(ndx, max) { if (max != nt_lgfl_max[ndx]) { \
   nt_lgfl_max[ndx] = max; nt_update_legend_width(NT_GRAPH_NDX, ndx, max); }}
 
-void notifier_legend_update(int ndx) {
+void notifier_legend_update(void) {
   static int nt_lgfl_max[GRLG_MAX];
-  if ((ndx >= 0) && (ndx < NT_NDX_MAX)) {
-    t_nt_extra *ex = notifier[ndx].extra;
-    if (ex) {
-      int aj_max = -1, ca_max = -1;
-      for (int i = 0; i < hops_no; i++, ex++) {
-        t_legend legend; stat_legend(i, &legend);
-        if (legend.name && GTK_IS_LABEL(ex->elem[GRLG_LGHN])) UPDATE_LABEL(ex->elem[GRLG_LGHN], legend.name);
-        nt_fill_legend_elem(ex->elem[GRLG_AVJT], legend.jt, legend.av, "±", &aj_max);
-        nt_fill_legend_elem(ex->elem[GRLG_CCAS], legend.as, legend.cc, ":", &ca_max);
-      }
-      LGFL_CHK_MAX(GRLG_AVJT, aj_max);
-      LGFL_CHK_MAX(GRLG_CCAS, ca_max);
-    }
+  t_nt_extra *ex = notifier[NT_GRAPH_NDX].extra;
+  if (!ex) return;
+  int aj_max = -1, ca_max = -1;
+  for (int i = 0; i < hops_no; i++, ex++) {
+    t_legend legend; stat_legend(i, &legend);
+    if (legend.name && GTK_IS_LABEL(ex->elem[GRLG_LGHN])) UPDATE_LABEL(ex->elem[GRLG_LGHN], legend.name);
+    nt_fill_legend_elem(ex->elem[GRLG_AVJT], legend.jt, legend.av, "±", &aj_max);
+    nt_fill_legend_elem(ex->elem[GRLG_CCAS], legend.as, legend.cc, ":", &ca_max);
   }
+  LGFL_CHK_MAX(GRLG_AVJT, aj_max);
+  LGFL_CHK_MAX(GRLG_CCAS, ca_max);
 }
 
 unsigned lgnd_excl_mask; // enough for MAXTTL(30) bitmask

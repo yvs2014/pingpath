@@ -11,8 +11,8 @@ GtkWidget* notifier_init(int ndx, GtkWidget *base);
 void notifier_inform(int ndx, const gchar *fmt, ...);
 gboolean notifier_get_visible(int ndx);
 void notifier_set_visible(int ndx, gboolean visible);
-void notifier_vis_rows(int ndx, int max);
-void notifier_legend_update(int ndx);
+void notifier_legend_vis_rows(int max);
+void notifier_legend_update(void);
 
 extern unsigned lgnd_excl_mask;
 

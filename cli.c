@@ -46,6 +46,26 @@ static gboolean cli_opt_g(const char *name, const char *value, t_opts *opts, GEr
   return opts ? cli_int_opt(name, value, error, ENT_STR_GRAPH, OPT_GRAPH_HDR, 0, GRAPH_TYPE_MAX - 1, &opts->graph) : false;
 }
 
+#define MASK_NTH(nth) ((mask & (1 << (nth))) ? true : false)
+
+#define MASK_GR_ELEMS(min, max) { int i0 = min; \
+  for (int i = min; i < max; i++) graphelem[i].enable = MASK_NTH(i - i0); }
+
+static gboolean cli_opt_G(const char *name, const char *value, t_opts *opts, GError **error) {
+  int mask = 0, max = GREL_MAX - GRLG_MAX - 1;
+  if (!opts || !cli_int_opt(name, value, error, ENT_STR_GEXTRA, OPT_GREX_HDR, 0, (1 << max) - 1, &mask)) return false;
+  MASK_GR_ELEMS(GRLG_MAX + 1, GREL_MAX);
+  return true;
+}
+
+static gboolean cli_opt_L(const char *name, const char *value, t_opts *opts, GError **error) {
+  int mask = 0, max = GRLG_MAX - 1; // -NO, -DASH, +LGND
+  if (!opts || !cli_int_opt(name, value, error, ENT_STR_LEGEND, OPT_GRLG_HDR, 0, (1 << max) - 1, &mask)) return false;
+  opts->legend = mask & 1; mask >>= 1;
+  MASK_GR_ELEMS(GRLG_MAX + 1 - max, GRLG_MAX);
+  return true;
+}
+
 static gboolean cli_opt_t(const char *name, const char *value, t_opts *opts, GError **error) {
   if (!value || !opts) return false;
   t_ent_spn *en = &ent_spn[ENT_SPN_TTL];
@@ -145,6 +165,10 @@ static gboolean cli_opt_S(const char *name, const char *value, gpointer unused, 
 // pub
 //
 
+#define CLI_INIT_FAILED(fmt, arg) { g_warning(fmt, arg); g_option_context_free(oc); return false; }
+
+gboolean autostart;
+
 gboolean cli_init(int *pargc, char ***pargv) {
   if (!pargc || !pargv) return false;
   gchar** target = NULL;
@@ -153,15 +177,15 @@ gboolean cli_init(int *pargc, char ***pargv) {
     { .long_name = "numeric",  .short_name = 'n', .arg = G_OPTION_ARG_NONE,     .arg_data = &num,
       .description = "Numeric output (i.e. disable " OPT_DNS_HDR " resolv)" },
     { .long_name = "cycles",   .short_name = 'c', .arg = G_OPTION_ARG_CALLBACK, .arg_data = cli_opt_c,
-      .arg_description = "<number>", .description = OPT_CYCLES_HDR " per target" },
+      .arg_description = "<number>",        .description = OPT_CYCLES_HDR " per target" },
     { .long_name = "interval", .short_name = 'i', .arg = G_OPTION_ARG_CALLBACK, .arg_data = cli_opt_i,
-      .arg_description = "<seconds>", .description = OPT_IVAL_HDR " between pings" },
+      .arg_description = "<seconds>",       .description = OPT_IVAL_HDR " between pings" },
     { .long_name = "ttl",      .short_name = 't', .arg = G_OPTION_ARG_CALLBACK, .arg_data = cli_opt_t,
-      .arg_description = "[min][,max]", .description = OPT_TTL_HDR " range" },
+      .arg_description = "[min][,max]",     .description = OPT_TTL_HDR " range" },
     { .long_name = "qos",      .short_name = 'q', .arg = G_OPTION_ARG_CALLBACK, .arg_data = cli_opt_q,
-      .arg_description = "<bits>", .description = OPT_QOS_HDR "/ToS byte" },
+      .arg_description = "<bits>",          .description = OPT_QOS_HDR "/ToS byte" },
     { .long_name = "size",     .short_name = 's', .arg = G_OPTION_ARG_CALLBACK, .arg_data = cli_opt_s,
-      .arg_description = "<in-bytes>", .description = OPT_PLOAD_HDR " size" },
+      .arg_description = "<in-bytes>",      .description = OPT_PLOAD_HDR " size" },
     { .long_name = "payload",  .short_name = 'p', .arg = G_OPTION_ARG_CALLBACK, .arg_data = cli_opt_p,
       .arg_description = "<upto-16-bytes>", .description = OPT_PLOAD_HDR " in hex notation" },
     { .long_name = "info",     .short_name = 'I', .arg = G_OPTION_ARG_CALLBACK, .arg_data = cli_opt_I,
@@ -169,13 +193,19 @@ gboolean cli_init(int *pargc, char ***pargv) {
     { .long_name = "stat",     .short_name = 'S', .arg = G_OPTION_ARG_CALLBACK, .arg_data = cli_opt_S,
       .arg_description = "[" STAT_PATT "]", .description = OPT_STAT_HDR " to display" },
     { .long_name = "graph",    .short_name = 'g', .arg = G_OPTION_ARG_CALLBACK, .arg_data = cli_opt_g,
-      .arg_description = "<type>", .description = OPT_GRAPH_HDR " to draw" },
+      .arg_description = "<type>",          .description = OPT_GRAPH_HDR " to draw" },
+    { .long_name = "gextra",   .short_name = 'G', .arg = G_OPTION_ARG_CALLBACK, .arg_data = cli_opt_G,
+      .arg_description = "<elems>",         .description = OPT_GREX_HDR },
+    { .long_name = "legend",   .short_name = 'L', .arg = G_OPTION_ARG_CALLBACK, .arg_data = cli_opt_L,
+      .arg_description = "<fields>",        .description = OPT_GRLG_HDR },
+    { .long_name = "run",      .short_name = 'R', .arg = G_OPTION_ARG_NONE,     .arg_data = &autostart,
+      .description = "Autostart from CLI (if target is set)" },
     { .long_name = "ipv4",     .short_name = '4', .arg = G_OPTION_ARG_NONE,     .arg_data = &ipv4,
       .description = OPT_IPV4_HDR " only" },
     { .long_name = "ipv6",     .short_name = '6', .arg = G_OPTION_ARG_NONE,     .arg_data = &ipv6,
       .description = OPT_IPV4_HDR " only" },
     { .long_name = "verbose",  .short_name = 'v', .arg = G_OPTION_ARG_INT,      .arg_data = &verbose,
-      .arg_description = "<level>", .description = "Messaging to stdout" },
+      .arg_description = "<level>",         .description = "Messaging to stdout" },
     { .long_name = G_OPTION_REMAINING, .arg = G_OPTION_ARG_STRING_ARRAY, .arg_data = &target, .arg_description = "TARGET" },
     {}
   };
@@ -187,25 +217,31 @@ gboolean cli_init(int *pargc, char ***pargv) {
   if (!oc) { g_warning("%s failed", "g_option_context_new()"); return false; }
   g_option_context_set_main_group(oc, og);
   GError *error = NULL;
-  if (!g_option_context_parse(oc, pargc, pargv, &error)) { g_warning("%s", error->message); return false; }
-  if (ipv4 && ipv6) { g_warning("options %s are mutually exclusive", "-4/-6"); return false; }
+  if (!g_option_context_parse(oc, pargc, pargv, &error)) CLI_INIT_FAILED("%s", error->message);
+  if (ipv4 && ipv6) CLI_INIT_FAILED("options %s are mutually exclusive", "-4/-6");
   if (ipv4 && (opts.ipv != 4)) { opts.ipv = 4; CLI_MESG(OPT_IPV4_HDR " only %s", TOGGLE_ON_HDR); }
   if (ipv6 && (opts.ipv != 6)) { opts.ipv = 6; CLI_MESG(OPT_IPV6_HDR " only %s", TOGGLE_ON_HDR); }
   if (num != !opts.dns) { opts.dns = !num; CLI_MESG(OPT_DNS_HDR " %s", opts.dns ? TOGGLE_ON_HDR : TOGGLE_OFF_HDR); }
   // arguments
-  if (target) for (gchar **p = target; *p; p++) {
-    const gchar *arg = *p;
-    if (!arg || !arg[0]) continue;
-    if (arg[0] == '-') { g_warning("Unknown option: '%s'", arg); return false; }
-    if (opts.target) g_warning(ENT_TARGET_HDR " is already set, skip '%s'", arg);
-    else {
-      cli = true; gchar *target = parser_valid_target(arg); cli = false;
-      if (!target) { g_warning("Invalid target: '%s'", arg); return false; }
-      else CLI_MESG(ENT_TARGET_HDR " %s", target);
-      g_free(opts.target); opts.target = target;
+  if (target) {
+    for (gchar **p = target; *p; p++) {
+      const gchar *arg = *p;
+      if (!arg || !arg[0]) continue;
+      if (arg[0] == '-') CLI_INIT_FAILED("Unknown option: '%s'", arg);
+      if (opts.target) g_warning(ENT_TARGET_HDR " is already set, skip '%s'", arg);
+      else {
+        cli = true; gchar *target = parser_valid_target(arg); cli = false;
+        if (target) CLI_MESG(ENT_TARGET_HDR " %s", target)
+        else CLI_INIT_FAILED("Invalid target: '%s'", arg);
+        g_free(opts.target); opts.target = target;
+      }
     }
+    g_strfreev(target);
   }
-  g_strfreev(target);
+  if (autostart) {
+    if (opts.target) CLI_MESG("%s", "Autostart")
+    else CLI_INIT_FAILED("autostart option %s is only used with TARGET setted", "-R/--run");
+  }
   g_option_context_free(oc);
   return true;
 }

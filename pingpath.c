@@ -98,6 +98,7 @@ static void app_cb(GtkApplication* app, gpointer unused) {
   gtk_window_present(GTK_WINDOW(win));
   LOG("GTK: %d.%d.%d", GTK_MAJOR_VERSION, GTK_MINOR_VERSION, GTK_MICRO_VERSION);
   LOG("Pango: %d.%d.%d", PANGO_VERSION_MAJOR, PANGO_VERSION_MINOR, PANGO_VERSION_MICRO);
+  if (autostart && opts.target) { pinger_start(); appbar_update(); }
 }
 
 int main(int argc, char **argv) {

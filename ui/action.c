@@ -65,7 +65,7 @@ static const gchar *help_message =
   SPANHDR("Auxiliary")
   SPANOPT(OPT_GRAPH_HDR, "either " OPT_GR_NONE_HDR ", or " OPT_GR_DOT_HDR ", or " OPT_GR_LINE_HDR ", or " OPT_GR_CURVE_HDR)
   SPANOPT(OPT_GRLG_HDR, "to display:")
-    SPANSUB(GRLG_DASH_HDR " " GRLG_AVJT_HDR " " GRLG_CCAS_HDR " " GRLG_LGHN_HDR)
+    SPANSUB(GRLG_AVJT_HDR " " GRLG_CCAS_HDR " " GRLG_LGHN_HDR)
   SPANOPT(OPT_GREX_HDR, "to display:")
     SPANSUB(GREX_MEAN_HDR " " GREX_JRNG_HDR " " GREX_AREA_HDR)
   SPANOPT(OPT_LOGMAX_HDR       , "Max rows in log tab [" MSTRSTR(DEF_LOGMAX) "]")

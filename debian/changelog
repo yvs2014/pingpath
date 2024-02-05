@@ -1,3 +1,15 @@
+pingpath (0.1.72) lunar mantic; urgency=low
+
+  * add GLR options
+
+  * -G Extra graph elements
+
+  * -L Legend and its fields
+
+  * -R run (autostart)
+
+ -- yvs <VSYakovetsky@gmail.com>  Mon, 05 Feb 2024 11:42:22 +0200
+
 pingpath (0.1.71) lunar mantic; urgency=low
 
   * show/hide certain graphs by clicking

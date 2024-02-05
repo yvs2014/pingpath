@@ -1,3 +1,9 @@
+## 0.1.72
+- add GLR options
+- -G Extra graph elements
+- -L Legend and its fields
+- -R run (autostart)
+
 ## 0.1.71
 - show/hide certain graphs by clicking
 

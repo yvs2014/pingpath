@@ -490,26 +490,19 @@ void graphtab_free(void) {
   }
 }
 
+#define GRAPH_VIEW_UPDATE { if (!pinger_state.pause) { \
+  if (opts.legend) notifier_legend_update(); \
+  if (GTK_IS_WIDGET(graph_graph)) gtk_widget_queue_draw(graph_graph); \
+}}
+
 void graphtab_update(gboolean retrieve) {
   if (!pinger_state.run) return;
-  if (pinger_state.gotdata && opts.legend && !notifier_get_visible(NT_GRAPH_NDX))
-    notifier_set_visible(NT_GRAPH_NDX, true);
   if (retrieve) graphtab_data_update();
-  if (!pinger_state.pause) {
-    if (opts.legend) notifier_legend_update(NT_GRAPH_NDX);
-    if (GTK_IS_WIDGET(graph_graph)) gtk_widget_queue_draw(graph_graph);
-  }
+  GRAPH_VIEW_UPDATE;
 }
 
-void graphtab_final_update(void) {
-  graphtab_data_update();
-  if (!pinger_state.pause) {
-    if (opts.legend) notifier_legend_update(NT_GRAPH_NDX);
-    if (GTK_IS_WIDGET(graph_graph)) gtk_widget_queue_draw(graph_graph);
-  }
-}
-
-inline void graphtab_toggle_legend(void) { if (opts.graph) notifier_set_visible(NT_GRAPH_NDX, opts.legend); }
+void graphtab_final_update(void) { graphtab_data_update(); GRAPH_VIEW_UPDATE; }
+void graphtab_toggle_legend(void) { if (opts.graph) notifier_set_visible(NT_GRAPH_NDX, opts.legend); }
 
 void graphtab_force_update(gboolean pause_toggled) {
   if (GTK_IS_WIDGET(graph_graph)) gtk_widget_queue_draw(graph_graph);

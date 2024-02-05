@@ -41,8 +41,6 @@ t_ent_bool ent_bool[ENT_BOOL_MAX] = {
     .pval = &statelem[ELEM_JTTR].enable, .prefix = OPT_STAT_HDR  },
   [ENT_BOOL_LGND] = { .en = { .typ = ENT_BOOL_LGND, .name = OPT_LGND_HDR },
     .pval = &opts.legend },
-  [ENT_BOOL_DASH] = { .en = { .typ = ENT_BOOL_DASH, .name = GRLG_DASH_HEADER },
-    .pval = &graphelem[GRLG_DASH].enable, .prefix = OPT_GRLG_HDR  },
   [ENT_BOOL_AVJT] = { .en = { .typ = ENT_BOOL_AVJT, .name = GRLG_AVJT_HEADER },
     .pval = &graphelem[GRLG_AVJT].enable, .prefix = OPT_GRLG_HDR  },
   [ENT_BOOL_CCAS] = { .en = { .typ = ENT_BOOL_CCAS, .name = GRLG_CCAS_HEADER },
@@ -85,7 +83,7 @@ static t_ent_exp ent_exp[ENT_EXP_MAX] = {
     .ndxs = {ENT_BOOL_LOSS, ENT_BOOL_SENT, ENT_BOOL_RECV, ENT_BOOL_LAST,
       ENT_BOOL_BEST, ENT_BOOL_WRST, ENT_BOOL_AVRG, ENT_BOOL_JTTR }},
   [ENT_EXP_LGFL] = { .c = {.en = {.typ = ENT_EXP_LGFL, .name = OPT_GRLG_HDR }},
-    .ndxs = {ENT_BOOL_DASH, ENT_BOOL_AVJT, ENT_BOOL_CCAS, ENT_BOOL_LGHN }},
+    .ndxs = {ENT_BOOL_AVJT, ENT_BOOL_CCAS, ENT_BOOL_LGHN }},
   [ENT_EXP_GREX] = { .c = {.en = {.typ = ENT_EXP_GREX, .name = OPT_GREX_HDR }},
     .ndxs = {ENT_BOOL_MEAN, ENT_BOOL_JRNG, ENT_BOOL_AREA }},
 };
@@ -175,18 +173,17 @@ static void toggle_cb(GtkCheckButton *check, t_ent_bool *en) {
     case ENT_BOOL_CC:
     case ENT_BOOL_DESC:
     case ENT_BOOL_RT:
-      if (check_bool_val(check, en, pingtab_vis_cols)) notifier_vis_rows(NT_GRAPH_NDX, -1);
+      if (check_bool_val(check, en, pingtab_vis_cols)) notifier_legend_vis_rows(-1);
       stat_whois_enabler();
       if (opts.whois) stat_run_whois_resolv();
       break;
     case ENT_BOOL_LGND:
       check_bool_val(check, en, graphtab_toggle_legend);
       break;
-    case ENT_BOOL_DASH:
     case ENT_BOOL_AVJT:
     case ENT_BOOL_CCAS:
     case ENT_BOOL_LGHN:
-      if (check_bool_val(check, en, NULL)) notifier_vis_rows(NT_GRAPH_NDX, -1);
+      if (check_bool_val(check, en, NULL)) notifier_legend_vis_rows(-1);
       break;
     case ENT_BOOL_MEAN:
     case ENT_BOOL_JRNG:

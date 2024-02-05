@@ -224,6 +224,8 @@ void pinger_start(void) {
   stat_clear(true);
   pinger_clear_data(true);
   graphtab_free();
+  pinger_vis_rows(0);
+  notifier_set_visible(NT_GRAPH_NDX, false);
   // schedule expiration check out
   if (exp_timer) { g_source_remove(exp_timer); exp_timer = 0; }
   guint exp_in = round(opts.cycles * (opts.timeout * 1.024)) + opts.timeout * 2; // ~24msec of possible ping time resolution
@@ -309,12 +311,6 @@ int pinger_update_tabs(int *pseq) {
   return G_SOURCE_CONTINUE;
 }
 
-void pinger_vis_rows(int no) {
-  pingtab_vis_rows(no);
-  if (opts.graph && opts.legend) notifier_vis_rows(NT_GRAPH_NDX, no);
-}
-
-void pinger_update_width(int typ, int max) {
-  pingtab_update_width(typ, max);
-}
+inline void pinger_vis_rows(int no) { pingtab_vis_rows(no); notifier_legend_vis_rows(no); }
+inline void pinger_update_width(int typ, int max) { pingtab_update_width(typ, max); }
 

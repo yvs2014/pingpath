@@ -272,6 +272,8 @@ int parser_int(const gchar *str, int typ, const gchar *option, t_minmax mm) {
     case ENT_STR_QOS:
     case ENT_STR_PSIZE:
     case ENT_STR_GRAPH:
+    case ENT_STR_GEXTRA:
+    case ENT_STR_LEGEND:
       return n;
   }
   return -1;

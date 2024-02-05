@@ -6,7 +6,7 @@
 .Nd ping wrapper for network diagnostic
 .Sh SYNOPSIS
 .Nm
-.Op Fl chigInpqsStv46
+.Op Fl chiIgGLnpqRsStv46
 .Sy [ TARGET ]
 .Sh DESCRIPTION
 Network diagnostic tool based on parsing system
@@ -128,16 +128,48 @@ Draw graphs of
 .Ar type :
 .Bl -tag -offset Ds -compact
 .It Cm 0
-none
+None
 .It Cm 1
-just dots
+Just dots
 .It Cm 2
-straight line
+Straight line
 .It Cm 3
-curved spline
+Curved spline
 .El
 Default
 .Ar 3
+.El
+.Bl -tag -width Ds
+.It Fl G, Fl -gextra Ar BITS
+Display extra elements on graphs according to
+.Ar bits :
+.Bl -tag -offset Ds -compact
+.It Cm 1st
+Average line
+.It Cm 2nd
+Jitter range
+.It Cm 3rd
+Jitter area
+.El
+Default
+.Ar none
+.El
+.Bl -tag -width Ds
+.It Fl L, Fl -legend Ar BITS
+Display graph legend and its fields according to
+.Ar bits :
+.Bl -tag -offset Ds -compact
+.It Cm 1st
+Legend
+.It Cm 2nd
+Average RTT ± Jitter
+.It Cm 3rd
+Country Code : AS Number
+.It Cm 4th
+Hopname
+.El
+Default
+.Ar all
 .El
 .Bl -tag -width Ds
 .It Fl v, Fl -verbose Ar LEVEL
@@ -157,6 +189,8 @@ Default
 .Ar none
 .El
 .Bl -tag -width Ds
+.It Fl R, Fl -run
+Autostart from CLI (if ping target is set)
 .It Fl 4, Fl -ipv4
 IPv4 only
 .It Fl 6, Fl -ipv6

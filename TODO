@@ -1,7 +1,2 @@
-Graphs:
-  - selectable hops
-  -? draggable legend
-
-Common:
-  - autostart pings from CLI
-  -? none-interactive run
+ - none-interactive run (output: simple text or json)
+ - draggable legend
