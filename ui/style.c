@@ -117,7 +117,7 @@ void style_init(void) {
       GTK_STYLE_PROVIDER(css_provider), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
     g_object_unref(css_provider);
     style_loaded = true;
-  } else WARN("no CSS data: %s failed", "g_strjoinv()");
+  } else FAILX("no CSS data", "g_strjoinv()");
 }
 
 const char* is_sysicon(const char **icon) {

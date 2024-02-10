@@ -90,9 +90,9 @@ static void dns_cache_update(gchar *addr, gchar *name) {
       if (list_add_nodup(&dns_cache, host, host_cmp, DNS_CACHE_MAX)) {
         LOG("dns cache updated with addr=%s name=%s", host->addr, host->name);
         PR_DNS_C; return;
-      } else WARN("%s: add cache failed", addr);
-    } else WARN("%s: dup host failed", addr);
-  } else WARN("%s: alloc host failed", addr);
+      } else FAILX(addr, "add cache");
+    } else FAILX(addr, "dup host");
+  } else FAILX(addr, "alloc host");
   host_free(host);
   g_free(host);
 }
@@ -108,9 +108,9 @@ static t_dns_elem* dns_query_save(const gchar *addr, t_hop *hop, int ndx) {
       if (added) {
         DNS_DEBUG("%s(%s) hop[%d] host[%d]=%s", __func__, addr, hop->at, ndx, hop->host[ndx].addr);
         PR_DNS_Q; return added->data;
-      } else WARN("%s: add query failed", addr);
-    } else WARN("%s: add ref failed", addr);
-  } else WARN("%s: dup addr failed", addr);
+      } else FAILX(addr, "add query");
+    } else FAILX(addr, "add ref");
+  } else FAILX(addr, "dup addr");
   dns_query_free(elem);
   g_free(elem);
   return NULL;
@@ -167,9 +167,9 @@ void dns_lookup(t_hop *hop, int ndx) {
       DNS_DEBUG("send query=%s", addr);
       g_resolver_lookup_by_address_async(res, ia, NULL, (GAsyncReadyCallback)on_dns_lookup, query);
       g_object_unref(ia);
-    } else WARN_("g_inet_address_new_from_string() failed");
+    } else FAIL("g_inet_address_new_from_string()");
     g_object_unref(res);
-  } else WARN_("g_resolver_get_default() failed");
+  } else FAIL("g_resolver_get_default()");
 }
 
 void dns_cache_free(void) {

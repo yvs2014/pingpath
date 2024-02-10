@@ -3,12 +3,12 @@ Section: net
 Priority: optional
 Maintainer: yvs <VSYakovetsky@gmail.com>
 Rules-Requires-Root: no
-Build-Depends: dpkg-dev, debhelper, pkgconf | pkg-config, libgtk-4-dev
+Build-Depends: dpkg-dev, debhelper, pkgconf | pkg-config, libgtk-4-dev, libjson-glib-dev
 Standards-Version: 4.6.2
 Homepage: https://github.com/yvs2014/pingpath
 
 Package: pingpath
-Depends: ${shlibs:Depends}, iputils-ping, libgtk-4-1 | libgtk-4-0
+Depends: ${shlibs:Depends}, iputils-ping, libgtk-4-1 | libgtk-4-0, libjson-glib-1.0-0
 Architecture: any
 Description: system 'ping' wrapper to display path
   Network diagnostic tool based on parsing system ping output with some functionality of traceroute.

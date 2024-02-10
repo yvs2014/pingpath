@@ -6,7 +6,7 @@
 .Nd ping wrapper for network diagnostic
 .Sh SYNOPSIS
 .Nm
-.Op Fl chiIgGLnpqRsStv46
+.Op Fl chiIgGLnpqrRsStv46
 .Sy [ TARGET ]
 .Sh DESCRIPTION
 Network diagnostic tool based on parsing system
@@ -172,6 +172,24 @@ Default
 .Ar all
 .El
 .Bl -tag -width Ds
+.It Fl r, Fl -recap Ar TYPE
+Run non-iteractively and print summary at exit:
+.Bl -tag -offset Ds -compact
+.It Cm t
+simple text
+.It Cm c
+CSV delimited with a semicolon
+.It Cm J
+pretty printed JSON
+.It Cm j
+more numeric JSON
+.El
+Default
+.Ar none
+.El
+.Bl -tag -width Ds
+.It Fl R, Fl -run
+Autostart from CLI (if ping target is set)
 .It Fl v, Fl -verbose Ar LEVEL
 Print debug messages to stdout according to bits of
 .Ar level :
@@ -189,8 +207,6 @@ Default
 .Ar none
 .El
 .Bl -tag -width Ds
-.It Fl R, Fl -run
-Autostart from CLI (if ping target is set)
 .It Fl 4, Fl -ipv4
 IPv4 only
 .It Fl 6, Fl -ipv6

@@ -52,7 +52,7 @@ static void on_tab_switch(GtkNotebook *nb, GtkWidget *tab, guint ndx, gpointer u
 #define APPQUIT(fmt, ...) { WARN("init " fmt " failed", __VA_ARGS__); \
   g_application_quit(G_APPLICATION(app)); exit_code = EXIT_FAILURE; return; }
 
-static void app_cb(GtkApplication* app, gpointer unused) {
+static void win_init(GtkApplication* app) {
   style_init();
   GtkWidget *win = gtk_application_window_new(app);
   if (!GTK_IS_WINDOW(win)) APPQUIT("%s", "app window");
@@ -61,7 +61,7 @@ static void app_cb(GtkApplication* app, gpointer unused) {
   { const char *icons[] = {APPNAME, NULL};
     const char *ico = is_sysicon(icons);
     if (ico) gtk_window_set_icon_name(GTK_WINDOW(win), ico);
-    else NOLOG("no '%s' icon", APPNAME);
+    else VERBOSE("no '%s' icon", APPNAME);
   }
   if (!appbar_init(app, win)) APPQUIT("%s", "appbar");
   GtkWidget *nb = gtk_notebook_new();
@@ -98,7 +98,11 @@ static void app_cb(GtkApplication* app, gpointer unused) {
   gtk_window_present(GTK_WINDOW(win));
   LOG("GTK: %d.%d.%d", GTK_MAJOR_VERSION, GTK_MINOR_VERSION, GTK_MICRO_VERSION);
   LOG("Pango: %d.%d.%d", PANGO_VERSION_MAJOR, PANGO_VERSION_MINOR, PANGO_VERSION_MICRO);
-  if (autostart && opts.target) { pinger_start(); appbar_update(); }
+}
+
+static void app_cb(GtkApplication* app, gpointer unused) {
+  if (!opts.recap) win_init(app);
+  if (autostart && opts.target) { pinger_start(); if (!opts.recap) appbar_update(); }
 }
 
 int main(int argc, char **argv) {
@@ -112,6 +116,7 @@ int main(int argc, char **argv) {
   pinger_init();
   g_signal_connect(app, EV_ACTIVE, G_CALLBACK(app_cb), NULL);
   int rc = g_application_run(G_APPLICATION(app), argc, argv);
+  if (opts.target && opts.recap) pinger_wait_for_recap();
   g_object_unref(app);
   return exit_code || rc;
 }

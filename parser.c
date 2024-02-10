@@ -32,6 +32,8 @@
 #define WHOIS_DELIM    ':'
 #define WHOIS_CCDEL    ','
 
+#define PARSER_MESG(fmt, ...) { if (cli) g_message(fmt, __VA_ARGS__); else notifier_inform(fmt, __VA_ARGS__); }
+
 typedef gboolean parser_cb(int at, GMatchInfo* match, const char *line);
 
 typedef struct parser_regex {
@@ -64,11 +66,12 @@ static t_response_regex regexes[] = {
     PATT_TS " \\d+ bytes f" PATT_FROM ": " PATT_SEQ " ttl=(?<" REN_TTL ">\\d+) (?<" REN_SKIP ">time=.* ms )(?<" REN_INFO ">.*)" }},
 };
 
-static t_parser_regex str_rx[STR_RX_MAX] = {
-  [STR_RX_INT]  = { .pattern = "^\\d+$" },
-  [STR_RX_PAD]  = { .pattern = "^[\\da-fA-F]{1,32}$" },
-  [STR_RX_INFO] = { .pattern = "^[" INFO_PATT "]+$" },
-  [STR_RX_STAT] = { .pattern = "^[" STAT_PATT "]+$" },
+static t_parser_regex str_rx[OPT_TYPE_MAX] = {
+  [OPT_TYPE_INT]   = { .pattern = "^\\d+$" },
+  [OPT_TYPE_PAD]   = { .pattern = "^[\\da-fA-F]{1,32}$" },
+  [OPT_TYPE_INFO]  = { .pattern = "^[" INFO_PATT "]+$" },
+  [OPT_TYPE_STAT]  = { .pattern = "^[" STAT_PATT "]+$" },
+  [OPT_TYPE_RECAP] = { .pattern = "^[" RECAP_PATT "]$" },
 };
 
 static GRegex* compile_regex(const char *pattern, GRegexCompileFlags flags) {
@@ -207,25 +210,23 @@ static char* split_with_delim(char **ps, int c) {
 static inline gboolean parser_valid_char0(gchar *str) { return g_regex_match(hostname_char0_regex, str, 0, NULL); }
 static inline gboolean parser_valid_host(gchar *host) { return g_regex_match(hostname_chars_regex, host, 0, NULL); }
 
-#define HNAME_ERROR(cause) PP_NOTIFY("Hostname %s", cause)
+#define HNAME_ERROR(cause) PARSER_MESG("Hostname %s", cause)
 
 static gboolean target_meet_all_conditions(gchar *s, int len, int max) {
   // rfc1123,rfc952 restrictions
-  if (len > max) { PP_NOTIFY("Hostname: out of length limit (%d > %d)", len, max); return false; }
+  if (len > max) { PARSER_MESG("Hostname: out of length limit (%d > %d)", len, max); return false; }
   if (s[len - 1] == '-') { HNAME_ERROR("cannot end with hyphen"); return false; }
   if (!parser_valid_char0(s)) { HNAME_ERROR("must start with a letter or a digit"); return false; }
   if (!parser_valid_host(s)) { HNAME_ERROR("contains not allowed characters"); return false; }
   return true;
 }
 
-#define PIERR(fmt, ...) { WARN("%s: " fmt, option, __VA_ARGS__); PP_NOTIFY("%s: " fmt, option, __VA_ARGS__); }
-
 static gchar* parser_valid_int(const gchar *option, const gchar *str) {
   gchar *cpy = g_strdup(str);
   if (!cpy) return NULL;
   gchar *val = g_strstrip(cpy);
-  gboolean valid = g_regex_match(str_rx[STR_RX_INT].regex, val, 0, NULL);
-  if (!valid) { PIERR("no match %s regex", str_rx[STR_RX_INT].pattern); g_free(cpy); val = NULL; }
+  gboolean valid = g_regex_match(str_rx[OPT_TYPE_INT].regex, val, 0, NULL);
+  if (!valid) { PARSER_MESG("%s: no match %s regex", option, str_rx[OPT_TYPE_INT].pattern); g_free(cpy); val = NULL; }
   return val;
 }
 
@@ -264,7 +265,7 @@ int parser_int(const gchar *str, int typ, const gchar *option, t_minmax mm) {
   int n = atol(val); g_free(val);
   int min = (mm.min > 0) ? mm.min : 0;
   int max = (mm.max < INT_MAX) ? mm.max : INT_MAX;
-  if ((n < min) || (n > max)) PIERR("out of range[%d,%d]", min, max)
+  if ((n < min) || (n > max)) PARSER_MESG("%s: out of range[%d,%d]", option, min, max)
   else switch (typ) {
     case ENT_STR_CYCLES:
     case ENT_STR_IVAL:
@@ -279,13 +280,13 @@ int parser_int(const gchar *str, int typ, const gchar *option, t_minmax mm) {
   return -1;
 }
 
-const char* parser_str(const gchar *str, const gchar *option, int buff_sz, int rx_ndx) {
+const char* parser_str(const gchar *str, const gchar *option, int rx_ndx) {
   static char str_buff[128];
-  g_strlcpy(str_buff, str, buff_sz);
+  g_strlcpy(str_buff, str, sizeof(str_buff));
   char *val = g_strstrip(str_buff);
   gboolean valid = g_regex_match(str_rx[rx_ndx].regex, val, 0, NULL);
   if (valid) return val;
-  else PP_NOTIFY("%s: no match %s regex", option, str_rx[rx_ndx].pattern);
+  PARSER_MESG("%s: no match %s regex", option, str_rx[rx_ndx].pattern);
   return NULL;
 }
 

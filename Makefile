@@ -14,12 +14,20 @@ DSCDIR ?= $(BASEDIR)/share/applications
 BASEICODIR ?= $(BASEDIR)/share/icons/hicolor
 SVGICODIR  ?= $(BASEICODIR)/scalable/apps
 
+PKGS ?= gtk4
+
 CC ?= gcc
-LIBS = $(shell $(PKGCONFIG) --libs gtk4)
-LIBS += -lm
-CFLAGS = -I.
-CFLAGS += $(shell $(PKGCONFIG) --cflags gtk4)
-CFLAGS += -Wall
+CFLAGS = -Wall
+CFLAGS += -I.
+LIBS = -lm
+
+ifndef NO_JSON
+PKGS += json-glib-1.0
+CFLAGS += -DWITH_JSON
+endif
+
+CFLAGS += $(shell $(PKGCONFIG) --cflags $(PKGS))
+LIBS += $(shell $(PKGCONFIG) --libs $(PKGS))
 
 ifdef FCFINI
 CFLAGS += -DFCFINI

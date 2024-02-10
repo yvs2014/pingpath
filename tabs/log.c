@@ -56,6 +56,7 @@ t_tab* logtab_init(GtkWidget* win) {
 }
 
 void log_add(const gchar *fmt, ...) {
+  if (opts.recap) return;
   va_list ap;
   va_start(ap, fmt);
   gchar *str = g_strdup_vprintf(fmt, ap);

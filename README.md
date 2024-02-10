@@ -6,7 +6,7 @@ PingPath
 SYNOPSIS
 --------
 
-**pingpath \[-chiIgGLnpqRsStv46\] [TARGET]**
+**pingpath \[-chiIgGLnpqrRsStv46\] [TARGET]**
 
 DESCRIPTION
 -----------

@@ -149,9 +149,9 @@ static void whois_cache_update(gchar *addr, gchar* welem[]) {
         LOG("whois cache updated with addr=%s as=%s cc=%s rt=%s desc=%s", cache->addr,
           cwelem[WHOIS_AS_NDX], cwelem[WHOIS_CC_NDX], cwelem[WHOIS_RT_NDX], cwelem[WHOIS_DESC_NDX]);
         PR_WHOIS_C; return;
-      } else WARN("%s: add cache failed", addr);
-    } else WARN("%s: dup host failed", addr);
-  } else WARN("%s: alloc host failed", addr);
+      } else FAILX(addr, "add cache");
+    } else FAILX(addr, "dup host");
+  } else FAILX(addr, "alloc host");
   wc_free(cache);
   g_free(cache);
 }
@@ -169,10 +169,10 @@ static t_wq_elem* whois_query_save(const gchar *addr, t_hop *hop, int ndx) {
         if (added) {
           WHOIS_DEBUG("%s(%s) hop[%d] host[%d]=%s", __func__, addr, hop->at, ndx, hop->host[ndx].addr);
           PR_WHOIS_Q; return added->data;
-        } else WARN("%s: add query failed", addr);
-      } else WARN("%s: add ref failed", addr);
-    } else WARN("%s: dup addr failed", addr);
-  } else WARN("%s: alloc buffer failed", addr);
+        } else FAILX(addr, "add query");
+      } else FAILX(addr, "add ref");
+    } else FAILX(addr, "dup addr");
+  } else FAILX(addr, "alloc buffer");
   wq_free(elem);
   g_free(elem);
   return NULL;
@@ -251,8 +251,8 @@ static void on_whois_connect(GObject* source, GAsyncResult *result, t_wq_elem *e
         g_output_stream_write_all_async(elem->output, request, strnlen(request, MAXHOSTNAME),
           G_PRIORITY_DEFAULT, NULL, (GAsyncReadyCallback)on_whois_write_all, request);
         return;
-      } else WARN("%s: g_strdup_printf() failed", elem->data.addr);
-    } else WARN("get %s stream failed", elem->input ? "output" : "input");
+      } else FAILX(elem->data.addr, "g_strdup_printf()");
+    } else FAILX(elem->input ? "output" : "input", "get stream");
   } else ERRLOG("whois connection failed");
   whois_query_close(elem);
 }
@@ -283,7 +283,7 @@ void whois_resolv(t_hop *hop, int ndx) {
     g_socket_client_connect_to_host_async(sock, WHOIS_HOST, WHOIS_PORT, NULL,
       (GAsyncReadyCallback)on_whois_connect, query);
     g_object_unref(sock);
-  } else WARN_("g_socket_client_new() failed");
+  } else FAIL("g_socket_client_new()");
 }
 
 void whois_cache_free(void) {

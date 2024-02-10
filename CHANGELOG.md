@@ -1,3 +1,7 @@
+## 0.1.73
+- add summary/recap option (text, csv, and json)
+- optimize a bit fn calls
+
 ## 0.1.72
 - add GLR options
 - -G Extra graph elements

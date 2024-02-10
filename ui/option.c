@@ -14,15 +14,15 @@ t_ent_bool ent_bool[ENT_BOOL_MAX] = {
   [ENT_BOOL_DNS]  = { .en = { .typ = ENT_BOOL_DNS,  .name = OPT_DNS_HDR },
     .pval = &opts.dns },
   [ENT_BOOL_HOST] = { .en = { .typ = ENT_BOOL_HOST, .name = ELEM_HOST_HDR },
-    .pval = &statelem[ELEM_HOST].enable, .prefix = OPT_INFO_HDR },
+    .pval = &statelem[ELEM_HOST].enable, .prefix = OPT_INFO_HEADER },
   [ENT_BOOL_AS]   = { .en = { .typ = ENT_BOOL_AS,   .name = ELEM_AS_HDR },
-    .pval = &statelem[ELEM_AS].enable,   .prefix = OPT_INFO_HDR },
+    .pval = &statelem[ELEM_AS].enable,   .prefix = OPT_INFO_HEADER },
   [ENT_BOOL_CC]   = { .en = { .typ = ENT_BOOL_CC,   .name = ELEM_CC_HDR },
-    .pval = &statelem[ELEM_CC].enable,   .prefix = OPT_INFO_HDR  },
+    .pval = &statelem[ELEM_CC].enable,   .prefix = OPT_INFO_HEADER  },
   [ENT_BOOL_DESC] = { .en = { .typ = ENT_BOOL_DESC, .name = ELEM_DESC_HDR },
-    .pval = &statelem[ELEM_DESC].enable, .prefix = OPT_INFO_HDR  },
+    .pval = &statelem[ELEM_DESC].enable, .prefix = OPT_INFO_HEADER  },
   [ENT_BOOL_RT]   = { .en = { .typ = ENT_BOOL_RT,   .name = ELEM_RT_HDR },
-    .pval = &statelem[ELEM_RT].enable,   .prefix = OPT_INFO_HDR  },
+    .pval = &statelem[ELEM_RT].enable,   .prefix = OPT_INFO_HEADER  },
   [ENT_BOOL_LOSS] = { .en = { .typ = ENT_BOOL_LOSS, .name = ELEM_LOSS_HEADER},
     .pval = &statelem[ELEM_LOSS].enable, .prefix = OPT_STAT_HDR  },
   [ENT_BOOL_SENT] = { .en = { .typ = ENT_BOOL_SENT, .name = ELEM_SENT_HDR },
@@ -77,7 +77,7 @@ t_ent_str ent_str[ENT_STR_MAX] = {
 };
 
 static t_ent_exp ent_exp[ENT_EXP_MAX] = {
-  [ENT_EXP_INFO] = { .c = {.en = {.typ = ENT_EXP_INFO, .name = OPT_INFO_HDR }},
+  [ENT_EXP_INFO] = { .c = {.en = {.typ = ENT_EXP_INFO, .name = OPT_INFO_HEADER }},
     .ndxs = {ENT_BOOL_HOST, ENT_BOOL_AS, ENT_BOOL_CC, ENT_BOOL_DESC, ENT_BOOL_RT }},
   [ENT_EXP_STAT] = { .c = {.en = {.typ = ENT_EXP_STAT, .name = OPT_STAT_HDR }},
     .ndxs = {ENT_BOOL_LOSS, ENT_BOOL_SENT, ENT_BOOL_RECV, ENT_BOOL_LAST,
@@ -124,8 +124,8 @@ static gboolean check_bool_val(GtkCheckButton *check, t_ent_bool *en, void (*upd
     if (update) update();
   }
   const gchar *onoff = state ? TOGGLE_ON_HDR : TOGGLE_OFF_HDR;
-  if (en->prefix) PP_NOTIFY("%s: %s %s", en->prefix, en->en.name, onoff);
-  else PP_NOTIFY("%s: %s", en->en.name, onoff);
+  if (en->prefix) notifier_inform("%s: %s %s", en->prefix, en->en.name, onoff);
+  else notifier_inform("%s: %s", en->en.name, onoff);
   return re;
 }
 
@@ -207,8 +207,8 @@ static void radio_cb(GtkCheckButton *check, t_ent_rad_map *map) {
         if (map->val != *(en->pval)) {
           *(en->pval) = map->val;
           if (en->cb) en->cb();
-          if (map->str) PP_NOTIFY("%s: %s", en->c.en.name, map->str);
-          else PP_NOTIFY("%s: %d", en->c.en.name, map->val);
+          if (map->str) notifier_inform("%s: %s", en->c.en.name, map->str);
+          else notifier_inform("%s: %d", en->c.en.name, map->val);
         }
       }
     }
@@ -238,15 +238,15 @@ static void input_cb(GtkWidget *input, t_ent_str *en) {
       int n = parser_int(got, en->en.typ, en->en.name, en->range);
       if (n > 0) {
         if (en->pint) *(en->pint) = n;
-        /*extra*/ if (en->en.typ == ENT_STR_IVAL) opts.tout_usec = n * 1000000;
-        PP_NOTIFY("%s: %d", en->en.name, n);
+        /*extra*/ if (en->en.typ == ENT_STR_IVAL) opts.tout_usec = n * G_USEC_PER_SEC;
+        notifier_inform("%s: %d", en->en.name, n);
       } else set_ed_texthint(en);
     } break;
     case ENT_STR_PLOAD: {
-      const char *pad = parser_str(got, en->en.name, PAD_SIZE, STR_RX_PAD);
+      const char *pad = parser_str(got, en->en.name, OPT_TYPE_PAD);
       if (pad) {
         if (en->pstr) g_strlcpy(en->pstr, pad, en->slen);
-        PP_NOTIFY("%s: %s", en->en.name, pad);
+        notifier_inform("%s: %s", en->en.name, pad);
       } else set_ed_texthint(en);
     } break;
   }
@@ -264,7 +264,7 @@ static void min_cb(GtkWidget *spin, t_ent_spn *en) {
   int *plim = en->aux[SPN_AUX_LIM].pval;
   int max = plim ? *plim : MAXTTL;
   if (pinger_within_range(1, max, got)) {
-    PP_NOTIFY("%s: %d <=> %d", en->c.en.name, got, max);
+    notifier_inform("%s: %d <=> %d", en->c.en.name, got, max);
     *pmin = val;
     // then adjust right:range
     double cp_min, cp_max;
@@ -289,7 +289,7 @@ static void max_cb(GtkWidget *spin, t_ent_spn *en) {
   int *pmin = en->aux[SPN_AUX_MIN].pval;
   int min = (pmin ? *pmin : 0) + 1;
   if (pinger_within_range(min, MAXTTL, got)) {
-    PP_NOTIFY("%s: %d <=> %d", en->c.en.name, min, got);
+    notifier_inform("%s: %d <=> %d", en->c.en.name, min, got);
     *plim = got;
     // then adjust left:range
     double cp_min, cp_max;

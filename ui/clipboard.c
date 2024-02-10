@@ -190,7 +190,7 @@ void cb_on_copy_l1(GSimpleAction *action, GVariant *var, gpointer data) {
   if (!tab || !GTK_IS_LIST_BOX(tab->dyn)) return;
   GdkClipboard *cb = gtk_widget_get_clipboard(GTK_WIDGET(tab->tab));
   if (GDK_IS_CLIPBOARD(cb)) {
-    NOLOG("clipoard action %s", ACT_COPY_HDR);
+    VERBOSE("clipoard action %s", ACT_COPY_HDR);
     gchar *text = cb_get_text(tab->dyn, cb, DATA_AT_LEVEL1);
     if (text) { gdk_clipboard_set_text(cb, text); g_free(text); }
   }
@@ -201,7 +201,7 @@ void cb_on_copy_l2(GSimpleAction *action, GVariant *var, gpointer data) {
   if (!tab || !GTK_IS_LIST_BOX(tab->dyn)) return;
   GdkClipboard *cb = gtk_widget_get_clipboard(GTK_WIDGET(tab->tab));
   if (GDK_IS_CLIPBOARD(cb)) {
-    NOLOG("clipoard action %s", ACT_COPY_HDR);
+    VERBOSE("clipoard action %s", ACT_COPY_HDR);
     gchar* arr[4] = { NULL };
     static int n_cbl2_arr = G_N_ELEMENTS(arr);
     int n = 0;
@@ -218,7 +218,7 @@ void cb_on_copy_l2(GSimpleAction *action, GVariant *var, gpointer data) {
 void cb_on_sall(GSimpleAction *action, GVariant *var, gpointer data) {
   t_tab *tab = data;
   if (!tab || !GTK_IS_LIST_BOX(tab->dyn)) return;
-  NOLOG("%s action %s", tab->name, cb_menu_label(tab->sel));
+  VERBOSE("%s action %s", tab->name, cb_menu_label(tab->sel));
   GtkWidget* list[] = {tab->hdr, tab->dyn, tab->info};
   static int n_cbsa_arr = G_N_ELEMENTS(list);
   tab->sel = any_list_sel(tab);

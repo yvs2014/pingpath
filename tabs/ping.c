@@ -22,9 +22,6 @@ typedef struct listbox {
   t_listline info;
 } t_listbox;
 
-const gchar *info_mesg;
-const gchar *notyet_mesg = "No data yet";
-
 static t_listbox listbox;
 
 static t_tab pingtab = { .self = &pingtab, .name = "ping-tab",
@@ -147,31 +144,19 @@ void pingtab_clear(void) {
   gtk_widget_set_visible(GTK_WIDGET(listbox.info.row), false);
   gtk_widget_set_visible(listbox.info.child, false);
   gtk_label_set_label(GTK_LABEL(listbox.info.child), NULL);
-  pinger_free_errors();
 }
 
 void pingtab_update(void) {
-  static const gchar *nopong_mesg[] = { "Not reached", "Not reached yet"};
-  if (!pinger_state.pause)
-    for (int i = 0; i < hops_no; i++)
-      for (int typ = 0; typ < ELEM_MAX; typ++)
-        if ((typ != ELEM_NO) && statelem[typ].enable) {
-          GtkWidget *label = listbox.lines[i].cells[typ];
-          if (GTK_IS_LABEL(label)) {
-            const gchar *text = stat_str_elem(i, typ);
-            UPDATE_LABEL(label, text);
-          }
+  if (pinger_state.pause) return;
+  for (int i = 0; i < hops_no; i++)
+    for (int typ = 0; typ < ELEM_MAX; typ++)
+      if ((typ != ELEM_NO) && statelem[typ].enable) {
+        GtkWidget *label = listbox.lines[i].cells[typ];
+        if (GTK_IS_LABEL(label)) {
+          const gchar *text = stat_str_elem(i, typ);
+          UPDATE_LABEL(label, text);
         }
-  { // no data display
-    gboolean notyet = (info_mesg == notyet_mesg);
-    if (pinger_state.gotdata) { if (notyet) pingtab_set_error(NULL); }
-    else if (!notyet && !info_mesg && pinger_state.gotdata) pingtab_set_error(notyet_mesg);
-  }
-  if (pinger_state.gotdata && !pinger_state.reachable) {
-    gboolean yet = pinger_state.run;
-    if (!info_mesg || (!yet && (info_mesg == nopong_mesg[1])))
-      pingtab_set_error(nopong_mesg[yet]);
-  }
+      }
 }
 
 void pingtab_vis_rows(int no) {
@@ -192,7 +177,7 @@ void pingtab_vis_cols(void) {
   pingtab_update();
 }
 
-void pingtab_update_width(int typ, int max) {
+void pingtab_set_width(int typ, int max) {
   for (int i = 0; i < HDRLINES; i++)
     gtk_label_set_width_chars(GTK_LABEL(listbox.header[i].cells[typ]), max);
   for (int i = 0; i < MAXTTL; i++)
@@ -200,7 +185,6 @@ void pingtab_update_width(int typ, int max) {
 }
 
 void pingtab_set_error(const gchar *error) {
-  info_mesg = error;
   gtk_label_set_label(GTK_LABEL(listbox.info.child), error);
   gboolean vis = error && error[0];
   gtk_widget_set_visible(GTK_WIDGET(listbox.info.row), vis);

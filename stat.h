@@ -40,7 +40,9 @@ void stat_save_timeout(int at, t_ping_timeout *data);
 void stat_save_info(int at, t_ping_info *data);
 void stat_last_tx(int at);
 const gchar *stat_str_elem(int at, int typ);
+gboolean stat_str_arr(int at, int typ, const gchar* arr[MAXADDR]);
 double stat_dbl_elem(int at, int typ);
+int stat_int_elem(int at, int typ);
 void stat_rseq(int at, t_rseq *data);
 void stat_legend(int at, t_legend *data);
 int stat_elem_max(int typ);
@@ -51,7 +53,7 @@ void stat_whois_enabler(void);
 void stat_run_whois_resolv(void);
 void stat_clean_elems(int typ);
 
-extern int hops_no;
+extern int hops_no, visibles;
 extern t_stat_elem statelem[ELEM_MAX]; // map indexes to elems
 
 #endif

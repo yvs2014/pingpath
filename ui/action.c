@@ -22,7 +22,7 @@
 #define MSTRSTR(x) MSTR(x)
 #define MSTR(x) #x
 #define MA_LOG(ndx) LOG("Action %s", action_label(ndx))
-#define MI_LOG(ndx) PP_NOTIFY("Action %s", action_label(ndx))
+#define MI_LOG(ndx) notifier_inform("Action %s", action_label(ndx))
 
 #define OKAY_BUTTON "Okay"
 
@@ -51,7 +51,7 @@ static const gchar *help_message =
   SPANOPT(OPT_CYCLES_HDR   "\t", "Number of ping cycles [" MSTRSTR(DEF_CYCLES) "]")
   SPANOPT(OPT_IVAL_HDR     "\t", "Gap in seconds between pings [" MSTRSTR(DEF_TOUT) "]")
   SPANOPT(OPT_DNS_HDR      "\t", "IP address resolving [on]")
-  SPANOPT(OPT_INFO_HDR     "\t", "Hop elements to display:")
+  SPANOPT(OPT_INFO_HEADER  "\t", "Hop elements to display:")
     SPANSUB(ELEM_HOST_HDR " " ELEM_AS_HDR " " ELEM_CC_HDR " " ELEM_DESC_HDR " " ELEM_RT_HDR)
   SPANOPT(OPT_STAT_HDR, "Stat elements to display:")
     SPANSUB(ELEM_LOSS_HDR " " ELEM_SENT_HDR " " ELEM_RECV_HDR " " ELEM_LAST_HDR " " ELEM_BEST_HDR

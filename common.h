@@ -9,7 +9,7 @@
 #endif
 
 #define APPNAME "pingpath"
-#define VERSION "0.1.72"
+#define VERSION "0.1.73"
 
 #define X_RES 1024
 #define Y_RES 720
@@ -34,6 +34,16 @@
 
 #define INFO_PATT    "hacdr"
 #define STAT_PATT    "lsrmbwaj"
+
+#ifdef WITH_JSON
+#define RECAP_PATT   "tcjJ"
+#else
+#define RECAP_PATT   "tc"
+#endif
+#define RECAP_TEXT        't'
+#define RECAP_CSV         'c'
+#define RECAP_JSON_NUM    'j'
+#define RECAP_JSON_PRETTY 'J'
 
 #define EV_ACTIVE     "activate"
 #define EV_DESTROY    "destroy"
@@ -87,16 +97,13 @@
 #define DNS_DEBUGGING 1
 #define WHOIS_DEBUGGING 1
 
-#define LOG(fmt, ...) { GLIB_PR(fmt, __VA_ARGS__); log_add("[%s] " fmt, timestampit(), __VA_ARGS__); }
-#define LOG_(mesg) { GLIB_PR("%s", mesg); log_add("[%s] %s", timestampit(), mesg); }
-
-#define NOLOG(fmt, ...) GLIB_PR(fmt, __VA_ARGS__)
-#define CLILOG(mesg) g_message("%s", mesg)
+#define LOG(fmt, ...) { VERBOSE(fmt, __VA_ARGS__); log_add("[%s] " fmt, timestampit(), __VA_ARGS__); }
+#define LOG_(mesg) { VERBOSE("%s", mesg); log_add("[%s] %s", timestampit(), mesg); }
 
 #ifdef LOGGING
-#define GLIB_PR(fmt, ...) { if (verbose) g_message(fmt, __VA_ARGS__); }
+#define VERBOSE(fmt, ...) { if (verbose) g_message(fmt, __VA_ARGS__); }
 #else
-#define GLIB_PR(fmt, ...) {}
+#define VERBOSE(fmt, ...) {}
 #endif
 
 #ifdef DEBUGGING
@@ -107,10 +114,12 @@
 
 #define WARN(fmt, ...) g_warning("%s: " fmt, __func__, __VA_ARGS__)
 #define WARN_(mesg) g_warning("%s: %s", __func__, mesg)
-#define ERROR(what) { if (!error) { g_warning("%s: %s: %s", __func__, what, unkn_error); } \
-  else { g_warning("%s: %s: rc=%d, %s", __func__, what, error->code, error->message); g_error_free(error); }}
+#define ERROR(what) { if (!error) { WARN("%s: %s", what, unkn_error); } \
+  else { WARN("%s: rc=%d, %s", what, error->code, error->message); g_error_free(error); }}
 #define ERRLOG(what) { if (!error) { LOG("%s: %s", what, unkn_error); } \
   else { LOG("%s: %s: rc=%d, %s\n", __func__, what, error->code, error->message); g_error_free(error); }}
+#define FAIL(what) WARN("%s failed", what)
+#define FAILX(what, extra) WARN("%s: %s failed", what, extra)
 
 #define STR_EQ(a, b) (!g_strcmp0(a, b))
 #define STR_NEQ(a, b) (g_strcmp0(a, b))
@@ -138,7 +147,8 @@
 #define OPT_IVAL_HDR     "Interval"
 #define OPT_IVAL_HEADER  OPT_IVAL_HDR ", sec"
 #define OPT_DNS_HDR      "DNS"
-#define OPT_INFO_HDR     "Hop Info"
+#define OPT_INFO_HDR     "Hop"
+#define OPT_INFO_HEADER  "Hop Info"
 #define OPT_STAT_HDR     "Statistics"
 #define OPT_TTL_HDR      "TTL"
 #define OPT_QOS_HDR      "QoS"
@@ -159,7 +169,9 @@
 #define OPT_LGND_HDR     "Graph legend"
 #define OPT_GRLG_HDR     "Legend fields"
 #define OPT_GREX_HDR     "Extra graph elements"
+
 #define OPT_LOGMAX_HDR   "LogTab rows"
+#define OPT_RECAP_HDR    "Summary"
 
 #define ELEM_HOST_HDR  "Host"
 #define ELEM_HOST_TIP  "Hostname or IP-address"
@@ -235,7 +247,8 @@ enum { ENT_BOOL_NONE, ENT_BOOL_DNS, ENT_BOOL_HOST, ENT_BOOL_AS, ENT_BOOL_CC, ENT
   ENT_BOOL_LGND, ENT_BOOL_AVJT, ENT_BOOL_CCAS, ENT_BOOL_LGHN, ENT_BOOL_MEAN, ENT_BOOL_JRNG, ENT_BOOL_AREA, ENT_BOOL_MAX };
 
 enum { ELEM_NO, ELEM_HOST, ELEM_AS, ELEM_CC, ELEM_DESC, ELEM_RT, ELEM_FILL,
-  ELEM_LOSS, ELEM_SENT, ELEM_RECV, ELEM_LAST, ELEM_BEST, ELEM_WRST, ELEM_AVRG, ELEM_JTTR, ELEM_MAX };
+  ELEM_LOSS, ELEM_SENT, ELEM_RECV, ELEM_LAST, ELEM_BEST, ELEM_WRST, ELEM_AVRG, ELEM_JTTR, ELEM_MAX,
+  EX_ELEM_ADDR, EX_ELEM_HOST, EX_ELEM_MAX };
 
 enum { GRLG_NO, GRLG_DASH, GRLG_AVJT, GRLG_CCAS, GRLG_LGHN, GRLG_MAX, GREL_MEAN, GREL_JRNG, GREL_AREA, GREL_MAX };
 
@@ -348,7 +361,7 @@ extern void log_add(const gchar *fmt, ...);
 
 #define ADD_REF_OR_RET(refs) { \
   if (!list_add_nodup(refs, ref_new(hop, ndx), (GCompareFunc)ref_cmp, REF_MAX)) { \
-    WARN("%s: add reference failed", addr); return NULL; }}
+    FAILX(addr, "add reference"); return NULL; }}
 
 #define UPDATE_LABEL(label, str) { const gchar *txt = gtk_label_get_text(GTK_LABEL(label)); \
   if (STR_NEQ(txt, str)) gtk_label_set_text(GTK_LABEL(label), str); }

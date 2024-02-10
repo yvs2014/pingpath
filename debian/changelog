@@ -1,3 +1,11 @@
+pingpath (0.1.73) lunar mantic; urgency=low
+
+  * add summary/recap option (text, csv, and json)
+
+  * optimize a bit fn calls
+
+ -- yvs <VSYakovetsky@gmail.com>  Sat, 10 Feb 2024 02:15:43 +0200
+
 pingpath (0.1.72) lunar mantic; urgency=low
 
   * add GLR options

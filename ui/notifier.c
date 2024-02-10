@@ -12,7 +12,7 @@
 #define LGND_DASH_COL_FMT "<span weight='800' color='%s'>%s</span>"
 #define LGND_LINE_TOGGLE_TIP "show/hide graph #%d"
 
-#define GRL_WARN(what) WARN("graph legend %s failed", what)
+#define GL_FAIL(what) FAILX("graph legend", what)
 
 typedef struct nt_extra {
   GtkListBoxRow *row;        // row
@@ -82,7 +82,7 @@ static gboolean nt_legend_pos_cb(GtkOverlay *overlay, GtkWidget *widget, GdkRect
 }
 
 static void nt_add_lgelem(GtkWidget *widget, GtkWidget *box, int align, int max, gboolean visible) {
-  if (!GTK_IS_BOX(box) || !GTK_IS_WIDGET(widget)) { GRL_WARN("gtk_widget_new()"); return; }
+  if (!GTK_IS_BOX(box) || !GTK_IS_WIDGET(widget)) { GL_FAIL("gtk_widget_new()"); return; }
   gtk_widget_set_visible(widget, visible);
   gtk_box_append(GTK_BOX(box), widget);
   if (GTK_IS_LABEL(widget) && (align >= 0)) {
@@ -153,7 +153,7 @@ static GtkWidget* nt_init(GtkWidget *base, t_notifier *nt) {
     case NT_MAIN_NDX: {
       inbox = gtk_label_new(NULL);
       if (GTK_IS_LABEL(inbox) && style_loaded && nt->dyn_css) gtk_widget_add_css_class(inbox, CSS_INVERT);
-      else WARN("action notifier %s failed", "gtk_label_new()");
+      else FAILX("action notifier", "gtk_label_new()");
     } break;
     case NT_GRAPH_NDX: {
       inbox = gtk_list_box_new();
@@ -184,10 +184,10 @@ static GtkWidget* nt_init(GtkWidget *base, t_notifier *nt) {
               NT_LG_LABEL(ex->elem[GRLG_AVJT], NULL, GTK_ALIGN_START, -1, graphelem[GRLG_AVJT].enable);
               NT_LG_LABEL(ex->elem[GRLG_CCAS], NULL, GTK_ALIGN_START, -1, graphelem[GRLG_CCAS].enable);
               NT_LG_LABEL(ex->elem[GRLG_LGHN], NULL, GTK_ALIGN_START, -1, graphelem[GRLG_LGHN].enable);
-            } else WARN("graph legend %s failed", "gtk_list_box_new()");
-          } else GRL_WARN("gtk_box_new()");
+            } else GL_FAIL("gtk_list_box_new()");
+          } else GL_FAIL("gtk_box_new()");
         }
-      } else GRL_WARN("gtk_list_box_new()");
+      } else GL_FAIL("gtk_list_box_new()");
     } break;
   }
   g_return_val_if_fail(GTK_IS_WIDGET(inbox), NULL);
@@ -245,12 +245,11 @@ inline GtkWidget* notifier_init(int ndx, GtkWidget *base) {
   return ((ndx >= 0) && (ndx < NT_NDX_MAX)) ? nt_init(base, &notifier[ndx]) : NULL;
 }
 
-void notifier_inform(int ndx, const gchar *fmt, ...) {
-  if ((ndx < 0) || (ndx >= NT_NDX_MAX)) return;
+void notifier_inform(const gchar *fmt, ...) {
   va_list ap;
   va_start(ap, fmt);
   gchar *str = g_strdup_vprintf(fmt, ap);
-  if (str) { cli ? CLILOG(str) : nt_inform(&notifier[ndx], str); g_free(str); }
+  if (str) { nt_inform(&notifier[NT_MAIN_NDX], str); g_free(str); }
   va_end(ap);
 }
 

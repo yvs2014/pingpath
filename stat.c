@@ -14,6 +14,7 @@
 enum { NONE = 0, RX = 1, TX = 2, RXTX = 3 };
 
 int hops_no = MAXTTL;
+int visibles = -1;
 
 t_stat_elem statelem[ELEM_MAX] = {
   [ELEM_NO]   = { .enable = true,  .name = "" },
@@ -38,7 +39,6 @@ static t_host_max host_max;
 static int whois_max[WHOIS_NDX_MAX];
 static const int wndx2endx[WHOIS_NDX_MAX] = {
   [WHOIS_AS_NDX] = ELEM_AS, [WHOIS_CC_NDX] = ELEM_CC, [WHOIS_DESC_NDX] = ELEM_DESC, [WHOIS_RT_NDX] = ELEM_RT };
-static int visibles = -1;
 
 static void update_hmax(const gchar* addr, const gchar *name) {
   int la = addr ? g_utf8_strlen(addr, MAXHOSTNAME) : 0;
@@ -94,7 +94,7 @@ static void update_addrname(int at, t_host *b) { // addr is mandatory, name not
 }
 
 static void stop_pings_behind(int from, const gchar *reason) {
-  for (int i = from; i < MAXTTL; i++) pinger_stop_nth(i, reason);
+  for (int i = from; i < MAXTTL; i++) pinger_nth_stop(i, reason);
 }
 
 static void set_hops_no(int no, const char *info) {
@@ -145,7 +145,7 @@ static void update_stat(int at, int rtt, t_tseq *mark, int rxtx) {
 
 static int calc_rtt(int at, t_tseq *mark) {
   if (!hops[at].mark.sec) return -1;
-  int rtt = (mark->sec - hops[at].mark.sec) * 1000000 + (mark->usec - hops[at].mark.usec);
+  int rtt = (mark->sec - hops[at].mark.sec) * G_USEC_PER_SEC + (mark->usec - hops[at].mark.usec);
   rtt = (rtt > opts.tout_usec) ? -1 : rtt; // skip timeouted responses
   return rtt;
 }
@@ -155,6 +155,9 @@ static int calc_rtt(int at, t_tseq *mark) {
 #define ADDRONLY(addr) ((addr) ? (addr) : unkn_field)
 static inline const gchar* addrname(int ndx, t_host *host) {
   return opts.dns ? ADDRNAME(host[ndx].addr, host[ndx].name) : ADDRONLY(host[ndx].addr);
+}
+static inline const gchar* addr_or_name(int ndx, t_host *host, gboolean num) {
+  return num ? host[ndx].addr : (STR_EQ(host[ndx].addr, host[ndx].name) ? NULL : host[ndx].name);
 }
 
 static const gchar *info_host(int at) {
@@ -192,6 +195,18 @@ static const gchar *info_host_nl(int at) {
   return NULL;
 }
 
+static void info_host_arr(int at, const gchar* arr[MAXADDR]) {
+  t_host *host = hops[at].host;
+  if (arr) for (int i = 0; i < MAXADDR; i++)
+    arr[i] = host[i].addr ? addrname(i, host) : NULL;
+}
+
+static void info_addrhost(int at, const gchar* arr[MAXADDR], gboolean num) {
+  t_host *host = hops[at].host;
+  if (arr) for (int i = 0; i < MAXADDR; i++)
+    arr[i] = addr_or_name(i, host, num);
+}
+
 static const gchar *info_whois(int at, int wtyp) {
   static gchar whois_cache[MAXTTL][WHOIS_NDX_MAX][BUFF_SIZE];
   t_whois *whois = hops[at].whois;
@@ -227,6 +242,11 @@ static const gchar *info_whois_nl(int at, int wtyp) {
     return s;
   }
   return NULL;
+}
+
+static void info_whois_arr(int at, int wtyp, const gchar* arr[MAXADDR]) {
+  t_whois *whois = hops[at].whois;
+  if (arr) for (int i = 0; i < MAXADDR; i++) arr[i] = whois[i].elem[wtyp];
 }
 
 static int prec(double v) { return ((v > 0) && (v < 10)) ? (v < 0.1 ? 2 : 1) : 0; }
@@ -329,15 +349,11 @@ void stat_free(void) {
   set_initial_maxes();
 }
 
-void stat_clear(gboolean clean) {
-  stat_free();
-  stat_init(clean);
-  pinger_set_error(NULL);
-}
+void stat_clear(gboolean clean) { stat_free(); stat_init(clean); }
 
 void stat_reset_cache(void) { // reset 'cached' flags
   for (int i = 0; i < MAXTTL; i++) hops[i].cached = hops[i].cached_nl = false;
-  pinger_update_width(ELEM_HOST, opts.dns ? host_max.name : host_max.addr);
+  pinger_set_width(ELEM_HOST, opts.dns ? host_max.name : host_max.addr);
 }
 
 static void stat_up_info(int at, const gchar *info) {
@@ -357,7 +373,7 @@ void stat_save_success(int at, t_ping_success *data) {
     LOG("target is reached at ttl=%d", ttl);
     set_hops_no(ttl, "behind target");
   }
-  pinger_free_nth_error(at);
+  pinger_nth_free_error(at);
   if (hops[at].info) stat_up_info(at, NULL);
   if (!pinger_state.reachable) pinger_state.reachable = true;
 }
@@ -378,7 +394,7 @@ void stat_save_discard(int at, t_ping_discard *data) {
     }
     g_free(data->reason);
   }
-  pinger_free_nth_error(at);
+  pinger_nth_free_error(at);
 }
 
 void stat_save_timeout(int at, t_ping_timeout *data) {
@@ -422,8 +438,24 @@ static const gchar *stat_strnl_elem(int at, int typ) {
     case ELEM_HOST: return info_host_nl(at);
     case ELEM_AS:   return info_whois_nl(at, WHOIS_AS_NDX);
     case ELEM_CC:   return info_whois_nl(at, WHOIS_CC_NDX);
+    case ELEM_DESC: return info_whois_nl(at, WHOIS_DESC_NDX);
+    case ELEM_RT:   return info_whois_nl(at, WHOIS_RT_NDX);
   }
   return NULL;
+}
+
+gboolean stat_str_arr(int at, int typ, const gchar* arr[MAXADDR]) {
+  switch (typ) {
+    case ELEM_HOST: info_host_arr(at, arr); break;
+    case ELEM_AS:   info_whois_arr(at, WHOIS_AS_NDX, arr); break;
+    case ELEM_CC:   info_whois_arr(at, WHOIS_CC_NDX, arr); break;
+    case ELEM_DESC: info_whois_arr(at, WHOIS_DESC_NDX, arr); break;
+    case ELEM_RT:   info_whois_arr(at, WHOIS_RT_NDX, arr); break;
+    case EX_ELEM_ADDR: info_addrhost(at, arr, true); break;
+    case EX_ELEM_HOST: info_addrhost(at, arr, false); break;
+    default: return false;
+  }
+  return true;
 }
 
 double stat_dbl_elem(int at, int typ) {
@@ -440,6 +472,19 @@ double stat_dbl_elem(int at, int typ) {
   }
   return re;
 }
+
+int stat_int_elem(int at, int typ) {
+  int re = -1;
+  switch (typ) {
+    case ELEM_SENT: re = hops[at].sent; break;
+    case ELEM_RECV: re = hops[at].recv; break;
+    case ELEM_LAST: re = hops[at].last; break;
+    case ELEM_BEST: re = hops[at].best; break;
+    case ELEM_WRST: re = hops[at].wrst; break;
+  }
+  return re;
+}
+
 
 #define RSEQ_FOR_SYNC(which) { data->rtt = hops[at].rseq[which].rtt; data->seq = -hops[at].rseq[which].seq; }
 
@@ -478,14 +523,14 @@ int stat_elem_max(int typ) {
 void stat_check_hostaddr_max(int len) {
   if (host_max.addr < len) {
     host_max.addr = len;
-    if (!opts.dns) pinger_update_width(ELEM_HOST, len);
+    if (!opts.dns) pinger_set_width(ELEM_HOST, len);
   }
 }
 
 void stat_check_hostname_max(int len) {
   if (host_max.name < len) {
     host_max.name = len;
-    if (opts.dns) pinger_update_width(ELEM_HOST, len);
+    if (opts.dns) pinger_set_width(ELEM_HOST, len);
   }
 }
 
@@ -494,7 +539,7 @@ void stat_check_whois_max(gchar* elem[]) {
     if (elem[i]) {
       int len = g_utf8_strlen(elem[i], MAXHOSTNAME);
       if (len > whois_max[i]) {
-        whois_max[i] = len; pinger_update_width(wndx2endx[i], len);
+        whois_max[i] = len; pinger_set_width(wndx2endx[i], len);
       }
     }
   }
