@@ -1,3 +1,11 @@
+pingpath (0.1.74) lunar mantic; urgency=low
+
+  * print runtime versions
+
+  * untie recap mode from gtk display
+
+ -- yvs <VSYakovetsky@gmail.com>  Sat, 10 Feb 2024 23:19:59 +0200
+
 pingpath (0.1.73) lunar mantic; urgency=low
 
   * add summary/recap option (text, csv, and json)

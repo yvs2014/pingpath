@@ -41,6 +41,6 @@ void pinger_on_quit(gboolean stop);
 int pinger_update_tabs(int *pseq);
 void pinger_vis_rows(int no);
 void pinger_set_width(int typ, int max);
-void pinger_wait_for_recap(void);
+int pinger_recap_loop(void);
 
 #endif

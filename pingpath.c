@@ -1,7 +1,9 @@
 
 #include <stdlib.h>
 #include <sysexits.h>
-
+#include <locale.h>
+#define GETTEXT_PACKAGE "gtk40"
+#include <glib/gi18n-lib.h>
 #ifdef FCFINI
 #include <fontconfig/fontconfig.h>
 #endif
@@ -30,7 +32,6 @@ static void on_app_exit(GtkWidget *widget, gpointer unused) {
   logtab_clear();
   graphtab_free();
   pinger_on_quit(false);
-  LOG_("app quit");
 #ifdef FCFINI
   FcFini();
 #endif
@@ -52,7 +53,7 @@ static void on_tab_switch(GtkNotebook *nb, GtkWidget *tab, guint ndx, gpointer u
 #define APPQUIT(fmt, ...) { WARN("init " fmt " failed", __VA_ARGS__); \
   g_application_quit(G_APPLICATION(app)); exit_code = EXIT_FAILURE; return; }
 
-static void win_init(GtkApplication* app) {
+static void app_cb(GtkApplication* app, gpointer unused) {
   style_init();
   GtkWidget *win = gtk_application_window_new(app);
   if (!GTK_IS_WINDOW(win)) APPQUIT("%s", "app window");
@@ -96,27 +97,31 @@ static void win_init(GtkApplication* app) {
   //
   g_signal_connect(win, EV_DESTROY, G_CALLBACK(on_app_exit), NULL);
   gtk_window_present(GTK_WINDOW(win));
-  LOG("GTK: %d.%d.%d", GTK_MAJOR_VERSION, GTK_MINOR_VERSION, GTK_MICRO_VERSION);
-  LOG("Pango: %d.%d.%d", PANGO_VERSION_MAJOR, PANGO_VERSION_MINOR, PANGO_VERSION_MICRO);
-}
-
-static void app_cb(GtkApplication* app, gpointer unused) {
-  if (!opts.recap) win_init(app);
-  if (autostart && opts.target) { pinger_start(); if (!opts.recap) appbar_update(); }
+  { char *ver; // log runtime versions
+    LOG("%c%s: " VERSION, g_ascii_toupper(APPNAME[0]), &(APPNAME[1]));
+    if ((ver = rtver(GTK_STRV)))   { LOG("GTK: %s", ver);   g_free(ver); }
+    if ((ver = rtver(CAIRO_STRV))) { LOG("Cairo: %s", ver); g_free(ver); }
+    if ((ver = rtver(PANGO_STRV))) { LOG("Pango: %s", ver); g_free(ver); }
+  }
+  if (autostart && opts.target) { pinger_start(); appbar_update(); }
 }
 
 int main(int argc, char **argv) {
-  gtk_init(); // to set locale mainly
-  GtkApplication *app = gtk_application_new("net.tools." APPNAME, APPFLAGS);
-  g_return_val_if_fail(GTK_IS_APPLICATION(app), EX_UNAVAILABLE);
+  { // l10n/i18n
+    setlocale(LC_ALL, "");
+//  bindtextdomain(GETTEXT_PACKAGE, GLIB_LOCALE_DIR-or-GTK_LOCALEDIR);
+    bind_textdomain_codeset(GETTEXT_PACKAGE, "UTF-8");
+    textdomain(GETTEXT_PACKAGE);
+  }
   g_return_val_if_fail(parser_init(), EX_SOFTWARE);
   g_return_val_if_fail(cli_init(&argc, &argv), EX_USAGE);
-  LOG_("app run");
   stat_init(true);
   pinger_init();
+  if (opts.recap) { pinger_start(); return pinger_recap_loop(); }
+  GtkApplication *app = gtk_application_new("net.tools." APPNAME, APPFLAGS);
+  g_return_val_if_fail(GTK_IS_APPLICATION(app), EX_UNAVAILABLE);
   g_signal_connect(app, EV_ACTIVE, G_CALLBACK(app_cb), NULL);
   int rc = g_application_run(G_APPLICATION(app), argc, argv);
-  if (opts.target && opts.recap) pinger_wait_for_recap();
   g_object_unref(app);
   return exit_code || rc;
 }

@@ -1,3 +1,7 @@
+## 0.1.74
+- print runtime versions
+- untie recap mode from gtk display
+
 ## 0.1.73
 - add summary/recap option (text, csv, and json)
 - optimize a bit fn calls

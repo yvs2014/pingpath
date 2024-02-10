@@ -1,5 +1,6 @@
 
 #include <stdio.h>
+#include <sysexits.h>
 #ifdef WITH_JSON
 #include <json-glib/json-glib.h>
 #endif
@@ -255,8 +256,8 @@ static void pinger_print_json(gboolean pretty) {
     JsonObject *obj = json_object_new();
     if (obj) {
       json_node_take_object(node, obj);
-      pinger_json_prop_str(obj, "Target", opts.target, pretty);
-      pinger_json_prop_str(obj, "Timestamp", timestampit(), pretty);
+      pinger_json_prop_str(obj, ENT_TARGET_HDR, opts.target, pretty);
+      pinger_json_prop_str(obj, ENT_TSTAMP_HDR, timestampit(), pretty);
       gchar *info = NULL;
       gboolean okay = true;
       if (pinger_state.gotdata) {
@@ -592,11 +593,12 @@ int pinger_update_tabs(int *pseq) {
 inline void pinger_vis_rows(int no) { if (!opts.recap) pingtab_vis_rows(no); notifier_legend_vis_rows(no); }
 inline void pinger_set_width(int typ, int max) { if (!opts.recap) pingtab_set_width(typ, max); }
 
-void pinger_wait_for_recap() {
-  recap_loop = g_main_loop_new(NULL, false);
-  if (!recap_loop) { FAIL("g_main_loop_new()"); return; }
+int pinger_recap_loop() {
+  if (!(recap_loop = g_main_loop_new(NULL, false))) {
+    FAIL("g_main_loop_new()"); return EX_UNAVAILABLE; }
   g_timeout_add_seconds(1, recap_cb, NULL);
   g_main_loop_run(recap_loop);
   g_main_loop_unref(recap_loop);
+  return 0;
 }
 

@@ -48,6 +48,17 @@ const char *timestampit(void) {
   return now_ts;
 }
 
+gchar* rtver(int ndx) {
+  int ver = 0;
+  switch (ndx) {
+    case GTK_STRV: return
+      g_strdup_printf("%d.%d.%d", gtk_get_major_version(), gtk_get_minor_version(), gtk_get_micro_version());
+    case CAIRO_STRV: ver = cairo_version(); break;
+    case PANGO_STRV: ver = pango_version(); break;
+  }
+  return ver ? g_strdup_printf("%d.%d.%d", ver / 10000, (ver % 10000) / 100, ver % 100) : NULL;
+}
+
 GtkListBoxRow* line_row_new(GtkWidget *child, gboolean visible) {
   GtkListBoxRow *row = GTK_LIST_BOX_ROW(gtk_list_box_row_new());
   g_return_val_if_fail(GTK_IS_LIST_BOX_ROW(row), NULL);

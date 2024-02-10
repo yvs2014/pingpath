@@ -9,7 +9,7 @@
 #endif
 
 #define APPNAME "pingpath"
-#define VERSION "0.1.73"
+#define VERSION "0.1.74"
 
 #define X_RES 1024
 #define Y_RES 720
@@ -141,6 +141,7 @@
 #define ACT_UNSALL_HDR "Unselect all"
 
 #define ENT_TARGET_HDR "Target"
+#define ENT_TSTAMP_HDR "Timestamp"
 
 #define OPT_MAIN_TOOLTIP "Main options"
 #define OPT_CYCLES_HDR   "Cycles"
@@ -237,6 +238,8 @@
 #define GRAPH_TOP    50
 #define GRAPH_RIGHT  40
 #define GRAPH_BOTTOM 40
+
+enum { GTK_STRV, CAIRO_STRV, PANGO_STRV };
 
 enum { TAB_PING_NDX, TAB_GRAPH_NDX, TAB_LOG_NDX, TAB_NDX_MAX };
 
@@ -347,6 +350,7 @@ extern t_stat_elem graphelem[GREL_MAX];
 
 gchar* get_nth_color(int i);
 
+char* rtver(int ndx);
 const char *timestampit(void);
 GtkListBoxRow* line_row_new(GtkWidget *child, gboolean visible);
 void tab_setup(t_tab *tab, const char *css);

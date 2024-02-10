@@ -1,4 +1,6 @@
 
+#include <stdlib.h>
+
 #include "cli.h"
 #include "stat.h"
 #include "pinger.h"
@@ -185,7 +187,7 @@ gboolean autostart;
 gboolean cli_init(int *pargc, char ***pargv) {
   if (!pargc || !pargv) return false;
   gchar** target = NULL;
-  gboolean num = false, ipv4 = false, ipv6 = false;
+  gboolean num = false, ipv4 = false, ipv6 = false, version = false;
   const GOptionEntry options[] = {
     { .long_name = "ipv4",     .short_name = '4', .arg = G_OPTION_ARG_NONE,     .arg_data = &ipv4,
       .description = OPT_IPV4_HDR " only" },
@@ -221,6 +223,8 @@ gboolean cli_init(int *pargc, char ***pargv) {
       .arg_description = "[" RECAP_PATT "]", .description = OPT_RECAP_HDR " at exit (" RECAP_TYPE_MESG ")"},
     { .long_name = "verbose",  .short_name = 'v', .arg = G_OPTION_ARG_INT,      .arg_data = &verbose,
       .arg_description = "<level>",          .description = "Messaging to stdout" },
+    { .long_name = "version",  .short_name = 'V', .arg = G_OPTION_ARG_NONE,     .arg_data = &version,
+      .description = "Runtime versions" },
     { .long_name = G_OPTION_REMAINING, .arg = G_OPTION_ARG_STRING_ARRAY, .arg_data = &target, .arg_description = "TARGET" },
     {}
   };
@@ -233,7 +237,14 @@ gboolean cli_init(int *pargc, char ***pargv) {
   g_option_context_set_main_group(oc, og);
   { GError *error = NULL;
     cli = true; gboolean okay = g_option_context_parse(oc, pargc, pargv, &error); cli = false;
-    if (!okay) CLI_FAIL("%s", error->message); }
+    if (!okay) CLI_FAIL("%s", error->message);
+    if (version) { g_print("%s", appver); char *ver;
+      if ((ver = rtver(GTK_STRV)))   { g_print(" +gtk-%s", ver);   g_free(ver); }
+      if ((ver = rtver(CAIRO_STRV))) { g_print(" +cairo-%s", ver); g_free(ver); }
+      if ((ver = rtver(PANGO_STRV))) { g_print(" +pango-%s", ver); g_free(ver); }
+      g_print("\n"); g_option_context_free(oc); exit(EXIT_SUCCESS);
+    }
+  }
   if (ipv4 && ipv6) CLI_FAIL("options %s are mutually exclusive", "-4/-6");
   if (ipv4 && (opts.ipv != 4)) { opts.ipv = 4; g_message(OPT_IPV4_HDR " only %s", TOGGLE_ON_HDR); }
   if (ipv6 && (opts.ipv != 6)) { opts.ipv = 6; g_message(OPT_IPV6_HDR " only %s", TOGGLE_ON_HDR); }

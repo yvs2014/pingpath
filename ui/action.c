@@ -19,8 +19,6 @@
 #define SPANHDR(txt)  SPANSZ("1.5", "large",  txt)
 #define SPANOPT(l, r) SPANSZ("1.5", "medium", "<b>\t" l "\t</b>" r)
 #define SPANSUB(txt)  SPANSZ("1",   "medium", "\t\t<tt>" txt "</tt>")
-#define MSTRSTR(x) MSTR(x)
-#define MSTR(x) #x
 #define MA_LOG(ndx) LOG("Action %s", action_label(ndx))
 #define MI_LOG(ndx) notifier_inform("Action %s", action_label(ndx))
 
@@ -48,18 +46,18 @@ static const gchar *help_message =
   SPANOPT(ACT_QUIT_HDR "\t\t\t", "stop and quit")
   "\n"
   SPANHDR("Main Options")
-  SPANOPT(OPT_CYCLES_HDR   "\t", "Number of ping cycles [" MSTRSTR(DEF_CYCLES) "]")
-  SPANOPT(OPT_IVAL_HDR     "\t", "Gap in seconds between pings [" MSTRSTR(DEF_TOUT) "]")
+  SPANOPT(OPT_CYCLES_HDR   "\t", "Number of ping cycles [" G_STRINGIFY(DEF_CYCLES) "]")
+  SPANOPT(OPT_IVAL_HDR     "\t", "Gap in seconds between pings [" G_STRINGIFY(DEF_TOUT) "]")
   SPANOPT(OPT_DNS_HDR      "\t", "IP address resolving [on]")
   SPANOPT(OPT_INFO_HEADER  "\t", "Hop elements to display:")
     SPANSUB(ELEM_HOST_HDR " " ELEM_AS_HDR " " ELEM_CC_HDR " " ELEM_DESC_HDR " " ELEM_RT_HDR)
   SPANOPT(OPT_STAT_HDR, "Stat elements to display:")
     SPANSUB(ELEM_LOSS_HDR " " ELEM_SENT_HDR " " ELEM_RECV_HDR " " ELEM_LAST_HDR " " ELEM_BEST_HDR
       " " ELEM_WRST_HDR " " ELEM_AVRG_HDR " " ELEM_JTTR_HDR)
-  SPANOPT(OPT_TTL_HDR    "\t\t", "working TTL range [0-" MSTRSTR(MAXTTL) "]")
-  SPANOPT(OPT_QOS_HDR      "\t", "QoS/ToS bits of IP header [" MSTRSTR(DEF_QOS) "]")
+  SPANOPT(OPT_TTL_HDR    "\t\t", "working TTL range [0-" G_STRINGIFY(MAXTTL) "]")
+  SPANOPT(OPT_QOS_HDR      "\t", "QoS/ToS bits of IP header [" G_STRINGIFY(DEF_QOS) "]")
   SPANOPT(OPT_PLOAD_HDR    "\t", "Up to 16 bytes in hex format [" DEF_PPAD "]")
-  SPANOPT(OPT_PSIZE_HDR  "\t\t", "ICMP data size [" MSTRSTR(DEF_PSIZE) "]")
+  SPANOPT(OPT_PSIZE_HDR  "\t\t", "ICMP data size [" G_STRINGIFY(DEF_PSIZE) "]")
   SPANOPT(OPT_IPV_HDR, "either " OPT_IPVA_HDR ", or " OPT_IPV4_HDR ", or " OPT_IPV6_HDR)
   "\n"
   SPANHDR("Auxiliary")
@@ -68,7 +66,7 @@ static const gchar *help_message =
     SPANSUB(GRLG_AVJT_HDR " " GRLG_CCAS_HDR " " GRLG_LGHN_HDR)
   SPANOPT(OPT_GREX_HDR, "to display:")
     SPANSUB(GREX_MEAN_HDR " " GREX_JRNG_HDR " " GREX_AREA_HDR)
-  SPANOPT(OPT_LOGMAX_HDR       , "Max rows in log tab [" MSTRSTR(DEF_LOGMAX) "]")
+  SPANOPT(OPT_LOGMAX_HDR       , "Max rows in log tab [" G_STRINGIFY(DEF_LOGMAX) "]")
 ;
 
 static t_act_desc act_desc[ACT_NDX_MAX] = {
