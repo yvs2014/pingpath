@@ -1,3 +1,7 @@
+## 0.1.76
+- greedy split of whois description element
+- enclose csv elements with delim inside
+
 ## 0.1.75
 - put recap in common g_app_run() context
 - rm unused i18n preinit

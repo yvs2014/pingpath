@@ -1,3 +1,11 @@
+pingpath (0.1.76) lunar mantic; urgency=low
+
+  * greedy split of whois description element
+
+  * enclose csv elements with delim inside
+
+ -- yvs <VSYakovetsky@gmail.com>  Sun, 11 Feb 2024 22:50:36 +0200
+
 pingpath (0.1.75) lunar mantic; urgency=low
 
   * put recap in common g_app_run() context

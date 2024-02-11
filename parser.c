@@ -198,9 +198,12 @@ static void analyze_line(int at, const char *line) {
   DEBUG("UNKNOWN[at=%d]: %s", at, line);
 }
 
-static char* split_with_delim(char **ps, int c) {
+#define GREEDY false
+#define LAZY   true
+
+static gchar* split_pair(char **ps, int c, gboolean lazy) {
   if (!ps || !*ps) return NULL;
-  char *val = strchr(*ps, c);
+  char *val = lazy ? strchr(*ps, c) : strrchr(*ps, c);
   if (!val) return NULL;
   *val++ = 0;
   *ps = g_strstrip(*ps);
@@ -305,11 +308,11 @@ void parser_whois(gchar *buff, int sz, gchar* elem[]) {
   static int as_prfx_len = sizeof(skip_as_prfx) - 1;
   if (!buff || !elem) return;
   memset(elem, 0, sizeof(gchar*) * WHOIS_NDX_MAX);
-  char *p = buff, *s;
+  gchar *p = buff, *s;
   while ((s = strsep(&p, WHOIS_NL))) {
     s = g_strstrip(s);
     if (s && s[0] && (s[0] != WHOIS_COMMENT)) {
-      char *val = split_with_delim(&s, WHOIS_DELIM);
+      gchar *val = split_pair(&s, WHOIS_DELIM, LAZY);
       if (!val) continue;
       int ndx = -1;
       if (STR_EQ(s, WHOIS_RT_TAG)) ndx = WHOIS_RT_NDX;
@@ -320,7 +323,7 @@ void parser_whois(gchar *buff, int sz, gchar* elem[]) {
           val += as_prfx_len;
       } else if (STR_EQ(s, WHOIS_DESC_TAG)) {
         ndx = WHOIS_DESC_NDX;
-        char *cc = split_with_delim(&val, WHOIS_CCDEL);
+        gchar *cc = split_pair(&val, WHOIS_CCDEL, GREEDY);
         if (cc) elem[WHOIS_CC_NDX] = g_strndup(cc, MAXHOSTNAME);
       }
       if (ndx >= 0) elem[ndx] = g_strndup(val, MAXHOSTNAME);
@@ -334,7 +337,7 @@ t_minmax parser_range(gchar *range, const gchar *option) {
   t_minmax re = { .min = -1, .max = -1};
   if (range) {
     gchar *min = range;
-    gchar *max = split_with_delim(&min, RANGE_DELIM);
+    gchar *max = split_pair(&min, RANGE_DELIM, LAZY);
     int min_val = -1, max_val = -1;
     if (min && min[0]) {
       min = parser_valid_int(option, min);

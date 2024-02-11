@@ -26,8 +26,13 @@
 
 #define CSV_DEL ';'
 #define HOP_INDENT g_print("%3s", "")
-#define PRINT_TEXT_STR(str, len) { const gchar *s = str; csv ? g_print("%c%s", CSV_DEL, s) : g_print(" %-*s", len, s); }
 #define PRINT_CSV_DIV { if (csv) g_print("%c\n", CSV_DEL); }
+#define PRINT_TEXT_ELEM(str, len) { const gchar *s = str; if (csv) print_csv_elem(s); else g_print(" %-*s", len, s); }
+
+static void print_csv_elem(const gchar *s) {
+  char *delim = strchr(s, CSV_DEL);
+  g_print(delim ? "%c\"%s\"" : "%c%s", CSV_DEL, s);
+}
 
 typedef struct proc {
   GSubprocess *proc;
@@ -74,7 +79,7 @@ static void pinger_print_text(gboolean csv) {
     if (csv) g_print("%s", OPT_TTL_HDR); else HOP_INDENT;
     for (int typ = ELEM_NO + 1; typ < ELEM_MAX; typ++) // header
       if (statelem[typ].enable && (typ != ELEM_FILL))
-        PRINT_TEXT_STR(statelem[typ].name, stat_elem_max(typ));
+        PRINT_TEXT_ELEM(statelem[typ].name, stat_elem_max(typ));
     g_print("\n");
     PRINT_CSV_DIV;
     int lim = (hops_no > visibles) ? (visibles + 1) : hops_no;
@@ -89,7 +94,7 @@ static void pinger_print_text(gboolean csv) {
         case ELEM_DESC:
         case ELEM_RT:
           stat_str_arr(i, typ, elems[typ]);
-          PRINT_TEXT_STR(elems[typ][0] ? elems[typ][0] : "", stat_elem_max(typ));
+          PRINT_TEXT_ELEM(elems[typ][0] ? elems[typ][0] : "", stat_elem_max(typ));
           break;
         case ELEM_LOSS:
         case ELEM_SENT:
@@ -99,7 +104,7 @@ static void pinger_print_text(gboolean csv) {
         case ELEM_WRST:
         case ELEM_AVRG:
         case ELEM_JTTR:
-          PRINT_TEXT_STR(stat_str_elem(i, typ), stat_elem_max(typ)); break;
+          PRINT_TEXT_ELEM(stat_str_elem(i, typ), stat_elem_max(typ)); break;
       }
       g_print("\n");
       for (int j = 1; j < MAXADDR; j++) { // multihop
@@ -107,7 +112,7 @@ static void pinger_print_text(gboolean csv) {
         if (!csv) HOP_INDENT;
         for (int mtyp = ELEM_HOST; mtyp < ELEM_RT + 1; mtyp++)
           if (statelem[mtyp].enable)
-            PRINT_TEXT_STR(elems[mtyp][j] ? elems[mtyp][j] : "", stat_elem_max(mtyp));
+            PRINT_TEXT_ELEM(elems[mtyp][j] ? elems[mtyp][j] : "", stat_elem_max(mtyp));
         g_print("\n");
       }
     }
