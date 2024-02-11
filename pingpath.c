@@ -2,8 +2,6 @@
 #include <stdlib.h>
 #include <sysexits.h>
 #include <locale.h>
-#define GETTEXT_PACKAGE "gtk40"
-#include <glib/gi18n-lib.h>
 #ifdef FCFINI
 #include <fontconfig/fontconfig.h>
 #endif
@@ -106,22 +104,31 @@ static void app_cb(GtkApplication* app, gpointer unused) {
   if (autostart && opts.target) { pinger_start(); appbar_update(); }
 }
 
+static void recap_cb(GApplication* app, gpointer unused) {
+  g_timeout_add_seconds(1, (GSourceFunc)pinger_recap_cb, app);
+  if (G_IS_APPLICATION(app)) g_application_hold(app);
+  pinger_start();
+  return;
+}
+
 int main(int argc, char **argv) {
-  { // l10n/i18n
-    setlocale(LC_ALL, "");
-//  bindtextdomain(GETTEXT_PACKAGE, GLIB_LOCALE_DIR-or-GTK_LOCALEDIR);
-    bind_textdomain_codeset(GETTEXT_PACKAGE, "UTF-8");
-    textdomain(GETTEXT_PACKAGE);
-  }
+  setlocale(LC_ALL, ""); // l10n for CLI option parser
   g_return_val_if_fail(parser_init(), EX_SOFTWARE);
   g_return_val_if_fail(cli_init(&argc, &argv), EX_USAGE);
   stat_init(true);
   pinger_init();
-  if (opts.recap) { pinger_start(); return pinger_recap_loop(); }
-  GtkApplication *app = gtk_application_new("net.tools." APPNAME, APPFLAGS);
-  g_return_val_if_fail(GTK_IS_APPLICATION(app), EX_UNAVAILABLE);
-  g_signal_connect(app, EV_ACTIVE, G_CALLBACK(app_cb), NULL);
-  int rc = g_application_run(G_APPLICATION(app), argc, argv);
+  GApplication *app;
+  if (opts.recap) {
+    app = g_application_new("net.tools." APPNAME, APPFLAGS);
+    g_return_val_if_fail(G_IS_APPLICATION(app), EX_UNAVAILABLE);
+    g_signal_connect(app, EV_ACTIVE, G_CALLBACK(recap_cb), NULL);
+  } else {
+    GtkApplication *gtkapp = gtk_application_new("net.tools." APPNAME, APPFLAGS);
+    g_return_val_if_fail(GTK_IS_APPLICATION(gtkapp), EX_UNAVAILABLE);
+    g_signal_connect(gtkapp, EV_ACTIVE, G_CALLBACK(app_cb), NULL);
+    app = G_APPLICATION(gtkapp);
+  }
+  int rc = g_application_run(app, argc, argv);
   g_object_unref(app);
   return exit_code || rc;
 }

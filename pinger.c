@@ -49,7 +49,6 @@ static gchar* ping_errors[MAXTTL];
 static const gchar *nodata_mesg = "No data";
 static const gchar *notyet_mesg = "No data yet";
 static const gchar *info_mesg;
-static GMainLoop *recap_loop;
 
 //
 
@@ -470,20 +469,6 @@ static int pinger_check_expired(gpointer unused) {
   exp_timer = 0; return G_SOURCE_REMOVE;
 }
 
-static int recap_cb(gpointer unused) {
-  static int recap_cnt;
-  { recap_cnt++; // indicate 'in progress'
-    int dec = recap_cnt / 10, rest = recap_cnt % 10;
-    if (rest) fprintf(stderr, "."); else fprintf(stderr, "%d", dec % 10); }
-  if (!pinger_active()) {
-    fprintf(stderr, "\n");
-    pinger_recap();
-    if (recap_loop) g_main_loop_quit(recap_loop);
-    return G_SOURCE_REMOVE;
-  }
-  return G_SOURCE_CONTINUE;
-}
-
 
 // pub
 //
@@ -593,12 +578,17 @@ int pinger_update_tabs(int *pseq) {
 inline void pinger_vis_rows(int no) { if (!opts.recap) pingtab_vis_rows(no); notifier_legend_vis_rows(no); }
 inline void pinger_set_width(int typ, int max) { if (!opts.recap) pingtab_set_width(typ, max); }
 
-int pinger_recap_loop() {
-  if (!(recap_loop = g_main_loop_new(NULL, false))) {
-    FAIL("g_main_loop_new()"); return EX_UNAVAILABLE; }
-  g_timeout_add_seconds(1, recap_cb, NULL);
-  g_main_loop_run(recap_loop);
-  g_main_loop_unref(recap_loop);
-  return 0;
+int pinger_recap_cb(GApplication *app) {
+  static int recap_cnt;
+  { recap_cnt++; // indicate 'in progress'
+    int dec = recap_cnt / 10, rest = recap_cnt % 10;
+    if (rest) fprintf(stderr, "."); else fprintf(stderr, "%d", dec % 10); }
+  if (!pinger_active()) {
+    fprintf(stderr, "\n");
+    pinger_recap();
+    if (G_IS_APPLICATION(app)) g_application_release(app);
+    return G_SOURCE_REMOVE;
+  }
+  return G_SOURCE_CONTINUE;
 }
 

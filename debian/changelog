@@ -1,3 +1,13 @@
+pingpath (0.1.75) lunar mantic; urgency=low
+
+  * put recap in common g_app_run() context
+
+  * rm unused i18n preinit
+
+  * update screenshot with opened graph menu
+
+ -- yvs <VSYakovetsky@gmail.com>  Sun, 11 Feb 2024 20:24:14 +0200
+
 pingpath (0.1.74) lunar mantic; urgency=low
 
   * print runtime versions

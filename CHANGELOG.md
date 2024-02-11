@@ -1,3 +1,8 @@
+## 0.1.75
+- put recap in common g_app_run() context
+- rm unused i18n preinit
+- update screenshot with opened graph menu
+
 ## 0.1.74
 - print runtime versions
 - untie recap mode from gtk display
