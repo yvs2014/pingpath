@@ -305,7 +305,7 @@ static void max_cb(GtkWidget *spin, t_ent_spn *en) {
 }
 
 static void graph_type_cb(void) {
-  if (opts.graph == GRAPH_TYPE_NONE) graphtab_free();
+  if (opts.graph == GRAPH_TYPE_NONE) graphtab_free(false);
   if (!pinger_state.pause) graphtab_force_update(false);
 }
 

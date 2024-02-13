@@ -9,8 +9,9 @@ static void cb_menu_update(t_tab *tab) {
   if (!tab || !G_IS_MENU(tab->menu)) return;
   g_menu_remove_all(tab->menu);
   for (int i = 0; i < POP_MENU_NDX_MAX; i++) {
-    const gchar *item = cb_menu_label((i == POP_MENU_NDX_SALL) ? tab->sel : -1);
-    g_menu_append_item(tab->menu, g_menu_item_new(item, tab->desc[i].name));
+    GMenuItem *item = g_menu_item_new(cb_menu_label((i == POP_MENU_NDX_SALL) ? tab->sel : -1), tab->desc[i].name);
+    if (item) { g_menu_append_item(tab->menu, item); g_object_unref(item); }
+    else FAIL("g_menu_item_new()");
   }
   SET_SA(tab->desc, POP_MENU_NDX_COPY, tab->sel);
 }

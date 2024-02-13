@@ -1,3 +1,13 @@
+pingpath (0.1.77) lunar mantic; urgency=low
+
+  * fix some mem leaks from analyzers reports
+
+  * unify cleanup at exit
+
+  * add '*' mark to display whois data presented in multiple sources
+
+ -- yvs <VSYakovetsky@gmail.com>  Tue, 13 Feb 2024 12:11:00 +0200
+
 pingpath (0.1.76) lunar mantic; urgency=low
 
   * greedy split of whois description element

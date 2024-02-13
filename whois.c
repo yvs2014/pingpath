@@ -67,17 +67,14 @@ static int wq_cmp(const void *a, const void *b) {
 }
 
 static void wc_free(t_wc_elem *elem) {
-  if (elem) {
-    UPD_STR(elem->addr, NULL);
-    for (int i = 0; i < WHOIS_NDX_MAX; i++) UPD_STR(elem->whois.elem[i], NULL);
-  }
+  if (elem) { CLR_STR(elem->addr); for (int i = 0; i < WHOIS_NDX_MAX; i++) CLR_STR(elem->whois.elem[i]); }
 }
 
 static void wq_free(t_wq_elem *elem) {
   if (elem) {
     wc_free(&elem->data);
     g_slist_free_full(elem->refs, g_free);
-    UPD_STR(elem->buff, NULL);
+    CLR_STR(elem->buff);
     elem->size = 0;
   }
 }
@@ -104,8 +101,8 @@ static void whois_query_close(t_wq_elem *elem) {
   if (!elem) return;
   if (G_IS_SOCKET_CONNECTION(elem->conn) && !g_io_stream_is_closed(G_IO_STREAM(elem->conn)))
     g_io_stream_close(G_IO_STREAM(elem->conn), NULL, NULL);
-  wq_free(elem);
   whois_query = g_slist_remove(whois_query, elem);
+  wq_free(elem); g_free(elem);
 }
 
 static void whois_copy_elems(gchar* from[], gchar* to[], gboolean *wcached, gboolean *wcached_nl) {
@@ -289,7 +286,7 @@ void whois_resolv(t_hop *hop, int ndx) {
 void whois_cache_free(void) {
   PR_WHOIS_C;
   g_slist_foreach(whois_cache, (GFunc)wc_free, NULL);
-  g_slist_free(whois_cache);
+  g_slist_free_full(whois_cache, g_free);
   whois_cache = NULL;
   PR_WHOIS_Q;
   g_slist_foreach(whois_query, (GFunc)whois_query_close, NULL);

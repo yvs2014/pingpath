@@ -24,16 +24,7 @@
 static GtkWidget* graphtab_ref;
 static int exit_code = EXIT_SUCCESS;
 
-static void on_app_exit(GtkWidget *widget, gpointer unused) {
-// note: subprocesses have to be already terminated by system at this point
-// if not, then pinger_on_quit(true);
-  logtab_clear();
-  graphtab_free();
-  pinger_on_quit(false);
-#ifdef FCFINI
-  FcFini();
-#endif
-}
+static void on_win_destroy(GtkWidget *widget, gpointer unused) { atquit = true; }
 
 static void on_tab_switch(GtkNotebook *nb, GtkWidget *tab, guint ndx, gpointer unused) {
   TAB_BGTYPE(tab);
@@ -77,7 +68,7 @@ static void app_cb(GtkApplication* app, gpointer unused) {
     gboolean graph = (i == TAB_GRAPH_NDX);
     t_tab *tab = tabs[i];
     if (!tab || !tab->tab || !tab->lab) { if (graph && !opts.graph) continue; else APPQUIT("tab#%d", i); }
-    tab_setup(tab, graph ? CSS_LIGHT_BG : NULL);
+    tab_setup(tab, (graph && style_loaded) ? CSS_LIGHT_BG : NULL);
     int ndx = gtk_notebook_append_page(GTK_NOTEBOOK(nb), tab->tab, tab->lab);
     if (ndx < 0) APPQUIT("tab page#%d", i);
     gtk_notebook_set_tab_reorderable(GTK_NOTEBOOK(nb), tab->tab, true);
@@ -93,7 +84,7 @@ static void app_cb(GtkApplication* app, gpointer unused) {
   if (!with_over) LOG_("failed to add overlay");
   gtk_window_set_child(GTK_WINDOW(win), with_over ? over : nb);
   //
-  g_signal_connect(win, EV_DESTROY, G_CALLBACK(on_app_exit), NULL);
+  g_signal_connect(win, EV_DESTROY, G_CALLBACK(on_win_destroy), NULL);
   gtk_window_present(GTK_WINDOW(win));
   { char *ver; // log runtime versions
     LOG("%c%s: " VERSION, g_ascii_toupper(APPNAME[0]), &(APPNAME[1]));
@@ -129,6 +120,7 @@ int main(int argc, char **argv) {
     app = G_APPLICATION(gtkapp);
   }
   int rc = g_application_run(app, argc, argv);
+  pinger_cleanup();
   g_object_unref(app);
   return exit_code || rc;
 }

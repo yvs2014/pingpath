@@ -1,3 +1,8 @@
+## 0.1.77
+- fix some mem leaks from analyzers reports
+- unify cleanup at exit
+- add '*' mark to display whois data presented in multiple sources
+
 ## 0.1.76
 - greedy split of whois description element
 - enclose csv elements with delim inside

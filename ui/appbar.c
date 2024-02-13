@@ -13,6 +13,7 @@ guint datetime_id;
 
 static int update_datetime(gpointer label) {
   static char datetime_label[32]; // note: for 'datetime_id' timer only
+  if (atquit) { datetime_id = 0; return G_SOURCE_REMOVE; }
   if (datetime_id) {
     gboolean is_label = GTK_IS_LABEL(label);
     if (!is_label) { datetime_id = 0; g_return_val_if_fail(is_label, G_SOURCE_REMOVE); }
@@ -20,7 +21,7 @@ static int update_datetime(gpointer label) {
     strftime(datetime_label, sizeof(datetime_label), "%F %T", localtime(&now));
     gtk_label_set_text(GTK_LABEL(label), datetime_label);
   }
-  return datetime_id;
+  return G_SOURCE_CONTINUE;
 }
 
 static gboolean start_datetime(GtkWidget *bar) {

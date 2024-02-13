@@ -80,7 +80,7 @@ static void update_addrname(int at, t_host *b) { // addr is mandatory, name not
       update_hmax(b->addr, b->name);
       hops[at].cached = hops[at].cached_nl = false;
       for (int j = 0; j < WHOIS_NDX_MAX; j++) {
-        UPD_STR(hop->whois[vacant].elem[j], NULL);
+        CLR_STR(hop->whois[vacant].elem[j]);
         hops[at].wcached[j] = hops[at].wcached_nl[j] = false;
       }
       LOG("set addrname[%d]: %s %s", at, b->addr, b->name ? b->name : "");
@@ -340,11 +340,10 @@ void stat_free(void) {
     stat_nth_hop_NA(hop);
     // clear strings
     for (int i = 0; i < MAXADDR; i++) {
-      UPD_STR(hop->host[i].addr, NULL);
-      UPD_STR(hop->host[i].name, NULL);
-      for (int j = 0; j < WHOIS_NDX_MAX; j++) UPD_STR(hops[at].whois[i].elem[j], NULL);
+      host_free(&hop->host[i]);
+      for (int j = 0; j < WHOIS_NDX_MAX; j++) CLR_STR(hops[at].whois[i].elem[j]);
     }
-    UPD_STR(hop->info, NULL);
+    CLR_STR(hop->info);
   }
   set_initial_maxes();
 }

@@ -9,7 +9,7 @@
 #endif
 
 #define APPNAME "pingpath"
-#define VERSION "0.1.76"
+#define VERSION "0.1.77"
 
 #define X_RES 1024
 #define Y_RES 720
@@ -123,6 +123,7 @@
 
 #define STR_EQ(a, b) (!g_strcmp0(a, b))
 #define STR_NEQ(a, b) (g_strcmp0(a, b))
+#define CLR_STR(str) { if (str) { g_free(str); str = NULL; }}
 #define UPD_STR(str, val) { g_free(str); str = g_strdup(val); }
 #define UPD_NSTR(str, val, max) { g_free(str); str = g_strndup(val, max); }
 #define SET_SA(desc, ndx, cond) {if (G_IS_SIMPLE_ACTION(desc[ndx].sa)) g_simple_action_set_enabled(desc[ndx].sa, cond);}

@@ -48,6 +48,9 @@ t_opts opts = { .target = NULL, .dns = true, .whois = true, .cycles = DEF_CYCLES
 
 t_pinger_state pinger_state;
 guint stat_timer, exp_timer;
+gboolean atquit;
+
+//
 
 static t_proc pings[MAXTTL];
 static gchar* ping_errors[MAXTTL];
@@ -69,7 +72,7 @@ static gchar* last_error(void) {
   return NULL;
 }
 
-static void pinger_free_errors(void) { for (int i = 0; i < MAXTTL; i++) pinger_nth_free_error(i); }
+static void pinger_error_free(void) { for (int i = 0; i < MAXTTL; i++) pinger_nth_free_error(i); }
 
 static void pinger_print_text(gboolean csv) {
   csv ? g_print("%s%c%s\n", timestampit(), CSV_DEL, opts.target) :
@@ -317,16 +320,17 @@ static void pinger_update(void) {
   }
 }
 
-static gboolean pinger_active(void) {
-  gboolean active = false;
-  for (int i = opts.min; i < opts.lim; i++) if (pings[i].active) { active = true; break; }
-  if (pinger_state.run != active) {
+static gboolean pinger_is_active(void) {
+  for (int i = opts.min; i < opts.lim; i++) if (pings[i].active) return true;
+  return false;
+}
+
+static gboolean pinger_update_status(void) {
+  gboolean active = pinger_is_active();
+  if (!atquit && (pinger_state.run != active)) {
     pinger_state.run = active;
     tab_updater(active);
-    if (!opts.recap) {
-      appbar_update();
-      if (!active) notifier_inform("%s finished", "Pings");
-    }
+    if (!opts.recap) { appbar_update(); if (!active) notifier_inform("%s finished", "Pings"); }
   }
   return active;
 }
@@ -338,8 +342,10 @@ static void process_stopped(GObject *process, GAsyncResult *result, t_proc *proc
     int sig = proc ? proc->sig : 0;
     if (!okay && sig) {
       int rc = g_subprocess_get_term_sig(G_SUBPROCESS(process));
-      if (rc != sig) ERROR("g_subprocess_get_term_sig()"); // rc != sig: to skip own stop signals
+      // rc != sig: to skip own stop signals
+      if (rc != sig) { ERROR("g_subprocess_get_term_sig()"); error = NULL; }
     }
+    if (error) g_error_free(error);
   }
   if (proc) {
     if G_IS_OBJECT(proc->proc) {
@@ -353,7 +359,8 @@ static void process_stopped(GObject *process, GAsyncResult *result, t_proc *proc
     GObject *p = process;
     CLEAR_G_OBJECT(&p);
   }
-  if (!pinger_active()) { // final update
+  if (!atquit && !pinger_is_active()) { // final update at process exit
+    pinger_update_status();
     pinger_update();
     if (!pinger_state.gotdata && (!info_mesg || (info_mesg == notyet_mesg))) pinger_set_error(nodata_mesg);
     if (opts.graph && !opts.recap) graphtab_final_update();
@@ -370,7 +377,7 @@ static void on_stdout(GObject *stream, GAsyncResult *result, t_proc *p) {
     ERROR("g_input_stream_read_finish(stdout)");
     pinger_nth_stop(p->ndx, "stdin error");
   } else if (size) { // data
-    if (!p->out) return; // possible at external exit
+    if (!p->out || atquit) return; // possible at external exit
     gssize left = BUFF_SIZE - size;
     p->out[(left > 0) ? size : size - 1] = 0;
     parser_parse(p->ndx, p->out);
@@ -389,7 +396,7 @@ static void on_stderr(GObject *stream, GAsyncResult *result, t_proc *p) {
   if (size < 0) {    // error
     ERROR("g_input_stream_read_finish(stderr)");
   } else if (size) { // data
-    if (!p->err) return; // possible at external exit
+    if (!p->err || atquit) return; // possible at external exit
     gchar *s = p->err;
     gssize left = BUFF_SIZE - size;
     s[(left > 0) ? size : size - 1] = 0;
@@ -467,7 +474,7 @@ static gboolean create_ping(int at, t_proc *p) {
 }
 
 static int pinger_check_expired(gpointer unused) {
-  for (int i = 0; i < MAXTTL; i++) if (pings[i].active) {
+  if (!atquit) for (int i = 0; i < MAXTTL; i++) if (pings[i].active) {
     LOG("proc(%d) is still active after expire time, stopping..", i);
     pinger_nth_stop(i, "runtime expired");
   }
@@ -486,10 +493,11 @@ void pinger_init(void) {
 void pinger_start(void) {
   if (!opts.target) return;
   for (int i = opts.min; i < opts.lim; i++) if (!create_ping(i, &pings[i])) break;
-  if (!pinger_active()) return;
+  gboolean active = pinger_update_status();
+  if (!active) return;
   pinger_clear_data(true);
   if (!opts.recap) {
-    graphtab_free();
+    graphtab_free(false);
     pinger_vis_rows(0);
   }
   notifier_set_visible(NT_GRAPH_NDX, false);
@@ -527,23 +535,14 @@ void pinger_nth_stop(int nth, const gchar* reason) {
 
 void pinger_stop(const gchar* reason) {
   for (int i = opts.min; i < opts.lim; i++) pinger_nth_stop(i, reason);
-  pinger_active();
+  if (!atquit) pinger_update_status();
 }
 
-#define FREE_PROC_BUFF(nth) { UPD_STR(pings[nth].out, NULL); UPD_STR(pings[nth].err, NULL); }
-
-void pinger_free(void) {
-  pinger_free_errors();
-  stat_free();
-  UPD_STR(opts.target, NULL);
-  for (int i = 0; i < MAXTTL; i++) FREE_PROC_BUFF(i);
-}
-
-inline void pinger_nth_free_error(int nth) { if (ping_errors[nth]) UPD_STR(ping_errors[nth], NULL); }
+inline void pinger_nth_free_error(int nth) { if (ping_errors[nth]) CLR_STR(ping_errors[nth]); }
 
 void pinger_clear_data(gboolean clean) {
   stat_clear(clean);
-  pinger_free_errors();
+  pinger_error_free();
   pinger_set_error(NULL);
   hops_no = opts.lim;
   if (!opts.recap) pingtab_clear();
@@ -561,19 +560,24 @@ gboolean pinger_within_range(int min, int max, int got) { // 1..MAXTTL
   return ((min <= got) && (got <= max));
 }
 
-void pinger_on_quit(gboolean stop) {
+void pinger_cleanup(void) {
   // stop timers unless it's already done
-  g_source_remove(datetime_id); datetime_id = 0;
   if (exp_timer) { g_source_remove(exp_timer); exp_timer = 0; }
   if (stat_timer) { g_source_remove(stat_timer); stat_timer = 0; }
-  // free resources
-  pinger_free();
+  if (datetime_id) { g_source_remove(datetime_id); datetime_id = 0; }
+  // stop pings unless they're finished
+  pinger_stop("at exit");
+  // free other resources
+  CLR_STR(opts.target);
+  stat_free();
   dns_cache_free();
   whois_cache_free();
-  if (stop) pinger_stop("at exit"); // note: if it's sysexit, subprocesses have to be already terminated by system
+  pinger_error_free();
+  graphtab_free(true);
 }
 
 int pinger_update_tabs(int *pseq) {
+  if (atquit) { stat_timer = 0; return G_SOURCE_REMOVE; }
   if (pseq) (*pseq)++;
   pinger_update();
   if (opts.graph && !opts.recap) graphtab_update(pseq != NULL);
@@ -588,7 +592,7 @@ int pinger_recap_cb(GApplication *app) {
   { recap_cnt++; // indicate 'in progress'
     int dec = recap_cnt / 10, rest = recap_cnt % 10;
     if (rest) fprintf(stderr, "."); else fprintf(stderr, "%d", dec % 10); }
-  if (!pinger_active()) {
+  if (!pinger_is_active()) {
     fprintf(stderr, "\n");
     pinger_recap();
     if (G_IS_APPLICATION(app)) g_application_release(app);

@@ -70,7 +70,9 @@ static int get_gset_bool_by_key(GtkSettings *sets, const char *key) {
 static gchar* get_gset_str_by_key(GtkSettings *sets, const char *key) {
   GValue data = {0};
   GValue *val = get_gval(sets, key, &data);
-  return (val && G_VALUE_HOLDS_STRING(val)) ? g_strdup_value_contents(val) : NULL;
+  gchar *str = (val && G_VALUE_HOLDS_STRING(val)) ? g_strdup_value_contents(val) : NULL;
+  if (val) g_value_unset(val);
+  return str;
 }
 
 #if GTK_MAJOR_VERSION == 4

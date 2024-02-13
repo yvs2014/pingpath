@@ -40,6 +40,10 @@ endif
 
 ifdef DEBUG
 CFLAGS += -g
+ifeq ($(CC),gcc)
+CFLAGS += -ggdb
+endif
+CFLAGS += -fno-omit-frame-pointer
 endif
 
 ifeq ($(DEBUG),asan)

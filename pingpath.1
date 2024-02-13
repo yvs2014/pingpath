@@ -93,6 +93,8 @@ Route
 .El
 Default
 .Ar hac
+.br
+Note: duplicates in output are marked with '*'
 .El
 .Bl -tag -width Ds
 .It Fl S, Fl -stat Ar KEYS
@@ -243,6 +245,9 @@ So that use
 or
 .Sy mtr
 for more accurate measures of transit hops and statistics.
+.sp 1
+On whois data: if there are multiple sources despite -m flag in query, it displays the last tags (marked with '*').
+.El
 .El
 .Sh PROJECT LOCATION
 .Lk https://github.com/yvs2014/pingpath

@@ -29,7 +29,6 @@ typedef struct help_dialog_in {
 } t_help_dialog_in;
 
 enum { ACT_NDX_START, ACT_NDX_PAUSE, ACT_NDX_RESET, ACT_NDX_HELP, ACT_NDX_QUIT, ACT_NDX_LGND, ACT_NDX_MAX };
-enum { APP_NDX, WIN_NDX, APP_WIN_MAX };
 
 static const char* kb_ctrl_s[] = {"<Ctrl>s", NULL};
 static const char* kb_space[]  = {"space",   NULL};
@@ -109,12 +108,10 @@ static const char* action_label(int ndx) {
 }
 
 static void on_startstop(GSimpleAction *action, GVariant *var, gpointer unused) {
-  if (opts.target) {
-    MI_LOG(ACT_NDX_START);
-    if (!stat_timer) pinger_start();
-    else pinger_stop("request");
-    appbar_update();
-  }
+  if (!opts.target) return;
+  MI_LOG(ACT_NDX_START);
+  if (stat_timer) pinger_stop("by request"); else pinger_start();
+  appbar_update();
 }
 
 static void on_pauseresume(GSimpleAction *action, GVariant *var, gpointer unused) {
@@ -147,8 +144,7 @@ static gboolean show_help_dialog(GtkWidget *win) {
 
 static void on_help(GSimpleAction *action, GVariant *var, gpointer data) {
   static t_help_dialog_in help_dialog;
-  if (!data) return;
-  GtkWidget *win = ((gpointer*)data)[WIN_NDX]; g_return_if_fail(GTK_IS_WINDOW(win));
+  GtkWidget *win = data; g_return_if_fail(GTK_IS_WINDOW(win));
   if (show_help_dialog(help_dialog.win)) return;
   //
   if (!GTK_IS_WINDOW(help_dialog.win)) {
@@ -207,11 +203,9 @@ static void on_help(GSimpleAction *action, GVariant *var, gpointer data) {
 }
 
 static void on_quit(GSimpleAction *action, GVariant *var, gpointer data) {
-  if (!data) return;
-  GtkWidget *app = ((gpointer*)data)[APP_NDX]; g_return_if_fail(G_IS_APPLICATION(app));
+  g_return_if_fail(GTK_IS_WINDOW(data));
   MA_LOG(ACT_NDX_QUIT);
-  pinger_on_quit(true);
-  g_application_quit(G_APPLICATION(app));
+  gtk_window_close(GTK_WINDOW(data));
 }
 
 static void on_legend(GSimpleAction *action, GVariant *var, gpointer unused) {
@@ -243,13 +237,11 @@ static GMenu* action_menu_init(GtkWidget *bar) {
 }
 
 static gboolean create_action_menu(GtkApplication *app, GtkWidget *win, GtkWidget *bar) {
-  static gpointer appwin[APP_WIN_MAX];
   g_return_val_if_fail(GTK_IS_APPLICATION(app), false);
   g_return_val_if_fail(GTK_IS_WINDOW(win), false);
   g_return_val_if_fail(GTK_IS_HEADER_BAR(bar), false);
-  appwin[APP_NDX] = app; appwin[WIN_NDX] = win;
   for (int i = 0; i < ACT_NDX_MAX; i++) act_entries[i].name = act_desc[i].name + ACT_DOT;
-  g_action_map_add_action_entries(G_ACTION_MAP(app), act_entries, ACT_NDX_MAX, appwin);
+  g_action_map_add_action_entries(G_ACTION_MAP(app), act_entries, ACT_NDX_MAX, win);
   for (int i = 0; i < ACT_NDX_MAX; i++)
     act_desc[i].sa = G_SIMPLE_ACTION(g_action_map_lookup_action(G_ACTION_MAP(app), act_entries[i].name));
   if (!(action_menu = action_menu_init(bar))) return false;
@@ -262,8 +254,11 @@ static gboolean create_action_menu(GtkApplication *app, GtkWidget *win, GtkWidge
 static void action_update_internal(GMenu *menu) {
   if (G_IS_MENU(menu)) {
     g_menu_remove_all(menu);
-    for (int i = 0; i < ACT_NDX_MAX; i++) if (!act_desc[i].invisible)
-      g_menu_append_item(menu, g_menu_item_new(action_label(i), act_desc[i].name));
+    for (int i = 0; i < ACT_NDX_MAX; i++) if (!act_desc[i].invisible) {
+      GMenuItem *item = g_menu_item_new(action_label(i), act_desc[i].name);
+      if (item) { g_menu_append_item(menu, item); g_object_unref(item); }
+      else FAIL("g_menu_item_new()");
+    }
   }
   gboolean run = pinger_state.run, pause = pinger_state.pause;
   SET_SA(act_desc, ACT_NDX_START, opts.target != NULL);

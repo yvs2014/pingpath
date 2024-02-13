@@ -303,7 +303,12 @@ gchar* parser_valid_target(const gchar *target) {
   return hostname;
 }
 
+#define DUP_WITH_MARK(dst, val) { \
+  if (dst) { CLR_STR(dst); dst = g_strdup_printf("%s*", val); } \
+  else dst = g_strndup(val, MAXHOSTNAME); }
+
 void parser_whois(gchar *buff, int sz, gchar* elem[]) {
+  // if there are multiple sources (despite -m query), take the last tag and mark it with '*'
   static const char skip_as_prfx[] = "AS";
   static int as_prfx_len = sizeof(skip_as_prfx) - 1;
   if (!buff || !elem) return;
@@ -324,9 +329,9 @@ void parser_whois(gchar *buff, int sz, gchar* elem[]) {
       } else if (STR_EQ(s, WHOIS_DESC_TAG)) {
         ndx = WHOIS_DESC_NDX;
         gchar *cc = split_pair(&val, WHOIS_CCDEL, GREEDY);
-        if (cc) elem[WHOIS_CC_NDX] = g_strndup(cc, MAXHOSTNAME);
+        if (cc) DUP_WITH_MARK(elem[WHOIS_CC_NDX], cc);
       }
-      if (ndx >= 0) elem[ndx] = g_strndup(val, MAXHOSTNAME);
+      if (ndx >= 0) DUP_WITH_MARK(elem[ndx], val);
     }
   }
   for (int i = 0; i < WHOIS_NDX_MAX; i++) if (!elem[i]) elem[i] = g_strdup(unkn_whois);

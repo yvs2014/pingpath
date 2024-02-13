@@ -13,7 +13,7 @@ static t_tab logtab = { .self = &logtab, .name = "log-tab",
 };
 
 static void logtab_add(const gchar *str) {
-  if (!str || !GTK_IS_LIST_BOX(logtab.dyn)) return;
+  if (atquit || !str || !GTK_IS_LIST_BOX(logtab.dyn)) return;
   GtkWidget *line = gtk_label_new(str);
   if (GTK_IS_LABEL(line)) {
     gtk_widget_set_halign(line, GTK_ALIGN_START);
@@ -56,13 +56,11 @@ t_tab* logtab_init(GtkWidget* win) {
 }
 
 void log_add(const gchar *fmt, ...) {
-  if (opts.recap) return;
+  if (atquit && opts.recap) return;
   va_list ap;
   va_start(ap, fmt);
   gchar *str = g_strdup_vprintf(fmt, ap);
   if (str) { logtab_add(str); g_free(str); }
   va_end(ap);
 }
-
-void logtab_clear(void) { memset(&logtab, 0, sizeof(logtab)); } // to avoid usage of disposed instances at sysexit
 

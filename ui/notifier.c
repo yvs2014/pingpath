@@ -43,7 +43,7 @@ static gboolean nt_bglight;
 //
 
 static gboolean nt_set_visible(t_notifier *nt, gboolean visible) {
-  if (nt && (nt->visible != visible)) {
+  if (!atquit && nt && (nt->visible != visible)) {
     if (GTK_IS_REVEALER(nt->reveal)) gtk_revealer_set_reveal_child(GTK_REVEALER(nt->reveal), visible);
     nt->visible = visible;
   }
@@ -152,8 +152,9 @@ static GtkWidget* nt_init(GtkWidget *base, t_notifier *nt) {
   switch (nt->typ) {
     case NT_MAIN_NDX: {
       inbox = gtk_label_new(NULL);
-      if (GTK_IS_LABEL(inbox) && style_loaded && nt->dyn_css) gtk_widget_add_css_class(inbox, CSS_INVERT);
-      else FAILX("action notifier", "gtk_label_new()");
+      if (GTK_IS_LABEL(inbox)) {
+        if (style_loaded && nt->dyn_css) gtk_widget_add_css_class(inbox, CSS_INVERT);
+      } else FAILX("action notifier", "gtk_label_new()");
     } break;
     case NT_GRAPH_NDX: {
       inbox = gtk_list_box_new();

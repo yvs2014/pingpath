@@ -99,7 +99,7 @@ void tab_setup(t_tab *tab, const char *css) {
 }
 
 void host_free(t_host *host) {
-  if (host) { UPD_STR(host->addr, NULL); UPD_STR(host->name, NULL); }
+  if (host) { CLR_STR(host->addr); CLR_STR(host->name); }
 }
 
 int host_cmp(const void *a, const void *b) {
