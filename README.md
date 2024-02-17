@@ -6,7 +6,7 @@ PingPath
 SYNOPSIS
 --------
 
-**pingpath \[-chiIgGLnpqrRsStv46\] [TARGET]**
+**pingpath \[-chiIgGLnpqrRsStTv46\] [TARGET]**
 
 DESCRIPTION
 -----------
@@ -40,6 +40,9 @@ SCREENSHOTS
 
 ## with auxiliary menu and Graph tab on background
 ![pp-screenshot05](https://raw.githubusercontent.com/yvs2014/pingpath/main/img/pp-screenshot05.png)
+
+## dark/light theme switches in aux menu
+![pp-screenshot09](https://raw.githubusercontent.com/yvs2014/pingpath/main/img/pp-screenshot09.png)
 
 ## graphs with legend
 ![pp-screenshot06](https://raw.githubusercontent.com/yvs2014/pingpath/main/img/pp-screenshot06.png)

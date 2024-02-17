@@ -6,7 +6,7 @@
 .Nd ping wrapper for network diagnostic
 .Sh SYNOPSIS
 .Nm
-.Op Fl chiIgGLnpqrRsStv46
+.Op Fl chiIgGLnpqrRsStTv46
 .Sy [ TARGET ]
 .Sh DESCRIPTION
 Network diagnostic tool based on parsing system
@@ -123,6 +123,20 @@ Jitter
 .El
 Default
 .Ar lsmbwaj
+.El
+.Bl -tag -width Ds
+.It Fl T, Fl -theme Ar BITS
+Toggle dark/light themes according to
+.Ar bits :
+.Bl -tag -offset Ds -compact
+.It Cm 1st
+Main theme (0 - light, 1 - dark)
+.It Cm 2nd
+Graph theme (0 - light, 1 - dark)
+.El
+Default
+.Ar 1
+(dark main, light graph)
 .El
 .Bl -tag -width Ds
 .It Fl g, Fl -graph Ar TYPE

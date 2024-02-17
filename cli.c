@@ -166,6 +166,17 @@ static gboolean cli_opt_S(const char *name, const char *value, gpointer unused, 
   return cli_opt_elem(name, value, error, OPT_TYPE_STAT);
 }
 
+static gboolean cli_opt_T(const char *name, const char *value, t_opts *opts, GError **error) {
+  if (!opts) return false;
+  int mask = opts->darkgraph | (opts->darkgraph << 1);
+  gboolean re = cli_int_opt(name, value, error, ENT_STR_THEME, "Theme dark/light bits", 0, 3, &mask);
+  if (re) {
+    opts->darktheme = (mask & 0x1) ? true : false;
+    opts->darkgraph = (mask & 0x2) ? true : false;
+  }
+  return re;
+}
+
 static gboolean cli_opt_r(const char *name, const char *value, gpointer unused, GError **error) {
   return cli_opt_elem(name, value, error, OPT_TYPE_RECAP);
 }
@@ -211,6 +222,8 @@ gboolean cli_init(int *pargc, char ***pargv) {
       .arg_description = "[" INFO_PATT "]",  .description = OPT_INFO_HEADER " to display" },
     { .long_name = "stat",     .short_name = 'S', .arg = G_OPTION_ARG_CALLBACK, .arg_data = cli_opt_S,
       .arg_description = "[" STAT_PATT "]",  .description = OPT_STAT_HDR " to display" },
+    { .long_name = "theme",    .short_name = 'T', .arg = G_OPTION_ARG_CALLBACK, .arg_data = cli_opt_T,
+      .arg_description = "<bits>",           .description = "Toggle dark/light themes" },
     { .long_name = "graph",    .short_name = 'g', .arg = G_OPTION_ARG_CALLBACK, .arg_data = cli_opt_g,
       .arg_description = "<type>",           .description = OPT_GRAPH_HDR " to draw" },
     { .long_name = "gextra",   .short_name = 'G', .arg = G_OPTION_ARG_CALLBACK, .arg_data = cli_opt_G,
@@ -237,7 +250,9 @@ gboolean cli_init(int *pargc, char ***pargv) {
   g_option_context_set_main_group(oc, og);
   { GError *error = NULL;
     cli = true; gboolean okay = g_option_context_parse(oc, pargc, pargv, &error); cli = false;
-    if (!okay) CLI_FAIL("%s", error->message);
+    if (!okay) {
+      g_message("%s", error ? error->message : unkn_error); g_error_free(error);
+      g_option_context_free(oc); return false; }
     if (version) { g_print("%s", appver); char *ver;
       if ((ver = rtver(GTK_STRV)))   { g_print(" +gtk-%s", ver);   g_free(ver); }
       if ((ver = rtver(CAIRO_STRV))) { g_print(" +cairo-%s", ver); g_free(ver); }

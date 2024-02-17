@@ -1,3 +1,11 @@
+pingpath (0.1.79) lunar mantic; urgency=low
+
+  * add CLI dark/light themes option
+
+  * update screenshots
+
+ -- yvs <VSYakovetsky@gmail.com>  Sat, 17 Feb 2024 21:28:30 +0200
+
 pingpath (0.1.78) lunar mantic; urgency=low
 
   * add dark/light theme switch (main and graph)

@@ -230,7 +230,9 @@ static gchar* parser_valid_int(const gchar *option, const gchar *str) {
   if (!cpy) return NULL;
   gchar *val = g_strstrip(cpy);
   gboolean valid = g_regex_match(str_rx[OPT_TYPE_INT].regex, val, 0, NULL);
-  if (!valid) { PARSER_MESG("%s: no match %s regex", option, str_rx[OPT_TYPE_INT].pattern); g_free(cpy); val = NULL; }
+  if (valid) { val = (val && val[0]) ? g_strdup(val) : NULL; }
+  else { PARSER_MESG("%s: no match %s regex", option, str_rx[OPT_TYPE_INT].pattern); val = NULL; }
+  g_free(cpy);
   return val;
 }
 
@@ -279,6 +281,7 @@ int parser_int(const gchar *str, int typ, const gchar *option, t_minmax mm) {
     case ENT_STR_GRAPH:
     case ENT_STR_GEXTRA:
     case ENT_STR_LEGEND:
+    case ENT_STR_THEME:
       return n;
   }
   return -1;
@@ -348,12 +351,12 @@ t_minmax parser_range(gchar *range, const gchar *option) {
     if (min && min[0]) {
       min = parser_valid_int(option, min);
       if (min && min[0]) min_val = atoi(min);
-      else return re;
+      g_free(min); if (min_val < 0) return re;
     }
     if (max && max[0]) {
       max = parser_valid_int(option, max);
       if (max && max[0]) max_val = atoi(max);
-      else return re;
+      g_free(max); if (max_val < 0) return re;
     }
     re.min = min_val; re.max = max_val;
   }

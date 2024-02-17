@@ -1,3 +1,7 @@
+## 0.1.79
+- add CLI dark/light themes option
+- update screenshots
+
 ## 0.1.78
 - add dark/light theme switch (main and graph)
 
