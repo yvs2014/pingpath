@@ -24,8 +24,8 @@ typedef struct notifier {
   GtkWidget *box, *inbox, *reveal;
   guint visible;
   const int typ;
-  const gboolean autohide, dyn_css;
-  const char *css;
+  const gboolean autohide, dyncss;
+  const char *defcss, *colcss;
   const int x, y;
   t_nt_extra *extra;
 } t_notifier;
@@ -33,12 +33,12 @@ typedef struct notifier {
 static t_nt_extra nt_extra_graph[MAXTTL];
 
 static t_notifier notifier[NT_NDX_MAX] = {
-  [NT_MAIN_NDX]  = { .typ = NT_MAIN_NDX,  .autohide = true, .dyn_css = true },
-  [NT_GRAPH_NDX] = { .typ = NT_GRAPH_NDX, .css = CSS_LEGEND, .extra = nt_extra_graph,
+  [NT_MAIN_NDX]  = { .typ = NT_MAIN_NDX,  .autohide = true, .dyncss = true,
+    .defcss = CSS_ROUNDED },
+  [NT_GRAPH_NDX] = { .typ = NT_GRAPH_NDX, .extra = nt_extra_graph,
+    .defcss = CSS_LEGEND, .colcss = CSS_LEGEND_COL,
     .x = GRAPH_RIGHT + MARGIN * 5, .y = GRAPH_TOP + MARGIN * 2 },
 };
-
-static gboolean nt_bglight;
 
 //
 
@@ -53,6 +53,7 @@ static gboolean nt_set_visible(t_notifier *nt, gboolean visible) {
 static gboolean nt_hide(t_notifier *nt) { return nt_set_visible(nt, false); }
 
 static void nt_inform(t_notifier *nt, gchar *mesg) {
+  static int last_known_bg;
   if (!nt || !mesg) return;
   if (!GTK_IS_WIDGET(nt->inbox) || !GTK_IS_REVEALER(nt->reveal)) return;
   if (nt->autohide && nt->visible) nt_hide(nt);
@@ -60,10 +61,10 @@ static void nt_inform(t_notifier *nt, gchar *mesg) {
     LOG_(mesg);
     gtk_label_set_text(GTK_LABEL(nt->inbox), mesg);
   }
-  if (nt->dyn_css && (nt_bglight == bg_light)) {
-    nt_bglight = !bg_light;
-    gtk_widget_remove_css_class(nt->box, bg_light ? CSS_LIGHT_BG : CSS_DARK_BG);
-    gtk_widget_add_css_class(nt->box, nt_bglight ? CSS_LIGHT_BG : CSS_DARK_BG);
+  if (nt->dyncss && (nt_dark != last_known_bg)) {
+    gtk_widget_remove_css_class(nt->box, last_known_bg ? CSS_BGONDARK : CSS_BGONLIGHT);
+    last_known_bg = nt_dark;
+    gtk_widget_add_css_class(nt->box, last_known_bg ? CSS_BGONDARK : CSS_BGONLIGHT);
   }
   gtk_revealer_set_reveal_child(GTK_REVEALER(nt->reveal), true);
   if (nt->autohide) nt->visible = g_timeout_add_seconds(AUTOHIDE_IN, (GSourceFunc)nt_hide, nt);
@@ -123,7 +124,7 @@ static void nt_lgnd_row_cb(GtkListBox* self, GtkListBoxRow* row, gpointer data) 
             gtk_label_set_use_markup(GTK_LABEL(no), true);
             gtk_list_box_row_set_selectable(row, en);
             gtk_widget_set_opacity(GTK_WIDGET(row), en ? 1 : 0.5);
-            if (pinger_state.gotdata && !pinger_state.run) graphtab_force_update(false);
+            if (pinger_state.gotdata && !pinger_state.run) graphtab_graph_refresh(false);
             LOG("graph exclusion mask: 0x%x", lgnd_excl_mask);
           }
         }
@@ -142,25 +143,23 @@ static GtkWidget* nt_init(GtkWidget *base, t_notifier *nt) {
   GtkWidget *box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
   g_return_val_if_fail(GTK_IS_BOX(box), NULL);
   if (style_loaded) {
-    if (nt->css) gtk_widget_add_css_class(box, nt->css);
-    if (nt->dyn_css) {
-      gtk_widget_add_css_class(box, nt_bglight ? CSS_LIGHT_BG : CSS_DARK_BG);
-      gtk_widget_add_css_class(box, CSS_ROUNDED);
-    }
+    if (nt->defcss) gtk_widget_add_css_class(box, nt->defcss);
+    if (nt->colcss) gtk_widget_add_css_class(box, nt->colcss);
+    if (nt->dyncss) gtk_widget_add_css_class(box, nt_dark ? CSS_BGONDARK : CSS_BGONLIGHT);
   }
   GtkWidget *inbox = NULL;
   switch (nt->typ) {
     case NT_MAIN_NDX: {
       inbox = gtk_label_new(NULL);
       if (GTK_IS_LABEL(inbox)) {
-        if (style_loaded && nt->dyn_css) gtk_widget_add_css_class(inbox, CSS_INVERT);
+        if (style_loaded && nt->dyncss) gtk_widget_add_css_class(inbox, CSS_INVERT);
       } else FAILX("action notifier", "gtk_label_new()");
     } break;
     case NT_GRAPH_NDX: {
       inbox = gtk_list_box_new();
       if (GTK_IS_LIST_BOX(inbox)) {
         g_signal_connect(inbox, EV_ROW_ACTIVE, G_CALLBACK(nt_lgnd_row_cb), NULL);
-        if (style_loaded) gtk_widget_add_css_class(inbox, CSS_LIGHT_BG);
+        if (style_loaded) gtk_widget_add_css_class(inbox, CSS_GR_BG);
         for (int i = 0; i < MAXTTL; i++) {
           t_nt_extra *ex = nt->extra ? &(nt->extra[i]) : NULL;
           if (!ex) continue;
@@ -172,7 +171,10 @@ static GtkWidget* nt_init(GtkWidget *base, t_notifier *nt) {
             if (GTK_IS_LIST_BOX_ROW(ex->row)) {
               gtk_list_box_append(GTK_LIST_BOX(inbox), GTK_WIDGET(ex->row));
               gtk_list_box_row_set_selectable(GTK_LIST_BOX_ROW(ex->row), LGND_ROW_DEF_STATE);
-              if (style_loaded) gtk_widget_add_css_class(GTK_WIDGET(ex->row), CSS_LEGEND_TEXT);
+              if (style_loaded) {
+                gtk_widget_add_css_class(GTK_WIDGET(ex->row), CSS_LEGEND_TEXT);
+                if (nt->colcss) gtk_widget_add_css_class(GTK_WIDGET(ex->row), nt->colcss);
+              }
               NT_LG_LABEL(ex->elem[GRLG_NO], nb_lgnd_nth_state(i, LGND_ROW_DEF_STATE), GTK_ALIGN_END, 2, true);
               if (GTK_IS_WIDGET(ex->elem[GRLG_NO])) gtk_label_set_use_markup(GTK_LABEL(ex->elem[GRLG_NO]), true);
               { // colored dash
@@ -209,6 +211,7 @@ static GtkWidget* nt_init(GtkWidget *base, t_notifier *nt) {
   } else nt_reveal_sets(reveal, GTK_ALIGN_CENTER, GTK_REVEALER_TRANSITION_TYPE_SWING_LEFT);
   // link widgets together
   gtk_box_append(GTK_BOX(box), inbox);
+  if (style_loaded && (nt->typ == NT_GRAPH_NDX)) gtk_widget_add_css_class(box, CSS_GR_BG);
   gtk_revealer_set_child(GTK_REVEALER(reveal), box);
   gtk_overlay_add_overlay(GTK_OVERLAY(over), reveal);
   gtk_overlay_set_child(GTK_OVERLAY(over), base);
@@ -242,7 +245,6 @@ static void nt_update_legend_width(int typ, int ndx, int max) {
 //
 
 inline GtkWidget* notifier_init(int ndx, GtkWidget *base) {
-  nt_bglight = !bg_light;
   return ((ndx >= 0) && (ndx < NT_NDX_MAX)) ? nt_init(base, &notifier[ndx]) : NULL;
 }
 
@@ -301,5 +303,13 @@ void notifier_legend_update(void) {
   LGFL_CHK_MAX(GRLG_CCAS, ca_max);
 }
 
+void notifier_legend_reload_css(void) {
+  t_notifier *nt = &notifier[NT_GRAPH_NDX];
+  if (!nt && !style_loaded) return;
+  if (nt->box) { gtk_widget_remove_css_class(nt->box, CSS_GR_BG); gtk_widget_add_css_class(nt->box, CSS_GR_BG); }
+  if (nt->inbox) { gtk_widget_remove_css_class(nt->inbox, CSS_GR_BG); gtk_widget_add_css_class(nt->inbox, CSS_GR_BG); }
+}
+
 unsigned lgnd_excl_mask; // enough for MAXTTL(30) bitmask
+gboolean nt_dark, nt_on_graph;
 

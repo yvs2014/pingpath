@@ -39,6 +39,8 @@ t_ent_bool ent_bool[ENT_BOOL_MAX] = {
     .pval = &statelem[ELEM_AVRG].enable, .prefix = OPT_STAT_HDR  },
   [ENT_BOOL_JTTR] = { .en = { .typ = ENT_BOOL_JTTR, .name = ELEM_JTTR_HEADER },
     .pval = &statelem[ELEM_JTTR].enable, .prefix = OPT_STAT_HDR  },
+  [ENT_BOOL_MN_DARK] = { .en = { .typ = ENT_BOOL_MN_DARK, .name = OPT_MN_DARK_HDR }, .pval = &opts.darktheme },
+  [ENT_BOOL_GR_DARK] = { .en = { .typ = ENT_BOOL_GR_DARK, .name = OPT_GR_DARK_HDR }, .pval = &opts.darkgraph },
   [ENT_BOOL_LGND] = { .en = { .typ = ENT_BOOL_LGND, .name = OPT_LGND_HDR },
     .pval = &opts.legend },
   [ENT_BOOL_AVJT] = { .en = { .typ = ENT_BOOL_AVJT, .name = GRLG_AVJT_HEADER },
@@ -145,12 +147,15 @@ static void set_ed_texthint(t_ent_str *en) {
     gtk_entry_set_placeholder_text(GTK_ENTRY(en->input), en->hint);
 }
 
-static void toggled_dns(void) {
-  stat_reset_cache();
-  pinger_update_tabs(NULL);
-}
+static void toggled_dns(void) { stat_reset_cache(); pinger_update_tabs(NULL); }
+static void toggle_graph_update(void) { graphtab_graph_refresh(false); }
 
-static void toggle_graph_update(void) { graphtab_force_update(false); }
+static void toggle_colors(void) {
+  style_set(opts.darktheme, opts.darkgraph);
+  tab_reload_theme();
+  graphtab_full_refresh();
+  nt_dark = !(nt_on_graph ? opts.darkgraph : opts.darktheme);
+}
 
 static void toggle_cb(GtkCheckButton *check, t_ent_bool *en) {
   if (!GTK_IS_CHECK_BUTTON(check) || !en) return;
@@ -176,6 +181,10 @@ static void toggle_cb(GtkCheckButton *check, t_ent_bool *en) {
       if (check_bool_val(check, en, pingtab_vis_cols)) notifier_legend_vis_rows(-1);
       stat_whois_enabler();
       if (opts.whois) stat_run_whois_resolv();
+      break;
+    case ENT_BOOL_MN_DARK:
+    case ENT_BOOL_GR_DARK:
+      check_bool_val(check, en, toggle_colors);
       break;
     case ENT_BOOL_LGND:
       check_bool_val(check, en, graphtab_toggle_legend);
@@ -306,7 +315,7 @@ static void max_cb(GtkWidget *spin, t_ent_spn *en) {
 
 static void graph_type_cb(void) {
   if (opts.graph == GRAPH_TYPE_NONE) graphtab_free(false);
-  if (!pinger_state.pause) graphtab_force_update(false);
+  if (!pinger_state.pause) graphtab_graph_refresh(false);
 }
 
 static GtkWidget* label_box(const gchar *name) {
@@ -531,10 +540,12 @@ static gboolean create_graph_optmenu(GtkWidget *list) {
   g_return_val_if_fail(GTK_IS_LIST_BOX(list), false);
   gboolean okay = true;
   gtk_list_box_remove_all(GTK_LIST_BOX(list));
-  if (!add_opt_radio(list,  &ent_rad[ENT_RAD_GRAPH]))  okay = false;
-  if (!add_opt_check(list,  &ent_bool[ENT_BOOL_LGND])) okay = false;
-  if (!add_opt_expand(list, &ent_exp[ENT_EXP_LGFL]))   okay = false;
-  if (!add_opt_expand(list, &ent_exp[ENT_EXP_GREX]))   okay = false;
+  if (!add_opt_check(list,  &ent_bool[ENT_BOOL_MN_DARK])) okay = false;
+  if (!add_opt_check(list,  &ent_bool[ENT_BOOL_GR_DARK])) okay = false;
+  if (!add_opt_radio(list,  &ent_rad[ENT_RAD_GRAPH]))     okay = false;
+  if (!add_opt_check(list,  &ent_bool[ENT_BOOL_LGND]))    okay = false;
+  if (!add_opt_expand(list, &ent_exp[ENT_EXP_LGFL]))      okay = false;
+  if (!add_opt_expand(list, &ent_exp[ENT_EXP_GREX]))      okay = false;
   EN_PR_INT(ENT_STR_LOGMAX);
   return okay;
 }

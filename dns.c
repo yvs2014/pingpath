@@ -136,6 +136,7 @@ static void on_dns_lookup(GObject* src, GAsyncResult *result, t_dns_elem *elem) 
     g_slist_foreach(elem->refs, (GFunc)dns_query_complete, elem);
     dns_query_free(elem);
     dns_query = g_slist_remove(dns_query, elem);
+    g_free(elem);
     PR_DNS_Q;
   }
 }
@@ -175,11 +176,11 @@ void dns_lookup(t_hop *hop, int ndx) {
 void dns_cache_free(void) {
   PR_DNS_C;
   g_slist_foreach(dns_cache, (GFunc)host_free, NULL);
-  g_slist_free(dns_cache);
+  g_slist_free_full(dns_cache, g_free);
   dns_cache = NULL;
   PR_DNS_Q;
   g_slist_foreach(dns_query, (GFunc)dns_query_free, NULL);
-  g_slist_free(dns_query);
+  g_slist_free_full(dns_query, g_free);
   dns_query = NULL;
 }
 

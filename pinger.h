@@ -3,15 +3,20 @@
 
 #include "common.h"
 
+#define DEF_DNS    true
+#define DEF_WHOIS  true
 #define DEF_CYCLES 100
 #define DEF_TOUT   1
 #define DEF_QOS    0
 #define DEF_PPAD  "00"
 #define DEF_PSIZE  56
+#define DEF_LEGEND     true
+#define DEF_DARK_MAIN  true
+#define DEF_DARK_GRAPH false
 
 typedef struct opts {
   gchar *target;
-  gboolean dns, whois, legend;
+  gboolean dns, whois, legend, darktheme, darkgraph;
   int cycles, timeout, qos, size, ipv, graph;
   int min, lim;       // TTL range
   char pad[PAD_SIZE]; // 16 x "00."

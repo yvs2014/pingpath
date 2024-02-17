@@ -39,33 +39,35 @@ static const char* kb_ctrl_l[] = {"<Ctrl>l", NULL};
 
 static const gchar *help_message =
   SPANHDR("Actions")
-  SPANOPT(ACT_START_HDR "/" ACT_STOP_HDR "\t", "target pings")
-  SPANOPT(ACT_PAUSE_HDR "/" ACT_RESUME_HDR,    "displaying data")
-  SPANOPT(ACT_RESET_HDR  "\t\t", "ping statistics")
-  SPANOPT(ACT_QUIT_HDR "\t\t\t", "stop and quit")
+  SPANOPT(ACT_START_HDR    "/" ACT_STOP_HDR "\t", "target pings")
+  SPANOPT(ACT_PAUSE_HDR    "/" ACT_RESUME_HDR,    "displaying data")
+  SPANOPT(ACT_RESET_HDR    "\t\t", "ping statistics")
+  SPANOPT(ACT_QUIT_HDR     "\t\t\t", "stop and quit")
   "\n"
   SPANHDR("Main Options")
   SPANOPT(OPT_CYCLES_HDR   "\t", "Number of ping cycles [" G_STRINGIFY(DEF_CYCLES) "]")
   SPANOPT(OPT_IVAL_HDR     "\t", "Gap in seconds between pings [" G_STRINGIFY(DEF_TOUT) "]")
-  SPANOPT(OPT_DNS_HDR      "\t", "IP address resolving [on]")
+  SPANOPT(OPT_DNS_HDR      "\t", "IP address resolving, on | off")
   SPANOPT(OPT_INFO_HEADER  "\t", "Hop elements to display:")
-    SPANSUB(ELEM_HOST_HDR " " ELEM_AS_HDR " " ELEM_CC_HDR " " ELEM_DESC_HDR " " ELEM_RT_HDR)
-  SPANOPT(OPT_STAT_HDR, "Stat elements to display:")
-    SPANSUB(ELEM_LOSS_HDR " " ELEM_SENT_HDR " " ELEM_RECV_HDR " " ELEM_LAST_HDR " " ELEM_BEST_HDR
+    SPANSUB(ELEM_HOST_HDR  " " ELEM_AS_HDR " " ELEM_CC_HDR " " ELEM_DESC_HDR " " ELEM_RT_HDR)
+  SPANOPT(OPT_STAT_HDR,    "Stat elements to display:")
+    SPANSUB(ELEM_LOSS_HDR  " " ELEM_SENT_HDR " " ELEM_RECV_HDR " " ELEM_LAST_HDR " " ELEM_BEST_HDR
       " " ELEM_WRST_HDR " " ELEM_AVRG_HDR " " ELEM_JTTR_HDR)
-  SPANOPT(OPT_TTL_HDR    "\t\t", "working TTL range [0-" G_STRINGIFY(MAXTTL) "]")
+  SPANOPT(OPT_TTL_HDR      "\t\t", "working TTL range [0-" G_STRINGIFY(MAXTTL) "]")
   SPANOPT(OPT_QOS_HDR      "\t", "QoS/ToS bits of IP header [" G_STRINGIFY(DEF_QOS) "]")
   SPANOPT(OPT_PLOAD_HDR    "\t", "Up to 16 bytes in hex format [" DEF_PPAD "]")
-  SPANOPT(OPT_PSIZE_HDR  "\t\t", "ICMP data size [" G_STRINGIFY(DEF_PSIZE) "]")
-  SPANOPT(OPT_IPV_HDR, "either " OPT_IPVA_HDR ", or " OPT_IPV4_HDR ", or " OPT_IPV6_HDR)
+  SPANOPT(OPT_PSIZE_HDR    "\t\t", "ICMP data size [" G_STRINGIFY(DEF_PSIZE) "]")
+  SPANOPT(OPT_IPV_HDR,     "either " OPT_IPVA_HDR ", or " OPT_IPV4_HDR ", or " OPT_IPV6_HDR)
   "\n"
   SPANHDR("Auxiliary")
-  SPANOPT(OPT_GRAPH_HDR, "either " OPT_GR_NONE_HDR ", or " OPT_GR_DOT_HDR ", or " OPT_GR_LINE_HDR ", or " OPT_GR_CURVE_HDR)
-  SPANOPT(OPT_GRLG_HDR, "to display:")
-    SPANSUB(GRLG_AVJT_HDR " " GRLG_CCAS_HDR " " GRLG_LGHN_HDR)
-  SPANOPT(OPT_GREX_HDR, "to display:")
-    SPANSUB(GREX_MEAN_HDR " " GREX_JRNG_HDR " " GREX_AREA_HDR)
-  SPANOPT(OPT_LOGMAX_HDR       , "Max rows in log tab [" G_STRINGIFY(DEF_LOGMAX) "]")
+  SPANOPT(OPT_MN_DARK_HEADER, "dark | light")
+  SPANOPT(OPT_GR_DARK_HEADER, "light | dark")
+  SPANOPT(OPT_GRAPH_HDR,   "either " OPT_GR_NONE_HDR ", or " OPT_GR_DOT_HDR ", or " OPT_GR_LINE_HDR ", or " OPT_GR_CURVE_HDR)
+  SPANOPT(OPT_GRLG_HDR,    "to display:")
+    SPANSUB(GRLG_AVJT_HDR  " " GRLG_CCAS_HDR " " GRLG_LGHN_HDR)
+  SPANOPT(OPT_GREX_HDR,    "to display:")
+    SPANSUB(GREX_MEAN_HDR  " " GREX_JRNG_HDR " " GREX_AREA_HDR)
+  SPANOPT(OPT_LOGMAX_HDR,  "Max rows in log tab [" G_STRINGIFY(DEF_LOGMAX) "]")
 ;
 
 static t_act_desc act_desc[ACT_NDX_MAX] = {
@@ -119,7 +121,7 @@ static void on_pauseresume(GSimpleAction *action, GVariant *var, gpointer unused
   pinger_state.pause = !pinger_state.pause;
   action_update();
   pinger_update_tabs(NULL);
-  if (opts.graph) graphtab_force_update(true);
+  if (opts.graph) graphtab_graph_refresh(true);
 }
 
 static void on_reset(GSimpleAction *action, GVariant *var, gpointer unused) {

@@ -10,6 +10,7 @@
 #include "stat.h"
 #include "dns.h"
 #include "whois.h"
+#include "ui/style.h"
 #include "ui/appbar.h"
 #include "ui/notifier.h"
 #include "tabs/ping.h"
@@ -42,9 +43,9 @@ typedef struct proc {
   char *out, *err; // stdout, stderr buffers
 } t_proc;
 
-t_opts opts = { .target = NULL, .dns = true, .whois = true, .cycles = DEF_CYCLES, .qos = DEF_QOS, .size = DEF_PSIZE,
+t_opts opts = { .target = NULL, .dns = DEF_DNS, .whois = DEF_WHOIS, .cycles = DEF_CYCLES, .qos = DEF_QOS, .size = DEF_PSIZE,
   .min = 0, .lim = MAXTTL, .timeout = DEF_TOUT, .tout_usec = DEF_TOUT * G_USEC_PER_SEC, .logmax = DEF_LOGMAX,
-  .graph = GRAPH_TYPE_CURVE, .legend = true };
+  .graph = GRAPH_TYPE_CURVE, .legend = DEF_LEGEND, .darktheme = DEF_DARK_MAIN, .darkgraph = DEF_DARK_GRAPH };
 
 t_pinger_state pinger_state;
 guint stat_timer, exp_timer;
@@ -574,6 +575,7 @@ void pinger_cleanup(void) {
   whois_cache_free();
   pinger_error_free();
   graphtab_free(true);
+  style_free();
 }
 
 int pinger_update_tabs(int *pseq) {

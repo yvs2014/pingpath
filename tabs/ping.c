@@ -192,27 +192,27 @@ void pingtab_set_error(const gchar *error) {
 }
 
 t_tab* pingtab_init(GtkWidget* win) {
-  pingtab.lab = gtk_box_new(GTK_ORIENTATION_VERTICAL, 2);
-  g_return_val_if_fail(GTK_IS_BOX(pingtab.lab), NULL);
-  pingtab.tab = gtk_box_new(GTK_ORIENTATION_VERTICAL, MARGIN);
-  g_return_val_if_fail(GTK_IS_BOX(pingtab.tab), NULL);
-  pingtab.hdr = pt_init_list_box(listbox.header, HDRLINES, statelem);
-  gtk_box_append(GTK_BOX(pingtab.tab), pingtab.hdr);
-  pingtab.dyn = pt_init_list_box(listbox.lines, MAXTTL, NULL);
-  g_return_val_if_fail(GTK_IS_LIST_BOX(pingtab.dyn), NULL);
+  TW_TW(pingtab.lab, gtk_box_new(GTK_ORIENTATION_VERTICAL, 2), CSS_PAD, NULL);
+  g_return_val_if_fail(GTK_IS_BOX(pingtab.lab.w), NULL);
+  TW_TW(pingtab.tab, gtk_box_new(GTK_ORIENTATION_VERTICAL, MARGIN), CSS_PAD, CSS_BGROUND);
+  g_return_val_if_fail(GTK_IS_BOX(pingtab.tab.w), NULL);
+  TW_TW(pingtab.hdr, pt_init_list_box(listbox.header, HDRLINES, statelem), NULL, CSS_BGROUND);
+  gtk_box_append(GTK_BOX(pingtab.tab.w), pingtab.hdr.w);
+  TW_TW(pingtab.dyn, pt_init_list_box(listbox.lines, MAXTTL, NULL), NULL, CSS_BGROUND);
+  g_return_val_if_fail(GTK_IS_LIST_BOX(pingtab.dyn.w), NULL);
   //
   GtkWidget *box = gtk_box_new(GTK_ORIENTATION_VERTICAL, MARGIN);
   g_return_val_if_fail(GTK_IS_BOX(box), NULL);
-  gtk_box_append(GTK_BOX(box), pingtab.dyn);
-  pingtab.info = pt_init_info();
-  g_return_val_if_fail(GTK_IS_WIDGET(pingtab.info), NULL);
-  gtk_box_append(GTK_BOX(box), pingtab.info);
+  gtk_box_append(GTK_BOX(box), pingtab.dyn.w);
+  TW_TW(pingtab.info, pt_init_info(), NULL, CSS_BGROUND);
+  g_return_val_if_fail(GTK_IS_WIDGET(pingtab.info.w), NULL);
+  gtk_box_append(GTK_BOX(box), pingtab.info.w);
   //
   GtkWidget *scroll = gtk_scrolled_window_new();
   g_return_val_if_fail(GTK_IS_SCROLLED_WINDOW(scroll), NULL);
   gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scroll), box);
   gtk_widget_set_vexpand(GTK_WIDGET(scroll), true);
-  gtk_box_append(GTK_BOX(pingtab.tab), scroll);
+  gtk_box_append(GTK_BOX(pingtab.tab.w), scroll);
   if (!clipboard_init(win, &pingtab)) LOG("no %s clipboard", pingtab.name);
   return &pingtab;
 }

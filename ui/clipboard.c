@@ -55,7 +55,7 @@ static void cb_on_press(GtkGestureClick *g, int n, double x, double y, GtkWidget
 
 static gboolean any_list_sel(t_tab *tab) {
   if (tab) {
-    GtkWidget* list[] = {tab->hdr, tab->dyn, tab->info};
+    GtkWidget* list[] = {tab->hdr.w, tab->dyn.w, tab->info.w};
     static int n_alsel = G_N_ELEMENTS(list);
     for (int i = 0; i < n_alsel; i++) if (GTK_IS_LIST_BOX(list[i])) {
       GList *l = gtk_list_box_get_selected_rows(GTK_LIST_BOX(list[i]));
@@ -169,46 +169,46 @@ static gchar* cb_get_text(GtkWidget* lb, GdkClipboard *cb, int level) {
 //
 
 gboolean clipboard_init(GtkWidget *win, t_tab *tab) {
-  g_return_val_if_fail(GTK_IS_WINDOW(win) && tab && GTK_IS_BOX(tab->tab), false);
+  g_return_val_if_fail(GTK_IS_WINDOW(win) && tab && GTK_IS_BOX(tab->tab.w), false);
   GtkGesture *gest = gtk_gesture_click_new();
   g_return_val_if_fail(GTK_IS_GESTURE_CLICK(gest), false);
   tab->pop = cb_popover_init(win, tab);
   g_return_val_if_fail(GTK_IS_POPOVER(tab->pop), false);
-  gtk_widget_set_parent(tab->pop, tab->tab);
+  gtk_widget_set_parent(tab->pop, tab->tab.w);
   g_signal_connect(gest, EV_PRESS, G_CALLBACK(cb_on_press), tab->pop);
-  GtkWidget* list[] = {tab->hdr, tab->dyn, tab->info};
+  GtkWidget* list[] = {tab->hdr.w, tab->dyn.w, tab->info.w};
   for (int i = 0; i < G_N_ELEMENTS(list); i++) if (GTK_IS_LIST_BOX(list[i]))
     g_signal_connect(list[i], EV_ROW_CHANGE, G_CALLBACK(cb_on_sel), tab);
   gtk_gesture_single_set_button(GTK_GESTURE_SINGLE(gest), 0);
   gtk_gesture_single_set_exclusive(GTK_GESTURE_SINGLE(gest), true);
-  gtk_widget_add_controller(GTK_WIDGET(tab->tab), GTK_EVENT_CONTROLLER(gest));
+  gtk_widget_add_controller(GTK_WIDGET(tab->tab.w), GTK_EVENT_CONTROLLER(gest));
   gtk_event_controller_set_propagation_limit(GTK_EVENT_CONTROLLER(gest), GTK_LIMIT_SAME_NATIVE);
   return true;
 }
 
 void cb_on_copy_l1(GSimpleAction *action, GVariant *var, gpointer data) {
   t_tab *tab = data;
-  if (!tab || !GTK_IS_LIST_BOX(tab->dyn)) return;
-  GdkClipboard *cb = gtk_widget_get_clipboard(GTK_WIDGET(tab->tab));
+  if (!tab || !GTK_IS_LIST_BOX(tab->dyn.w)) return;
+  GdkClipboard *cb = gtk_widget_get_clipboard(GTK_WIDGET(tab->tab.w));
   if (GDK_IS_CLIPBOARD(cb)) {
     VERBOSE("clipoard action %s", ACT_COPY_HDR);
-    gchar *text = cb_get_text(tab->dyn, cb, DATA_AT_LEVEL1);
+    gchar *text = cb_get_text(tab->dyn.w, cb, DATA_AT_LEVEL1);
     if (text) { gdk_clipboard_set_text(cb, text); g_free(text); }
   }
 }
 
 void cb_on_copy_l2(GSimpleAction *action, GVariant *var, gpointer data) {
   t_tab *tab = data;
-  if (!tab || !GTK_IS_LIST_BOX(tab->dyn)) return;
-  GdkClipboard *cb = gtk_widget_get_clipboard(GTK_WIDGET(tab->tab));
+  if (!tab || !GTK_IS_LIST_BOX(tab->dyn.w)) return;
+  GdkClipboard *cb = gtk_widget_get_clipboard(GTK_WIDGET(tab->tab.w));
   if (GDK_IS_CLIPBOARD(cb)) {
     VERBOSE("clipoard action %s", ACT_COPY_HDR);
     gchar* arr[4] = { NULL };
     static int n_cbl2_arr = G_N_ELEMENTS(arr);
     int n = 0;
-    arr[n] = cb_get_text(tab->hdr,  cb, DATA_AT_LEVEL2); if (arr[n]) n++;
-    arr[n] = cb_get_text(tab->dyn,  cb, DATA_AT_LEVEL2); if (arr[n]) n++;
-    arr[n] = cb_get_text(tab->info, cb, DATA_AT_LEVEL1); if (arr[n]) n++;
+    arr[n] = cb_get_text(tab->hdr.w,  cb, DATA_AT_LEVEL2); if (arr[n]) n++;
+    arr[n] = cb_get_text(tab->dyn.w,  cb, DATA_AT_LEVEL2); if (arr[n]) n++;
+    arr[n] = cb_get_text(tab->info.w, cb, DATA_AT_LEVEL1); if (arr[n]) n++;
     if (!n) return;
     char *text = g_strjoinv("\n", arr);
     for (int i = 0; i < n_cbl2_arr; i++) g_free(arr[i]);
@@ -218,9 +218,9 @@ void cb_on_copy_l2(GSimpleAction *action, GVariant *var, gpointer data) {
 
 void cb_on_sall(GSimpleAction *action, GVariant *var, gpointer data) {
   t_tab *tab = data;
-  if (!tab || !GTK_IS_LIST_BOX(tab->dyn)) return;
+  if (!tab || !GTK_IS_LIST_BOX(tab->dyn.w)) return;
   VERBOSE("%s action %s", tab->name, cb_menu_label(tab->sel));
-  GtkWidget* list[] = {tab->hdr, tab->dyn, tab->info};
+  GtkWidget* list[] = {tab->hdr.w, tab->dyn.w, tab->info.w};
   static int n_cbsa_arr = G_N_ELEMENTS(list);
   tab->sel = any_list_sel(tab);
   if (tab->sel) {

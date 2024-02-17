@@ -80,6 +80,7 @@ static GRegex* compile_regex(const char *pattern, GRegexCompileFlags flags) {
   if (err) {
     WARN("regex PATTERN: %s", pattern);
     WARN("regex ERROR: %s", err->message);
+    g_error_free(err);
   }
   g_assert(regex);
   return regex;

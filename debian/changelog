@@ -1,3 +1,9 @@
+pingpath (0.1.78) lunar mantic; urgency=low
+
+  * add dark/light theme switch (main and graph)
+
+ -- yvs <VSYakovetsky@gmail.com>  Sat, 17 Feb 2024 03:29:38 +0200
+
 pingpath (0.1.77) lunar mantic; urgency=low
 
   * fix some mem leaks from analyzers reports

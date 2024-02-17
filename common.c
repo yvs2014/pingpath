@@ -10,7 +10,7 @@ const char *unkn_error = "unknown error";
 const char *unkn_field = ""; // "?" "???" (see notes)
 const char *unkn_whois = "";
 
-gboolean cli, bg_light;
+gboolean cli;
 gint verbose, start_page = TAB_PING_NDX; // TAB_GRAPH_NDX;
 
 const double colors[][3] = { // 5x6 is enough for MAXTTL=30
@@ -33,6 +33,10 @@ t_stat_elem graphelem[GREL_MAX] = {
   [GREL_JRNG] = {                 .name = GREX_JRNG_HDR    },
   [GREL_AREA] = {                 .name = GREX_AREA_HDR    },
 };
+
+t_tab* nb_tabs[TAB_NDX_MAX]; // note: nb list is reorderable
+
+//
 
 static unsigned rgb2x(double c) { int n = c * 255; return n % 256; }
 
@@ -67,35 +71,45 @@ GtkListBoxRow* line_row_new(GtkWidget *child, gboolean visible) {
   return row;
 }
 
-void tab_setup(t_tab *tab, const char *css) {
+void tab_setup(t_tab *tab) {
   if (!tab) return;
-  if (GTK_IS_WIDGET(tab->lab)) {
-    gtk_widget_set_hexpand(tab->lab, true);
-    if (style_loaded) gtk_widget_add_css_class(tab->lab, CSS_PAD);
-    if (GTK_IS_BOX(tab->lab)) {
+  if (GTK_IS_WIDGET(tab->lab.w)) {
+    gtk_widget_set_hexpand(tab->lab.w, true);
+    if (style_loaded && tab->lab.css) gtk_widget_add_css_class(tab->lab.w, tab->lab.css);
+    if (GTK_IS_BOX(tab->lab.w)) {
       const char *ico = is_sysicon(tab->ico);
       if (!ico) WARN("No icon found for %s", tab->name);
       GtkWidget *image = gtk_image_new_from_icon_name(ico);
-      if (GTK_IS_IMAGE(image)) gtk_box_append(GTK_BOX(tab->lab), image);
+      if (GTK_IS_IMAGE(image)) gtk_box_append(GTK_BOX(tab->lab.w), image);
       if (tab->tag) {
         GtkWidget *tag = gtk_label_new(tab->tag);
-        if (GTK_IS_LABEL(tag)) gtk_box_append(GTK_BOX(tab->lab), tag);
+        if (GTK_IS_LABEL(tag)) gtk_box_append(GTK_BOX(tab->lab.w), tag);
       }
-      gtk_widget_set_tooltip_text(tab->lab, tab->tip);
+      gtk_widget_set_tooltip_text(tab->lab.w, tab->tip);
     }
   }
-  GtkWidget* list[] = {tab->hdr, tab->dyn, tab->info};
-  for (int i = 0; i < G_N_ELEMENTS(list); i++) if (GTK_IS_WIDGET(list[i])) {
-    gtk_widget_set_can_focus(list[i], false);
-    if (style_loaded) gtk_widget_add_css_class(list[i], (i && css) ? css: CSS_BGROUND);
-  }
-  if (GTK_IS_WIDGET(tab->tab) && style_loaded) {
-    if (css) gtk_widget_add_css_class(tab->tab, css);
-    else {
-      gtk_widget_add_css_class(tab->tab, css ? css: CSS_PAD);
-      gtk_widget_add_css_class(tab->tab, css ? css: CSS_BGROUND);
-    }
-  }
+  t_tab_widget tw[] = {tab->hdr, tab->dyn, tab->info};
+  for (int i = 0; i < G_N_ELEMENTS(tw); i++) if (GTK_IS_WIDGET(tw[i].w))
+    gtk_widget_set_can_focus(tw[i].w, false);
+  if (style_loaded && tab->tab.css && GTK_IS_WIDGET(tab->tab.w))
+    gtk_widget_add_css_class(tab->tab.w, tab->tab.css);
+}
+
+#define RELOAD_TW_CSS(tw, reload) { const char *col = reload; \
+  if ((tw).col) gtk_widget_remove_css_class((tw).w, (tw).col); \
+  (tw).col = col; gtk_widget_add_css_class((tw).w, (tw).col); }
+
+void tab_color(t_tab *tab) {
+  if (!style_loaded || !tab) return;
+  t_tab_widget tw[] = {tab->hdr, tab->dyn, tab->info};
+  for (int i = 0; i < G_N_ELEMENTS(tw); i++) if (tw[i].col && GTK_IS_WIDGET(tw[i].w))
+    RELOAD_TW_CSS(tw[i], tw[i].col);
+  if (tab->tab.col && GTK_IS_WIDGET(tab->tab.w))
+    RELOAD_TW_CSS(tab->tab, tab->tab.col);
+}
+
+void tab_reload_theme(void) {
+  for (int i = 0; i < G_N_ELEMENTS(nb_tabs); i++) if (nb_tabs[i]) tab_color(nb_tabs[i]);
 }
 
 void host_free(t_host *host) {

@@ -9,7 +9,7 @@
 #endif
 
 #define APPNAME "pingpath"
-#define VERSION "0.1.77"
+#define VERSION "0.1.78"
 
 #define X_RES 1024
 #define Y_RES 720
@@ -163,6 +163,10 @@
 #define OPT_IPV6_HDR     "IPv6"
 
 #define OPT_AUX_TOOLTIP  "Auxiliary"
+#define OPT_MN_DARK_HDR  "Main dark theme"
+#define OPT_MN_DARK_HEADER "Main theme"
+#define OPT_GR_DARK_HDR  "Graph dark theme"
+#define OPT_GR_DARK_HEADER "Graph theme"
 #define OPT_GRAPH_HDR    "Graph type"
 #define OPT_GR_NONE_HDR  "None"
 #define OPT_GR_DOT_HDR   "Dots"
@@ -248,7 +252,8 @@ enum { ENT_EXP_NONE, ENT_EXP_INFO, ENT_EXP_STAT, ENT_EXP_LGFL, ENT_EXP_GREX, ENT
 
 enum { ENT_BOOL_NONE, ENT_BOOL_DNS, ENT_BOOL_HOST, ENT_BOOL_AS, ENT_BOOL_CC, ENT_BOOL_DESC, ENT_BOOL_RT,
   ENT_BOOL_LOSS, ENT_BOOL_SENT, ENT_BOOL_RECV, ENT_BOOL_LAST, ENT_BOOL_BEST, ENT_BOOL_WRST, ENT_BOOL_AVRG, ENT_BOOL_JTTR,
-  ENT_BOOL_LGND, ENT_BOOL_AVJT, ENT_BOOL_CCAS, ENT_BOOL_LGHN, ENT_BOOL_MEAN, ENT_BOOL_JRNG, ENT_BOOL_AREA, ENT_BOOL_MAX };
+  ENT_BOOL_MN_DARK, ENT_BOOL_GR_DARK, ENT_BOOL_LGND, ENT_BOOL_AVJT, ENT_BOOL_CCAS, ENT_BOOL_LGHN,
+  ENT_BOOL_MEAN, ENT_BOOL_JRNG, ENT_BOOL_AREA, ENT_BOOL_MAX };
 
 enum { ELEM_NO, ELEM_HOST, ELEM_AS, ELEM_CC, ELEM_DESC, ELEM_RT, ELEM_FILL,
   ELEM_LOSS, ELEM_SENT, ELEM_RECV, ELEM_LAST, ELEM_BEST, ELEM_WRST, ELEM_AVRG, ELEM_JTTR, ELEM_MAX,
@@ -315,10 +320,14 @@ typedef struct t_act_desc {
   const gboolean invisible;
 } t_act_desc;
 
+typedef struct tab_widget { // widget and its dark/light css
+  GtkWidget *w; const char *css, *col;
+} t_tab_widget;
+
 typedef struct tab {
   struct tab *self;
   const char *name;
-  GtkWidget *tab, *lab, *dyn, *hdr, *info;
+  t_tab_widget tab, lab, dyn, hdr, info;
   const char *tag, *tip, *ico[MAX_ICONS];
   GMenu *menu;       // menu template
   GtkWidget *pop;    // popover menu
@@ -342,9 +351,10 @@ extern const char *unkn_field;
 extern const char *unkn_whois;
 extern const char *log_empty;
 
-extern gboolean cli, bg_light;
+extern gboolean cli;
 extern gint verbose, start_page;
 
+extern t_tab* nb_tabs[TAB_NDX_MAX];
 extern const double colors[][3];
 extern const int n_colors;
 extern t_stat_elem graphelem[GREL_MAX];
@@ -354,7 +364,9 @@ gchar* get_nth_color(int i);
 char* rtver(int ndx);
 const char *timestampit(void);
 GtkListBoxRow* line_row_new(GtkWidget *child, gboolean visible);
-void tab_setup(t_tab *tab, const char *css);
+void tab_setup(t_tab *tab);
+void tab_color(t_tab *tab);
+void tab_reload_theme(void);
 
 void host_free(t_host *host);
 int host_cmp(const void *a, const void *b);
@@ -370,5 +382,7 @@ extern void log_add(const gchar *fmt, ...);
 
 #define UPDATE_LABEL(label, str) { const gchar *txt = gtk_label_get_text(GTK_LABEL(label)); \
   if (STR_NEQ(txt, str)) gtk_label_set_text(GTK_LABEL(label), str); }
+
+#define TW_TW(tw, widget, perm, dyn) { (tw).w = widget; (tw).css = perm; (tw).col = dyn; }
 
 #endif

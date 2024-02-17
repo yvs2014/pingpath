@@ -1,3 +1,6 @@
+## 0.1.78
+- add dark/light theme switch (main and graph)
+
 ## 0.1.77
 - fix some mem leaks from analyzers reports
 - unify cleanup at exit
