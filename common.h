@@ -9,7 +9,7 @@
 #endif
 
 #define APPNAME "pingpath"
-#define VERSION "0.1.79"
+#define VERSION "0.1.80"
 
 #define X_RES 1024
 #define Y_RES 720
@@ -374,11 +374,8 @@ int ref_cmp(const t_ref *a, const t_ref *b);
 t_ref* ref_new(t_hop *hop, int ndx);
 void print_refs(GSList *refs, const gchar *prefix);
 GSList* list_add_nodup(GSList **list, gpointer data, GCompareFunc cmp, int max);
+GSList* list_add_ref(GSList **list, t_hop *hop, int ndx);
 extern void log_add(const gchar *fmt, ...);
-
-#define ADD_REF_OR_RET(refs) { \
-  if (!list_add_nodup(refs, ref_new(hop, ndx), (GCompareFunc)ref_cmp, REF_MAX)) { \
-    FAILX(addr, "add reference"); return NULL; }}
 
 #define UPDATE_LABEL(label, str) { const gchar *txt = gtk_label_get_text(GTK_LABEL(label)); \
   if (STR_NEQ(txt, str)) gtk_label_set_text(GTK_LABEL(label), str); }

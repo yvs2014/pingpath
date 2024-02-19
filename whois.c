@@ -129,6 +129,22 @@ static void whois_query_complete(t_ref *ref, t_wq_elem *elem) {
   }
 }
 
+static GSList* list_add_wc(GSList **list, t_wc_elem *wc) {
+  if (!list || !wc) return NULL;
+  GSList *elem = g_slist_find_custom(*list, wc, wc_cmp);
+  if (elem) { g_free(wc); return elem; }
+  *list = g_slist_prepend(*list, wc);
+  if (g_slist_length(*list) > WHOIS_CACHE_MAX) {
+    GSList *last = g_slist_last(*list);
+    if (last) {
+      t_wc_elem *elem = last->data;
+      if (elem) { *list = g_slist_remove(*list, elem); wc_free(elem); g_free(elem); }
+      else *list = g_slist_delete_link(*list, last);
+    }
+  }
+  return *list;
+}
+
 static void whois_cache_update(gchar *addr, gchar* welem[]) {
   if (!addr) return;
   t_wc_elem *cache = wc_find(addr);
@@ -142,7 +158,7 @@ static void whois_cache_update(gchar *addr, gchar* welem[]) {
     gchar **cwelem = cache->whois.elem;
     for (int i = 0; i < WHOIS_NDX_MAX; i++) UPD_NSTR(cwelem[i], welem[i], MAXHOSTNAME);
     if (cache->addr && whois_elems_not_null(cwelem)) {
-      if (list_add_nodup(&whois_cache, cache, wc_cmp, WHOIS_CACHE_MAX)) {
+      if (list_add_wc(&whois_cache, cache)) {
         LOG("whois cache updated with addr=%s as=%s cc=%s rt=%s desc=%s", cache->addr,
           cwelem[WHOIS_AS_NDX], cwelem[WHOIS_CC_NDX], cwelem[WHOIS_RT_NDX], cwelem[WHOIS_DESC_NDX]);
         PR_WHOIS_C; return;
@@ -161,7 +177,7 @@ static t_wq_elem* whois_query_save(const gchar *addr, t_hop *hop, int ndx) {
   if (elem->buff) {
     elem->data.addr = g_strndup(addr, MAXHOSTNAME);
     if (elem->data.addr) {
-      if (list_add_nodup(&elem->refs, ref_new(hop, ndx), (GCompareFunc)ref_cmp, REF_MAX)) {
+      if (list_add_ref(&elem->refs, hop, ndx)) {
         GSList *added = list_add_nodup(&whois_query, elem, wq_cmp, WHOIS_QUERY_MAX);
         if (added) {
           WHOIS_DEBUG("%s(%s) hop[%d] host[%d]=%s", __func__, addr, hop->at, ndx, hop->host[ndx].addr);
@@ -170,15 +186,17 @@ static t_wq_elem* whois_query_save(const gchar *addr, t_hop *hop, int ndx) {
       } else FAILX(addr, "add ref");
     } else FAILX(addr, "dup addr");
   } else FAILX(addr, "alloc buffer");
-  wq_free(elem);
-  g_free(elem);
+  wq_free(elem); g_free(elem);
   return NULL;
 }
 
 static t_wq_elem* whois_query_fill(gchar *addr, t_hop *hop, int ndx) {
   if (!hop || !addr) return NULL;
   t_wq_elem *found = wq_find(addr);
-  if (found) { ADD_REF_OR_RET(&found->refs); return NULL; }
+  if (found) {
+    if (!list_add_ref(&found->refs, hop, ndx)) FAILX(addr, "add ref");
+    return NULL;
+  }
   WHOIS_DEBUG("%s(%s) hop[%d] host[%d]=%s", __func__, addr, hop->at, ndx, hop->host[ndx].addr);
   return whois_query_save(addr, hop, ndx);
 }

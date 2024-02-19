@@ -103,7 +103,7 @@ static t_dns_elem* dns_query_save(const gchar *addr, t_hop *hop, int ndx) {
   if (!elem) return NULL;
   elem->host.addr = g_strndup(addr, MAXHOSTNAME);
   if (elem->host.addr) {
-    if (list_add_nodup(&elem->refs, ref_new(hop, ndx), (GCompareFunc)ref_cmp, REF_MAX)) {
+    if (list_add_ref(&elem->refs, hop, ndx)) {
       GSList *added = list_add_nodup(&dns_query, elem, dns_query_cmp, DNS_QUERY_MAX);
       if (added) {
         DNS_DEBUG("%s(%s) hop[%d] host[%d]=%s", __func__, addr, hop->at, ndx, hop->host[ndx].addr);
@@ -119,7 +119,10 @@ static t_dns_elem* dns_query_save(const gchar *addr, t_hop *hop, int ndx) {
 static t_dns_elem* dns_query_fill(gchar *addr, t_hop *hop, int ndx) {
   if (!hop || !addr) return NULL;
   t_dns_elem *found = dns_query_find(addr);
-  if (found) { ADD_REF_OR_RET(&found->refs); return NULL; }
+  if (found) {
+    if (!list_add_ref(&found->refs, hop, ndx)) FAILX(addr, "add ref");
+    return NULL;
+  }
   DNS_DEBUG("%s(%s) hop[%d] host[%d]=%s", __func__, addr, hop->at, ndx, hop->host[ndx].addr);
   return dns_query_save(addr, hop, ndx);
 }

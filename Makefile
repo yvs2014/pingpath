@@ -34,10 +34,6 @@ CFLAGS += -DFCFINI
 LIBS += -lfontconfig
 endif
 
-ifeq ($(CC),gcc)
-CFLAGS += -fanalyzer
-endif
-
 ifdef DEBUG
 CFLAGS += -g
 ifeq ($(CC),gcc)
@@ -48,6 +44,7 @@ endif
 
 ifeq ($(DEBUG),asan)
 LIBS += -lasan
+CFLAGS += -fanalyzer
 CFLAGS += -fsanitize=address
 #CFLAGS += -fsanitize=undefined
 #CFLAGS += -fsanitize=thread

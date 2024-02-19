@@ -1,3 +1,7 @@
+## 0.1.80
+- optimize for speed a bit
+- fix dup memleaks of dns references
+
 ## 0.1.79
 - add CLI dark/light themes option
 - update screenshots

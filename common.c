@@ -147,9 +147,22 @@ void print_refs(GSList *refs, const gchar *prefix) {
 GSList* list_add_nodup(GSList **list, gpointer data, GCompareFunc cmp, int max) {
   if (!list || !data || !cmp) return NULL;
   GSList *elem = g_slist_find_custom(*list, data, cmp);
-  if (elem) return elem;
+  if (elem) { g_free(data); return elem; }
   *list = g_slist_prepend(*list, data);
   if ((max > 0) && (g_slist_length(*list) > max))
+    *list = g_slist_delete_link(*list, g_slist_last(*list));
+  return *list;
+}
+
+GSList* list_add_ref(GSList **list, t_hop *hop, int ndx) {
+  t_ref *ref = ref_new(hop, ndx);
+  if (!ref) return NULL;
+  if (list) {
+    GSList *elem = g_slist_find_custom(*list, ref, (GCompareFunc)ref_cmp);
+    if (elem) { g_free(ref); return elem; }
+  }
+  *list = g_slist_prepend(*list, ref);
+  if (g_slist_length(*list) > REF_MAX)
     *list = g_slist_delete_link(*list, g_slist_last(*list));
   return *list;
 }
