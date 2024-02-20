@@ -9,7 +9,7 @@
 #endif
 
 #define APPNAME "pingpath"
-#define VERSION "0.1.80"
+#define VERSION "0.1.81"
 
 #define X_RES 1024
 #define Y_RES 720

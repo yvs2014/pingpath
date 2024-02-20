@@ -1,3 +1,9 @@
+pingpath (0.1.81) lunar mantic; urgency=low
+
+  * set LANG=C to predictably parse ping's output (spotted i18d ping on ArchLinux)
+
+ -- yvs <VSYakovetsky@gmail.com>  Tue, 20 Feb 2024 02:42:42 +0200
+
 pingpath (0.1.80) lunar mantic; urgency=low
 
   * optimize for speed a bit

@@ -103,7 +103,8 @@ static void recap_cb(GApplication* app, gpointer unused) {
 }
 
 int main(int argc, char **argv) {
-  setlocale(LC_ALL, ""); // l10n for CLI option parser
+  setlocale(LC_ALL, ""); // parser: early l10n for CLI options
+  putenv("LANG=C");      // parser: disable ping's I18n output
   g_return_val_if_fail(parser_init(), EX_SOFTWARE);
   g_return_val_if_fail(cli_init(&argc, &argv), EX_USAGE);
   stat_init(true);

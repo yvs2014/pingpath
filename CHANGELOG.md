@@ -1,3 +1,6 @@
+## 0.1.81
+- set LANG=C to predictably parse ping's output (spotted i18d ping on ArchLinux)
+
 ## 0.1.80
 - optimize for speed a bit
 - fix dup memleaks of dns references
