@@ -1,3 +1,6 @@
+## 0.1.82
+- test .aur packaging
+
 ## 0.1.81
 - set LANG=C to predictably parse ping's output (spotted i18d ping on ArchLinux)
 

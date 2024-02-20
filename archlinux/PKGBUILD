@@ -1,0 +1,31 @@
+# Maintainer: yvs <VSYakovetsky@gmail.com>
+
+pkgname=pingpath
+pkgver=0.1
+pkgrel=1
+pkgdesc="ping wrapper to display path"
+arch=('x86_64' 'aarch64')
+url="https://github.com/yvs2014/$pkgname"
+license=('GPL-2.0-or-later')
+depends=('gtk4' 'json-glib')
+makedepends=('git' 'gcc' 'make')
+
+source=("$pkgname::git+$url")
+provides=("$pkgname")
+
+pkgver() {
+  cd "$pkgname"
+  echo "0.1.$(git rev-list HEAD | sed -n '$=')"
+}
+
+build() {
+  cd "$pkgname"
+  make
+}
+
+package() {
+  cd "$pkgname"
+  DESTDIR="$pkgdir" make install
+}
+
+sha256sums=('SKIP')
