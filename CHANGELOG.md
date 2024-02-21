@@ -1,3 +1,7 @@
+## 0.1.83
+- bring back '-g 0' CLI call
+- aur PKGBUILD versioning
+
 ## 0.1.82
 - test .aur packaging
 

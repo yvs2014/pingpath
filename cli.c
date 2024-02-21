@@ -272,10 +272,13 @@ gboolean cli_init(int *pargc, char ***pargv) {
       if (arg[0] == '-') CLI_FAIL("Unknown option: '%s'", arg);
       if (opts.target) g_message(ENT_TARGET_HDR " is already set, skip '%s'", arg);
       else {
-        cli = true; gchar *target = parser_valid_target(arg); cli = false;
-        if (target) g_message(ENT_TARGET_HDR " %s", target);
-        else CLI_FAIL("Invalid target: '%s'", arg);
-        g_free(opts.target); opts.target = target;
+        cli = true; gchar *pinghost = parser_valid_target(arg); cli = false;
+        if (pinghost) g_message(ENT_TARGET_HDR " %s", pinghost);
+        else {
+          g_message("Invalid " ENT_TARGET_HDR ": '%s'", arg);
+          g_strfreev(target); g_option_context_free(oc); return false;
+        }
+        g_free(opts.target); opts.target = pinghost;
       }
     }
     g_strfreev(target);

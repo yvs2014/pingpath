@@ -7,8 +7,10 @@
 .*.swp
 *~
 compile_commands.json
+build-dir/
 *.snap
 /.flatpak-builder/
 /debs/
 **/.debhelper
-build-dir/
+/aur/
+archlinux/pingpath/

@@ -60,14 +60,12 @@ static void app_cb(GtkApplication* app, gpointer unused) {
   if (style_loaded) gtk_widget_add_css_class(nb, CSS_BGROUND);
   gtk_notebook_set_tab_pos(GTK_NOTEBOOK(nb), GTK_POS_BOTTOM);
   nb_tabs[TAB_PING_NDX] = pingtab_init(win);
-  nb_tabs[TAB_LOG_NDX]  = logtab_init(win);
   if (opts.graph) { nb_tabs[TAB_GRAPH_NDX] = graphtab_init(win); graphtab_ref = nb_tabs[TAB_GRAPH_NDX]->tab.w; }
+  nb_tabs[TAB_LOG_NDX]  = logtab_init(win);
   for (int i = 0; i < G_N_ELEMENTS(nb_tabs); i++) {
+    if (!opts.graph && (i == TAB_GRAPH_NDX)) continue;
     t_tab *tab = nb_tabs[i];
-    if (!tab || !tab->tab.w || !tab->lab.w) {
-      if ((tab->tab.w == graphtab_ref) && !opts.graph) continue;
-      else APPQUIT("tab#%d", i);
-    }
+    if (!tab || !tab->tab.w || !tab->lab.w) APPQUIT("tab#%d", i);
     tab_setup(tab);
     int ndx = gtk_notebook_append_page(GTK_NOTEBOOK(nb), tab->tab.w, tab->lab.w);
     if (ndx < 0) APPQUIT("tab page#%d", i);

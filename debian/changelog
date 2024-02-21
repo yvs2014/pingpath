@@ -1,3 +1,11 @@
+pingpath (0.1.83) lunar mantic; urgency=low
+
+  * bring back '-g 0' CLI call
+
+  * aur PKGBUILD versioning
+
+ -- yvs <VSYakovetsky@gmail.com>  Wed, 21 Feb 2024 04:02:01 +0200
+
 pingpath (0.1.82) lunar mantic; urgency=low
 
   * test .aur packaging
