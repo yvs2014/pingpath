@@ -1,3 +1,9 @@
+pingpath (0.1.84) lunar mantic; urgency=low
+
+  * add -f option (set options from .ini config file)
+
+ -- yvs <VSYakovetsky@gmail.com>  Thu, 22 Feb 2024 04:08:23 +0200
+
 pingpath (0.1.83) lunar mantic; urgency=low
 
   * bring back '-g 0' CLI call

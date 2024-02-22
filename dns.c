@@ -11,7 +11,7 @@ static GSList *dns_query;
 static GSList *dns_cache;
 
 #ifdef DNS_DEBUGGING
-#define DNS_DEBUG(fmt, ...) { if (verbose & 4) LOG("DNS: " fmt, __VA_ARGS__); }
+#define DNS_DEBUG(fmt, ...) { if (verbose & 4) g_message("DNS: " fmt, __VA_ARGS__); }
 #else
 #define DNS_DEBUG(...) {}
 #endif

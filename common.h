@@ -9,7 +9,7 @@
 #endif
 
 #define APPNAME "pingpath"
-#define VERSION "0.1.83"
+#define VERSION "0.1.84"
 
 #define X_RES 1024
 #define Y_RES 720
@@ -88,26 +88,28 @@
 #define MARGIN  8
 #define ACT_DOT 4 // beyond of "app." or "win."
 
-// verbose > 0: log to stdout
-// verbose & 2: common debug
-// verbose & 4: dns debug
-// verbose & 8: whois debug
+// verbose & 1:  log to stdout
+// verbose & 2:  common debug
+// verbose & 4:  dns
+// verbose & 8:  whois
+// verbose & 16: config
 #define LOGGING 1
 #define DEBUGGING 1
 #define DNS_DEBUGGING 1
 #define WHOIS_DEBUGGING 1
+#define CONFIG_DEBUGGING 1
 
 #define LOG(fmt, ...) { VERBOSE(fmt, __VA_ARGS__); log_add("[%s] " fmt, timestampit(), __VA_ARGS__); }
 #define LOG_(mesg) { VERBOSE("%s", mesg); log_add("[%s] %s", timestampit(), mesg); }
 
 #ifdef LOGGING
-#define VERBOSE(fmt, ...) { if (verbose) g_message(fmt, __VA_ARGS__); }
+#define VERBOSE(fmt, ...) { if (verbose & 1) g_message(fmt, __VA_ARGS__); }
 #else
 #define VERBOSE(fmt, ...) {}
 #endif
 
 #ifdef DEBUGGING
-#define DEBUG(fmt, ...) { if (verbose & 2) LOG(fmt, __VA_ARGS__); }
+#define DEBUG(fmt, ...) { if (verbose & 2) g_message(fmt, __VA_ARGS__); }
 #else
 #define DEBUG(fmt, ...) {}
 #endif

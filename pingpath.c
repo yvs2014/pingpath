@@ -104,7 +104,8 @@ int main(int argc, char **argv) {
   setlocale(LC_ALL, ""); // parser: early l10n for CLI options
   putenv("LANG=C");      // parser: disable ping's i18n output
   g_return_val_if_fail(parser_init(), EX_SOFTWARE);
-  g_return_val_if_fail(cli_init(&argc, &argv), EX_USAGE);
+  { gboolean valid_cli_options = cli_init(&argc, &argv);
+    g_return_val_if_fail(valid_cli_options, EX_USAGE); }
   stat_init(true);
   pinger_init();
   GApplication *app;

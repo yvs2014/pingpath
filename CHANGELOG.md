@@ -1,3 +1,6 @@
+## 0.1.84
+- add -f option (set options from .ini config file)
+
 ## 0.1.83
 - bring back '-g 0' CLI call
 - aur PKGBUILD versioning

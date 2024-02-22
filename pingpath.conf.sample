@@ -1,0 +1,35 @@
+
+[ping]
+# cycles = 100
+
+## NOTE: 4 - IPv4, 6 - IPv6
+# ipversion =
+
+# numeric = false
+# interval = 1
+# ttl = 1,30
+# qos = 0
+# payload = 00
+
+## NOTE: all is "hacdr"
+# info = hac
+
+## NOTE: all is "lsrmbwaj"
+# stat = lsmbwaj
+
+[aux]
+## NOTE: 1st bit stands for dark main theme, 2nd - for dark graph theme
+# theme = 1
+
+## NOTE: 0 - none, 1 - dot, 2 - line, 3 - curve
+# graph = 3
+
+## NOTE: 1st bit - midline, 2nd - scope, 3rd - area
+# extra = 0
+
+## NOTE: 1st - display fields, 2st bit - field rtt±jitter, 3nd - field cc:as, 4rd - field hopname
+# legend = 15
+
+## NOTE: not-interactive mode: t - text, c - csv, j - json, J - pretty json
+# recap =
+

@@ -6,7 +6,7 @@
 .Nd ping wrapper for network diagnostic
 .Sh SYNOPSIS
 .Nm
-.Op Fl chiIgGLnpqrRsStTv46
+.Op Fl cfgGhiILnpqrRsStTv46
 .Sy [ TARGET ]
 .Sh DESCRIPTION
 Network diagnostic tool based on parsing system
@@ -22,6 +22,9 @@ and written in
 .Sy GTK4 .
 .Sh OPTIONS
 .Bl -tag -width Ds
+.It Fl f, Fl -file Ar FILENAME
+Read options from ini file.
+.br
 .It Fl c, Fl -cycles Ar NUMBER
 Run
 .Ar number
@@ -156,7 +159,7 @@ Default
 .Ar 3
 .El
 .Bl -tag -width Ds
-.It Fl G, Fl -gextra Ar BITS
+.It Fl G, Fl -extra Ar BITS
 Display extra elements on graphs according to
 .Ar bits :
 .Bl -tag -offset Ds -compact
@@ -176,20 +179,20 @@ Display graph legend and its fields according to
 .Ar bits :
 .Bl -tag -offset Ds -compact
 .It Cm 1st
-Legend
+Display legend fields
 .It Cm 2nd
-Average RTT ± Jitter
+Field "Average RTT ± Jitter"
 .It Cm 3rd
-Country Code : AS Number
+Field "Country Code : AS Number"
 .It Cm 4th
-Hopname
+Field "Hopname"
 .El
 Default
 .Ar all
 .El
 .Bl -tag -width Ds
 .It Fl r, Fl -recap Ar TYPE
-Run non-iteractively and print summary at exit:
+Run non-interactively and print summary at exit:
 .Bl -tag -offset Ds -compact
 .It Cm t
 simple text
@@ -210,14 +213,16 @@ Autostart from CLI (if ping target is set)
 Print debug messages to stdout according to bits of
 .Ar level :
 .Bl -tag -offset Ds -compact
-.It Cm any
-log to stdout
+.It Cm 1st
+main log
 .It Cm 2nd
 common debug
 .It Cm 3rd
-dns debug
+dns
 .It Cm 4th
-whois debug
+whois
+.It Cm 5th
+config
 .El
 Default
 .Ar none
