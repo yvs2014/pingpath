@@ -1,3 +1,7 @@
+## 0.1.85
+- add .rpm packaging
+- install conf sample too
+
 ## 0.1.84
 - add -f option (set options from .ini config file)
 

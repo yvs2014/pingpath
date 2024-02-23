@@ -1,5 +1,5 @@
 
-# NOTE: it's just a template, there's no flatpak runtimes that provide 'ping' utility
+# NOTE: it's just a template, there's not yet flatpak runtimes that provide iputils-ping utility
 
 app-id: net.tools.pingpath
 runtime: org.gnome.Platform

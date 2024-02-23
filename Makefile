@@ -6,13 +6,17 @@ DESC_SRC = assets/$(DESC)
 DESC_DST = $(GROUP).$(DESC)
 BASEICONAME = assets/icons/$(NAME)
 ICO_SIZES = 48 512
+CONF_DST = $(NAME).conf
+CONF_SRC = $(CONF_DST).sample
 
 PREFIX ?= /usr/local
 BASEDIR = $(DESTDIR)$(PREFIX)
-MANDIR ?= $(BASEDIR)/share/man/man1
-DSCDIR ?= $(BASEDIR)/share/applications
-BASEICODIR ?= $(BASEDIR)/share/icons/hicolor
+SHRDIR  = $(BASEDIR)/share
+MANDIR ?= $(SHRDIR)/man/man1
+DSCDIR ?= $(SHRDIR)/applications
+BASEICODIR ?= $(SHRDIR)/icons/hicolor
 SVGICODIR  ?= $(BASEICODIR)/scalable/apps
+SMPLDIR ?= $(SHRDIR)/doc/$(NAME)/examples
 
 PKGS ?= gtk4
 
@@ -87,6 +91,8 @@ install: $(NAME)
 	@mkdir -p $(MANDIR)
 	install -m 644 $(NAME).1 $(MANDIR)/
 	gzip -f $(MANDIR)/$(NAME).1
+	@mkdir -p $(SMPLDIR)
+	install -T -m 644 $(CONF_SRC) $(SMPLDIR)/$(CONF_DST)
 	@mkdir -p $(DSCDIR)
 	install -T -m 644 $(DESC_SRC) $(DSCDIR)/$(DESC_DST)
 	@mkdir -p $(SVGICODIR)

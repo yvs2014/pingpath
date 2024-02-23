@@ -1,3 +1,11 @@
+pingpath (0.1.85) mantic noble; urgency=low
+
+  * add .rpm packaging
+
+  * install conf sample too
+
+ -- yvs <VSYakovetsky@gmail.com>  Fri, 23 Feb 2024 10:37:54 +0200
+
 pingpath (0.1.84) lunar mantic; urgency=low
 
   * add -f option (set options from .ini config file)

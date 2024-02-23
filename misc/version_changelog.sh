@@ -57,7 +57,7 @@ _mntr=$(sed -n 's/^Maintainer: //p' debian/control)
 _tf="/tmp/$(basename $DEB_CHANGELOG).$$"
 trap "rm -f $_tf" EXIT TERM
 cp "$DEB_CHANGELOG" "$_tf"
-printf "$NAME ($vn) lunar mantic; urgency=low\n$deb_comments\n -- $_mntr  $(date -R)\n\n" | cat - "$_tf" >"$DEB_CHANGELOG"
+printf "$NAME ($vn) mantic noble; urgency=low\n$deb_comments\n -- $_mntr  $(date -R)\n\n" | cat - "$_tf" >"$DEB_CHANGELOG"
 
 echo "Keep in mind:"
 echo "	git diff"

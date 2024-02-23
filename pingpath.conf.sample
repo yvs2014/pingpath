@@ -1,15 +1,16 @@
 
 [ping]
 # cycles = 100
+# numeric = false
+# interval = 1
+# qos = 0
+# payload = 00
+
+## NOTE: minTTL,maxTTL
+# ttl = 1,30
 
 ## NOTE: 4 - IPv4, 6 - IPv6
 # ipversion =
-
-# numeric = false
-# interval = 1
-# ttl = 1,30
-# qos = 0
-# payload = 00
 
 ## NOTE: all is "hacdr"
 # info = hac
