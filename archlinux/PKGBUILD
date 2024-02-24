@@ -8,7 +8,7 @@ arch=('x86_64' 'aarch64')
 url="https://github.com/yvs2014/$pkgname"
 license=('GPL-2.0-or-later')
 depends=('iputils' 'gtk4' 'json-glib')
-makedepends=('git' 'gcc' 'make')
+makedepends=('git' 'gcc' 'make' 'pkgconf')
 
 source=("$pkgname::git+$url")
 provides=("$pkgname")

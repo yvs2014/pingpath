@@ -33,11 +33,6 @@ endif
 CFLAGS += $(shell $(PKGCONFIG) --cflags $(PKGS))
 LIBS += $(shell $(PKGCONFIG) --libs $(PKGS))
 
-ifdef FCFINI
-CFLAGS += -DFCFINI
-LIBS += -lfontconfig
-endif
-
 ifdef DEBUG
 CFLAGS += -g
 ifeq ($(CC),gcc)

@@ -20,6 +20,19 @@ Inspired by ncurses look of
 .Sy mtr
 and written in
 .Sy GTK4 .
+.Pp
+What it displays:
+.Bl -tag -width Ds
+.ad l
+- Hop hostnames taken by DNS back resolving (see\~https://docs.gtk.org/gio/class.Resolver.html)
+.br
+- Whois lookup data received by querying RIPE whois (see\~http://www.ripe.net/ris/riswhois.html)
+.br
+- Statistics calculated on data from iputils-ping output (see\~ping(8)\~manual)
+.br
+- Graphs drawn in runtime providing visual representation to make it easier to analyze numerical information
+.El
+.br
 .Sh OPTIONS
 .Bl -tag -width Ds
 .It Fl f, Fl -file Ar FILENAME

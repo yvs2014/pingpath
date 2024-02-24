@@ -1,3 +1,11 @@
+pingpath (0.1.86) mantic noble; urgency=low
+
+  * add short annotation
+
+  * small correction in pkg build
+
+ -- yvs <VSYakovetsky@gmail.com>  Sat, 24 Feb 2024 12:12:43 +0200
+
 pingpath (0.1.85) mantic noble; urgency=low
 
   * add .rpm packaging

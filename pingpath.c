@@ -2,9 +2,6 @@
 #include <stdlib.h>
 #include <sysexits.h>
 #include <locale.h>
-#ifdef FCFINI
-#include <fontconfig/fontconfig.h>
-#endif
 
 #include "common.h"
 #include "cli.h"

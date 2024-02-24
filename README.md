@@ -15,6 +15,12 @@ Network diagnostic tool based on parsing system **ping** output with functionali
 No need set‐root‐uid or raw‐socket‐perms itself to run due to being a wrapper for **ping**.  
 Inspired by ncurses look of **mtr** and written in **GTK4**.
 
+What it displays:
+- Hop hostnames taken by DNS back resolving (see https://docs.gtk.org/gio/class.Resolver.html)
+- Whois lookup data received by querying RIPE whois (see http://www.ripe.net/ris/riswhois.html)
+- Statistics calculated on data from iputils-ping output (see ping(8) manual)
+- Graphs drawn in runtime providing visual representation to make it easier to analyze numerical information
+
 DETAILS
 -------
 ... *see pingpath.1 page*

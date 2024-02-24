@@ -1,3 +1,7 @@
+## 0.1.86
+- add short annotation
+- small correction in pkg build
+
 ## 0.1.85
 - add .rpm packaging
 - install conf sample too
