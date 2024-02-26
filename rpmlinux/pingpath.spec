@@ -1,10 +1,11 @@
 
 # SPEC for rpmbuild
 
-%define subversion %(echo "$(git rev-list --count HEAD)_$(git rev-parse --short HEAD)")
+%define gtag b215bec
+%define subversion %(echo "$(git rev-list --count %{gtag}...HEAD)_$(git rev-parse --short HEAD)")
 
 Name:       pingpath
-Version:    0.1.%{subversion}
+Version:    0.2.%{subversion}
 Release:    1
 Summary:    'ping' wrapper to display path
 License:    GPL-2.0-or-later

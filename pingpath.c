@@ -84,6 +84,7 @@ static void app_cb(GtkApplication* app, gpointer unused) {
   { char *ver; // log runtime versions
     LOG("%c%s: " VERSION, g_ascii_toupper(APPNAME[0]), &(APPNAME[1]));
     if ((ver = rtver(GTK_STRV)))   { LOG("GTK: %s", ver);   g_free(ver); }
+    if ((ver = rtver(GLIB_STRV)))  { LOG("Glib: %s", ver);  g_free(ver); }
     if ((ver = rtver(CAIRO_STRV))) { LOG("Cairo: %s", ver); g_free(ver); }
     if ((ver = rtver(PANGO_STRV))) { LOG("Pango: %s", ver); g_free(ver); }
   }

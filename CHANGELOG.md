@@ -1,3 +1,6 @@
+## 0.2.1
+- bump version to 0.2
+
 ## 0.1.86
 - add short annotation
 - small correction in pkg build

@@ -55,6 +55,8 @@ const char *timestampit(void) {
 gchar* rtver(int ndx) {
   int ver = 0;
   switch (ndx) {
+    case GLIB_STRV: return
+      g_strdup_printf("%d.%d.%d", glib_major_version, glib_minor_version, glib_micro_version);
     case GTK_STRV: return
       g_strdup_printf("%d.%d.%d", gtk_get_major_version(), gtk_get_minor_version(), gtk_get_micro_version());
     case CAIRO_STRV: ver = cairo_version(); break;

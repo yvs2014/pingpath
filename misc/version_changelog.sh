@@ -4,7 +4,8 @@ set -e
 LANG=C
 
 NAME='pingpath'
-VERPRFX='0.1'
+VERPRFX='0.2'
+TAG='b215bec'
 
 BACKUP=
 MD_CHANGELOG='CHANGELOG.md'
@@ -27,9 +28,7 @@ for m in "$@"; do
 done
 
 
-[ -n "$TAG0" ] && { fltr=sed; fargs="/^$TAG0/q"; } || fltr=cat
-
-vers="$(git rev-list HEAD | $fltr $fargs | sed -n '$=')"
+vers="$(git rev-list --count $TAG...HEAD)"
 next=$(($vers + 1))
 vn="$VERPRFX.$next"
 [ -n "$BACKUP" ] && cp "$FILE" "/tmp/$(basename $FILE).bk"
@@ -38,9 +37,10 @@ sed -i "s/^\($PATT\).*/\1\"$vn\"/" "$FILE"
 sed -i "s/^\($PATT_SNAP\).*/\1$vn/" "$FILE_SNAP"
 
 ## md format
-[ -n "$BACKUP" ] && cp "$MD_CHANGELOG" "/tmp/$(basename $MD_CHANGELOG).bk"
-printf "## $VERPRFX.${next}$md_comments\n" > "$MD_CHANGELOG"
-git log | while read w r; do
+MD_BK="/tmp/$(basename $MD_CHANGELOG).bk"
+cp "$MD_CHANGELOG" "$MD_BK"
+printf "## $VERPRFX.${next}$md_comments\n\n" > "$MD_CHANGELOG"
+git log "$TAG...HEAD" | while read w r; do
 	if [ "$w" = 'commit' ]; then
 		printf "\n## $VERPRFX.$vers\n"
 		vers=$(($vers - 1))
@@ -50,6 +50,7 @@ git log | while read w r; do
 		echo "- $w $r"
 	fi
 done >>"$MD_CHANGELOG"
+cat "$MD_BK" >>"$MD_CHANGELOG"
 
 ## deb format
 [ -n "$BACKUP" ] && cp "$DEB_CHANGELOG" "/tmp/$(basename $DEB_CHANGELOG).bk"

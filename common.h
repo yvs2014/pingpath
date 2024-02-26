@@ -9,7 +9,7 @@
 #endif
 
 #define APPNAME "pingpath"
-#define VERSION "0.1.86"
+#define VERSION "0.2.1"
 
 #define X_RES 1024
 #define Y_RES 720
@@ -246,7 +246,7 @@
 #define GRAPH_RIGHT  40
 #define GRAPH_BOTTOM 40
 
-enum { GTK_STRV, CAIRO_STRV, PANGO_STRV };
+enum { GLIB_STRV, GTK_STRV, CAIRO_STRV, PANGO_STRV };
 
 enum { TAB_PING_NDX, TAB_GRAPH_NDX, TAB_LOG_NDX, TAB_NDX_MAX };
 

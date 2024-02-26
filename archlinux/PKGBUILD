@@ -1,7 +1,10 @@
 # Maintainer: yvs <VSYakovetsky@gmail.com>
 
+_bver="0.2"
+_gtag="b215bec"
+
 pkgname=pingpath
-pkgver="0.1.r$(git rev-list --count HEAD).$(git rev-parse --short HEAD)"
+pkgver="${_bver}.r$(git rev-list --count ${_gtag}..HEAD).$(git rev-parse --short HEAD)"
 pkgrel=1
 pkgdesc="ping wrapper to display path"
 arch=('x86_64' 'aarch64')

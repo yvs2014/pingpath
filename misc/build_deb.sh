@@ -1,7 +1,9 @@
 :
 
-name='pingpath'
-basever='0.1'
+APPNAME='pingpath'
+BASEVER='0.2'
+GTAG='b215bec'
+DDIR="debs"
 
 # build depends on: dpkg-dev debhelper
 chk_cmd() {
@@ -14,23 +16,22 @@ chk_cmd dh debhelper
 chk_cmd pkg-config "pkgconf (or pkg-config on some derives)"
 
 set -e
-command -v git >/dev/null && rev="$(git rev-list HEAD | sed -n '$=')" || rev=
-[ -n "$rev" ] && vers="$basever.$rev" || vers="$basever"
+command -v git >/dev/null && rev="$(git rev-list --count $GTAG...HEAD)" || rev=
+[ -n "$rev" ] && vers="$BASEVER.$rev" || vers="$BASEVER"
 arch="$(dpkg-architecture -qDEB_BUILD_ARCH)"
-ddir="debs"
-nra="$ddir/${name}_${vers}_$arch"
+nra="$DDIR/${APPNAME}_${vers}_$arch"
 
-mkdir -p "$ddir"
+mkdir -p "$DDIR"
 
 bi_file="$nra.buildinfo"
 ch_file="$nra.changes"
 dpkg-buildpackage --help | grep -q buildinfo-file && \
   BOUT="--buildinfo-file=$bi_file" COUT="--changes-file=$ch_file" || \
-  BOUT="--buildinfo-option=-O$bi_file" COUT="--changes-option=-O$ch_file" DH_OPTIONS="--destdir=$ddir"
+  BOUT="--buildinfo-option=-O$bi_file" COUT="--changes-option=-O$ch_file" DH_OPTIONS="--destdir=$DDIR"
 
-export DEBDIR="--destdir=$ddir"
+export DEBDIR="--destdir=$DDIR"
 dpkg-buildpackage -b -tc --no-sign \
-  --buildinfo-option="-u$ddir" $BOUT \
-  --changes-option="-u$ddir" $COUT && \
-  (echo "\nPackages in $ddir/:"; ls -l "$ddir")
+  --buildinfo-option="-u$DDIR" $BOUT \
+  --changes-option="-u$DDIR" $COUT && \
+  (echo "\nPackages in $DDIR/:"; ls -l "$DDIR")
 

@@ -4,25 +4,34 @@ build .deb:
     misc/build_deb.sh
   install:
     dpkg -i debs/pingpath_*.deb
-  run:
-    pingpath
+
+build .rpm:
+  build:
+    misc/build_rpm.sh
+  install:
+    rpm -U rpms/$(uname -m)/pingpath-*.rpm
+
+build .aur:
+  build:
+    misc/build_aur.sh
+  install:
+    pacman -U aur/pingpath-*.zst
 
 build .snap:
-  needed host packages:
-    snap
-  install snap builder:
+  pre-install unless done before:
     snap install snapcraft
-  build and install app:
-    snapcraft && snapcraft install pingpath*.snap
+  build:
+    snapcraft
+  install:
+    snapcraft install pingpath*.snap
   run:
-    pingpath
+    /snap/bin/pingpath
 
-build .flatpak ('iputils-ping' runtime is requiered)
-  needed host packages:
+build .flatpak (requires runtime with 'iputils-ping')
+  pre-install unless done before:
     flatpak flatpak-builder [flatpak-xdg-utils]
-  install gtk4;
     flatpak install org.gnome.Platform//45 org.gnome.Sdk//45
-  build and install app:
+  build and install:
     flatpak-builder --user --install build-dir flatpak.yaml --force-clean
   run:
     flatpak run net.tools.pingpath

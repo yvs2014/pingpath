@@ -384,6 +384,7 @@ gboolean cli_init(int *pargc, char ***pargv) {
       g_option_context_free(oc); return false; }
     if (version) { g_print("%s", appver); char *ver;
       if ((ver = rtver(GTK_STRV)))   { g_print(" +gtk-%s", ver);   g_free(ver); }
+      if ((ver = rtver(GLIB_STRV)))  { g_print(" +glib-%s", ver);  g_free(ver); }
       if ((ver = rtver(CAIRO_STRV))) { g_print(" +cairo-%s", ver); g_free(ver); }
       if ((ver = rtver(PANGO_STRV))) { g_print(" +pango-%s", ver); g_free(ver); }
       g_print("\n"); g_option_context_free(oc); exit(EXIT_SUCCESS);
