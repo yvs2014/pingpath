@@ -30,6 +30,10 @@ PKGS += json-glib-1.0
 CFLAGS += -DWITH_JSON
 endif
 
+ifndef NO_DND
+CFLAGS += -DWITH_DND
+endif
+
 CFLAGS += $(shell $(PKGCONFIG) --cflags $(PKGS))
 LIBS += $(shell $(PKGCONFIG) --libs $(PKGS))
 

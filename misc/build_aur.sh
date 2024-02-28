@@ -2,7 +2,6 @@
 
 set -e
 AUR=aur
-export PREFIX="/usr"
 export PKGDEST="$(pwd)/$AUR"
 
 mkdir -p "$AUR"

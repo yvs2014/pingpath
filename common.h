@@ -9,7 +9,7 @@
 #endif
 
 #define APPNAME "pingpath"
-#define VERSION "0.2.1"
+#define VERSION "0.2.2"
 
 #define X_RES 1024
 #define Y_RES 720
@@ -56,6 +56,9 @@
 #define EV_ROW_ACTIVE "row-activated"
 #define EV_TAB_SWITCH "switch-page"
 #define EV_GET_POS    "get-child-position"
+#define EV_DND_DRAG   "prepare"
+#define EV_DND_ICON   "drag-begin"
+#define EV_DND_DROP   "drop"
 
 #define MAX_ICONS      4
 #define ICON_PROP      "icon-name"

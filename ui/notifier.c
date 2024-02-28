@@ -26,7 +26,11 @@ typedef struct notifier {
   const int typ;
   const gboolean autohide, dyncss;
   const char *defcss, *colcss;
+#ifdef WITH_DND
+  int x, y, dx, dy;
+#else
   const int x, y;
+#endif
   t_nt_extra *extra;
 } t_notifier;
 
@@ -133,6 +137,34 @@ static void nt_lgnd_row_cb(GtkListBox* self, GtkListBoxRow* row, gpointer data) 
   }
 }
 
+#ifdef WITH_DND
+static GdkContentProvider* nt_lgnd_dnd_drag(GtkDragSource *src, double x, double y, t_notifier *nt) {
+  if (!nt) return NULL;
+  nt->dx = round(x); nt->dy = round(y);
+  DEBUG("DND-drag: x=%d y=%d, dx=%d dy=%d", nt->x, nt->y, nt->dx, nt->dy);
+  return gdk_content_provider_new_typed(G_TYPE_POINTER, nt);
+}
+
+static void nt_lgnd_dnd_icon(GtkDragSource *src, GdkDrag *drag, t_notifier *nt) {
+  if (!GTK_IS_DRAG_SOURCE(src) || !nt || !GTK_IS_WIDGET(nt->box)) return;
+  GdkPaintable *icon = gtk_widget_paintable_new(nt->box);
+  if (!GDK_IS_PAINTABLE(icon)) return;
+  gtk_drag_source_set_icon(src, icon, nt->dx, nt->dy);
+  g_object_unref(icon);
+  DEBUG("DND-icon: dx=%d dy=%d", nt->dx, nt->dy);
+}
+
+static gboolean nt_lgnd_on_drop(GtkDropTarget *dst, const GValue *val, double x, double y, gpointer unused) {
+  if (!val || !G_VALUE_HOLDS_POINTER(val)) return false;
+  t_notifier *nt = g_value_get_pointer(val);
+  if (!nt) return false;
+  nt->x = round(x) - nt->dx;
+  nt->y = round(y) - nt->dy;
+  DEBUG("DND-drop: x=%d y=%d, dx=%d dy=%d, cursor at x=%.0f y=%.0f", nt->x, nt->y, nt->dx, nt->dy, x, y);
+  return true;
+}
+#endif
+
 #define NT_LG_LABEL(lab, txt, align, chars, visible) { lab = gtk_label_new(txt); \
   nt_add_lgelem(lab, ex->box, align, chars, visible); }
 
@@ -190,6 +222,19 @@ static GtkWidget* nt_init(GtkWidget *base, t_notifier *nt) {
             } else GL_FAIL("gtk_list_box_new()");
           } else GL_FAIL("gtk_box_new()");
         }
+#ifdef WITH_DND
+        GtkDragSource *dnd_src = gtk_drag_source_new();
+        if (GTK_IS_DRAG_SOURCE(dnd_src)) {
+          g_signal_connect(dnd_src, EV_DND_DRAG, G_CALLBACK(nt_lgnd_dnd_drag), nt);
+          g_signal_connect(dnd_src, EV_DND_ICON, G_CALLBACK(nt_lgnd_dnd_icon), nt);
+          gtk_widget_add_controller(box, GTK_EVENT_CONTROLLER(dnd_src));
+        } else GL_FAIL("gtk_drag_source_new()");
+        GtkDropTarget *dnd_dst = gtk_drop_target_new(G_TYPE_POINTER, GDK_ACTION_COPY);
+        if (GTK_IS_DROP_TARGET(dnd_dst)) {
+          g_signal_connect(dnd_dst, EV_DND_DROP, G_CALLBACK(nt_lgnd_on_drop), NULL);
+          gtk_widget_add_controller(over, GTK_EVENT_CONTROLLER(dnd_dst));
+        } else GL_FAIL("gtk_drop_target_new()");
+#endif
       } else GL_FAIL("gtk_list_box_new()");
     } break;
   }
