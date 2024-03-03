@@ -11,7 +11,44 @@ const char *unkn_field = ""; // "?" "???" (see notes)
 const char *unkn_whois = "";
 
 gboolean cli;
-gint verbose, start_page = TAB_PING_NDX; // TAB_GRAPH_NDX;
+gint verbose, start_page = TAB_PING_NDX;
+t_tab* nb_tabs[TAB_NDX_MAX]; // note: nb list is reorderable
+
+t_type_elem pingelem[ELEM_MAX] = {
+  [ELEM_NO]   = { .type = ELEM_NO,   .enable = true, .name = "" },
+  [ELEM_HOST] = { .type = ELEM_HOST, .enable = true, .name = ELEM_HOST_HDR, .tip = ELEM_HOST_TIP },
+  [ELEM_AS]   = { .type = ELEM_AS,   .enable = true, .name = ELEM_AS_HDR,   .tip = ELEM_AS_TIP   },
+  [ELEM_CC]   = { .type = ELEM_CC,   .enable = true, .name = ELEM_CC_HDR,   .tip = ELEM_CC_TIP   },
+  [ELEM_DESC] = { .type = ELEM_DESC,                 .name = ELEM_DESC_HDR, .tip = ELEM_DESC_TIP },
+  [ELEM_RT]   = { .type = ELEM_RT,                   .name = ELEM_RT_HDR,   .tip = ELEM_RT_TIP   },
+  [ELEM_FILL] = { .type = ELEM_FILL, .enable = true, .name = "" },
+  [ELEM_LOSS] = { .type = ELEM_LOSS, .enable = true, .name = ELEM_LOSS_HDR, .tip = ELEM_LOSS_TIP },
+  [ELEM_SENT] = { .type = ELEM_SENT, .enable = true, .name = ELEM_SENT_HDR, .tip = ELEM_SENT_TIP },
+  [ELEM_RECV] = { .type = ELEM_RECV,                 .name = ELEM_RECV_HDR, .tip = ELEM_RECV_TIP },
+  [ELEM_LAST] = { .type = ELEM_LAST, .enable = true, .name = ELEM_LAST_HDR, .tip = ELEM_LAST_TIP },
+  [ELEM_BEST] = { .type = ELEM_BEST, .enable = true, .name = ELEM_BEST_HDR, .tip = ELEM_BEST_TIP },
+  [ELEM_WRST] = { .type = ELEM_WRST, .enable = true, .name = ELEM_WRST_HDR, .tip = ELEM_WRST_TIP },
+  [ELEM_AVRG] = { .type = ELEM_AVRG, .enable = true, .name = ELEM_AVRG_HDR, .tip = ELEM_AVRG_TIP },
+  [ELEM_JTTR] = { .type = ELEM_JTTR, .enable = true, .name = ELEM_JTTR_HDR, .tip = ELEM_JTTR_TIP },
+};
+
+int info_ndxs[] = { ENT_BOOL_HOST, ENT_BOOL_AS, ENT_BOOL_CC, ENT_BOOL_DESC, ENT_BOOL_RT, 0 };
+int stat_ndxs[] = { ENT_BOOL_LOSS, ENT_BOOL_SENT, ENT_BOOL_RECV, ENT_BOOL_LAST, ENT_BOOL_BEST, ENT_BOOL_WRST,
+  ENT_BOOL_AVRG, ENT_BOOL_JTTR, 0 };
+
+t_type_elem graphelem[GREL_MAX] = {
+  [GRLG_NO]   = { .type = GRLG_NO,   .enable = true, .name = "" },
+  [GRLG_DASH] = { .type = GRLG_DASH, .enable = true, .name = GRLG_DASH_HEADER },
+  [GRLG_AVJT] = { .type = GRLG_AVJT, .enable = true, .name = GRLG_AVJT_HEADER },
+  [GRLG_CCAS] = { .type = GRLG_CCAS, .enable = true, .name = GRLG_CCAS_HEADER },
+  [GRLG_LGHN] = { .type = GRLG_LGHN, .enable = true, .name = GRLG_LGHN_HDR    },
+  [GREL_MEAN] = { .type = GREL_MEAN,                 .name = GREX_MEAN_HDR    },
+  [GREL_JRNG] = { .type = GREL_JRNG,                 .name = GREX_JRNG_HDR    },
+  [GREL_AREA] = { .type = GREL_AREA,                 .name = GREX_AREA_HDR    },
+};
+
+int grlg_ndxs[] = { ENT_BOOL_AVJT, ENT_BOOL_CCAS, ENT_BOOL_LGHN, 0 };
+int grel_ndxs[] = { ENT_BOOL_MEAN, ENT_BOOL_JRNG, ENT_BOOL_AREA, 0 };
 
 const double colors[][3] = { // 5x6 is enough for MAXTTL=30
   {1, 0, 0},     {0, 1, 0},     {0, 0, 1},     {1, 1, 0},         {1, 0, 1},         {0, 1, 1},
@@ -23,19 +60,6 @@ const double colors[][3] = { // 5x6 is enough for MAXTTL=30
 
 const int n_colors = G_N_ELEMENTS(colors);
 
-t_stat_elem graphelem[GREL_MAX] = {
-  [GRLG_NO]   = { .enable = true, .name = "" },
-  [GRLG_DASH] = { .enable = true, .name = GRLG_DASH_HEADER },
-  [GRLG_AVJT] = { .enable = true, .name = GRLG_AVJT_HEADER },
-  [GRLG_CCAS] = { .enable = true, .name = GRLG_CCAS_HEADER },
-  [GRLG_LGHN] = { .enable = true, .name = GRLG_LGHN_HDR    },
-  [GREL_MEAN] = {                 .name = GREX_MEAN_HDR    },
-  [GREL_JRNG] = {                 .name = GREX_JRNG_HDR    },
-  [GREL_AREA] = {                 .name = GREX_AREA_HDR    },
-};
-
-t_tab* nb_tabs[TAB_NDX_MAX]; // note: nb list is reorderable
-
 //
 
 static unsigned rgb2x(double c) { int n = c * 255; return n % 256; }
@@ -43,6 +67,26 @@ static unsigned rgb2x(double c) { int n = c * 255; return n % 256; }
 gchar* get_nth_color(int i) {
   int n = i % n_colors;
   return g_strdup_printf("#%02x%02x%02x", rgb2x(colors[n][0]), rgb2x(colors[n][1]), rgb2x(colors[n][2]));
+}
+
+static gboolean* elem_enabler(int type, t_type_elem *elem, int max) {
+  for (int i = 0; i < max; i++) if (type == elem[i].type) return &elem[i].enable;
+  return NULL;
+}
+inline gboolean*  pingelem_enabler(int type) { return elem_enabler(type, pingelem,  G_N_ELEMENTS(pingelem));  }
+inline gboolean* graphelem_enabler(int type) { return elem_enabler(type, graphelem, G_N_ELEMENTS(graphelem)); }
+
+int elem_type2ndx(int type, t_type_elem *elem, int max) {
+  for (int i = 0; i < max; i++) if (type == elem[i].type) return i;
+  return -1;
+}
+inline int  pingelem_type2ndx(int type) { return elem_type2ndx(type, pingelem,  G_N_ELEMENTS(pingelem));  }
+inline int graphelem_type2ndx(int type) { return elem_type2ndx(type, graphelem, G_N_ELEMENTS(graphelem)); }
+
+#define IS_GR_NDX(ndx) (((GRLG_DASH <= ndx) && (ndx <= GRLG_LGHN)) || ((GREL_MEAN <= ndx) && (ndx <= GREL_AREA)))
+gboolean is_grelem_enabled(int type) {
+  int ndx = graphelem_type2ndx(type);
+  return IS_GR_NDX(ndx) ? graphelem[ndx].enable : false;
 }
 
 const char *timestampit(void) {

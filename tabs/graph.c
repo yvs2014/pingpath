@@ -405,9 +405,9 @@ static void gr_draw_graph(GtkDrawingArea *area, cairo_t* cr, int w, int h, gpoin
       pango_cairo_show_layout(cr, graph_pango);
     }
   }
-  { gboolean mean = graphelem[GREL_MEAN].enable, area = graphelem[GREL_AREA].enable, scope = graphelem[GREL_JRNG].enable;
+  { gboolean mean = is_grelem_enabled(GREL_MEAN), area = is_grelem_enabled(GREL_AREA);
     if (mean || area) gr_draw_mean(cr, mean, area);
-    if (scope) gr_draw_smth(cr, THIN_SIZE, LINE_ALPHA, gr_draw_dot_scope_loop);
+    if (is_grelem_enabled(GREL_JRNG)) gr_draw_smth(cr, THIN_SIZE, LINE_ALPHA, gr_draw_dot_scope_loop);
   }
   switch (opts.graph) {
     case GRAPH_TYPE_DOT:

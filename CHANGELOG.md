@@ -1,3 +1,6 @@
+## 0.2.3
+- retoss some view elements on a way to make them reorderable for DnD
+
 ## 0.2.2
 - make graph legend draggable
 - aurbuild minor correction

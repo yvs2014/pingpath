@@ -11,89 +11,82 @@
 typedef gboolean (*optmenu_add_items_fn)(GtkWidget *);
 
 t_ent_bool ent_bool[ENT_BOOL_MAX] = {
-  [ENT_BOOL_DNS]  = { .en = { .typ = ENT_BOOL_DNS,  .name = OPT_DNS_HDR },
-    .pval = &opts.dns },
-  [ENT_BOOL_HOST] = { .en = { .typ = ENT_BOOL_HOST, .name = ELEM_HOST_HDR },
-    .pval = &statelem[ELEM_HOST].enable, .prefix = OPT_INFO_HEADER },
-  [ENT_BOOL_AS]   = { .en = { .typ = ENT_BOOL_AS,   .name = ELEM_AS_HDR },
-    .pval = &statelem[ELEM_AS].enable,   .prefix = OPT_INFO_HEADER },
-  [ENT_BOOL_CC]   = { .en = { .typ = ENT_BOOL_CC,   .name = ELEM_CC_HDR },
-    .pval = &statelem[ELEM_CC].enable,   .prefix = OPT_INFO_HEADER  },
-  [ENT_BOOL_DESC] = { .en = { .typ = ENT_BOOL_DESC, .name = ELEM_DESC_HDR },
-    .pval = &statelem[ELEM_DESC].enable, .prefix = OPT_INFO_HEADER  },
-  [ENT_BOOL_RT]   = { .en = { .typ = ENT_BOOL_RT,   .name = ELEM_RT_HDR },
-    .pval = &statelem[ELEM_RT].enable,   .prefix = OPT_INFO_HEADER  },
-  [ENT_BOOL_LOSS] = { .en = { .typ = ENT_BOOL_LOSS, .name = ELEM_LOSS_HEADER},
-    .pval = &statelem[ELEM_LOSS].enable, .prefix = OPT_STAT_HDR  },
-  [ENT_BOOL_SENT] = { .en = { .typ = ENT_BOOL_SENT, .name = ELEM_SENT_HDR },
-    .pval = &statelem[ELEM_SENT].enable, .prefix = OPT_STAT_HDR  },
-  [ENT_BOOL_RECV] = { .en = { .typ = ENT_BOOL_RECV, .name = ELEM_RECV_HDR },
-    .pval = &statelem[ELEM_RECV].enable, .prefix = OPT_STAT_HDR  },
-  [ENT_BOOL_LAST] = { .en = { .typ = ENT_BOOL_LAST, .name = ELEM_LAST_HDR },
-    .pval = &statelem[ELEM_LAST].enable, .prefix = OPT_STAT_HDR  },
-  [ENT_BOOL_BEST] = { .en = { .typ = ENT_BOOL_BEST, .name = ELEM_BEST_HDR },
-    .pval = &statelem[ELEM_BEST].enable, .prefix = OPT_STAT_HDR  },
-  [ENT_BOOL_WRST] = { .en = { .typ = ENT_BOOL_WRST, .name = ELEM_WRST_HEADER },
-    .pval = &statelem[ELEM_WRST].enable, .prefix = OPT_STAT_HDR  },
-  [ENT_BOOL_AVRG] = { .en = { .typ = ENT_BOOL_AVRG, .name = ELEM_AVRG_HEADER },
-    .pval = &statelem[ELEM_AVRG].enable, .prefix = OPT_STAT_HDR  },
-  [ENT_BOOL_JTTR] = { .en = { .typ = ENT_BOOL_JTTR, .name = ELEM_JTTR_HEADER },
-    .pval = &statelem[ELEM_JTTR].enable, .prefix = OPT_STAT_HDR  },
-  [ENT_BOOL_MN_DARK] = { .en = { .typ = ENT_BOOL_MN_DARK, .name = OPT_MN_DARK_HDR }, .pval = &opts.darktheme },
-  [ENT_BOOL_GR_DARK] = { .en = { .typ = ENT_BOOL_GR_DARK, .name = OPT_GR_DARK_HDR }, .pval = &opts.darkgraph },
-  [ENT_BOOL_LGND] = { .en = { .typ = ENT_BOOL_LGND, .name = OPT_LGND_HDR },
-    .pval = &opts.legend },
-  [ENT_BOOL_AVJT] = { .en = { .typ = ENT_BOOL_AVJT, .name = GRLG_AVJT_HEADER },
-    .pval = &graphelem[GRLG_AVJT].enable, .prefix = OPT_GRLG_HDR  },
-  [ENT_BOOL_CCAS] = { .en = { .typ = ENT_BOOL_CCAS, .name = GRLG_CCAS_HEADER },
-    .pval = &graphelem[GRLG_CCAS].enable, .prefix = OPT_GRLG_HDR  },
-  [ENT_BOOL_LGHN] = { .en = { .typ = ENT_BOOL_LGHN, .name = GRLG_LGHN_HDR },
-    .pval = &graphelem[GRLG_LGHN].enable, .prefix = OPT_GRLG_HDR  },
-  [ENT_BOOL_MEAN] = { .en = { .typ = ENT_BOOL_MEAN, .name = GREX_MEAN_HEADER },
-    .pval = &graphelem[GREL_MEAN].enable, .prefix = OPT_GREX_HDR  },
-  [ENT_BOOL_JRNG] = { .en = { .typ = ENT_BOOL_JRNG, .name = GREX_JRNG_HEADER },
-    .pval = &graphelem[GREL_JRNG].enable, .prefix = OPT_GREX_HDR  },
-  [ENT_BOOL_AREA] = { .en = { .typ = ENT_BOOL_AREA, .name = GREX_AREA_HEADER },
-    .pval = &graphelem[GREL_AREA].enable, .prefix = OPT_GREX_HDR  },
+  [ENT_BOOL_DNS]  = { .en = { .type = ENT_BOOL_DNS,  .name = OPT_DNS_HDR }, .pval = &opts.dns },
+  [ENT_BOOL_HOST] = { .en = { .type = ENT_BOOL_HOST, .name = ELEM_HOST_HDR },
+    .valfn = pingelem_enabler, .valtype = ELEM_HOST, .prefix = OPT_INFO_HEADER },
+  [ENT_BOOL_AS]   = { .en = { .type = ENT_BOOL_AS,   .name = ELEM_AS_HDR },
+    .valfn = pingelem_enabler, .valtype = ELEM_AS,   .prefix = OPT_INFO_HEADER },
+  [ENT_BOOL_CC]   = { .en = { .type = ENT_BOOL_CC,   .name = ELEM_CC_HDR },
+    .valfn = pingelem_enabler, .valtype = ELEM_CC,   .prefix = OPT_INFO_HEADER },
+  [ENT_BOOL_DESC] = { .en = { .type = ENT_BOOL_DESC, .name = ELEM_DESC_HDR },
+    .valfn = pingelem_enabler, .valtype = ELEM_DESC, .prefix = OPT_INFO_HEADER },
+  [ENT_BOOL_RT]   = { .en = { .type = ENT_BOOL_RT,   .name = ELEM_RT_HDR },
+    .valfn = pingelem_enabler, .valtype = ELEM_RT,   .prefix = OPT_INFO_HEADER },
+  [ENT_BOOL_LOSS] = { .en = { .type = ENT_BOOL_LOSS, .name = ELEM_LOSS_HEADER},
+    .valfn = pingelem_enabler, .valtype = ELEM_LOSS, .prefix = OPT_STAT_HDR },
+  [ENT_BOOL_SENT] = { .en = { .type = ENT_BOOL_SENT, .name = ELEM_SENT_HDR },
+    .valfn = pingelem_enabler, .valtype = ELEM_SENT, .prefix = OPT_STAT_HDR },
+  [ENT_BOOL_RECV] = { .en = { .type = ENT_BOOL_RECV, .name = ELEM_RECV_HDR },
+    .valfn = pingelem_enabler, .valtype = ELEM_RECV, .prefix = OPT_STAT_HDR },
+  [ENT_BOOL_LAST] = { .en = { .type = ENT_BOOL_LAST, .name = ELEM_LAST_HDR },
+    .valfn = pingelem_enabler, .valtype = ELEM_LAST, .prefix = OPT_STAT_HDR },
+  [ENT_BOOL_BEST] = { .en = { .type = ENT_BOOL_BEST, .name = ELEM_BEST_HDR },
+    .valfn = pingelem_enabler, .valtype = ELEM_BEST, .prefix = OPT_STAT_HDR },
+  [ENT_BOOL_WRST] = { .en = { .type = ENT_BOOL_WRST, .name = ELEM_WRST_HEADER },
+    .valfn = pingelem_enabler, .valtype = ELEM_WRST, .prefix = OPT_STAT_HDR },
+  [ENT_BOOL_AVRG] = { .en = { .type = ENT_BOOL_AVRG, .name = ELEM_AVRG_HEADER },
+    .valfn = pingelem_enabler, .valtype = ELEM_AVRG, .prefix = OPT_STAT_HDR },
+  [ENT_BOOL_JTTR] = { .en = { .type = ENT_BOOL_JTTR, .name = ELEM_JTTR_HEADER },
+    .valfn = pingelem_enabler, .valtype = ELEM_JTTR, .prefix = OPT_STAT_HDR },
+  [ENT_BOOL_MN_DARK] = { .en = { .type = ENT_BOOL_MN_DARK, .name = OPT_MN_DARK_HDR }, .pval = &opts.darktheme },
+  [ENT_BOOL_GR_DARK] = { .en = { .type = ENT_BOOL_GR_DARK, .name = OPT_GR_DARK_HDR }, .pval = &opts.darkgraph },
+  [ENT_BOOL_LGND] = { .en = { .type = ENT_BOOL_LGND, .name = OPT_LGND_HDR }, .pval = &opts.legend },
+  [ENT_BOOL_AVJT] = { .en = { .type = ENT_BOOL_AVJT, .name = GRLG_AVJT_HEADER },
+    .valfn = graphelem_enabler, .valtype = GRLG_AVJT, .prefix = OPT_GRLG_HDR },
+  [ENT_BOOL_CCAS] = { .en = { .type = ENT_BOOL_CCAS, .name = GRLG_CCAS_HEADER },
+    .valfn = graphelem_enabler, .valtype = GRLG_CCAS, .prefix = OPT_GRLG_HDR },
+  [ENT_BOOL_LGHN] = { .en = { .type = ENT_BOOL_LGHN, .name = GRLG_LGHN_HDR },
+    .valfn = graphelem_enabler, .valtype = GRLG_LGHN, .prefix = OPT_GRLG_HDR },
+  [ENT_BOOL_MEAN] = { .en = { .type = ENT_BOOL_MEAN, .name = GREX_MEAN_HEADER },
+    .valfn = graphelem_enabler, .valtype = GREL_MEAN, .prefix = OPT_GREX_HDR },
+  [ENT_BOOL_JRNG] = { .en = { .type = ENT_BOOL_JRNG, .name = GREX_JRNG_HEADER },
+    .valfn = graphelem_enabler, .valtype = GREL_JRNG, .prefix = OPT_GREX_HDR },
+  [ENT_BOOL_AREA] = { .en = { .type = ENT_BOOL_AREA, .name = GREX_AREA_HEADER },
+    .valfn = graphelem_enabler, .valtype = GREL_AREA, .prefix = OPT_GREX_HDR },
 };
 
 t_ent_str ent_str[ENT_STR_MAX] = {
   [ENT_STR_CYCLES] = { .len = 6,  .width = 6, .range = { .min = CYCLES_MIN, .max = CYCLES_MAX },
-    .en = { .typ = ENT_STR_CYCLES, .name = OPT_CYCLES_HDR },
+    .en = { .type = ENT_STR_CYCLES, .name = OPT_CYCLES_HDR },
     .pint = &opts.cycles,  .idef = DEF_CYCLES },
   [ENT_STR_IVAL]   = { .len = 4,  .width = 6, .range = { .min = IVAL_MIN,   .max = IVAL_MAX },
-    .en = { .typ = ENT_STR_IVAL,   .name = OPT_IVAL_HEADER },
+    .en = { .type = ENT_STR_IVAL,   .name = OPT_IVAL_HEADER },
     .pint = &opts.timeout, .idef = DEF_TOUT },
   [ENT_STR_QOS]    = { .len = 3,  .width = 6, .range = { .max = QOS_MAX },
-    .en = { .typ = ENT_STR_QOS,    .name = OPT_QOS_HDR },
+    .en = { .type = ENT_STR_QOS,    .name = OPT_QOS_HDR },
     .pint = &opts.qos,     .idef = DEF_QOS },
   [ENT_STR_PLOAD]  = { .len = 48, .width = 6,
-    .en = { .typ = ENT_STR_PLOAD,  .name = OPT_PLOAD_HEADER },
+    .en = { .type = ENT_STR_PLOAD,  .name = OPT_PLOAD_HEADER },
     .pstr = opts.pad,      .sdef = DEF_PPAD, .slen = sizeof(opts.pad) },
   [ENT_STR_PSIZE]  = { .len = 4,  .width = 6, .range = { .min = PSIZE_MIN,  .max = PSIZE_MAX },
-    .en = { .typ = ENT_STR_PSIZE,  .name = OPT_PSIZE_HDR },
+    .en = { .type = ENT_STR_PSIZE,  .name = OPT_PSIZE_HDR },
     .pint = &opts.size,    .idef = DEF_PSIZE },
   [ENT_STR_LOGMAX] = { .len = 3,  .width = 6, .range = { .max = LOGMAX_MAX },
-    .en = { .typ = ENT_STR_LOGMAX, .name = OPT_LOGMAX_HDR },
+    .en = { .type = ENT_STR_LOGMAX, .name = OPT_LOGMAX_HDR },
     .pint = &opts.logmax,  .idef = DEF_LOGMAX },
 };
 
 static t_ent_exp ent_exp[ENT_EXP_MAX] = {
-  [ENT_EXP_INFO] = { .c = {.en = {.typ = ENT_EXP_INFO, .name = OPT_INFO_HEADER }},
-    .ndxs = {ENT_BOOL_HOST, ENT_BOOL_AS, ENT_BOOL_CC, ENT_BOOL_DESC, ENT_BOOL_RT }},
-  [ENT_EXP_STAT] = { .c = {.en = {.typ = ENT_EXP_STAT, .name = OPT_STAT_HDR }},
-    .ndxs = {ENT_BOOL_LOSS, ENT_BOOL_SENT, ENT_BOOL_RECV, ENT_BOOL_LAST,
-      ENT_BOOL_BEST, ENT_BOOL_WRST, ENT_BOOL_AVRG, ENT_BOOL_JTTR }},
-  [ENT_EXP_LGFL] = { .c = {.en = {.typ = ENT_EXP_LGFL, .name = OPT_GRLG_HDR }},
-    .ndxs = {ENT_BOOL_AVJT, ENT_BOOL_CCAS, ENT_BOOL_LGHN }},
-  [ENT_EXP_GREX] = { .c = {.en = {.typ = ENT_EXP_GREX, .name = OPT_GREX_HDR }},
-    .ndxs = {ENT_BOOL_MEAN, ENT_BOOL_JRNG, ENT_BOOL_AREA }},
+  [ENT_EXP_INFO] = { .c = {.en = {.type = ENT_EXP_INFO, .name = OPT_INFO_HEADER }}, .ndxs = info_ndxs },
+  [ENT_EXP_STAT] = { .c = {.en = {.type = ENT_EXP_STAT, .name = OPT_STAT_HDR }},    .ndxs = stat_ndxs },
+  [ENT_EXP_LGFL] = { .c = {.en = {.type = ENT_EXP_LGFL, .name = OPT_GRLG_HDR }},    .ndxs = grlg_ndxs },
+  [ENT_EXP_GREX] = { .c = {.en = {.type = ENT_EXP_GREX, .name = OPT_GREX_HDR }},    .ndxs = grel_ndxs },
 };
 
 static void min_cb(GtkWidget*, t_ent_spn*);
 static void max_cb(GtkWidget*, t_ent_spn*);
 t_ent_spn ent_spn[ENT_SPN_MAX] = {
-  [ENT_SPN_TTL] = { .c = {.en = {.typ = ENT_SPN_TTL, .name = OPT_TTL_HDR }}, .aux = {
+  [ENT_SPN_TTL] = { .c = {.en = {.type = ENT_SPN_TTL, .name = OPT_TTL_HDR }}, .aux = {
     [SPN_AUX_MIN] = {.cb = G_CALLBACK(min_cb), .pval = &opts.min, .def = 1},
     [SPN_AUX_LIM] = {.cb = G_CALLBACK(max_cb), .pval = &opts.lim, .def = MAXTTL}
   }},
@@ -103,14 +96,14 @@ static void graph_type_cb(void);
 
 static t_ent_rad ent_rad[ENT_RAD_MAX] = {
   [ENT_RAD_IPV] = { .pval = &opts.ipv,
-    .c = {.en = {.typ = ENT_RAD_IPV, .name = OPT_IPV_HDR }},
+    .c = {.en = {.type = ENT_RAD_IPV, .name = OPT_IPV_HDR }},
     .map = {
       {.ndx = ENT_RAD_IPV, .str = OPT_IPVA_HDR},
       {.ndx = ENT_RAD_IPV, .val = 4, .str = OPT_IPV4_HDR},
       {.ndx = ENT_RAD_IPV, .val = 6, .str = OPT_IPV6_HDR},
     }},
   [ENT_RAD_GRAPH] = { .pval = &opts.graph, .cb = graph_type_cb,
-    .c = {.en = {.typ = ENT_RAD_GRAPH, .name = OPT_GRAPH_HDR }, .atrun = true },
+    .c = {.en = {.type = ENT_RAD_GRAPH, .name = OPT_GRAPH_HDR }, .atrun = true },
     .map = {
       {.ndx = ENT_RAD_GRAPH, .val = GRAPH_TYPE_NONE,  .str = OPT_GR_NONE_HDR},
       {.ndx = ENT_RAD_GRAPH, .val = GRAPH_TYPE_DOT,   .str = OPT_GR_DOT_HDR},
@@ -119,15 +112,20 @@ static t_ent_rad ent_rad[ENT_RAD_MAX] = {
     }},
 };
 
+//
+
 static gboolean check_bool_val(GtkCheckButton *check, t_ent_bool *en, void (*update)(void)) {
   gboolean state = gtk_check_button_get_active(check), re = false;
-  if (en->pval) if (*(en->pval) != state) {
-    *(en->pval) = state; re = true;
-    if (update) update();
+  if (en) {
+    gboolean *pb = EN_BOOLPTR(en);
+    if (pb && (*pb != state)) {
+      *pb = state; re = true;
+      if (update) update();
+    }
+    const gchar *onoff = state ? TOGGLE_ON_HDR : TOGGLE_OFF_HDR;
+    if (en->prefix) notifier_inform("%s: %s %s", en->prefix, en->en.name, onoff);
+    else notifier_inform("%s: %s", en->en.name, onoff);
   }
-  const gchar *onoff = state ? TOGGLE_ON_HDR : TOGGLE_OFF_HDR;
-  if (en->prefix) notifier_inform("%s: %s %s", en->prefix, en->en.name, onoff);
-  else notifier_inform("%s: %s", en->en.name, onoff);
   return re;
 }
 
@@ -159,7 +157,7 @@ static void toggle_colors(void) {
 
 static void toggle_cb(GtkCheckButton *check, t_ent_bool *en) {
   if (!GTK_IS_CHECK_BUTTON(check) || !en) return;
-  switch (en->en.typ) {
+  switch (en->en.type) {
     case ENT_BOOL_DNS:
       check_bool_val(check, en, toggled_dns);
       break;
@@ -208,7 +206,7 @@ static void radio_cb(GtkCheckButton *check, t_ent_rad_map *map) {
   int ndx = map->ndx;
   if ((ndx < 0) || (ndx >= G_N_ELEMENTS(ent_rad[0].map))) return;
   t_ent_rad *en = &ent_rad[ndx];
-  switch (en->c.en.typ) {
+  switch (en->c.en.type) {
     case ENT_RAD_GRAPH:
     case ENT_RAD_IPV: {
       gboolean selected = gtk_check_button_get_active(check);
@@ -238,24 +236,25 @@ static void input_cb(GtkWidget *input, t_ent_str *en) {
   if (!en) return;
   g_return_if_fail(GTK_IS_EDITABLE(input));
   const gchar *got = gtk_editable_get_text(GTK_EDITABLE(input));
-  switch (en->en.typ) {
+  switch (en->en.type) {
     case ENT_STR_CYCLES:
     case ENT_STR_IVAL:
     case ENT_STR_LOGMAX:
     case ENT_STR_QOS:
     case ENT_STR_PSIZE: {
-      int n = parser_int(got, en->en.typ, en->en.name, en->range);
+      int n = parser_int(got, en->en.type, en->en.name, en->range);
       if (n > 0) {
         if (en->pint) *(en->pint) = n;
-        /*extra*/ if (en->en.typ == ENT_STR_IVAL) opts.tout_usec = n * G_USEC_PER_SEC;
+        /*extra*/ if (en->en.type == ENT_STR_IVAL) opts.tout_usec = n * G_USEC_PER_SEC;
         notifier_inform("%s: %d", en->en.name, n);
       } else set_ed_texthint(en);
     } break;
     case ENT_STR_PLOAD: {
-      const char *pad = parser_str(got, en->en.name, OPT_TYPE_PAD);
+      char *pad = parser_str(got, en->en.name, OPT_TYPE_PAD);
       if (pad) {
         if (en->pstr) g_strlcpy(en->pstr, pad, en->slen);
         notifier_inform("%s: %s", en->en.name, pad);
+        g_free(pad);
       } else set_ed_texthint(en);
     } break;
   }
@@ -347,7 +346,8 @@ static GtkWidget* add_opt_check(GtkWidget* list, t_ent_bool *en) {
     gtk_widget_set_halign(check, GTK_ALIGN_END);
     g_signal_connect(check, EV_TOGGLE, G_CALLBACK(toggle_cb), en);
     en->check = GTK_CHECK_BUTTON(check);
-    if (en->pval) gtk_check_button_set_active(en->check, *(en->pval));
+    gboolean *pb = EN_BOOLPTR(en);
+    if (pb) gtk_check_button_set_active(en->check, *pb);
   }
   return box;
 }
@@ -404,13 +404,9 @@ static GtkWidget* add_expand_common(GtkWidget* list, t_ent_exp_common *en) {
 static GtkWidget* add_opt_expand(GtkWidget* list, t_ent_exp *en) {
   if (!en) return NULL;
   GtkWidget *box = add_expand_common(list, &en->c);
-  if (GTK_IS_BOX(box) && en->c.sub) {
-    for (int i = 0; i < G_N_ELEMENTS(en->ndxs); i++) {
-      int ndx = en->ndxs[i];
-      if (!ndx) break;
-      add_opt_check(en->c.sub, &ent_bool[ndx]);
-    }
-  }
+  if (GTK_IS_BOX(box) && en->c.sub)
+    for (int *pi = en->ndxs; *pi; pi++)
+      add_opt_check(en->c.sub, &ent_bool[*pi]);
   return box;
 }
 
@@ -580,7 +576,8 @@ void option_update(void) {
 void option_toggled(int ndx) {
   if ((ndx >= 0) && (ndx < ENT_BOOL_MAX)) {
     t_ent_bool *en = &ent_bool[ndx];
-    if (en->check && en->pval) gtk_check_button_set_active(en->check, *(en->pval));
+    gboolean *pb = EN_BOOLPTR(en);
+    if (en->check && pb) gtk_check_button_set_active(en->check, *pb);
   }
 }
 

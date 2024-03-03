@@ -23,7 +23,7 @@ typedef struct nt_extra {
 typedef struct notifier {
   GtkWidget *box, *inbox, *reveal;
   guint visible;
-  const int typ;
+  const int type;
   const gboolean autohide, dyncss;
   const char *defcss, *colcss;
 #ifdef WITH_DND
@@ -37,9 +37,8 @@ typedef struct notifier {
 static t_nt_extra nt_extra_graph[MAXTTL];
 
 static t_notifier notifier[NT_NDX_MAX] = {
-  [NT_MAIN_NDX]  = { .typ = NT_MAIN_NDX,  .autohide = true, .dyncss = true,
-    .defcss = CSS_ROUNDED },
-  [NT_GRAPH_NDX] = { .typ = NT_GRAPH_NDX, .extra = nt_extra_graph,
+  [NT_MAIN_NDX]  = { .type = NT_MAIN_NDX,  .autohide = true, .dyncss = true, .defcss = CSS_ROUNDED },
+  [NT_GRAPH_NDX] = { .type = NT_GRAPH_NDX, .extra = nt_extra_graph,
     .defcss = CSS_LEGEND, .colcss = CSS_LEGEND_COL,
     .x = GRAPH_RIGHT + MARGIN * 5, .y = GRAPH_TOP + MARGIN * 2 },
 };
@@ -180,7 +179,7 @@ static GtkWidget* nt_init(GtkWidget *base, t_notifier *nt) {
     if (nt->dyncss) gtk_widget_add_css_class(box, nt_dark ? CSS_BGONDARK : CSS_BGONLIGHT);
   }
   GtkWidget *inbox = NULL;
-  switch (nt->typ) {
+  switch (nt->type) {
     case NT_MAIN_NDX: {
       inbox = gtk_label_new(NULL);
       if (GTK_IS_LABEL(inbox)) {
@@ -213,12 +212,12 @@ static GtkWidget* nt_init(GtkWidget *base, t_notifier *nt) {
                 gchar *col = get_nth_color(i);
                 if (col) g_snprintf(span, sizeof(span), LGND_DASH_COL_FMT, col, DASH_CHAR);
                 else g_snprintf(span, sizeof(span), LGND_DASH_DEF_FMT, DASH_CHAR);
-                NT_LG_LABEL(ex->elem[GRLG_DASH], span, -1, -1, graphelem[GRLG_DASH].enable);
+                NT_LG_LABEL(ex->elem[GRLG_DASH], span, -1, -1, is_grelem_enabled(GRLG_DASH));
                 if (GTK_IS_WIDGET(ex->elem[GRLG_DASH]) && col) gtk_label_set_use_markup(GTK_LABEL(ex->elem[GRLG_DASH]), true);
                 g_free(col); }
-              NT_LG_LABEL(ex->elem[GRLG_AVJT], NULL, GTK_ALIGN_START, -1, graphelem[GRLG_AVJT].enable);
-              NT_LG_LABEL(ex->elem[GRLG_CCAS], NULL, GTK_ALIGN_START, -1, graphelem[GRLG_CCAS].enable);
-              NT_LG_LABEL(ex->elem[GRLG_LGHN], NULL, GTK_ALIGN_START, -1, graphelem[GRLG_LGHN].enable);
+              NT_LG_LABEL(ex->elem[GRLG_AVJT], NULL, GTK_ALIGN_START, -1, is_grelem_enabled(GRLG_AVJT));
+              NT_LG_LABEL(ex->elem[GRLG_CCAS], NULL, GTK_ALIGN_START, -1, is_grelem_enabled(GRLG_CCAS));
+              NT_LG_LABEL(ex->elem[GRLG_LGHN], NULL, GTK_ALIGN_START, -1, is_grelem_enabled(GRLG_LGHN));
             } else GL_FAIL("gtk_list_box_new()");
           } else GL_FAIL("gtk_box_new()");
         }
@@ -256,7 +255,7 @@ static GtkWidget* nt_init(GtkWidget *base, t_notifier *nt) {
   } else nt_reveal_sets(reveal, GTK_ALIGN_CENTER, GTK_REVEALER_TRANSITION_TYPE_SWING_LEFT);
   // link widgets together
   gtk_box_append(GTK_BOX(box), inbox);
-  if (style_loaded && (nt->typ == NT_GRAPH_NDX)) gtk_widget_add_css_class(box, CSS_GR_BG);
+  if (style_loaded && (nt->type == NT_GRAPH_NDX)) gtk_widget_add_css_class(box, CSS_GR_BG);
   gtk_revealer_set_child(GTK_REVEALER(reveal), box);
   gtk_overlay_add_overlay(GTK_OVERLAY(over), reveal);
   gtk_overlay_set_child(GTK_OVERLAY(over), base);
@@ -277,9 +276,9 @@ static void nt_fill_legend_elem(GtkWidget* label, const gchar *f1, const gchar *
   }
 }
 
-static void nt_update_legend_width(int typ, int ndx, int max) {
-  if ((typ >= 0) && (typ < NT_NDX_MAX) && (ndx >= 0) && (ndx < GRLG_MAX)) {
-    t_nt_extra *ex = notifier[typ].extra;
+static void nt_update_legend_width(int type, int ndx, int max) {
+  if ((type >= 0) && (type < NT_NDX_MAX) && (ndx >= 0) && (ndx < GRLG_MAX)) {
+    t_nt_extra *ex = notifier[type].extra;
     if (ex) for (int i = 0; i < MAXTTL; i++, ex++)
       if (GTK_IS_LABEL(ex->elem[ndx])) gtk_label_set_width_chars(GTK_LABEL(ex->elem[ndx]), max);
   }
@@ -310,7 +309,7 @@ inline void notifier_set_visible(int ndx, gboolean visible) {
 }
 
 #define NT_LG_ELEM_VIS(ndx, extra_cond) { if (GTK_IS_WIDGET(ex->elem[ndx])) \
-  gtk_widget_set_visible(ex->elem[ndx], vis && graphelem[ndx].enable && extra_cond); }
+  gtk_widget_set_visible(ex->elem[ndx], vis && is_grelem_enabled(ndx) && extra_cond); }
 
 void notifier_legend_vis_rows(int max) {
   static int nt_lgnd_max;

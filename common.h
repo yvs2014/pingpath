@@ -9,7 +9,7 @@
 #endif
 
 #define APPNAME "pingpath"
-#define VERSION "0.2.2"
+#define VERSION "0.2.3"
 
 #define X_RES 1024
 #define Y_RES 720
@@ -341,10 +341,11 @@ typedef struct tab {
   GActionEntry act[POP_MENU_NDX_MAX];
 } t_tab;
 
-typedef struct t_stat_elem {
+typedef struct t_type_elem {
+  int type;
   gboolean enable;
   gchar *name, *tip;
-} t_stat_elem;
+} t_type_elem;
 
 typedef struct t_legend {
   const gchar *name, *as, *cc, *av, *jt;
@@ -360,11 +361,22 @@ extern gboolean cli;
 extern gint verbose, start_page;
 
 extern t_tab* nb_tabs[TAB_NDX_MAX];
+extern t_type_elem pingelem[ELEM_MAX];
+extern t_type_elem graphelem[GREL_MAX];
 extern const double colors[][3];
 extern const int n_colors;
-extern t_stat_elem graphelem[GREL_MAX];
+extern int info_ndxs[];
+extern int stat_ndxs[];
+extern int grlg_ndxs[];
+extern int grel_ndxs[];
 
 gchar* get_nth_color(int i);
+
+gboolean*  pingelem_enabler(int type);
+gboolean* graphelem_enabler(int type);
+int  pingelem_type2ndx(int type);
+int graphelem_type2ndx(int type);
+gboolean is_grelem_enabled(int type);
 
 char* rtver(int ndx);
 const char *timestampit(void);

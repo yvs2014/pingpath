@@ -12,7 +12,7 @@ enum { ENT_SPN_NONE, ENT_SPN_TTL, ENT_SPN_MAX };
 enum { ENT_RAD_NONE, ENT_RAD_IPV, ENT_RAD_GRAPH, ENT_RAD_MAX };
 
 typedef struct ent_ndx {
-  int typ;
+  int type;
   const gchar *name;
 } t_ent_ndx;
 
@@ -27,9 +27,12 @@ typedef struct ent_str {
   gchar buff[ENT_BUFF_SIZE];
 } t_ent_str;
 
+typedef gboolean* (*bool_fn)(int);
+
 typedef struct ent_bool {
   t_ent_ndx en;
-  gboolean *pval;
+  gboolean *pval; // at compile-time
+  bool_fn valfn; int valtype; // at run-time
   const gchar *prefix;
   GtkCheckButton *check;
 } t_ent_bool;
@@ -42,7 +45,7 @@ typedef struct ent_exp_common {
 
 typedef struct ent_exp {
   t_ent_exp_common c;
-  int ndxs[SUBLIST_MAX];  // 0 terminated indexes, otherwise max
+  int *ndxs;  // reference to null-terminated index list
 } t_ent_exp;
 
 typedef struct ent_rad_map {

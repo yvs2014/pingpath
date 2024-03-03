@@ -45,7 +45,9 @@ void pinger_set_error(const gchar *error);
 gboolean pinger_within_range(int min, int max, int got);
 int pinger_update_tabs(int *pseq);
 void pinger_vis_rows(int no);
-void pinger_set_width(int typ, int max);
+void pinger_set_width(int type, int max);
 int pinger_recap_cb(GApplication *app);
+
+#define EN_BOOLPTR(en) ((en)->pval ? (en)->pval : ((en)->valfn ? (en)->valfn((en)->valtype) : NULL))
 
 #endif

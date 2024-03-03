@@ -43,7 +43,7 @@ enum { CNF_OPT_IPV, CNF_OPT_NODNS, CNF_OPT_CYCLES, CNF_OPT_IVAL, CNF_OPT_TTL, CN
 
 typedef struct t_config_option {
   const char *opt;
-  int typ;
+  int type;
   void *data;
 } t_config_option;
 
@@ -54,11 +54,11 @@ typedef struct t_config_section {
 
 //
 
-static gboolean cli_int_opt(const char *name, const char *value, GError **error, int typ, const char *hdr,
+static gboolean cli_int_opt(const char *name, const char *value, GError **error, int type, const char *hdr,
     int min, int max, int *opt) {
   if (!value || !hdr) return false;
   t_minmax range = { .min = min, .max = max };
-  int n = parser_int(value, typ, hdr, range);
+  int n = parser_int(value, type, hdr, range);
   if (n < 0) { CLI_SET_ERR; return false; }
   if (opt) *opt = n;
   g_message("%s: %d", hdr, n);
@@ -87,8 +87,8 @@ static gboolean cli_opt_g(const char *name, const char *value, t_opts *opts, GEr
 
 #define MASK_NTH(nth) ((mask & (1 << (nth))) ? true : false)
 
-#define MASK_GR_ELEMS(min, max) { int i0 = min; \
-  for (int i = min; i < max; i++) graphelem[i].enable = MASK_NTH(i - i0); }
+#define MASK_GR_ELEMS(min, max) { int i0 = min; for (int i = min; i < max; i++) { \
+  gboolean *pb = graphelem_enabler(i); if (pb) *pb = MASK_NTH(i - i0); }}
 
 static gboolean cli_opt_G(const char *name, const char *value, t_opts *opts, GError **error) {
   int mask = 0, max = GREL_MAX - GRLG_MAX - 1;
@@ -137,34 +137,27 @@ static gboolean cli_opt_t(const char *name, const char *value, t_opts *opts, GEr
   return okay;
 }
 
-static t_ent_bool* cli_infostat_entry(int c, int typ) {
-  int ndx = -1;
-  if        (typ == OPT_TYPE_INFO) switch (c) { // info elements
-    case 'h': ndx = ENT_BOOL_HOST; break;
-    case 'a': ndx = ENT_BOOL_AS;   break;
-    case 'c': ndx = ENT_BOOL_CC;   break;
-    case 'd': ndx = ENT_BOOL_DESC; break;
-    case 'r': ndx = ENT_BOOL_RT;   break;
-  } else if (typ == OPT_TYPE_STAT) switch (c) { // stat elements
-    case 'l': ndx = ENT_BOOL_LOSS; break;
-    case 's': ndx = ENT_BOOL_SENT; break;
-    case 'r': ndx = ENT_BOOL_RECV; break;
-    case 'm': ndx = ENT_BOOL_LAST; break; // 'm'sec
-    case 'b': ndx = ENT_BOOL_BEST; break;
-    case 'w': ndx = ENT_BOOL_WRST; break;
-    case 'a': ndx = ENT_BOOL_AVRG; break;
-    case 'j': ndx = ENT_BOOL_JTTR; break;
+static t_ent_bool* cli_infostat_entry(int c, int cat) {
+  static int infochar2ent[] = { ['h'] = ENT_BOOL_HOST, ['a'] = ENT_BOOL_AS, ['c'] = ENT_BOOL_CC,
+    ['d'] = ENT_BOOL_DESC, ['r'] = ENT_BOOL_RT };
+  static int statchar2ent[] = { ['l'] = ENT_BOOL_LOSS, ['s'] = ENT_BOOL_SENT, ['r'] = ENT_BOOL_RECV,
+    ['m'] = ENT_BOOL_LAST, ['b'] = ENT_BOOL_BEST, ['w'] = ENT_BOOL_WRST, ['a'] = ENT_BOOL_AVRG, ['j'] = ENT_BOOL_JTTR };
+  int ndx = 0;
+  if        (cat == OPT_TYPE_INFO) { // category: info
+    if (strchr(INFO_PATT, c)) ndx = infochar2ent[c];
+  } else if (cat == OPT_TYPE_STAT) { // category: stat
+    if (strchr(STAT_PATT, c)) ndx = statchar2ent[c];
   }
-  return (ndx < 0) ? NULL : &ent_bool[ndx];
+  return (ndx > 0) ? &ent_bool[ndx] : NULL;
 }
 
-static const char* cli_opt_infostat(const char *value, int typ, const gchar *hdr) {
-  const char *str = parser_str(value, hdr, typ);
+static char* cli_opt_infostat(const char *value, int cat, const gchar *hdr) {
+  char *str = parser_str(value, hdr, cat);
   if (str) for (const char *p = str; *p; p++) {
-    t_ent_bool *en = cli_infostat_entry(*p, typ);
+    t_ent_bool *en = cli_infostat_entry(*p, cat);
     if (!en) continue;
-    if (en->pval) *en->pval = true;
-    g_message("%s: %s: %s", en->prefix, en->en.name, TOGGLE_ON_HDR);
+    gboolean *pb = EN_BOOLPTR(en);
+    if (pb) { *pb = true; g_message("%s: %s: %s", en->prefix, en->en.name, TOGGLE_ON_HDR); }
   }
   return str;
 }
@@ -172,15 +165,15 @@ static const char* cli_opt_infostat(const char *value, int typ, const gchar *hdr
 #define RECAP_TYPE_EXPAND(type) ((type == 't') ? "text" : ((type == 'c') ? "csv" : \
  ((g_ascii_tolower(type) == 'j') ? "json" : "unknown")))
 
-static gboolean cli_opt_elem(const char *name, const char *value, GError **error, int typ) {
+static gboolean cli_opt_elem(const char *name, const char *value, GError **error, int cat) {
   if (!value) return false;
-  const char *str = NULL;
-  switch (typ) {
-    case OPT_TYPE_INFO: stat_clean_elems(ENT_EXP_INFO); str = cli_opt_infostat(value, typ, OPT_INFO_HEADER); break;
-    case OPT_TYPE_STAT: stat_clean_elems(ENT_EXP_STAT); str = cli_opt_infostat(value, typ, OPT_STAT_HDR); break;
+  char *str = NULL;
+  switch (cat) {
+    case OPT_TYPE_INFO: stat_clean_elems(ENT_EXP_INFO); str = cli_opt_infostat(value, cat, OPT_INFO_HEADER); break;
+    case OPT_TYPE_STAT: stat_clean_elems(ENT_EXP_STAT); str = cli_opt_infostat(value, cat, OPT_STAT_HDR); break;
     case OPT_TYPE_PAD: {
       t_ent_str *en = &ent_str[ENT_STR_PLOAD];
-      str = parser_str(value, en->en.name, typ);
+      str = parser_str(value, en->en.name, cat);
       if (str) {
         if (en->pstr) g_strlcpy(en->pstr, str, en->slen);
         g_message("%s: %s", en->en.name, str);
@@ -191,8 +184,8 @@ static gboolean cli_opt_elem(const char *name, const char *value, GError **error
       if (str) { opts.recap = str[0]; g_message("Summary: %s", RECAP_TYPE_EXPAND(opts.recap)); }
     } break;
   }
-  if (!str) CLI_SET_ERR;
-  return (str != NULL);
+  if (str) { g_free(str); return true; }
+  CLI_SET_ERR; return false;
 }
 
 static gboolean cli_opt_p(const char *name, const char *value, gpointer unused, GError **error) {
@@ -239,24 +232,24 @@ static void cli_set_opt_dns(gboolean numeric, t_opts *opts) {
 static gboolean cli_opt_f(const char *name, const char *value, t_opts *opts, GError **error) {
   const t_config_section config_sections[] = {
     { .name = CNF_SECTION_MAIN, .options = {
-      { .opt = CNF_STR_IPV,    .typ = CNF_OPT_IPV },
-      { .opt = CNF_STR_NODNS,  .typ = CNF_OPT_NODNS },
-      { .opt = CNF_STR_CYCLES, .typ = CNF_OPT_CYCLES, .data = cli_opt_c },
-      { .opt = CNF_STR_IVAL,   .typ = CNF_OPT_IVAL,   .data = cli_opt_i },
-      { .opt = CNF_STR_TTL,    .typ = CNF_OPT_TTL,    .data = cli_opt_t },
-      { .opt = CNF_STR_QOS,    .typ = CNF_OPT_QOS,    .data = cli_opt_q },
-      { .opt = CNF_STR_SIZE,   .typ = CNF_OPT_SIZE,   .data = cli_opt_s },
-      { .opt = CNF_STR_PLOAD,  .typ = CNF_OPT_PLOAD,  .data = cli_opt_p },
-      { .opt = CNF_STR_INFO,   .typ = CNF_OPT_INFO,   .data = cli_opt_I },
-      { .opt = CNF_STR_STAT,   .typ = CNF_OPT_STAT,   .data = cli_opt_S },
+      { .opt = CNF_STR_IPV,    .type = CNF_OPT_IPV },
+      { .opt = CNF_STR_NODNS,  .type = CNF_OPT_NODNS },
+      { .opt = CNF_STR_CYCLES, .type = CNF_OPT_CYCLES, .data = cli_opt_c },
+      { .opt = CNF_STR_IVAL,   .type = CNF_OPT_IVAL,   .data = cli_opt_i },
+      { .opt = CNF_STR_TTL,    .type = CNF_OPT_TTL,    .data = cli_opt_t },
+      { .opt = CNF_STR_QOS,    .type = CNF_OPT_QOS,    .data = cli_opt_q },
+      { .opt = CNF_STR_SIZE,   .type = CNF_OPT_SIZE,   .data = cli_opt_s },
+      { .opt = CNF_STR_PLOAD,  .type = CNF_OPT_PLOAD,  .data = cli_opt_p },
+      { .opt = CNF_STR_INFO,   .type = CNF_OPT_INFO,   .data = cli_opt_I },
+      { .opt = CNF_STR_STAT,   .type = CNF_OPT_STAT,   .data = cli_opt_S },
       {}
     }},
     { .name = CNF_SECTION_AUX, .options = {
-      { .opt = CNF_STR_THEME,  .typ = CNF_OPT_THEME,  .data = cli_opt_T },
-      { .opt = CNF_STR_GRAPH,  .typ = CNF_OPT_GRAPH,  .data = cli_opt_g },
-      { .opt = CNF_STR_EXTRA,  .typ = CNF_OPT_EXTRA,  .data = cli_opt_G },
-      { .opt = CNF_STR_LGND,   .typ = CNF_OPT_LGND,   .data = cli_opt_L },
-      { .opt = CNF_STR_RECAP,  .typ = CNF_OPT_RECAP,  .data = cli_opt_r },
+      { .opt = CNF_STR_THEME,  .type = CNF_OPT_THEME,  .data = cli_opt_T },
+      { .opt = CNF_STR_GRAPH,  .type = CNF_OPT_GRAPH,  .data = cli_opt_g },
+      { .opt = CNF_STR_EXTRA,  .type = CNF_OPT_EXTRA,  .data = cli_opt_G },
+      { .opt = CNF_STR_LGND,   .type = CNF_OPT_LGND,   .data = cli_opt_L },
+      { .opt = CNF_STR_RECAP,  .type = CNF_OPT_RECAP,  .data = cli_opt_r },
       {}
     }},
     {}
@@ -281,7 +274,7 @@ static gboolean cli_opt_f(const char *name, const char *value, t_opts *opts, GEr
         }
         CONF_DEBUG("validate %s:%s=%s", section, optname, optval);
       }
-      switch (option->typ) {
+      switch (option->type) {
         case CNF_OPT_IPV: {
           gint val = g_key_file_get_integer(file, section, optname, &opterr);
           if (!opterr) {
@@ -333,8 +326,8 @@ static gboolean cli_opt_f(const char *name, const char *value, t_opts *opts, GEr
 
 #define CLI_OPT_NONE(sname, lname, adata, mdesc) { .short_name = sname, .long_name = lname, \
   .description = mdesc, .arg = G_OPTION_ARG_NONE, .arg_data = adata }
-#define CLI_OPT_SMTH(sname, lname, adata, mdesc, adesc, typ) { .short_name = sname, .long_name = lname, \
-  .description = mdesc, .arg = typ, .arg_data = adata, .arg_description = adesc }
+#define CLI_OPT_SMTH(sname, lname, adata, mdesc, adesc, type) { .short_name = sname, .long_name = lname, \
+  .description = mdesc, .arg = type, .arg_data = adata, .arg_description = adesc }
 #define CLI_OPT_CALL(sname, lname, adata, mdesc, adesc) \
   CLI_OPT_SMTH(sname, lname, adata, mdesc, adesc, G_OPTION_ARG_CALLBACK)
 #define CLI_OPT_INTC(sname, lname, adata, mdesc, adesc) \

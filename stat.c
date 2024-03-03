@@ -16,23 +16,9 @@ enum { NONE = 0, RX = 1, TX = 2, RXTX = 3 };
 int hops_no = MAXTTL;
 int visibles = -1;
 
-t_stat_elem statelem[ELEM_MAX] = {
-  [ELEM_NO]   = { .enable = true,  .name = "" },
-  [ELEM_HOST] = { .enable = true,  .name = ELEM_HOST_HDR, .tip = ELEM_HOST_TIP },
-  [ELEM_AS]   = { .enable = true,  .name = ELEM_AS_HDR,   .tip = ELEM_AS_TIP   },
-  [ELEM_CC]   = { .enable = true,  .name = ELEM_CC_HDR,   .tip = ELEM_CC_TIP   },
-  [ELEM_DESC] = {                  .name = ELEM_DESC_HDR, .tip = ELEM_DESC_TIP },
-  [ELEM_RT]   = {                  .name = ELEM_RT_HDR,   .tip = ELEM_RT_TIP   },
-  [ELEM_FILL] = { .enable = true,  .name = "" },
-  [ELEM_LOSS] = { .enable = true,  .name = ELEM_LOSS_HDR, .tip = ELEM_LOSS_TIP },
-  [ELEM_SENT] = { .enable = true,  .name = ELEM_SENT_HDR, .tip = ELEM_SENT_TIP },
-  [ELEM_RECV] = {                  .name = ELEM_RECV_HDR, .tip = ELEM_RECV_TIP },
-  [ELEM_LAST] = { .enable = true,  .name = ELEM_LAST_HDR, .tip = ELEM_LAST_TIP },
-  [ELEM_BEST] = { .enable = true,  .name = ELEM_BEST_HDR, .tip = ELEM_BEST_TIP },
-  [ELEM_WRST] = { .enable = true,  .name = ELEM_WRST_HDR, .tip = ELEM_WRST_TIP },
-  [ELEM_AVRG] = { .enable = true,  .name = ELEM_AVRG_HDR, .tip = ELEM_AVRG_TIP },
-  [ELEM_JTTR] = { .enable = true,  .name = ELEM_JTTR_HDR, .tip = ELEM_JTTR_TIP },
-};
+#define IS_INFO_NDX(ndx) ((ELEM_HOST <= ndx) && (ndx <= ELEM_RT))
+#define IS_STAT_NDX(ndx) ((ELEM_LOSS <= ndx) && (ndx <= ELEM_JTTR))
+#define IS_WHOIS_NDX(ndx) ((ELEM_AS <= ndx) && (ndx <= ELEM_RT))
 
 static t_hop hops[MAXTTL];
 static t_host_max host_max;
@@ -195,58 +181,62 @@ static const gchar *info_host_nl(int at) {
   return NULL;
 }
 
-static void info_host_arr(int at, const gchar* arr[MAXADDR]) {
-  t_host *host = hops[at].host;
-  if (arr) for (int i = 0; i < MAXADDR; i++)
-    arr[i] = host[i].addr ? addrname(i, host) : NULL;
+static int info_host_arr(int at, const gchar* arr[MAXADDR]) {
+  t_host *host = hops[at].host; int n = 0;
+  for (; n < MAXADDR; n++) { if (host[n].addr) arr[n] = addrname(n, host); else break; }
+  return n;
 }
 
-static void info_addrhost(int at, const gchar* arr[MAXADDR], gboolean num) {
-  t_host *host = hops[at].host;
-  if (arr) for (int i = 0; i < MAXADDR; i++)
-    arr[i] = addr_or_name(i, host, num);
+static int info_addrhost(int at, const gchar* arr[MAXADDR], gboolean num) {
+  t_host *host = hops[at].host; int n = 0;
+  for (; n < MAXADDR; n++) { if (host[n].addr) arr[n] = addr_or_name(n, host, num); else break; }
+  return n;
 }
 
-static const gchar *info_whois(int at, int wtyp) {
+static const gchar *info_whois(int at, int type) {
   static gchar whois_cache[MAXTTL][WHOIS_NDX_MAX][BUFF_SIZE];
   t_whois *whois = hops[at].whois;
-  gchar *elem = whois[0].elem[wtyp];
+  gchar *elem = whois[0].elem[type];
   if (elem) { // as a marker
-    gchar *s = whois_cache[at][wtyp];
-    if (!hops[at].wcached[wtyp]) {
+    gchar *s = whois_cache[at][type];
+    if (!hops[at].wcached[type]) {
       int l = g_snprintf(s, BUFF_SIZE, "%s", elem);
       for (int i = 1; (i < MAXADDR) && (l < BUFF_SIZE); i++) {
-        elem = whois[i].elem[wtyp];
+        elem = whois[i].elem[type];
         if (!elem) break;
         l += g_snprintf(s + l, BUFF_SIZE - l, "\n%s", elem);
       }
-      hops[at].wcached[wtyp] = true;
-      LOG("whois cache[%d,%d] updated with %s", at, wtyp, (s && s[0]) ? s : log_empty);
+      hops[at].wcached[type] = true;
+      LOG("whois cache[%d,%d] updated with %s", at, type, (s && s[0]) ? s : log_empty);
     }
     return s;
   }
   return NULL;
 }
 
-static const gchar *info_whois_nl(int at, int wtyp) {
+static const gchar *info_whois_nl(int at, int type) {
   static gchar whois_nl_cache[MAXTTL][WHOIS_NDX_MAX][MAXHOSTNAME];
   t_whois *whois = hops[at].whois;
-  gchar *elem = whois[0].elem[wtyp];
+  gchar *elem = whois[0].elem[type];
   if (elem) { // as a marker
-    gchar *s = whois_nl_cache[at][wtyp];
-    if (!hops[at].wcached_nl[wtyp]) {
+    gchar *s = whois_nl_cache[at][type];
+    if (!hops[at].wcached_nl[type]) {
       g_snprintf(s, MAXHOSTNAME, "%s", elem);
-      hops[at].wcached_nl[wtyp] = true;
-      LOG("whois_nl cache[%d,%d] updated with %s", at, wtyp, (s && s[0]) ? s : log_empty);
+      hops[at].wcached_nl[type] = true;
+      LOG("whois_nl cache[%d,%d] updated with %s", at, type, (s && s[0]) ? s : log_empty);
     }
     return s;
   }
   return NULL;
 }
 
-static void info_whois_arr(int at, int wtyp, const gchar* arr[MAXADDR]) {
-  t_whois *whois = hops[at].whois;
-  if (arr) for (int i = 0; i < MAXADDR; i++) arr[i] = whois[i].elem[wtyp];
+static int info_whois_arr(int at, int type, const gchar* arr[MAXADDR]) {
+  t_whois *whois = hops[at].whois; int n = 0;
+  for (; n < MAXADDR; n++) {
+    gchar *s = whois[n].elem[type];
+    if (s) arr[n] = s; else break;
+  }
+  return n;
 }
 
 static int prec(double v) { return ((v > 0) && (v < 10)) ? (v < 0.1 ? 2 : 1) : 0; }
@@ -274,7 +264,7 @@ static const gchar* fill_stat_rtt(int usec, gchar* buff, int size) {
   return buff;
 }
 
-static const gchar *stat_hop(int typ, t_hop *hop) {
+static const gchar *stat_hop(int type, t_hop *hop) {
   static gchar buff_loss[NUM_BUFF_SZ];
   static gchar buff_sent[NUM_BUFF_SZ];
   static gchar buff_recv[NUM_BUFF_SZ];
@@ -283,7 +273,7 @@ static const gchar *stat_hop(int typ, t_hop *hop) {
   static gchar buff_wrst[NUM_BUFF_SZ];
   static gchar buff_avrg[NUM_BUFF_SZ];
   static gchar buff_jttr[NUM_BUFF_SZ];
-  switch (typ) {
+  switch (type) {
     case ELEM_LOSS: return fill_stat_dbl(hop->loss, buff_loss, sizeof(buff_loss), "%", 0);
     case ELEM_SENT: return fill_stat_int(hop->sent, buff_sent, sizeof(buff_sent));
     case ELEM_RECV: return fill_stat_int(hop->recv, buff_recv, sizeof(buff_recv));
@@ -412,8 +402,8 @@ void stat_last_tx(int at) { // update last 'tx' unless done before
 
 #define IW_RET(elem, ndx) { return (elem) ? info_whois(at, elem, ndx) : NULL; }
 
-const gchar *stat_str_elem(int at, int typ) {
-  switch (typ) {
+const gchar *stat_str_elem(int at, int type) {
+  switch (type) {
     case ELEM_HOST: return info_host(at);
     case ELEM_AS:   return info_whois(at, WHOIS_AS_NDX);
     case ELEM_CC:   return info_whois(at, WHOIS_CC_NDX);
@@ -427,13 +417,13 @@ const gchar *stat_str_elem(int at, int typ) {
     case ELEM_WRST:
     case ELEM_AVRG:
     case ELEM_JTTR:
-      return stat_hop(typ, &hops[at]);
+      return stat_hop(type, &hops[at]);
   }
   return NULL;
 }
 
-static const gchar *stat_strnl_elem(int at, int typ) {
-  switch (typ) {
+static const gchar *stat_strnl_elem(int at, int type) {
+  switch (type) {
     case ELEM_HOST: return info_host_nl(at);
     case ELEM_AS:   return info_whois_nl(at, WHOIS_AS_NDX);
     case ELEM_CC:   return info_whois_nl(at, WHOIS_CC_NDX);
@@ -443,23 +433,26 @@ static const gchar *stat_strnl_elem(int at, int typ) {
   return NULL;
 }
 
-gboolean stat_str_arr(int at, int typ, const gchar* arr[MAXADDR]) {
-  switch (typ) {
-    case ELEM_HOST: info_host_arr(at, arr); break;
-    case ELEM_AS:   info_whois_arr(at, WHOIS_AS_NDX, arr); break;
-    case ELEM_CC:   info_whois_arr(at, WHOIS_CC_NDX, arr); break;
-    case ELEM_DESC: info_whois_arr(at, WHOIS_DESC_NDX, arr); break;
-    case ELEM_RT:   info_whois_arr(at, WHOIS_RT_NDX, arr); break;
-    case EX_ELEM_ADDR: info_addrhost(at, arr, true); break;
-    case EX_ELEM_HOST: info_addrhost(at, arr, false); break;
-    default: return false;
+int stat_str_arr(int at, int type, const gchar* arr[MAXADDR]) {
+  int n = 0;
+  if (arr)  {
+    memset(arr, 0, MAXADDR * sizeof(gchar*));
+    switch (type) {
+      case ELEM_HOST: n = info_host_arr(at, arr); break;
+      case ELEM_AS:   n = info_whois_arr(at, WHOIS_AS_NDX, arr); break;
+      case ELEM_CC:   n = info_whois_arr(at, WHOIS_CC_NDX, arr); break;
+      case ELEM_DESC: n = info_whois_arr(at, WHOIS_DESC_NDX, arr); break;
+      case ELEM_RT:   n = info_whois_arr(at, WHOIS_RT_NDX, arr); break;
+      case EX_ELEM_ADDR: n = info_addrhost(at, arr, true); break;
+      case EX_ELEM_HOST: n = info_addrhost(at, arr, false); break;
+    }
   }
-  return true;
+  return n;
 }
 
-double stat_dbl_elem(int at, int typ) {
+double stat_dbl_elem(int at, int type) {
   double re = -1;
-  switch (typ) {
+  switch (type) {
     case ELEM_LOSS: re = hops[at].loss; break;
     case ELEM_SENT: re = hops[at].sent; break;
     case ELEM_RECV: re = hops[at].recv; break;
@@ -472,9 +465,9 @@ double stat_dbl_elem(int at, int typ) {
   return re;
 }
 
-int stat_int_elem(int at, int typ) {
+int stat_int_elem(int at, int type) {
   int re = -1;
-  switch (typ) {
+  switch (type) {
     case ELEM_SENT: re = hops[at].sent; break;
     case ELEM_RECV: re = hops[at].recv; break;
     case ELEM_LAST: re = hops[at].last; break;
@@ -507,8 +500,8 @@ void stat_legend(int at, t_legend *data) {
   data->jt = stat_str_elem(at, ELEM_JTTR);
 }
 
-int stat_elem_max(int typ) {
-  switch (typ) {
+int stat_elem_max(int type) {
+  switch (type) {
     case ELEM_HOST: return opts.dns ? host_max.name : host_max.addr;
     case ELEM_AS:   return whois_max[WHOIS_AS_NDX];
     case ELEM_CC:   return whois_max[WHOIS_CC_NDX];
@@ -546,18 +539,9 @@ void stat_check_whois_max(gchar* elem[]) {
 
 void stat_whois_enabler(void) {
   gboolean enable = false;
-  for (int i = 0; i < ELEM_MAX; i++) switch (i) {
-    case ELEM_AS:
-    case ELEM_CC:
-    case ELEM_DESC:
-    case ELEM_RT:
-      if (statelem[i].enable && !enable) enable = true;
-      break;
-  }
-  if (enable != opts.whois) {
-    opts.whois = enable;
-    LOG("whois %sabled", enable ? "en" : "dis");
-  }
+  for (int i = 0; i < G_N_ELEMENTS(pingelem); i++)
+    if (IS_WHOIS_NDX(pingelem[i].type) && pingelem[i].enable) { enable = true; break; }
+  if (enable != opts.whois) { opts.whois = enable; LOG("whois %sabled", enable ? "en" : "dis"); }
 }
 
 void stat_run_whois_resolv(void) {
@@ -568,14 +552,13 @@ void stat_run_whois_resolv(void) {
   }
 }
 
-void stat_clean_elems(int typ) {
-  if (typ == ENT_EXP_INFO) {
-    statelem[ELEM_HOST].enable = statelem[ELEM_AS].enable = statelem[ELEM_CC].enable =
-    statelem[ELEM_DESC].enable = statelem[ELEM_RT].enable = false;
-  } else if (typ == ENT_EXP_STAT) {
-    statelem[ELEM_LOSS].enable = statelem[ELEM_SENT].enable = statelem[ELEM_RECV].enable =
-    statelem[ELEM_LAST].enable = statelem[ELEM_BEST].enable = statelem[ELEM_WRST].enable =
-    statelem[ELEM_AVRG].enable = statelem[ELEM_JTTR].enable = false;
+void stat_clean_elems(int type) {
+  if (type == ENT_EXP_INFO) {
+    for (int i = 0; i < G_N_ELEMENTS(pingelem); i++)
+      if (IS_INFO_NDX(pingelem[i].type)) pingelem[i].enable = false;
+  } else if (type == ENT_EXP_STAT) {
+    for (int i = 0; i < G_N_ELEMENTS(pingelem); i++)
+      if (IS_STAT_NDX(pingelem[i].type)) pingelem[i].enable = false;
   }
 }
 

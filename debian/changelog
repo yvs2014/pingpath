@@ -1,3 +1,9 @@
+pingpath (0.2.3) mantic noble; urgency=low
+
+  * retoss some view elements on a way to make them reorderable for DnD
+
+ -- yvs <VSYakovetsky@gmail.com>  Sun, 03 Mar 2024 11:35:44 +0200
+
 pingpath (0.2.2) mantic noble; urgency=low
 
   * make graph legend draggable

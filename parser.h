@@ -10,8 +10,8 @@ enum { OPT_TYPE_INT, OPT_TYPE_PAD, OPT_TYPE_INFO, OPT_TYPE_STAT, OPT_TYPE_RECAP,
 gboolean parser_init(void);
 void parser_parse(int at, char *input);
 gchar* parser_valid_target(const gchar *target);
-int parser_int(const gchar *str, int typ, const gchar *option, t_minmax range);
-const char* parser_str(const gchar *str, const gchar *option, int rx_ndx);
+int parser_int(const gchar *str, int type, const gchar *option, t_minmax range);
+char* parser_str(const gchar *str, const gchar *option, int cat);
 void parser_whois(gchar *buff, int sz, gchar* elem[]);
 t_minmax parser_range(gchar *range, const gchar *option);
 

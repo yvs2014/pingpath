@@ -66,11 +66,13 @@ static t_response_regex regexes[] = {
     PATT_TS " \\d+ bytes f" PATT_FROM ": " PATT_SEQ " ttl=(?<" REN_TTL ">\\d+) (?<" REN_SKIP ">time=.* ms )(?<" REN_INFO ">.*)" }},
 };
 
+#define NODUPCHARS "(?!.*(.).*\\1)"
+
 static t_parser_regex str_rx[OPT_TYPE_MAX] = {
   [OPT_TYPE_INT]   = { .pattern = "^\\d+$" },
   [OPT_TYPE_PAD]   = { .pattern = "^[\\da-fA-F]{1,32}$" },
-  [OPT_TYPE_INFO]  = { .pattern = "^[" INFO_PATT "]+$" },
-  [OPT_TYPE_STAT]  = { .pattern = "^[" STAT_PATT "]+$" },
+  [OPT_TYPE_INFO]  = { .pattern = "^" NODUPCHARS "[" INFO_PATT "]+$" },
+  [OPT_TYPE_STAT]  = { .pattern = "^" NODUPCHARS "[" STAT_PATT "]+$" },
   [OPT_TYPE_RECAP] = { .pattern = "^[" RECAP_PATT "]$" },
 };
 
@@ -122,13 +124,12 @@ static gboolean valid_mark(GMatchInfo* match, t_tseq *mark) {
   return true;
 }
 
-static gboolean valid_markhost(GMatchInfo* match, t_tseq* mark, t_host* host,
-    const char *typ, const char *line) {
-  if (!valid_mark(match, mark)) { DEBUG("wrong MARK in %s message: %s", typ, line); return false; }
+static gboolean valid_markhost(GMatchInfo* match, t_tseq* mark, t_host* host, const char *type, const char *line) {
+  if (!valid_mark(match, mark)) { DEBUG("wrong MARK in %s message: %s", type, line); return false; }
   host->addr = fetch_named_str(match, REN_ADDR);
   if (!host->addr) {
     host->addr = fetch_named_str(match, REN_IP);
-    if (!host->addr) { DEBUG("wrong HOST in %s message: %s", typ, line); return false; }
+    if (!host->addr) { DEBUG("wrong HOST in %s message: %s", type, line); return false; }
   }
   host->name = fetch_named_str(match, REN_NAME);
   return true;
@@ -265,14 +266,14 @@ void parser_parse(int at, char *input) {
   }
 }
 
-int parser_int(const gchar *str, int typ, const gchar *option, t_minmax mm) {
+int parser_int(const gchar *str, int type, const gchar *option, t_minmax mm) {
   gchar *val = parser_valid_int(option, str);
   if (!val) return -1;
   int n = atol(val); g_free(val);
   int min = (mm.min > 0) ? mm.min : 0;
   int max = (mm.max < INT_MAX) ? mm.max : INT_MAX;
   if ((n < min) || (n > max)) PARSER_MESG("%s: out of range[%d,%d]", option, min, max)
-  else switch (typ) {
+  else switch (type) {
     case ENT_STR_CYCLES:
     case ENT_STR_IVAL:
     case ENT_STR_LOGMAX:
@@ -287,13 +288,17 @@ int parser_int(const gchar *str, int typ, const gchar *option, t_minmax mm) {
   return -1;
 }
 
-const char* parser_str(const gchar *str, const gchar *option, int rx_ndx) {
-  static char str_buff[128];
-  g_strlcpy(str_buff, str, sizeof(str_buff));
-  char *val = g_strstrip(str_buff);
-  gboolean valid = g_regex_match(str_rx[rx_ndx].regex, val, 0, NULL);
-  if (valid) return val;
-  PARSER_MESG("%s: no match %s regex", option, str_rx[rx_ndx].pattern);
+#define PARSE_MAX_CHARS 128
+char* parser_str(const gchar *str, const gchar *option, int cat) {
+  char *buff = g_strndup(str, PARSE_MAX_CHARS);
+  if (buff) {
+    char *val = g_strdup(g_strstrip(buff)); g_free(buff);
+    if (val) {
+      gboolean valid = g_regex_match(str_rx[cat].regex, val, 0, NULL);
+      if (valid) return val;
+    } else WARN_("g_strdup()");
+    PARSER_MESG("%s: no match %s regex", option, str_rx[cat].pattern);
+  } else WARN_("g_strndup()");
   return NULL;
 }
 
