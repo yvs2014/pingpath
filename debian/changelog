@@ -1,3 +1,15 @@
+pingpath (0.2.4) mantic noble; urgency=low
+
+  * CLI: make -S and -I reorderable
+
+  * CLI: changed -G and -L values to reordable chars
+
+  * CLI: -T move legend on/off here
+
+  * manual corresponded to CLI changes
+
+ -- yvs <VSYakovetsky@gmail.com>  Tue, 05 Mar 2024 21:24:26 +0200
+
 pingpath (0.2.3) mantic noble; urgency=low
 
   * retoss some view elements on a way to make them reorderable for DnD

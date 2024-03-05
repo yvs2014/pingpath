@@ -16,8 +16,6 @@ enum { NONE = 0, RX = 1, TX = 2, RXTX = 3 };
 int hops_no = MAXTTL;
 int visibles = -1;
 
-#define IS_INFO_NDX(ndx) ((ELEM_HOST <= ndx) && (ndx <= ELEM_RT))
-#define IS_STAT_NDX(ndx) ((ELEM_LOSS <= ndx) && (ndx <= ELEM_JTTR))
 #define IS_WHOIS_NDX(ndx) ((ELEM_AS <= ndx) && (ndx <= ELEM_RT))
 
 static t_hop hops[MAXTTL];
@@ -527,13 +525,9 @@ void stat_check_hostname_max(int len) {
 }
 
 void stat_check_whois_max(gchar* elem[]) {
-  for (int i = 0; i < WHOIS_NDX_MAX; i++) {
-    if (elem[i]) {
-      int len = g_utf8_strlen(elem[i], MAXHOSTNAME);
-      if (len > whois_max[i]) {
-        whois_max[i] = len; pinger_set_width(wndx2endx[i], len);
-      }
-    }
+  for (int i = 0; i < WHOIS_NDX_MAX; i++) if (elem[i]) {
+    int len = g_utf8_strlen(elem[i], MAXHOSTNAME);
+    if (len > whois_max[i]) { whois_max[i] = len; pinger_set_width(wndx2endx[i], len); }
   }
 }
 
@@ -549,16 +543,6 @@ void stat_run_whois_resolv(void) {
     t_hop *hop = &hops[at];
     for (int i = 0; i < MAXADDR; i++)
       if (hop->host[i].addr) whois_resolv(hop, i);
-  }
-}
-
-void stat_clean_elems(int type) {
-  if (type == ENT_EXP_INFO) {
-    for (int i = 0; i < G_N_ELEMENTS(pingelem); i++)
-      if (IS_INFO_NDX(pingelem[i].type)) pingelem[i].enable = false;
-  } else if (type == ENT_EXP_STAT) {
-    for (int i = 0; i < G_N_ELEMENTS(pingelem); i++)
-      if (IS_STAT_NDX(pingelem[i].type)) pingelem[i].enable = false;
   }
 }
 

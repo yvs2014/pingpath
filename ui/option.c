@@ -48,11 +48,11 @@ t_ent_bool ent_bool[ENT_BOOL_MAX] = {
   [ENT_BOOL_LGHN] = { .en = { .type = ENT_BOOL_LGHN, .name = GRLG_LGHN_HDR },
     .valfn = graphelem_enabler, .valtype = GRLG_LGHN, .prefix = OPT_GRLG_HDR },
   [ENT_BOOL_MEAN] = { .en = { .type = ENT_BOOL_MEAN, .name = GREX_MEAN_HEADER },
-    .valfn = graphelem_enabler, .valtype = GREL_MEAN, .prefix = OPT_GREX_HDR },
+    .valfn = graphelem_enabler, .valtype = GREX_MEAN, .prefix = OPT_GREX_HDR },
   [ENT_BOOL_JRNG] = { .en = { .type = ENT_BOOL_JRNG, .name = GREX_JRNG_HEADER },
-    .valfn = graphelem_enabler, .valtype = GREL_JRNG, .prefix = OPT_GREX_HDR },
+    .valfn = graphelem_enabler, .valtype = GREX_JRNG, .prefix = OPT_GREX_HDR },
   [ENT_BOOL_AREA] = { .en = { .type = ENT_BOOL_AREA, .name = GREX_AREA_HEADER },
-    .valfn = graphelem_enabler, .valtype = GREL_AREA, .prefix = OPT_GREX_HDR },
+    .valfn = graphelem_enabler, .valtype = GREX_AREA, .prefix = OPT_GREX_HDR },
 };
 
 t_ent_str ent_str[ENT_STR_MAX] = {
@@ -80,7 +80,7 @@ static t_ent_exp ent_exp[ENT_EXP_MAX] = {
   [ENT_EXP_INFO] = { .c = {.en = {.type = ENT_EXP_INFO, .name = OPT_INFO_HEADER }}, .ndxs = info_ndxs },
   [ENT_EXP_STAT] = { .c = {.en = {.type = ENT_EXP_STAT, .name = OPT_STAT_HDR }},    .ndxs = stat_ndxs },
   [ENT_EXP_LGFL] = { .c = {.en = {.type = ENT_EXP_LGFL, .name = OPT_GRLG_HDR }},    .ndxs = grlg_ndxs },
-  [ENT_EXP_GREX] = { .c = {.en = {.type = ENT_EXP_GREX, .name = OPT_GREX_HDR }},    .ndxs = grel_ndxs },
+  [ENT_EXP_GREX] = { .c = {.en = {.type = ENT_EXP_GREX, .name = OPT_GREX_HDR }},    .ndxs = grex_ndxs },
 };
 
 static void min_cb(GtkWidget*, t_ent_spn*);
@@ -145,7 +145,8 @@ static void set_ed_texthint(t_ent_str *en) {
     gtk_entry_set_placeholder_text(GTK_ENTRY(en->input), en->hint);
 }
 
-static void toggled_dns(void) { stat_reset_cache(); pinger_update_tabs(NULL); }
+static void toggled_dns(void) { stat_reset_cache(); notifier_legend_remax(); pinger_update_tabs(NULL); }
+
 static void toggle_graph_update(void) { graphtab_graph_refresh(false); }
 
 static void toggle_colors(void) {

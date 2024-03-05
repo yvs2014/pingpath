@@ -53,7 +53,6 @@ static gboolean add_target_input(GtkWidget *bar) {
   g_return_val_if_fail(GTK_IS_HEADER_BAR(bar), false);
   GtkWidget *entry = gtk_entry_new();
   g_return_val_if_fail(GTK_IS_ENTRY(entry), false);
-//gtk_entry_set_has_frame(GTK_ENTRY(entry), false);
   gtk_entry_set_max_length(GTK_ENTRY(entry), MAXHOSTNAME);
   gchar *hint = ENTER_HINT;
   gtk_entry_set_placeholder_text(GTK_ENTRY(entry), hint);

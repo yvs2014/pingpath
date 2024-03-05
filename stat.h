@@ -51,7 +51,6 @@ void stat_check_hostname_max(int l);
 void stat_check_whois_max(gchar* elem[]);
 void stat_whois_enabler(void);
 void stat_run_whois_resolv(void);
-void stat_clean_elems(int type);
 
 extern int hops_no, visibles;
 extern t_type_elem pingelem[ELEM_MAX]; // map ping-tab indexes to elems

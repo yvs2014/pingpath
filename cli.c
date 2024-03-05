@@ -52,6 +52,20 @@ typedef struct t_config_section {
   t_config_option options[CNF_OPT_MAX];
 } t_config_section;
 
+#ifdef REORDER_DEBUGGING
+#define REORDER_DEBUG(fmt, ...) { if (verbose & 32) g_message("REORDER: " fmt, __VA_ARGS__); }
+static void cli_pr_elems(t_type_elem *elems, int max) {
+  GString *s = g_string_new(NULL);
+  for (int i = 0; i < max; i++)
+    g_string_append_printf(s, " %c%d", elems[i].enable ? '+' : '-', elems[i].type);
+  g_message("REORDER: elem:%s", s->str); g_string_free(s, true);
+}
+#define REORDER_PRINT_ELEMS(elems, max) { if (verbose & 32) cli_pr_elems(elems, max); }
+#else
+#define REORDER_DEBUG(...) {}
+#define REORDER_PRINT_ELEMS(...) {}
+#endif
+
 //
 
 static gboolean cli_int_opt(const char *name, const char *value, GError **error, int type, const char *hdr,
@@ -83,26 +97,6 @@ static gboolean cli_opt_s(const char *name, const char *value, t_opts *opts, GEr
 
 static gboolean cli_opt_g(const char *name, const char *value, t_opts *opts, GError **error) {
   return opts ? cli_int_opt(name, value, error, ENT_STR_GRAPH, OPT_GRAPH_HDR, 0, GRAPH_TYPE_MAX - 1, &opts->graph) : false;
-}
-
-#define MASK_NTH(nth) ((mask & (1 << (nth))) ? true : false)
-
-#define MASK_GR_ELEMS(min, max) { int i0 = min; for (int i = min; i < max; i++) { \
-  gboolean *pb = graphelem_enabler(i); if (pb) *pb = MASK_NTH(i - i0); }}
-
-static gboolean cli_opt_G(const char *name, const char *value, t_opts *opts, GError **error) {
-  int mask = 0, max = GREL_MAX - GRLG_MAX - 1;
-  if (!opts || !cli_int_opt(name, value, error, ENT_STR_GEXTRA, OPT_GREX_HDR, 0, (1 << max) - 1, &mask)) return false;
-  MASK_GR_ELEMS(GRLG_MAX + 1, GREL_MAX);
-  return true;
-}
-
-static gboolean cli_opt_L(const char *name, const char *value, t_opts *opts, GError **error) {
-  int mask = 0, max = GRLG_MAX - 1; // -NO, -DASH, +LGND
-  if (!opts || !cli_int_opt(name, value, error, ENT_STR_LEGEND, OPT_GRLG_HDR, 0, (1 << max) - 1, &mask)) return false;
-  opts->legend = mask & 1; mask >>= 1;
-  MASK_GR_ELEMS(GRLG_MAX + 1 - max, GRLG_MAX);
-  return true;
 }
 
 static gboolean cli_opt_t(const char *name, const char *value, t_opts *opts, GError **error) {
@@ -137,28 +131,57 @@ static gboolean cli_opt_t(const char *name, const char *value, t_opts *opts, GEr
   return okay;
 }
 
-static t_ent_bool* cli_infostat_entry(int c, int cat) {
-  static int infochar2ent[] = { ['h'] = ENT_BOOL_HOST, ['a'] = ENT_BOOL_AS, ['c'] = ENT_BOOL_CC,
-    ['d'] = ENT_BOOL_DESC, ['r'] = ENT_BOOL_RT };
-  static int statchar2ent[] = { ['l'] = ENT_BOOL_LOSS, ['s'] = ENT_BOOL_SENT, ['r'] = ENT_BOOL_RECV,
-    ['m'] = ENT_BOOL_LAST, ['b'] = ENT_BOOL_BEST, ['w'] = ENT_BOOL_WRST, ['a'] = ENT_BOOL_AVRG, ['j'] = ENT_BOOL_JTTR };
-  int ndx = 0;
-  if        (cat == OPT_TYPE_INFO) { // category: info
-    if (strchr(INFO_PATT, c)) ndx = infochar2ent[c];
-  } else if (cat == OPT_TYPE_STAT) { // category: stat
-    if (strchr(STAT_PATT, c)) ndx = statchar2ent[c];
-  }
-  return (ndx > 0) ? &ent_bool[ndx] : NULL;
-}
-
-static char* cli_opt_infostat(const char *value, int cat, const gchar *hdr) {
-  char *str = parser_str(value, hdr, cat);
-  if (str) for (const char *p = str; *p; p++) {
-    t_ent_bool *en = cli_infostat_entry(*p, cat);
+static char* cli_opt_charelem(char *str, const char *patt, int ch) {
+  if (str && patt && (ch >= 0)) for (const char *p = str; *p; p++) {
+    t_ent_bool *en = strchr(patt, *p) ? &ent_bool[char2ndx(ch, true, *p)] : NULL;
     if (!en) continue;
     gboolean *pb = EN_BOOLPTR(en);
     if (pb) { *pb = true; g_message("%s: %s: %s", en->prefix, en->en.name, TOGGLE_ON_HDR); }
   }
+  return str;
+}
+
+static char* reorder_patt(const char *str, const char *patt) {
+  char *order = g_strdup(patt);
+  if (order) {
+    char *o = order;
+    for (const char *p = patt, *pstr = str; *p; p++, o++)
+      if (strchr(str, *p)) { *o = *pstr; pstr++; };
+  } else WARN_("g_strdup()");
+  REORDER_DEBUG("in order: %s + %s => %s", patt, str, order);
+  return order;
+}
+
+static void reorder_elems(const char *str, t_elem_desc *desc) {
+  if (!str || !desc || !desc->elems || !desc->patt) return;
+  char *order = reorder_patt(str, desc->patt);
+  if (order && (strnlen(order, desc->len + 1) == desc->len)) {
+    t_type_elem *elems = &desc->elems[desc->min], newelems[desc->len];
+    int n = 0, sz = desc->len * sizeof(t_type_elem);
+    memmove(newelems, elems, sz);
+    for (const char *p = order; *p; p++, n++) {
+      int c = *p;
+      int ndx = char2ndx(desc->cat, true, c), type = char2ndx(desc->cat, false, c);
+      if ((type < 0) || (ndx < 0)) WARN("Not valid indexes: ent=%d elem=%d", ndx, type); else {
+        desc->ndxs[n] = ndx;
+        int endx = desc->t2n(type);
+        if (endx < 0) WARN("Unknown %d type", type);
+        else newelems[n] = desc->elems[endx];
+      }
+    }
+    desc->ndxs[n] = 0;
+    memmove(elems, newelems, sz);
+  } else WARN_("number of indexes are different to reorder");
+  g_free(order);
+}
+
+static char* cli_char_opts(int type, const char *value, int cat, t_elem_desc *desc, int max, const char *hdr) {
+  if (!desc || !desc->elems) return NULL;
+  REORDER_PRINT_ELEMS(desc->elems, max);
+  clean_elems(type);
+  char *str = cli_opt_charelem(parser_str(value, hdr, cat), desc->patt, desc->cat);
+  if (str) { if (str[0]) reorder_elems(str, desc); else g_message("%s: off", hdr); }
+  REORDER_PRINT_ELEMS(desc->elems, max);
   return str;
 }
 
@@ -169,8 +192,6 @@ static gboolean cli_opt_elem(const char *name, const char *value, GError **error
   if (!value) return false;
   char *str = NULL;
   switch (cat) {
-    case OPT_TYPE_INFO: stat_clean_elems(ENT_EXP_INFO); str = cli_opt_infostat(value, cat, OPT_INFO_HEADER); break;
-    case OPT_TYPE_STAT: stat_clean_elems(ENT_EXP_STAT); str = cli_opt_infostat(value, cat, OPT_STAT_HDR); break;
     case OPT_TYPE_PAD: {
       t_ent_str *en = &ent_str[ENT_STR_PLOAD];
       str = parser_str(value, en->en.name, cat);
@@ -179,6 +200,14 @@ static gboolean cli_opt_elem(const char *name, const char *value, GError **error
         g_message("%s: %s", en->en.name, str);
       }
     } break;
+    case OPT_TYPE_INFO:
+      str = cli_char_opts(ENT_EXP_INFO, value, cat, &info_desc, ELEM_MAX, OPT_INFO_HEADER); break;
+    case OPT_TYPE_STAT:
+      str = cli_char_opts(ENT_EXP_STAT, value, cat, &stat_desc, ELEM_MAX, OPT_STAT_HDR);    break;
+    case OPT_TYPE_GRLG:
+      str = cli_char_opts(ENT_EXP_LGFL, value, cat, &grlg_desc, GRGR_MAX, OPT_GRLG_HDR);    break;
+    case OPT_TYPE_GREX:
+      str = cli_char_opts(ENT_EXP_GREX, value, cat, &grex_desc, GRGR_MAX, OPT_GREX_HDR);    break;
     case OPT_TYPE_RECAP: {
       str = parser_str(value, OPT_RECAP_HDR, OPT_TYPE_RECAP);
       if (str) { opts.recap = str[0]; g_message("Summary: %s", RECAP_TYPE_EXPAND(opts.recap)); }
@@ -200,13 +229,22 @@ static gboolean cli_opt_S(const char *name, const char *value, gpointer unused, 
   return cli_opt_elem(name, value, error, OPT_TYPE_STAT);
 }
 
+static gboolean cli_opt_L(const char *name, const char *value, t_opts *opts, GError **error) {
+  return cli_opt_elem(name, value, error, OPT_TYPE_GRLG);
+}
+
+static gboolean cli_opt_G(const char *name, const char *value, t_opts *opts, GError **error) {
+  return cli_opt_elem(name, value, error, OPT_TYPE_GREX);
+}
+
 static gboolean cli_opt_T(const char *name, const char *value, t_opts *opts, GError **error) {
   if (!opts) return false;
-  int mask = opts->darkgraph | (opts->darkgraph << 1);
-  gboolean re = cli_int_opt(name, value, error, ENT_STR_THEME, "Theme dark/light bits", 0, 3, &mask);
+  int mask = opts->darktheme | (opts->darkgraph << 1) | (opts->legend << 2);
+  gboolean re = cli_int_opt(name, value, error, ENT_STR_THEME, "Theme bits", 0, 7, &mask);
   if (re) {
     opts->darktheme = (mask & 0x1) ? true : false;
     opts->darkgraph = (mask & 0x2) ? true : false;
+    opts->legend    = (mask & 0x4) ? true : false;
   }
   return re;
 }

@@ -9,7 +9,7 @@
 #endif
 
 #define APPNAME "pingpath"
-#define VERSION "0.2.3"
+#define VERSION "0.2.4"
 
 #define X_RES 1024
 #define Y_RES 720
@@ -34,6 +34,8 @@
 
 #define INFO_PATT    "hacdr"
 #define STAT_PATT    "lsrmbwaj"
+#define GRLG_PATT    "dch"
+#define GREX_PATT    "lra"
 
 #ifdef WITH_JSON
 #define RECAP_PATT   "tcjJ"
@@ -96,11 +98,13 @@
 // verbose & 4:  dns
 // verbose & 8:  whois
 // verbose & 16: config
+// verbose & 32: reorder
 #define LOGGING 1
 #define DEBUGGING 1
 #define DNS_DEBUGGING 1
 #define WHOIS_DEBUGGING 1
 #define CONFIG_DEBUGGING 1
+#define REORDER_DEBUGGING 1
 
 #define LOG(fmt, ...) { VERBOSE(fmt, __VA_ARGS__); log_add("[%s] " fmt, timestampit(), __VA_ARGS__); }
 #define LOG_(mesg) { VERBOSE("%s", mesg); log_add("[%s] %s", timestampit(), mesg); }
@@ -264,7 +268,11 @@ enum { ELEM_NO, ELEM_HOST, ELEM_AS, ELEM_CC, ELEM_DESC, ELEM_RT, ELEM_FILL,
   ELEM_LOSS, ELEM_SENT, ELEM_RECV, ELEM_LAST, ELEM_BEST, ELEM_WRST, ELEM_AVRG, ELEM_JTTR, ELEM_MAX,
   EX_ELEM_ADDR, EX_ELEM_HOST, EX_ELEM_MAX };
 
-enum { GRLG_NO, GRLG_DASH, GRLG_AVJT, GRLG_CCAS, GRLG_LGHN, GRLG_MAX, GREL_MEAN, GREL_JRNG, GREL_AREA, GREL_MAX };
+enum { GRLG_NO, GRLG_DASH, GRLG_AVJT, GRLG_CCAS, GRLG_LGHN, GREX_MEAN, GREX_JRNG, GREX_AREA, GRGR_MAX };
+#define GRLG_MIN GRLG_AVJT
+#define GRLG_MAX (GRLG_LGHN + 1)
+
+enum { INFO_CHAR, STAT_CHAR, GRLG_CHAR, GREX_CHAR };
 
 enum { WHOIS_AS_NDX, WHOIS_CC_NDX, WHOIS_DESC_NDX, WHOIS_RT_NDX, WHOIS_NDX_MAX };
 
@@ -351,6 +359,16 @@ typedef struct t_legend {
   const gchar *name, *as, *cc, *av, *jt;
 } t_legend;
 
+typedef int (*type2ndx_fn)(int);
+
+typedef struct elem_desc {
+  int *ndxs;
+  t_type_elem *elems;
+  const int min, len, cat;
+  const char *patt;
+  type2ndx_fn t2n;
+} t_elem_desc;
+
 extern const char *appver;
 extern const char *unkn_error;
 extern const char *unkn_field;
@@ -362,21 +380,23 @@ extern gint verbose, start_page;
 
 extern t_tab* nb_tabs[TAB_NDX_MAX];
 extern t_type_elem pingelem[ELEM_MAX];
-extern t_type_elem graphelem[GREL_MAX];
+extern int info_ndxs[], stat_ndxs[];
+extern t_type_elem graphelem[GRGR_MAX];
+extern int grlg_ndxs[], grex_ndxs[];
+extern t_elem_desc info_desc, stat_desc, grlg_desc, grex_desc;
+
 extern const double colors[][3];
 extern const int n_colors;
-extern int info_ndxs[];
-extern int stat_ndxs[];
-extern int grlg_ndxs[];
-extern int grel_ndxs[];
 
 gchar* get_nth_color(int i);
 
+int char2ndx(int cat, gboolean ent, char c);
 gboolean*  pingelem_enabler(int type);
 gboolean* graphelem_enabler(int type);
 int  pingelem_type2ndx(int type);
 int graphelem_type2ndx(int type);
 gboolean is_grelem_enabled(int type);
+void clean_elems(int type);
 
 char* rtver(int ndx);
 const char *timestampit(void);
@@ -396,7 +416,11 @@ extern void log_add(const gchar *fmt, ...);
 
 #define UPDATE_LABEL(label, str) { const gchar *txt = gtk_label_get_text(GTK_LABEL(label)); \
   if (STR_NEQ(txt, str)) gtk_label_set_text(GTK_LABEL(label), str); }
+#define UPDATE_LABMAX(label, str, max) { const gchar *txt = gtk_label_get_text(GTK_LABEL(label)); \
+  if (STR_NEQ(txt, str)) gtk_label_set_text(GTK_LABEL(label), str); \
+  if (str) { int len = g_utf8_strlen(str, MAXHOSTNAME); if (len > (max)) { (max) = len; }}}
 
 #define TW_TW(tw, widget, perm, dyn) { (tw).w = widget; (tw).css = perm; (tw).col = dyn; }
+#define IS_GRLG_NDX(ndx) ((GRLG_AVJT <= ndx) && (ndx <= GRLG_LGHN))
 
 #endif

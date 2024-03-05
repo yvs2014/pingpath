@@ -149,10 +149,12 @@ Toggle dark/light themes according to
 Main theme (0 - light, 1 - dark)
 .It Cm 2nd
 Graph theme (0 - light, 1 - dark)
+.It Cm 3rd
+Graphs with legend
 .El
 Default
-.Ar 1
-(dark main, light graph)
+.Ar 5
+(dark main, light graph, legend)
 .El
 .Bl -tag -width Ds
 .It Fl g, Fl -graph Ar TYPE
@@ -172,32 +174,30 @@ Default
 .Ar 3
 .El
 .Bl -tag -width Ds
-.It Fl G, Fl -extra Ar BITS
+.It Fl G, Fl -extra Ar KEYS
 Display extra elements on graphs according to
-.Ar bits :
+.Ar keys :
 .Bl -tag -offset Ds -compact
-.It Cm 1st
+.It Cm l
 Average line
-.It Cm 2nd
+.It Cm r
 Jitter range
-.It Cm 3rd
+.It Cm a
 Jitter area
 .El
 Default
 .Ar none
 .El
 .Bl -tag -width Ds
-.It Fl L, Fl -legend Ar BITS
+.It Fl L, Fl -legend Ar KEYS
 Display graph legend and its fields according to
-.Ar bits :
+.Ar keys :
 .Bl -tag -offset Ds -compact
-.It Cm 1st
-Display legend fields
-.It Cm 2nd
-Field "Average RTT ± Jitter"
-.It Cm 3rd
+.It Cm d
+Field "Average Delay ± Jitter"
+.It Cm c
 Field "Country Code : AS Number"
-.It Cm 4th
+.It Cm h
 Field "Hopname"
 .El
 Default
@@ -227,15 +227,17 @@ Print debug messages to stdout according to bits of
 .Ar level :
 .Bl -tag -offset Ds -compact
 .It Cm 1st
-main log
+(1)  main log
 .It Cm 2nd
-common debug
+(2)  common debug
 .It Cm 3rd
-dns
+(4)  dns
 .It Cm 4th
-whois
+(8)  whois
 .It Cm 5th
-config
+(16) config
+.It Cm 6th
+(32) reorder
 .El
 Default
 .Ar none

@@ -71,8 +71,10 @@ static t_response_regex regexes[] = {
 static t_parser_regex str_rx[OPT_TYPE_MAX] = {
   [OPT_TYPE_INT]   = { .pattern = "^\\d+$" },
   [OPT_TYPE_PAD]   = { .pattern = "^[\\da-fA-F]{1,32}$" },
-  [OPT_TYPE_INFO]  = { .pattern = "^" NODUPCHARS "[" INFO_PATT "]+$" },
-  [OPT_TYPE_STAT]  = { .pattern = "^" NODUPCHARS "[" STAT_PATT "]+$" },
+  [OPT_TYPE_INFO]  = { .pattern = "^" NODUPCHARS "[" INFO_PATT "]*$" },
+  [OPT_TYPE_STAT]  = { .pattern = "^" NODUPCHARS "[" STAT_PATT "]*$" },
+  [OPT_TYPE_GRLG]  = { .pattern = "^" NODUPCHARS "[" GRLG_PATT "]*$" },
+  [OPT_TYPE_GREX]  = { .pattern = "^" NODUPCHARS "[" GREX_PATT "]*$" },
   [OPT_TYPE_RECAP] = { .pattern = "^[" RECAP_PATT "]$" },
 };
 
@@ -306,7 +308,7 @@ gchar* parser_valid_target(const gchar *target) {
   if (!target || !target[0]) return NULL;
   gchar *copy = g_strdup(target);
   gchar *hostname = NULL, *s = g_strstrip(copy);
-  int len = g_utf8_strlen(s, MAXHOSTNAME + 1);
+  int len = s ? g_utf8_strlen(s, MAXHOSTNAME + 1) : 0;
   if (len && target_meet_all_conditions(s, len, MAXHOSTNAME)) hostname = g_strdup(s);
   g_free(copy);
   return hostname;

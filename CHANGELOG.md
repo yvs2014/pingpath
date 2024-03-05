@@ -1,3 +1,9 @@
+## 0.2.4
+- CLI: make -S and -I reorderable
+- CLI: changed -G and -L values to reordable chars
+- CLI: -T move legend on/off here
+- manual corresponded to CLI changes
+
 ## 0.2.3
 - retoss some view elements on a way to make them reorderable for DnD
 

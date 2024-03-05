@@ -32,23 +32,16 @@ t_type_elem pingelem[ELEM_MAX] = {
   [ELEM_JTTR] = { .type = ELEM_JTTR, .enable = true, .name = ELEM_JTTR_HDR, .tip = ELEM_JTTR_TIP },
 };
 
-int info_ndxs[] = { ENT_BOOL_HOST, ENT_BOOL_AS, ENT_BOOL_CC, ENT_BOOL_DESC, ENT_BOOL_RT, 0 };
-int stat_ndxs[] = { ENT_BOOL_LOSS, ENT_BOOL_SENT, ENT_BOOL_RECV, ENT_BOOL_LAST, ENT_BOOL_BEST, ENT_BOOL_WRST,
-  ENT_BOOL_AVRG, ENT_BOOL_JTTR, 0 };
-
-t_type_elem graphelem[GREL_MAX] = {
+t_type_elem graphelem[GRGR_MAX] = {
   [GRLG_NO]   = { .type = GRLG_NO,   .enable = true, .name = "" },
   [GRLG_DASH] = { .type = GRLG_DASH, .enable = true, .name = GRLG_DASH_HEADER },
   [GRLG_AVJT] = { .type = GRLG_AVJT, .enable = true, .name = GRLG_AVJT_HEADER },
   [GRLG_CCAS] = { .type = GRLG_CCAS, .enable = true, .name = GRLG_CCAS_HEADER },
   [GRLG_LGHN] = { .type = GRLG_LGHN, .enable = true, .name = GRLG_LGHN_HDR    },
-  [GREL_MEAN] = { .type = GREL_MEAN,                 .name = GREX_MEAN_HDR    },
-  [GREL_JRNG] = { .type = GREL_JRNG,                 .name = GREX_JRNG_HDR    },
-  [GREL_AREA] = { .type = GREL_AREA,                 .name = GREX_AREA_HDR    },
+  [GREX_MEAN] = { .type = GREX_MEAN,                 .name = GREX_MEAN_HDR    },
+  [GREX_JRNG] = { .type = GREX_JRNG,                 .name = GREX_JRNG_HDR    },
+  [GREX_AREA] = { .type = GREX_AREA,                 .name = GREX_AREA_HDR    },
 };
-
-int grlg_ndxs[] = { ENT_BOOL_AVJT, ENT_BOOL_CCAS, ENT_BOOL_LGHN, 0 };
-int grel_ndxs[] = { ENT_BOOL_MEAN, ENT_BOOL_JRNG, ENT_BOOL_AREA, 0 };
 
 const double colors[][3] = { // 5x6 is enough for MAXTTL=30
   {1, 0, 0},     {0, 1, 0},     {0, 0, 1},     {1, 1, 0},         {1, 0, 1},         {0, 1, 1},
@@ -59,6 +52,81 @@ const double colors[][3] = { // 5x6 is enough for MAXTTL=30
 };
 
 const int n_colors = G_N_ELEMENTS(colors);
+
+//
+
+static int elem_type2ndx(int type, t_type_elem *elem, int max) {
+  for (int i = 0; i < max; i++) if (type == elem[i].type) return i;
+  return -1;
+}
+int  pingelem_type2ndx(int type) { return elem_type2ndx(type, pingelem,  G_N_ELEMENTS(pingelem));  }
+int graphelem_type2ndx(int type) { return elem_type2ndx(type, graphelem, G_N_ELEMENTS(graphelem)); }
+
+static const char* char_pattern[] = { [INFO_CHAR] = INFO_PATT, [STAT_CHAR] = STAT_PATT,
+  [GRLG_CHAR] = GRLG_PATT, [GREX_CHAR] = GREX_PATT };
+
+#define MAXCHARS_IN_PATTERN 8
+static int char_ndxs[][MAXCHARS_IN_PATTERN][2] = { // max pattern is 8 chars
+  [INFO_CHAR] = {
+    {ENT_BOOL_HOST, ELEM_HOST}, // h
+    {ENT_BOOL_AS,   ELEM_AS},   // a
+    {ENT_BOOL_CC,   ELEM_CC},   // c
+    {ENT_BOOL_DESC, ELEM_DESC}, // d
+    {ENT_BOOL_RT,   ELEM_RT},   // r
+  },
+  [STAT_CHAR] = {
+    {ENT_BOOL_LOSS, ELEM_LOSS}, // l
+    {ENT_BOOL_SENT, ELEM_SENT}, // s
+    {ENT_BOOL_RECV, ELEM_RECV}, // r
+    {ENT_BOOL_LAST, ELEM_LAST}, // m
+    {ENT_BOOL_BEST, ELEM_BEST}, // b
+    {ENT_BOOL_WRST, ELEM_WRST}, // w
+    {ENT_BOOL_AVRG, ELEM_AVRG}, // a
+    {ENT_BOOL_JTTR, ELEM_JTTR}, // j
+  },
+  [GRLG_CHAR] = {
+    {ENT_BOOL_AVJT, GRLG_AVJT}, // d
+    {ENT_BOOL_CCAS, GRLG_CCAS}, // c
+    {ENT_BOOL_LGHN, GRLG_LGHN}, // h
+  },
+  [GREX_CHAR] = {
+    {ENT_BOOL_MEAN, GREX_MEAN}, // l
+    {ENT_BOOL_JRNG, GREX_JRNG}, // r
+    {ENT_BOOL_AREA, GREX_AREA}, // a
+  },
+};
+
+int char2ndx(int cat, gboolean ent, char c) {
+  int n = -1;
+  switch (cat) {
+    case INFO_CHAR:
+    case STAT_CHAR:
+    case GRLG_CHAR:
+    case GREX_CHAR: {
+      char *p = strchr(char_pattern[cat], c);
+      if (p) {
+        int pos = p - char_pattern[cat];
+        if (pos < MAXCHARS_IN_PATTERN) n = char_ndxs[cat][pos][ent ? 0 : 1];
+      }
+    } break;
+  }
+  return n;
+}
+
+int info_ndxs[] = { ENT_BOOL_HOST, ENT_BOOL_AS, ENT_BOOL_CC, ENT_BOOL_DESC, ENT_BOOL_RT, 0 };
+t_elem_desc info_desc = { .ndxs = info_ndxs, .elems = pingelem, .min = ELEM_HOST, .len = ELEM_RT - ELEM_HOST + 1,
+  .cat = INFO_CHAR, .patt = INFO_PATT, .t2n = pingelem_type2ndx };
+int stat_ndxs[] = { ENT_BOOL_LOSS, ENT_BOOL_SENT, ENT_BOOL_RECV, ENT_BOOL_LAST, ENT_BOOL_BEST,
+  ENT_BOOL_WRST, ENT_BOOL_AVRG, ENT_BOOL_JTTR, 0 };
+t_elem_desc stat_desc = { .ndxs = stat_ndxs, .elems = pingelem, .min = ELEM_LOSS, .len = ELEM_JTTR - ELEM_LOSS + 1,
+  .cat = STAT_CHAR, .patt = STAT_PATT, .t2n = pingelem_type2ndx };
+
+int grlg_ndxs[] = { ENT_BOOL_AVJT, ENT_BOOL_CCAS, ENT_BOOL_LGHN, 0 };
+t_elem_desc grlg_desc = { .ndxs = grlg_ndxs, .elems = graphelem, .min = GRLG_AVJT, .len = GRLG_LGHN - GRLG_AVJT + 1,
+  .cat = GRLG_CHAR, .patt = GRLG_PATT, .t2n = graphelem_type2ndx };
+int grex_ndxs[] = { ENT_BOOL_MEAN, ENT_BOOL_JRNG, ENT_BOOL_AREA, 0 };
+t_elem_desc grex_desc = { .ndxs = grex_ndxs, .elems = graphelem, .min = GREX_MEAN, .len = GREX_AREA - GREX_MEAN + 1,
+  .cat = GREX_CHAR, .patt = GREX_PATT, .t2n = graphelem_type2ndx };
 
 //
 
@@ -76,17 +144,21 @@ static gboolean* elem_enabler(int type, t_type_elem *elem, int max) {
 inline gboolean*  pingelem_enabler(int type) { return elem_enabler(type, pingelem,  G_N_ELEMENTS(pingelem));  }
 inline gboolean* graphelem_enabler(int type) { return elem_enabler(type, graphelem, G_N_ELEMENTS(graphelem)); }
 
-int elem_type2ndx(int type, t_type_elem *elem, int max) {
-  for (int i = 0; i < max; i++) if (type == elem[i].type) return i;
-  return -1;
-}
-inline int  pingelem_type2ndx(int type) { return elem_type2ndx(type, pingelem,  G_N_ELEMENTS(pingelem));  }
-inline int graphelem_type2ndx(int type) { return elem_type2ndx(type, graphelem, G_N_ELEMENTS(graphelem)); }
-
-#define IS_GR_NDX(ndx) (((GRLG_DASH <= ndx) && (ndx <= GRLG_LGHN)) || ((GREL_MEAN <= ndx) && (ndx <= GREL_AREA)))
 gboolean is_grelem_enabled(int type) {
   int ndx = graphelem_type2ndx(type);
-  return IS_GR_NDX(ndx) ? graphelem[ndx].enable : false;
+  return ((ndx >= 0) && (ndx < GRGR_MAX)) ? graphelem[ndx].enable : false;
+}
+
+#define CLEAN_ELEM_LOOP(elems, min, max) { for (int i = 0; i < G_N_ELEMENTS(elems); i++) \
+  if ((min <= elems[i].type) && (elems[i].type <= max)) elems[i].enable = false; }
+
+void clean_elems(int type) {
+  switch (type) {
+    case ENT_EXP_INFO: CLEAN_ELEM_LOOP(pingelem,  ELEM_HOST, ELEM_RT);   break;
+    case ENT_EXP_STAT: CLEAN_ELEM_LOOP(pingelem,  ELEM_LOSS, ELEM_JTTR); break;
+    case ENT_EXP_LGFL: CLEAN_ELEM_LOOP(graphelem, GRLG_AVJT, GRLG_LGHN); break;
+    case ENT_EXP_GREX: CLEAN_ELEM_LOOP(graphelem, GREX_MEAN, GREX_AREA); break;
+  }
 }
 
 const char *timestampit(void) {
