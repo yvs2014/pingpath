@@ -8,7 +8,6 @@ void pingtab_update(void);
 void pingtab_clear(void);
 void pingtab_vis_rows(int no);
 void pingtab_vis_cols(void);
-void pingtab_set_width(int type, int max);
 void pingtab_set_error(const gchar *error);
 
 #endif

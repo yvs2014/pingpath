@@ -77,10 +77,10 @@ t_ent_str ent_str[ENT_STR_MAX] = {
 };
 
 static t_ent_exp ent_exp[ENT_EXP_MAX] = {
-  [ENT_EXP_INFO] = { .c = {.en = {.type = ENT_EXP_INFO, .name = OPT_INFO_HEADER }}, .ndxs = info_ndxs },
-  [ENT_EXP_STAT] = { .c = {.en = {.type = ENT_EXP_STAT, .name = OPT_STAT_HDR }},    .ndxs = stat_ndxs },
-  [ENT_EXP_LGFL] = { .c = {.en = {.type = ENT_EXP_LGFL, .name = OPT_GRLG_HDR }},    .ndxs = grlg_ndxs },
-  [ENT_EXP_GREX] = { .c = {.en = {.type = ENT_EXP_GREX, .name = OPT_GREX_HDR }},    .ndxs = grex_ndxs },
+  [ENT_EXP_INFO] = { .c = {.en = {.type = ENT_EXP_INFO, .name = OPT_INFO_HEADER }}, .desc = &info_desc },
+  [ENT_EXP_STAT] = { .c = {.en = {.type = ENT_EXP_STAT, .name = OPT_STAT_HDR }},    .desc = &stat_desc },
+  [ENT_EXP_LGFL] = { .c = {.en = {.type = ENT_EXP_LGFL, .name = OPT_GRLG_HDR }},    .desc = &grlg_desc },
+  [ENT_EXP_GREX] = { .c = {.en = {.type = ENT_EXP_GREX, .name = OPT_GREX_HDR }},    .desc = &grex_desc },
 };
 
 static void min_cb(GtkWidget*, t_ent_spn*);
@@ -145,7 +145,7 @@ static void set_ed_texthint(t_ent_str *en) {
     gtk_entry_set_placeholder_text(GTK_ENTRY(en->input), en->hint);
 }
 
-static void toggled_dns(void) { stat_reset_cache(); notifier_legend_remax(); pinger_update_tabs(NULL); }
+static void toggled_dns(void) { stat_reset_cache(); notifier_legend_update(); pinger_update_tabs(NULL); }
 
 static void toggle_graph_update(void) { graphtab_graph_refresh(false); }
 
@@ -405,9 +405,15 @@ static GtkWidget* add_expand_common(GtkWidget* list, t_ent_exp_common *en) {
 static GtkWidget* add_opt_expand(GtkWidget* list, t_ent_exp *en) {
   if (!en) return NULL;
   GtkWidget *box = add_expand_common(list, &en->c);
-  if (GTK_IS_BOX(box) && en->c.sub)
-    for (int *pi = en->ndxs; *pi; pi++)
-      add_opt_check(en->c.sub, &ent_bool[*pi]);
+  if (GTK_IS_BOX(box) && en->c.sub && en->desc) {
+    t_elem_desc *desc = en->desc; type2ndx_fn type2ndx = desc->t2e;
+    if (type2ndx) for (int i = desc->mm.min; i <= desc->mm.max; i++) {
+      int type = desc->elems[i].type;
+      int ndx = type2ndx(type);
+      if (ndx < 0) WARN("Unknown %d type", type);
+      else add_opt_check(en->c.sub, &ent_bool[ndx]);
+    }
+  }
   return box;
 }
 
@@ -517,6 +523,8 @@ static gboolean create_optmenu(GtkWidget *bar, const char **icons, const char *t
 }
 
 static gboolean create_ping_optmenu(GtkWidget *list) {
+  static GtkWidget *ping_optmenu_list;
+  if (list) ping_optmenu_list = list; else list = ping_optmenu_list;
   g_return_val_if_fail(GTK_IS_LIST_BOX(list), false);
   gboolean okay = true;
   gtk_list_box_remove_all(GTK_LIST_BOX(list));
@@ -573,6 +581,8 @@ void option_update(void) {
   ENT_LOOP_EXP(ent_spn);
   ENT_LOOP_EXP(ent_rad);
 }
+
+gboolean option_update_pingmenu(void) { return create_ping_optmenu(NULL); }
 
 void option_toggled(int ndx) {
   if ((ndx >= 0) && (ndx < ENT_BOOL_MAX)) {

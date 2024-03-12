@@ -3,10 +3,6 @@
 
 #include "common.h"
 
-typedef struct host_max {
-  int addr, name;
-} t_host_max;
-
 typedef struct ping_success {
   t_tseq mark;
   t_host host;
@@ -45,10 +41,6 @@ double stat_dbl_elem(int at, int type);
 int stat_int_elem(int at, int type);
 void stat_rseq(int at, t_rseq *data);
 void stat_legend(int at, t_legend *data);
-int stat_elem_max(int type);
-void stat_check_hostaddr_max(int l);
-void stat_check_hostname_max(int l);
-void stat_check_whois_max(gchar* elem[]);
 void stat_whois_enabler(void);
 void stat_run_whois_resolv(void);
 

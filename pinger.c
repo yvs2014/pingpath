@@ -75,25 +75,32 @@ static gchar* last_error(void) {
 
 static void pinger_error_free(void) { for (int i = 0; i < MAXTTL; i++) pinger_nth_free_error(i); }
 
+#define PN_PRMAX(name) { const gchar *str = name; if (str && str[0]) { \
+  int len = g_utf8_strlen(str, MAXHOSTNAME); if (len > maxes[j]) maxes[j] = len; }}
+
 static void pinger_print_text(gboolean csv) {
   csv ? g_print("%s%c%s\n", timestampit(), CSV_DEL, opts.target) :
     g_print("[%s] %s\n", timestampit(), opts.target);
   PRINT_CSV_DIV;
   if (pinger_state.gotdata) {
     if (csv) g_print("%s", OPT_TTL_HDR); else HOP_INDENT;
-    for (int ndx = ELEM_NO + 1; ndx < ELEM_MAX; ndx++) { // header
-      int type = pingelem[ndx].type;
-      if (pingelem[ndx].enable && (type != ELEM_FILL))
-        PRINT_TEXT_ELEM(pingelem[ndx].name, stat_elem_max(type));
+    int lim = (hops_no > visibles) ? (visibles + 1) : hops_no;
+    //
+    int maxes[ELEM_MAX]; memset(maxes, 0, sizeof(maxes));
+    for (int j = 0; j < ELEM_MAX; j++) PN_PRMAX(pingelem[j].name);
+    for (int i = opts.min; i < lim; i++) for (int j = 0; j < ELEM_MAX; j++) PN_PRMAX(stat_str_elem(i, pingelem[j].type));
+    //
+    for (int j = ELEM_NO + 1; j < ELEM_MAX; j++) { // header
+      int type = pingelem[j].type;
+      if (pingelem[j].enable && (type != ELEM_FILL)) PRINT_TEXT_ELEM(pingelem[j].name, maxes[j]);
     }
     g_print("\n");
     PRINT_CSV_DIV;
-    int lim = (hops_no > visibles) ? (visibles + 1) : hops_no;
     for (int i = opts.min; i < lim; i++) { // data per hop
       const gchar* elems[G_N_ELEMENTS(pingelem)][MAXADDR]; memset(elems, 0, sizeof(elems));
       int lines = 0;
-      for (int ndx = 0; ndx < G_N_ELEMENTS(pingelem); ndx++) if (pingelem[ndx].enable) {
-        int type = pingelem[ndx].type;
+      for (int j = 0; j < G_N_ELEMENTS(pingelem); j++) if (pingelem[j].enable) {
+        int type = pingelem[j].type;
         switch (type) {
           case ELEM_NO:
             csv ? g_print("%d", i + 1) : g_print("%2d.", i + 1); break;
@@ -102,8 +109,8 @@ static void pinger_print_text(gboolean csv) {
           case ELEM_CC:
           case ELEM_DESC:
           case ELEM_RT: {
-            int n = stat_str_arr(i, type, elems[ndx]); if (lines < n) lines = n;
-            PRINT_TEXT_ELEM(elems[ndx][0] ? elems[ndx][0] : "", stat_elem_max(type));
+            int n = stat_str_arr(i, type, elems[j]); if (lines < n) lines = n;
+            PRINT_TEXT_ELEM(elems[j][0] ? elems[j][0] : "", maxes[j]);
           } break;
           case ELEM_LOSS:
           case ELEM_SENT:
@@ -113,15 +120,14 @@ static void pinger_print_text(gboolean csv) {
           case ELEM_WRST:
           case ELEM_AVRG:
           case ELEM_JTTR:
-            PRINT_TEXT_ELEM(stat_str_elem(i, type), stat_elem_max(type)); break;
+            PRINT_TEXT_ELEM(stat_str_elem(i, type), maxes[j]); break;
         }
       }
       g_print("\n");
-      for (int j = 1; j < lines; j++) { // multihop
+      for (int k = 1; k < lines; k++) { // multihop
         if (!csv) HOP_INDENT;
-        for (int ndx = ELEM_HOST; ndx <= ELEM_RT; ndx++)
-          if (pingelem[ndx].enable)
-            PRINT_TEXT_ELEM(elems[ndx][j] ? elems[ndx][j] : "", stat_elem_max(pingelem[ndx].type));
+        for (int j = ELEM_HOST; j <= ELEM_RT; j++)
+          if (pingelem[j].enable) PRINT_TEXT_ELEM(elems[j][k] ? elems[j][k] : "", maxes[j]);
         g_print("\n");
       }
     }
@@ -596,7 +602,6 @@ int pinger_update_tabs(int *pseq) {
 }
 
 inline void pinger_vis_rows(int no) { if (!opts.recap) pingtab_vis_rows(no); notifier_legend_vis_rows(no); }
-inline void pinger_set_width(int type, int max) { if (!opts.recap) pingtab_set_width(type, max); }
 
 int pinger_recap_cb(GApplication *app) {
   static int recap_cnt;

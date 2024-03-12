@@ -19,20 +19,6 @@ int visibles = -1;
 #define IS_WHOIS_NDX(ndx) ((ELEM_AS <= ndx) && (ndx <= ELEM_RT))
 
 static t_hop hops[MAXTTL];
-static t_host_max host_max;
-static int whois_max[WHOIS_NDX_MAX];
-static const int wndx2endx[WHOIS_NDX_MAX] = {
-  [WHOIS_AS_NDX] = ELEM_AS, [WHOIS_CC_NDX] = ELEM_CC, [WHOIS_DESC_NDX] = ELEM_DESC, [WHOIS_RT_NDX] = ELEM_RT };
-
-static void update_hmax(const gchar* addr, const gchar *name) {
-  int la = addr ? g_utf8_strlen(addr, MAXHOSTNAME) : 0;
-  int ln = name ? g_utf8_strlen(name, MAXHOSTNAME) : 0;
-  if (addr) {
-    stat_check_hostaddr_max(la);
-    stat_check_hostname_max(name ? ln : la);
-  } else if (name)
-    stat_check_hostname_max(ln);
-}
 
 static void update_addrname(int at, t_host *b) { // addr is mandatory, name not
   if (!b) return;
@@ -47,7 +33,6 @@ static void update_addrname(int at, t_host *b) { // addr is mandatory, name not
       if (!a->name) {
         if (b->name) { // add first resolved hostname to not change it back-n-forth
           UPD_STR(a->name, b->name);
-          update_hmax(NULL, b->name);
           hops[at].cached = hops[at].cached_nl = false;
           LOG("set hostname[%d]: %s", at, b->name);
         } else if (opts.dns) dns_lookup(hop, i); // otherwise run dns lookup
@@ -61,7 +46,6 @@ static void update_addrname(int at, t_host *b) { // addr is mandatory, name not
       t_host *a = &hop->host[vacant];
       UPD_STR(a->addr, b->addr);
       UPD_STR(a->name, b->name);
-      update_hmax(b->addr, b->name);
       hops[at].cached = hops[at].cached_nl = false;
       for (int j = 0; j < WHOIS_NDX_MAX; j++) {
         CLR_STR(hop->whois[vacant].elem[j]);
@@ -284,14 +268,6 @@ static const gchar *stat_hop(int type, t_hop *hop) {
   return NULL;
 }
 
-static void set_initial_maxes(void) {
-  host_max.addr = host_max.name = g_utf8_strlen(ELEM_HOST_HDR, MAXHOSTNAME);
-  whois_max[WHOIS_AS_NDX]   = g_utf8_strlen(ELEM_AS_HDR,   MAXHOSTNAME);
-  whois_max[WHOIS_CC_NDX]   = g_utf8_strlen(ELEM_CC_HDR,   MAXHOSTNAME);
-  whois_max[WHOIS_DESC_NDX] = g_utf8_strlen(ELEM_DESC_HDR, MAXHOSTNAME);
-  whois_max[WHOIS_RT_NDX]   = g_utf8_strlen(ELEM_RT_HDR,   MAXHOSTNAME);
-}
-
 static void stat_nth_hop_NA(t_hop *hop) { // NA(<0)
   hop->last = hop->best = hop->wrst = hop->prev = -1;
   hop->loss = hop->avrg = hop->jttr = -1;
@@ -316,7 +292,6 @@ void stat_init(gboolean clean) { // clean start or on reset
     stat_nth_hop_NA(&hops[i]);
     hops[i].at = i;
   }
-  set_initial_maxes();
   stat_whois_enabler();
 }
 
@@ -333,15 +308,11 @@ void stat_free(void) {
     }
     CLR_STR(hop->info);
   }
-  set_initial_maxes();
 }
 
 void stat_clear(gboolean clean) { stat_free(); stat_init(clean); }
 
-void stat_reset_cache(void) { // reset 'cached' flags
-  for (int i = 0; i < MAXTTL; i++) hops[i].cached = hops[i].cached_nl = false;
-  pinger_set_width(ELEM_HOST, opts.dns ? host_max.name : host_max.addr);
-}
+void stat_reset_cache(void) { for (int i = 0; i < MAXTTL; i++) hops[i].cached = hops[i].cached_nl = false; }
 
 static void stat_up_info(int at, const gchar *info) {
   if (STR_EQ(hops[at].info, info)) return;
@@ -496,39 +467,6 @@ void stat_legend(int at, t_legend *data) {
   data->cc = stat_strnl_elem(at, ELEM_CC);
   data->av = stat_str_elem(at, ELEM_AVRG);
   data->jt = stat_str_elem(at, ELEM_JTTR);
-}
-
-int stat_elem_max(int type) {
-  switch (type) {
-    case ELEM_HOST: return opts.dns ? host_max.name : host_max.addr;
-    case ELEM_AS:   return whois_max[WHOIS_AS_NDX];
-    case ELEM_CC:   return whois_max[WHOIS_CC_NDX];
-    case ELEM_DESC: return whois_max[WHOIS_DESC_NDX];
-    case ELEM_RT:   return whois_max[WHOIS_RT_NDX];
-    case ELEM_FILL: return ELEM_LEN / 2;
-  }
-  return ELEM_LEN;
-}
-
-void stat_check_hostaddr_max(int len) {
-  if (host_max.addr < len) {
-    host_max.addr = len;
-    if (!opts.dns) pinger_set_width(ELEM_HOST, len);
-  }
-}
-
-void stat_check_hostname_max(int len) {
-  if (host_max.name < len) {
-    host_max.name = len;
-    if (opts.dns) pinger_set_width(ELEM_HOST, len);
-  }
-}
-
-void stat_check_whois_max(gchar* elem[]) {
-  for (int i = 0; i < WHOIS_NDX_MAX; i++) if (elem[i]) {
-    int len = g_utf8_strlen(elem[i], MAXHOSTNAME);
-    if (len > whois_max[i]) { whois_max[i] = len; pinger_set_width(wndx2endx[i], len); }
-  }
 }
 
 void stat_whois_enabler(void) {

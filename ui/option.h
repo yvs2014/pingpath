@@ -45,7 +45,7 @@ typedef struct ent_exp_common {
 
 typedef struct ent_exp {
   t_ent_exp_common c;
-  int *ndxs;  // reference to null-terminated index list
+  t_elem_desc *desc; // reference to element group descripotion
 } t_ent_exp;
 
 typedef struct ent_rad_map {
@@ -75,6 +75,7 @@ typedef struct ent_spn {
 gboolean option_init(GtkWidget* bar);
 void option_update(void);
 void option_toggled(int ndx);
+gboolean option_update_pingmenu(void);
 
 extern t_ent_bool ent_bool[];
 extern t_ent_str  ent_str[];

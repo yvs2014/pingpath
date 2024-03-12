@@ -7,12 +7,12 @@
 const char *appver = APPNAME "-" VERSION;
 
 const char *unkn_error = "unknown error";
-const char *unkn_field = ""; // "?" "???" (see notes)
+const char *unkn_field = ""; // "?" "???"
 const char *unkn_whois = "";
 
 gboolean cli;
 gint verbose, start_page = TAB_PING_NDX;
-t_tab* nb_tabs[TAB_NDX_MAX]; // note: nb list is reorderable
+t_tab* nb_tabs[TAB_NDX_MAX]; // notebook tabs are reorderable
 
 t_type_elem pingelem[ELEM_MAX] = {
   [ELEM_NO]   = { .type = ELEM_NO,   .enable = true, .name = "" },
@@ -113,20 +113,48 @@ int char2ndx(int cat, gboolean ent, char c) {
   return n;
 }
 
-int info_ndxs[] = { ENT_BOOL_HOST, ENT_BOOL_AS, ENT_BOOL_CC, ENT_BOOL_DESC, ENT_BOOL_RT, 0 };
-t_elem_desc info_desc = { .ndxs = info_ndxs, .elems = pingelem, .min = ELEM_HOST, .len = ELEM_RT - ELEM_HOST + 1,
-  .cat = INFO_CHAR, .patt = INFO_PATT, .t2n = pingelem_type2ndx };
-int stat_ndxs[] = { ENT_BOOL_LOSS, ENT_BOOL_SENT, ENT_BOOL_RECV, ENT_BOOL_LAST, ENT_BOOL_BEST,
-  ENT_BOOL_WRST, ENT_BOOL_AVRG, ENT_BOOL_JTTR, 0 };
-t_elem_desc stat_desc = { .ndxs = stat_ndxs, .elems = pingelem, .min = ELEM_LOSS, .len = ELEM_JTTR - ELEM_LOSS + 1,
-  .cat = STAT_CHAR, .patt = STAT_PATT, .t2n = pingelem_type2ndx };
+static int pingelem_type2ent(int type) {
+  int n = -1;
+  switch (type) {
+    case ELEM_HOST: n = ENT_BOOL_HOST; break;
+    case ELEM_AS:   n = ENT_BOOL_AS;   break;
+    case ELEM_CC:   n = ENT_BOOL_CC;   break;
+    case ELEM_DESC: n = ENT_BOOL_DESC; break;
+    case ELEM_RT:   n = ENT_BOOL_RT;   break;
+    case ELEM_LOSS: n = ENT_BOOL_LOSS; break;
+    case ELEM_SENT: n = ENT_BOOL_SENT; break;
+    case ELEM_RECV: n = ENT_BOOL_RECV; break;
+    case ELEM_LAST: n = ENT_BOOL_LAST; break;
+    case ELEM_BEST: n = ENT_BOOL_BEST; break;
+    case ELEM_WRST: n = ENT_BOOL_WRST; break;
+    case ELEM_AVRG: n = ENT_BOOL_AVRG; break;
+    case ELEM_JTTR: n = ENT_BOOL_JTTR; break;
+  }
+  return n;
+}
 
-int grlg_ndxs[] = { ENT_BOOL_AVJT, ENT_BOOL_CCAS, ENT_BOOL_LGHN, 0 };
-t_elem_desc grlg_desc = { .ndxs = grlg_ndxs, .elems = graphelem, .min = GRLG_AVJT, .len = GRLG_LGHN - GRLG_AVJT + 1,
-  .cat = GRLG_CHAR, .patt = GRLG_PATT, .t2n = graphelem_type2ndx };
-int grex_ndxs[] = { ENT_BOOL_MEAN, ENT_BOOL_JRNG, ENT_BOOL_AREA, 0 };
-t_elem_desc grex_desc = { .ndxs = grex_ndxs, .elems = graphelem, .min = GREX_MEAN, .len = GREX_AREA - GREX_MEAN + 1,
-  .cat = GREX_CHAR, .patt = GREX_PATT, .t2n = graphelem_type2ndx };
+static int graphelem_type2ent(int type) {
+  int n = -1;
+  switch (type) {
+    case GRLG_AVJT: n = ENT_BOOL_AVJT; break;
+    case GRLG_CCAS: n = ENT_BOOL_CCAS; break;
+    case GRLG_LGHN: n = ENT_BOOL_LGHN; break;
+    case GREX_MEAN: n = ENT_BOOL_MEAN; break;
+    case GREX_JRNG: n = ENT_BOOL_JRNG; break;
+    case GREX_AREA: n = ENT_BOOL_AREA; break;
+  }
+  return n;
+}
+
+t_elem_desc info_desc = { .elems = pingelem, .mm = { .min = ELEM_HOST, .max = ELEM_RT },
+  .cat = INFO_CHAR, .patt = INFO_PATT, .t2n = pingelem_type2ndx, .t2e = pingelem_type2ent };
+t_elem_desc stat_desc = { .elems = pingelem, .mm = { .min = ELEM_LOSS, .max = ELEM_JTTR },
+  .cat = STAT_CHAR, .patt = STAT_PATT, .t2n = pingelem_type2ndx, .t2e = pingelem_type2ent };
+
+t_elem_desc grlg_desc = { .elems = graphelem, .mm = { .min = GRLG_AVJT, .max = GRLG_LGHN },
+  .cat = GRLG_CHAR, .patt = GRLG_PATT, .t2n = graphelem_type2ndx, .t2e = graphelem_type2ent };
+t_elem_desc grex_desc = { .elems = graphelem, .mm = { .min = GREX_MEAN, .max = GREX_AREA },
+  .cat = GREX_CHAR, .patt = GREX_PATT, .t2n = graphelem_type2ndx, .t2e = graphelem_type2ent };
 
 //
 

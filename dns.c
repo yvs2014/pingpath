@@ -71,7 +71,6 @@ static void dns_query_complete(t_ref *ref, t_dns_elem *elem) {
         UPD_NSTR(orig->name, elem->host.name, MAXHOSTNAME);
         if (hop->cached) hop->cached = false;
         if (hop->cached_nl) hop->cached_nl = false;
-        if (orig->name) stat_check_hostname_max(g_utf8_strlen(orig->name, MAXHOSTNAME));
         DNS_DEBUG("%s(%d,%d) addr=%s name=%s", __func__, hop->at, ndx, orig->addr, orig->name);
       } else LOG("dns(%s) origin is changed: %s", elem->host.addr, orig->addr);
     }

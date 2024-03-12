@@ -124,7 +124,6 @@ static void whois_query_complete(t_ref *ref, t_wq_elem *elem) {
     if (STR_EQ(orig, addr)) {
       gchar **elems = hop->whois[ndx].elem;
       whois_copy_elems(elem->data.whois.elem, elems, hop->wcached, hop->wcached_nl);
-      stat_check_whois_max(elems);
     } else LOG("whois(%s) origin is changed: %s", addr, orig);
   }
 }

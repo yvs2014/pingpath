@@ -1,3 +1,11 @@
+pingpath (0.2.5) mantic noble; urgency=low
+
+  * DnD reordering for Info and Stat fields
+
+  * SizeGroups instead of setting width in chars
+
+ -- yvs <VSYakovetsky@gmail.com>  Tue, 12 Mar 2024 22:01:12 +0200
+
 pingpath (0.2.4) mantic noble; urgency=low
 
   * CLI: make -S and -I reorderable

@@ -9,7 +9,7 @@
 #endif
 
 #define APPNAME "pingpath"
-#define VERSION "0.2.4"
+#define VERSION "0.2.5"
 
 #define X_RES 1024
 #define Y_RES 720
@@ -61,6 +61,7 @@
 #define EV_DND_DRAG   "prepare"
 #define EV_DND_ICON   "drag-begin"
 #define EV_DND_DROP   "drop"
+#define EV_DND_MOVE   "motion"
 
 #define MAX_ICONS      4
 #define ICON_PROP      "icon-name"
@@ -104,7 +105,7 @@
 #define DNS_DEBUGGING 1
 #define WHOIS_DEBUGGING 1
 #define CONFIG_DEBUGGING 1
-#define REORDER_DEBUGGING 1
+#define DNDORD_DEBUGGING 1
 
 #define LOG(fmt, ...) { VERBOSE(fmt, __VA_ARGS__); log_add("[%s] " fmt, timestampit(), __VA_ARGS__); }
 #define LOG_(mesg) { VERBOSE("%s", mesg); log_add("[%s] %s", timestampit(), mesg); }
@@ -119,6 +120,12 @@
 #define DEBUG(fmt, ...) { if (verbose & 2) g_message(fmt, __VA_ARGS__); }
 #else
 #define DEBUG(fmt, ...) {}
+#endif
+
+#ifdef DNDORD_DEBUGGING
+#define DNDORD(fmt, ...) { if (verbose & 32) g_message(fmt, __VA_ARGS__); }
+#else
+#define DNDORD(fmt, ...) {}
 #endif
 
 #define WARN(fmt, ...) g_warning("%s: " fmt, __func__, __VA_ARGS__)
@@ -362,11 +369,11 @@ typedef struct t_legend {
 typedef int (*type2ndx_fn)(int);
 
 typedef struct elem_desc {
-  int *ndxs;
   t_type_elem *elems;
-  const int min, len, cat;
+  const t_minmax mm;
+  const int cat;
   const char *patt;
-  type2ndx_fn t2n;
+  type2ndx_fn t2n, t2e;
 } t_elem_desc;
 
 extern const char *appver;
@@ -380,9 +387,7 @@ extern gint verbose, start_page;
 
 extern t_tab* nb_tabs[TAB_NDX_MAX];
 extern t_type_elem pingelem[ELEM_MAX];
-extern int info_ndxs[], stat_ndxs[];
 extern t_type_elem graphelem[GRGR_MAX];
-extern int grlg_ndxs[], grex_ndxs[];
 extern t_elem_desc info_desc, stat_desc, grlg_desc, grex_desc;
 
 extern const double colors[][3];
@@ -416,11 +421,12 @@ extern void log_add(const gchar *fmt, ...);
 
 #define UPDATE_LABEL(label, str) { const gchar *txt = gtk_label_get_text(GTK_LABEL(label)); \
   if (STR_NEQ(txt, str)) gtk_label_set_text(GTK_LABEL(label), str); }
-#define UPDATE_LABMAX(label, str, max) { const gchar *txt = gtk_label_get_text(GTK_LABEL(label)); \
-  if (STR_NEQ(txt, str)) gtk_label_set_text(GTK_LABEL(label), str); \
-  if (str) { int len = g_utf8_strlen(str, MAXHOSTNAME); if (len > (max)) { (max) = len; }}}
 
-#define TW_TW(tw, widget, perm, dyn) { (tw).w = widget; (tw).css = perm; (tw).col = dyn; }
+#define TW_TW(tw, widget, css_perm, css_dyn) { (tw).w = widget; (tw).css = css_perm; (tw).col = css_dyn; }
+
+#define IS_INFO_NDX(ndx) ((ELEM_HOST <= ndx) && (ndx <= ELEM_RT))
+#define IS_STAT_NDX(ndx) ((ELEM_LOSS <= ndx) && (ndx <= ELEM_JTTR))
 #define IS_GRLG_NDX(ndx) ((GRLG_AVJT <= ndx) && (ndx <= GRLG_LGHN))
+#define IS_GREX_NDX(ndx) ((GREX_MEAN <= ndx) && (ndx <= GREX_AREA))
 
 #endif

@@ -1,3 +1,7 @@
+## 0.2.5
+- DnD reordering for Info and Stat fields
+- SizeGroups instead of setting width in chars
+
 ## 0.2.4
 - CLI: make -S and -I reorderable
 - CLI: changed -G and -L values to reordable chars

@@ -52,18 +52,16 @@ typedef struct t_config_section {
   t_config_option options[CNF_OPT_MAX];
 } t_config_section;
 
-#ifdef REORDER_DEBUGGING
-#define REORDER_DEBUG(fmt, ...) { if (verbose & 32) g_message("REORDER: " fmt, __VA_ARGS__); }
+#ifdef DNDORD_DEBUGGING
 static void cli_pr_elems(t_type_elem *elems, int max) {
   GString *s = g_string_new(NULL);
   for (int i = 0; i < max; i++)
     g_string_append_printf(s, " %c%d", elems[i].enable ? '+' : '-', elems[i].type);
   g_message("REORDER: elem:%s", s->str); g_string_free(s, true);
 }
-#define REORDER_PRINT_ELEMS(elems, max) { if (verbose & 32) cli_pr_elems(elems, max); }
+#define CLI_REORDER_PRINT_ELEMS(elems, max) { if (verbose & 32) cli_pr_elems(elems, max); }
 #else
-#define REORDER_DEBUG(...) {}
-#define REORDER_PRINT_ELEMS(...) {}
+#define CLI_REORDER_PRINT_ELEMS(...) {}
 #endif
 
 //
@@ -148,28 +146,28 @@ static char* reorder_patt(const char *str, const char *patt) {
     for (const char *p = patt, *pstr = str; *p; p++, o++)
       if (strchr(str, *p)) { *o = *pstr; pstr++; };
   } else WARN_("g_strdup()");
-  REORDER_DEBUG("in order: %s + %s => %s", patt, str, order);
+  DNDORD("REORDER: %s + %s => %s", patt, str, order);
   return order;
 }
 
 static void reorder_elems(const char *str, t_elem_desc *desc) {
   if (!str || !desc || !desc->elems || !desc->patt) return;
   char *order = reorder_patt(str, desc->patt);
-  if (order && (strnlen(order, desc->len + 1) == desc->len)) {
-    t_type_elem *elems = &desc->elems[desc->min], newelems[desc->len];
-    int n = 0, sz = desc->len * sizeof(t_type_elem);
+  int len = desc->mm.max - desc->mm.min + 1;
+  type2ndx_fn type2ndx = desc->t2n;
+  if (type2ndx && order && (len > 0) && (strnlen(order, len + 1) == len)) {
+    t_type_elem *elems = &desc->elems[desc->mm.min], newelems[len];
+    int n = 0, sz = len * sizeof(t_type_elem);
     memmove(newelems, elems, sz);
     for (const char *p = order; *p; p++, n++) {
       int c = *p;
       int ndx = char2ndx(desc->cat, true, c), type = char2ndx(desc->cat, false, c);
       if ((type < 0) || (ndx < 0)) WARN("Not valid indexes: ent=%d elem=%d", ndx, type); else {
-        desc->ndxs[n] = ndx;
-        int endx = desc->t2n(type);
-        if (endx < 0) WARN("Unknown %d type", type);
-        else newelems[n] = desc->elems[endx];
+        int ndx = type2ndx(type);
+        if (ndx < 0) WARN("Unknown %d type", type);
+        else newelems[n] = desc->elems[ndx];
       }
     }
-    desc->ndxs[n] = 0;
     memmove(elems, newelems, sz);
   } else WARN_("number of indexes are different to reorder");
   g_free(order);
@@ -177,11 +175,11 @@ static void reorder_elems(const char *str, t_elem_desc *desc) {
 
 static char* cli_char_opts(int type, const char *value, int cat, t_elem_desc *desc, int max, const char *hdr) {
   if (!desc || !desc->elems) return NULL;
-  REORDER_PRINT_ELEMS(desc->elems, max);
+  CLI_REORDER_PRINT_ELEMS(desc->elems, max);
   clean_elems(type);
   char *str = cli_opt_charelem(parser_str(value, hdr, cat), desc->patt, desc->cat);
   if (str) { if (str[0]) reorder_elems(str, desc); else g_message("%s: off", hdr); }
-  REORDER_PRINT_ELEMS(desc->elems, max);
+  CLI_REORDER_PRINT_ELEMS(desc->elems, max);
   return str;
 }
 
