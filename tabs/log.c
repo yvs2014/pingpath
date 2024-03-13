@@ -15,7 +15,9 @@ static t_tab logtab = { .self = &logtab, .name = "log-tab",
 
 static void logtab_add(const gchar *str) {
   if (atquit || !str || !GTK_IS_LIST_BOX(logtab.dyn.w)) return;
-  GtkWidget *line = gtk_label_new(str);
+  gchar *cp = strchr(str, '\n') ? g_strdup(str) : NULL;
+  GtkWidget *line = gtk_label_new(cp ? g_strdelimit(cp, "\n", ',') : str);
+  g_free(cp);
   if (GTK_IS_LABEL(line)) {
     gtk_widget_set_halign(line, GTK_ALIGN_START);
     gtk_list_box_append(GTK_LIST_BOX(logtab.dyn.w), line);

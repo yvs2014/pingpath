@@ -1,3 +1,7 @@
+## 0.2.6
+- DnD reorder: suppress not needed notifications
+- Clipboard: precalculate field lengths due to SizeGroups
+
 ## 0.2.5
 - DnD reordering for Info and Stat fields
 - SizeGroups instead of setting width in chars

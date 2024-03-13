@@ -112,6 +112,8 @@ static t_ent_rad ent_rad[ENT_RAD_MAX] = {
     }},
 };
 
+static gboolean opt_reordering;
+
 //
 
 static gboolean check_bool_val(GtkCheckButton *check, t_ent_bool *en, void (*update)(void)) {
@@ -122,9 +124,11 @@ static gboolean check_bool_val(GtkCheckButton *check, t_ent_bool *en, void (*upd
       *pb = state; re = true;
       if (update) update();
     }
-    const gchar *onoff = state ? TOGGLE_ON_HDR : TOGGLE_OFF_HDR;
-    if (en->prefix) notifier_inform("%s: %s %s", en->prefix, en->en.name, onoff);
-    else notifier_inform("%s: %s", en->en.name, onoff);
+    if (!opt_reordering) {
+      const gchar *onoff = state ? TOGGLE_ON_HDR : TOGGLE_OFF_HDR;
+      if (en->prefix) notifier_inform("%s: %s %s", en->prefix, en->en.name, onoff);
+      else notifier_inform("%s: %s", en->en.name, onoff);
+    }
   }
   return re;
 }
@@ -582,7 +586,8 @@ void option_update(void) {
   ENT_LOOP_EXP(ent_rad);
 }
 
-gboolean option_update_pingmenu(void) { return create_ping_optmenu(NULL); }
+gboolean option_update_pingmenu(void) {
+  opt_reordering = true; gboolean re = create_ping_optmenu(NULL); opt_reordering = false; return re; }
 
 void option_toggled(int ndx) {
   if ((ndx >= 0) && (ndx < ENT_BOOL_MAX)) {

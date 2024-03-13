@@ -1,3 +1,11 @@
+pingpath (0.2.6) mantic noble; urgency=low
+
+  * DnD reorder: suppress not needed notifications
+
+  * Clipboard: precalculate field lengths due to SizeGroups
+
+ -- yvs <VSYakovetsky@gmail.com>  Wed, 13 Mar 2024 18:43:43 +0200
+
 pingpath (0.2.5) mantic noble; urgency=low
 
   * DnD reordering for Info and Stat fields
