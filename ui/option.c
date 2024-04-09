@@ -125,9 +125,8 @@ static gboolean check_bool_val(GtkCheckButton *check, t_ent_bool *en, void (*upd
       if (update) update();
     }
     if (!opt_reordering) {
-      const gchar *onoff = state ? TOGGLE_ON_HDR : TOGGLE_OFF_HDR;
-      if (en->prefix) notifier_inform("%s: %s %s", en->prefix, en->en.name, onoff);
-      else notifier_inform("%s: %s", en->en.name, onoff);
+      if (en->prefix) notifier_inform("%s: %s %s", en->prefix, en->en.name, onoff(state));
+      else notifier_inform("%s: %s", en->en.name, onoff(state));
     }
   }
   return re;
@@ -154,10 +153,10 @@ static void toggled_dns(void) { stat_reset_cache(); notifier_legend_update(); pi
 static void toggle_graph_update(void) { graphtab_graph_refresh(false); }
 
 static void toggle_colors(void) {
+  tab_dependent(NULL);
   style_set(opts.darktheme, opts.darkgraph);
   tab_reload_theme();
   graphtab_full_refresh();
-  nt_dark = !(nt_on_graph ? opts.darkgraph : opts.darktheme);
 }
 
 static void toggle_cb(GtkCheckButton *check, t_ent_bool *en) {
@@ -490,14 +489,14 @@ static GtkWidget* add_opt_radio(GtkWidget* list, t_ent_rad *en) {
 #define EN_PR_STR(ndx) EN_PR_FMT(ndx, "%s", ent_str[ndx].sdef)
 #define EN_PR_INT(ndx) EN_PR_FMT(ndx, "%d", ent_str[ndx].idef)
 
-#if GTK_MAJOR_VERSION == 4
-#if GTK_MINOR_VERSION < 12
-static void gtk_list_box_remove_all(GtkListBox *box) {
+static void gtk_compat_list_box_remove_all(GtkListBox *box) {
   g_return_if_fail(GTK_IS_LIST_BOX(box));
+#if GTK_CHECK_VERSION(4, 12, 0)
+  gtk_list_box_remove_all(box);
+#else
   for (GtkWidget *c; (c = gtk_widget_get_first_child(GTK_WIDGET(box)));) gtk_list_box_remove(box, c);
+#endif
 }
-#endif
-#endif
 
 static gboolean create_optmenu(GtkWidget *bar, const char **icons, const char *tooltip, optmenu_add_items_fn fn) {
   g_return_val_if_fail(GTK_IS_HEADER_BAR(bar), false);
@@ -531,7 +530,7 @@ static gboolean create_ping_optmenu(GtkWidget *list) {
   if (list) ping_optmenu_list = list; else list = ping_optmenu_list;
   g_return_val_if_fail(GTK_IS_LIST_BOX(list), false);
   gboolean okay = true;
-  gtk_list_box_remove_all(GTK_LIST_BOX(list));
+  gtk_compat_list_box_remove_all(GTK_LIST_BOX(list));
   EN_PR_INT(ENT_STR_CYCLES);
   EN_PR_INT(ENT_STR_IVAL);
   if (!add_opt_check(list,  &ent_bool[ENT_BOOL_DNS])) okay = false;
@@ -548,7 +547,7 @@ static gboolean create_ping_optmenu(GtkWidget *list) {
 static gboolean create_graph_optmenu(GtkWidget *list) {
   g_return_val_if_fail(GTK_IS_LIST_BOX(list), false);
   gboolean okay = true;
-  gtk_list_box_remove_all(GTK_LIST_BOX(list));
+  gtk_compat_list_box_remove_all(GTK_LIST_BOX(list));
   if (!add_opt_check(list,  &ent_bool[ENT_BOOL_MN_DARK])) okay = false;
   if (!add_opt_check(list,  &ent_bool[ENT_BOOL_GR_DARK])) okay = false;
   if (!add_opt_radio(list,  &ent_rad[ENT_RAD_GRAPH]))     okay = false;

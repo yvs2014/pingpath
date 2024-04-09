@@ -14,6 +14,6 @@ void notifier_legend_update(void);
 void notifier_legend_reload_css(void);
 
 extern unsigned lgnd_excl_mask;
-extern gboolean nt_dark, nt_on_graph;
+extern gboolean nt_dark;
 
 #endif

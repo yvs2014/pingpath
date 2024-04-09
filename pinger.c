@@ -15,6 +15,9 @@
 #include "ui/notifier.h"
 #include "tabs/ping.h"
 #include "tabs/graph.h"
+#ifdef WITH_PPGL
+#include "tabs/ppgl.h"
+#endif
 
 #define PING "/bin/ping"
 #define SKIPNAME PING ": "
@@ -45,7 +48,12 @@ typedef struct proc {
 
 t_opts opts = { .target = NULL, .dns = DEF_DNS, .whois = DEF_WHOIS, .cycles = DEF_CYCLES, .qos = DEF_QOS, .size = DEF_PSIZE,
   .min = 0, .lim = MAXTTL, .timeout = DEF_TOUT, .tout_usec = DEF_TOUT * G_USEC_PER_SEC, .logmax = DEF_LOGMAX,
-  .graph = GRAPH_TYPE_CURVE, .legend = DEF_LEGEND, .darktheme = DEF_DARK_MAIN, .darkgraph = DEF_DARK_GRAPH };
+  .graph = GRAPH_TYPE_CURVE, .legend = DEF_LEGEND, .darktheme = DEF_DARK_MAIN, .darkgraph = DEF_DARK_GRAPH,
+#ifdef WITH_PPGL
+  .ppgl = true,
+  .darkppgl = DEF_DARK_PPGL,
+#endif
+};
 
 t_pinger_state pinger_state;
 guint stat_timer, exp_timer;
@@ -364,7 +372,7 @@ static void process_stopped(GObject *process, GAsyncResult *result, t_proc *proc
     if (error) g_error_free(error);
   }
   if (proc) {
-    if G_IS_OBJECT(proc->proc) {
+    if (G_IS_OBJECT(proc->proc)) {
       LOG("clear ping[%d] resources", proc->ndx);
       CLEAR_G_OBJECT(&proc->proc);
     }
@@ -598,6 +606,9 @@ int pinger_update_tabs(int *pseq) {
   if (pseq) (*pseq)++;
   pinger_update();
   if (opts.graph && !opts.recap) graphtab_update(pseq != NULL);
+#ifdef WITH_PPGL
+  if (opts.ppgl && !opts.recap) ppgl_update(pseq != NULL);
+#endif
   return G_SOURCE_CONTINUE;
 }
 

@@ -17,14 +17,6 @@
 #define BG_CONTRAST_DARK  "#2c2c2c"
 #define BG_CONTRAST_LIGHT "#f5f5f5"
 
-#if GTK_MAJOR_VERSION == 4
-#if GTK_MINOR_VERSION < 12
-#define CSS_PROVIDER_LOAD_FROM(prov, str) gtk_css_provider_load_from_data(prov, str, -1)
-#else
-#define CSS_PROVIDER_LOAD_FROM(prov, str) gtk_css_provider_load_from_string(prov, str)
-#endif
-#endif
-
 #define STYLE_GET_DISPLAY(re) GdkDisplay *display = gdk_display_get_default(); \
   if (!display) { WARN_("no default display"); return re; }
 
@@ -63,6 +55,14 @@ static const gchar *css_common = " \
   ." CSS_BGONLIGHT " {background:" BG_CONTRAST_LIGHT ";color:" BG_CONTRAST_LIGHT ";} \
   #" CSS_ID_DATETIME " {font-weight:500;} \
 ";
+
+static void style_css_load(GtkCssProvider *prov, const gchar *str) {
+#if GTK_CHECK_VERSION(4, 12, 0)
+  gtk_css_provider_load_from_string(prov, str);
+#else
+  gtk_css_provider_load_from_data(prov, str, -1);
+#endif
+}
 
 static gchar* style_extra_css(const gchar *common, gboolean dark, gboolean grdark) {
   int ndx = dark ? 1 : 0, grndx = grdark ? 1 : 0;
@@ -138,7 +138,7 @@ static void style_load_extra(GdkDisplay *display, gboolean dark, gboolean darkgr
   g_return_if_fail(GTK_IS_CSS_PROVIDER(prov));
   gchar *data = style_extra_css(css_common, dark, darkgr);
   if (!data) { WARN_("no CSS data"); g_object_unref(prov); return; }
-  CSS_PROVIDER_LOAD_FROM(prov, data); g_free(data);
+  style_css_load(prov, data); g_free(data);
   if (prov_extra) gtk_style_context_remove_provider_for_display(display, GTK_STYLE_PROVIDER(prov_extra));
   prov_extra = prov;
   gtk_style_context_add_provider_for_display(display, GTK_STYLE_PROVIDER(prov_extra),

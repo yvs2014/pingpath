@@ -5,14 +5,8 @@
 #include "ui/style.h"
 #include "ui/notifier.h"
 
-#define X_AXIS "time"
-#define Y_AXIS "delay [msec]"
+#define GRFONT_RATIO 0.28
 
-#define GR_FONT "monospace"
-#define GRF_RATIO 0.28
-
-#define GR_RTT0 1000 // 1msec
-#define GR_RTT_SCALE 1000. // usec to msec
 #define GR_Y_GAP 1.1
 
 #define TICK_SIZE 6
@@ -55,8 +49,6 @@ static const t_gr_color text_col = { .ondark = 0.85, .onlight = 0   };
 
 static t_tab graphtab = { .self = &graphtab, .name = "graph-tab",
   .tag = GRAPH_TAB_TAG, .tip = GRAPH_TAB_TIP, .ico = {GRAPH_TAB_ICON, GRAPH_TAB_ICOA, GRAPH_TAB_ICOB},
-//  .desc = { [POP_MENU_NDX_COPY] = { .name = "win.graph_menu_copy" }, [POP_MENU_NDX_SALL] = { .name = "win.graph_menu_sall" }},
-//  .act = { [POP_MENU_NDX_COPY] = { .activate = cb_on_copy_l1 },  [POP_MENU_NDX_SALL] = { .activate = cb_on_sall }},
 };
 
 static t_gr_list gr_series[MAXTTL], gr_series_kept[MAXTTL];
@@ -71,7 +63,7 @@ static GtkWidget *graph_grid, *graph_marks, *graph_graph;
 static PangoFontDescription *graph_font;
 static PangoLayout *grid_pango, *mark_pango, *graph_pango;
 
-static t_gr_aux_measures grm = { .x = GRAPH_LEFT, .y = GRAPH_TOP, .fs = CELL_SIZE * GRF_RATIO, .ymax = GR_RTT0,
+static t_gr_aux_measures grm = { .x = GRAPH_LEFT, .y = GRAPH_TOP, .fs = CELL_SIZE * GRFONT_RATIO, .ymax = PP_RTT0,
   .dx = MAIN_TIMING_SEC * ((double)CELL_SIZE / X_IN_TIME_TICKS),
   .no = X_RES / ((double)CELL_SIZE / X_IN_TIME_TICKS) + 1, // to start keeping data w/o knowing drawing area width
 };
@@ -85,7 +77,7 @@ static void gr_scale_max(int max) {
 }
 
 static int gr_max_in_series(void) {
-  int max = GR_RTT0;
+  int max = PP_RTT0;
   for (int i = 0; i < n_series; i++) {
     for (GSList *item = GR_LIST; item; item = item->next) {
       if (!item->data) continue;
@@ -114,7 +106,7 @@ static void gr_save(int i, t_rseq *data) {
     GR_ACTUAL_LIST = g_slist_delete_link(GR_ACTUAL_LIST, last); GR_ACTUAL_LEN--;
     if ((rtt * GR_Y_GAP) >= grm.ymax) {
       int max = gr_max_in_series();
-      if (((max * GR_Y_GAP) < grm.ymax) && (max > GR_RTT0)) gr_scale_max(max); // down-scale
+      if (((max * GR_Y_GAP) < grm.ymax) && (max > PP_RTT0)) gr_scale_max(max); // down-scale
     }
   }
 }
@@ -123,8 +115,8 @@ static void gr_set_font(void) {
   if (graph_font) pango_font_description_free(graph_font);
   graph_font = pango_font_description_new();
   if (graph_font) {
-    pango_font_description_set_family(graph_font, GR_FONT);
-    pango_font_description_set_absolute_size(graph_font, (grm.fs ? grm.fs : (CELL_SIZE * GRF_RATIO)) * PANGO_SCALE);
+    pango_font_description_set_family(graph_font, PP_FONT_FAMILY);
+    pango_font_description_set_absolute_size(graph_font, (grm.fs ? grm.fs : (CELL_SIZE * GRFONT_RATIO)) * PANGO_SCALE);
   } else WARN_("Cannot allocate pango font");
 }
 
@@ -310,10 +302,10 @@ static void gr_draw_grid(GtkDrawingArea *area, cairo_t* cr, int w, int h, gpoint
   if (grid_pango) {
     double ts = TICK_SIZE * 2;
     cairo_move_to(cr, grm.x1 + ts, grm.y1 - 0.5 * grm.fs);
-    pango_layout_set_text(grid_pango, X_AXIS, -1);
+    pango_layout_set_text(grid_pango, X_AXIS_TITLE, -1);
     pango_cairo_show_layout(cr, grid_pango);
     cairo_move_to(cr, grm.x / 4., grm.y - (ts + 1.5 * grm.fs));
-    pango_layout_set_text(grid_pango, Y_AXIS, -1);
+    pango_layout_set_text(grid_pango, Y_AXIS_TITLE, -1);
     pango_cairo_show_layout(cr, grid_pango);
   }
 }
@@ -331,10 +323,10 @@ static void gr_draw_marks(GtkDrawingArea *area, cairo_t* cr, int w, int h, gpoin
   if (mark_pango) {
     if (grm.M > 0) {
       GR_TEXTCOL;
-      gchar buff[8];
-      double dy = grm.ymax / GR_RTT_SCALE / grm.M;
+      gchar buff[16];
+      double dy = grm.ymax / PP_RTT_SCALE / grm.M;
       for (int j = grm.M, y = grm.y - 0.6 * grm.fs; j >= 0; j--, y += CELL_SIZE) {
-        g_snprintf(buff, sizeof(buff), "%.1f", dy * j);
+        g_snprintf(buff, sizeof(buff), PP_RTT_AXIS_FMT, dy * j);
         cairo_move_to(cr, 0, y);
         pango_layout_set_text(mark_pango, buff, -1);
         pango_cairo_show_layout(cr, mark_pango);
@@ -399,7 +391,7 @@ static void gr_draw_graph(GtkDrawingArea *area, cairo_t* cr, int w, int h, gpoin
         i <= grm.N; i++, x -= CELL_SIZE, t -= dt) if ((i + 1) % X_FREQ) {
       if (t < 0) t += 3600;
       int mm = t / 60, ss = t % 60;
-      g_snprintf(buff, sizeof(buff), "%02d:%02d", mm, ss);
+      g_snprintf(buff, sizeof(buff), PP_TIME_AXIS_FMT, mm, ss);
       cairo_move_to(cr, x, y);
       pango_layout_set_text(graph_pango, buff, -1);
       pango_cairo_show_layout(cr, graph_pango);
@@ -473,31 +465,31 @@ static void gr_unfreeze_data(void) {
 
 t_tab* graphtab_init(GtkWidget* win) {
   TW_TW(graphtab.lab, gtk_box_new(GTK_ORIENTATION_VERTICAL, 2), CSS_PAD, NULL);
-  g_return_val_if_fail(GTK_IS_BOX(graphtab.lab.w), NULL);
+  g_return_val_if_fail(graphtab.lab.w, NULL);
   TW_TW(graphtab.dyn, gtk_box_new(GTK_ORIENTATION_VERTICAL, 0), NULL, CSS_GR_BG);
-  g_return_val_if_fail(GTK_IS_BOX(graphtab.dyn.w), NULL);
+  g_return_val_if_fail(graphtab.dyn.w, NULL);
   // create layers
   graph_grid = gtk_drawing_area_new();
-  g_return_val_if_fail(GTK_IS_DRAWING_AREA(graph_grid), NULL);
+  g_return_val_if_fail(graph_grid, NULL);
   gtk_drawing_area_set_draw_func(GTK_DRAWING_AREA(graph_grid), gr_draw_grid, NULL, NULL);
   graph_marks = gtk_drawing_area_new();
-  g_return_val_if_fail(GTK_IS_DRAWING_AREA(graph_marks), NULL);
+  g_return_val_if_fail(graph_marks, NULL);
   gtk_drawing_area_set_draw_func(GTK_DRAWING_AREA(graph_marks), gr_draw_marks, NULL, NULL);
   graph_graph = gtk_drawing_area_new();
-  g_return_val_if_fail(GTK_IS_DRAWING_AREA(graph_graph), NULL);
+  g_return_val_if_fail(graph_graph, NULL);
   gtk_drawing_area_set_draw_func(GTK_DRAWING_AREA(graph_graph), gr_draw_graph, NULL, NULL);
   // merge layers
   GtkWidget *over = gtk_overlay_new();
-  g_return_val_if_fail(GTK_IS_OVERLAY(over), NULL);
+  g_return_val_if_fail(over, NULL);
   gtk_overlay_add_overlay(GTK_OVERLAY(over), graph_grid);
   gtk_overlay_add_overlay(GTK_OVERLAY(over), graph_marks);
   gtk_overlay_add_overlay(GTK_OVERLAY(over), graph_graph);
   gtk_overlay_set_child(GTK_OVERLAY(over), graphtab.dyn.w);
-  // wrap in scroll (not necessary yet)
+  // wrap scrolling
   graphtab.tab.w = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-  g_return_val_if_fail(GTK_IS_BOX(graphtab.tab.w), NULL);
+  g_return_val_if_fail(graphtab.tab.w, NULL);
   GtkWidget *scroll = gtk_scrolled_window_new();
-  g_return_val_if_fail(GTK_IS_SCROLLED_WINDOW(scroll), NULL);
+  g_return_val_if_fail(scroll, NULL);
   gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scroll), over);
   // put into tab
   gtk_widget_set_vexpand(GTK_WIDGET(scroll), true);
@@ -508,7 +500,7 @@ t_tab* graphtab_init(GtkWidget* win) {
 }
 
 void graphtab_free(gboolean finish) {
-  grm.at = 0; grm.ymax = GR_RTT0;
+  grm.at = 0; grm.ymax = PP_RTT0;
   for (int i = 0; i < n_series; i++) {
     GR_LEN = 0; if (GR_LIST) { g_slist_free_full(GR_LIST, g_free); GR_LIST = NULL; }
     GR_LEN_CP = 0; if (GR_LIST_CP) { g_slist_free_full(GR_LIST_CP, g_free); GR_LIST_CP = NULL; }

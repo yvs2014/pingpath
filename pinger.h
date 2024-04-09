@@ -13,10 +13,14 @@
 #define DEF_LEGEND     true
 #define DEF_DARK_MAIN  true
 #define DEF_DARK_GRAPH false
+#define DEF_DARK_PPGL  false
 
 typedef struct opts {
   gchar *target;
   gboolean dns, whois, legend, darktheme, darkgraph;
+#ifdef WITH_PPGL
+  gboolean ppgl, darkppgl;
+#endif
   int cycles, timeout, qos, size, ipv, graph;
   int min, lim;       // TTL range
   char pad[PAD_SIZE]; // 16 x "00."

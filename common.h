@@ -7,9 +7,10 @@
 #if GTK_MAJOR_VERSION < 4
 #error GTK4 is required
 #endif
+#define MIN_GTK_RUNTIME(major, minor, micro) (!gtk_check_version(major, minor, micro))
 
 #define APPNAME "pingpath"
-#define VERSION "0.2.6"
+#define VERSION "0.2.7"
 
 #define X_RES 1024
 #define Y_RES 720
@@ -62,6 +63,11 @@
 #define EV_DND_ICON   "drag-begin"
 #define EV_DND_DROP   "drop"
 #define EV_DND_MOVE   "motion"
+#ifdef WITH_PPGL
+#define EV_PPGL_INIT   "realize"
+#define EV_PPGL_FREE   "unrealize"
+#define EV_PPGL_DRAW   "render"
+#endif
 
 #define MAX_ICONS      4
 #define ICON_PROP      "icon-name"
@@ -81,6 +87,11 @@
 #define GRAPH_TAB_ICON "media-playlist-shuffle-symbolic"
 #define GRAPH_TAB_ICOA "utilities-system-monitor-symbolic"
 #define GRAPH_TAB_ICOB "media-playlist-repeat-symbolic"
+#ifdef WITH_PPGL
+#define GL3D_TAB_ICON  "application-x-appliance-symbolic"
+#define GL3D_TAB_ICOB  "network-cellular-connected-symbolic"
+#define GL3D_TAB_ICOA  "preferences-system-network-symbolic"
+#endif
 #define LOG_TAB_ICON   "system-search-symbolic"
 #define LOG_TAB_ICOA   "edit-find-symbolic"
 
@@ -90,6 +101,18 @@
 #define LOG_TAB_TIP   "Auxiliary logs"
 #define GRAPH_TAB_TAG "Graph"
 #define GRAPH_TAB_TIP "Line graph"
+#ifdef WITH_PPGL
+#define GL3D_TAB_TAG  "3D"
+#define GL3D_TAB_TIP  "3D view"
+#endif
+
+#define PP_FONT_FAMILY "monospace"
+#define X_AXIS_TITLE   "time"
+#define Y_AXIS_TITLE   "delay [msec]"
+#define PP_RTT0      1000  // 1msec
+#define PP_RTT_SCALE 1000. // usec to msec
+#define PP_RTT_AXIS_FMT  "%.1f"
+#define PP_TIME_AXIS_FMT "%02d:%02d"
 
 #define MARGIN  8
 #define ACT_DOT 4 // beyond of "app." or "win."
@@ -262,7 +285,11 @@
 
 enum { GLIB_STRV, GTK_STRV, CAIRO_STRV, PANGO_STRV };
 
-enum { TAB_PING_NDX, TAB_GRAPH_NDX, TAB_LOG_NDX, TAB_NDX_MAX };
+enum { TAB_PING_NDX, TAB_GRAPH_NDX,
+#ifdef WITH_PPGL
+TAB_3D_NDX,
+#endif
+TAB_LOG_NDX, TAB_NDX_MAX };
 
 enum { ENT_EXP_NONE, ENT_EXP_INFO, ENT_EXP_STAT, ENT_EXP_LGFL, ENT_EXP_GREX, ENT_EXP_MAX };
 
@@ -393,6 +420,7 @@ extern t_elem_desc info_desc, stat_desc, grlg_desc, grex_desc;
 extern const double colors[][3];
 extern const int n_colors;
 
+const char* onoff(gboolean on);
 gchar* get_nth_color(int i);
 
 int char2ndx(int cat, gboolean ent, char c);
@@ -403,6 +431,7 @@ int graphelem_type2ndx(int type);
 gboolean is_grelem_enabled(int type);
 void clean_elems(int type);
 
+void tab_dependent(GtkWidget *tab);
 char* rtver(int ndx);
 const char *timestampit(void);
 GtkListBoxRow* line_row_new(GtkWidget *child, gboolean visible);

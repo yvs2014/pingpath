@@ -1,3 +1,9 @@
+pingpath (0.2.7) mantic noble; urgency=low
+
+  * [in progress] base of 3D-plot with OpenGL support
+
+ -- yvs <VSYakovetsky@gmail.com>  Tue, 09 Apr 2024 11:25:34 +0300
+
 pingpath (0.2.6) mantic noble; urgency=low
 
   * DnD reorder: suppress not needed notifications

@@ -56,7 +56,7 @@ static gboolean nt_set_visible(t_notifier *nt, gboolean visible) {
 static gboolean nt_hide(t_notifier *nt) { return nt_set_visible(nt, false); }
 
 static void nt_inform(t_notifier *nt, gchar *mesg) {
-  static int last_known_bg;
+  static int nt_curr_dark;
   if (!nt || !mesg) return;
   if (!GTK_IS_WIDGET(nt->inbox) || !GTK_IS_REVEALER(nt->reveal)) return;
   if (nt->autohide && nt->visible) nt_hide(nt);
@@ -64,10 +64,10 @@ static void nt_inform(t_notifier *nt, gchar *mesg) {
     LOG_(mesg);
     gtk_label_set_text(GTK_LABEL(nt->inbox), mesg);
   }
-  if (nt->dyncss && (nt_dark != last_known_bg)) {
-    gtk_widget_remove_css_class(nt->box, last_known_bg ? CSS_BGONDARK : CSS_BGONLIGHT);
-    last_known_bg = nt_dark;
-    gtk_widget_add_css_class(nt->box, last_known_bg ? CSS_BGONDARK : CSS_BGONLIGHT);
+  if (nt->dyncss && (nt_dark != nt_curr_dark)) {
+    gtk_widget_remove_css_class(nt->box, nt_curr_dark ? CSS_BGONDARK : CSS_BGONLIGHT);
+    nt_curr_dark = nt_dark;
+    gtk_widget_add_css_class(nt->box,    nt_curr_dark ? CSS_BGONDARK : CSS_BGONLIGHT);
   }
   gtk_revealer_set_reveal_child(GTK_REVEALER(nt->reveal), true);
   if (nt->autohide) nt->visible = g_timeout_add_seconds(AUTOHIDE_IN, (GSourceFunc)nt_hide, nt);
@@ -86,7 +86,7 @@ static gboolean nt_legend_pos_cb(GtkOverlay *overlay, GtkWidget *widget, GdkRect
 }
 
 static void nt_add_lgelem(GtkWidget *widget, GtkWidget *box, int align, gboolean visible) {
-  if (!GTK_IS_BOX(box) || !GTK_IS_WIDGET(widget)) { GL_FAIL("gtk_widget_new()"); return; }
+  if (!GTK_IS_BOX(box) || !GTK_IS_WIDGET(widget)) return;
   gtk_widget_set_visible(widget, visible);
   gtk_box_append(GTK_BOX(box), widget);
   if (GTK_IS_LABEL(widget) && (align >= 0)) {
@@ -146,7 +146,7 @@ static GdkContentProvider* nt_lgnd_dnd_drag(GtkDragSource *src, gdouble x, gdoub
 static void nt_lgnd_dnd_icon(GtkDragSource *src, GdkDrag *drag, t_notifier *nt) {
   if (!GTK_IS_DRAG_SOURCE(src) || !nt || !GTK_IS_WIDGET(nt->box)) return;
   GdkPaintable *icon = gtk_widget_paintable_new(nt->box);
-  if (!GDK_IS_PAINTABLE(icon)) return;
+  if (!icon) return;
   gtk_drag_source_set_icon(src, icon, nt->dx, nt->dy);
   g_object_unref(icon);
   DNDORD("DND-icon: dx=%d dy=%d", nt->dx, nt->dy);
@@ -167,12 +167,72 @@ static gboolean nt_lgnd_on_drop(GtkDropTarget *dst, const GValue *val, gdouble x
 #define NT_LG_LABEL(lab, txt, align, vis) { lab = gtk_label_new(txt); nt_add_lgelem(lab, ex->box, align, vis); }
 #define NG_LG_GROUP(j) { if (group[j]) gtk_size_group_add_widget(group[j], ex->elem[j]); }
 
+static void nt_init_graph_box(GtkWidget *box, GtkWidget *over, t_notifier *nt) {
+  if (!GTK_IS_LIST_BOX(box) || !GTK_IS_OVERLAY(over) || !nt) return;
+  g_signal_connect(box, EV_ROW_ACTIVE, G_CALLBACK(nt_lgnd_row_cb), NULL);
+  if (style_loaded) gtk_widget_add_css_class(box, CSS_GR_BG);
+  GtkSizeGroup* group[GRLG_MAX];
+  for (int i = 0; i < G_N_ELEMENTS(group); i++)
+    group[i] = gtk_size_group_new(GTK_SIZE_GROUP_HORIZONTAL);
+  for (int i = 0; i < MAXTTL; i++) {
+    t_nt_extra *ex = nt->extra ? &(nt->extra[i]) : NULL;
+    if (!ex) continue;
+    ex->box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, MARGIN);
+    if (ex->box) { // number, color dash, avrg±jttr, cc:as, hopname
+      gchar span[100]; g_snprintf(span, sizeof(span), LGND_LINE_TOGGLE_TIP, i + 1);
+      gtk_widget_set_tooltip_text(ex->box, span);
+      ex->row = line_row_new(ex->box, false);
+      if (ex->box) {
+        gtk_list_box_append(GTK_LIST_BOX(box), GTK_WIDGET(ex->row));
+        gtk_list_box_row_set_selectable(GTK_LIST_BOX_ROW(ex->row), LGND_ROW_DEF_STATE);
+        if (style_loaded) {
+          gtk_widget_add_css_class(GTK_WIDGET(ex->row), CSS_LEGEND_TEXT);
+          if (nt->colcss) gtk_widget_add_css_class(GTK_WIDGET(ex->row), nt->colcss);
+        }
+        NT_LG_LABEL(ex->elem[GRLG_NO], nb_lgnd_nth_state(i, LGND_ROW_DEF_STATE), GTK_ALIGN_END, true);
+        if (GTK_IS_WIDGET(ex->elem[GRLG_NO])) {
+          NG_LG_GROUP(GRLG_NO); gtk_label_set_use_markup(GTK_LABEL(ex->elem[GRLG_NO]), true);
+        }
+        { // colored dash
+          gchar *col = get_nth_color(i);
+          if (col) g_snprintf(span, sizeof(span), LGND_DASH_COL_FMT, col, DASH_CHAR);
+          else g_snprintf(span, sizeof(span), LGND_DASH_DEF_FMT, DASH_CHAR);
+          NT_LG_LABEL(ex->elem[GRLG_DASH], span, -1, is_grelem_enabled(GRLG_DASH));
+          if (GTK_IS_WIDGET(ex->elem[GRLG_DASH]) && col) {
+            NG_LG_GROUP(GRLG_DASH); gtk_label_set_use_markup(GTK_LABEL(ex->elem[GRLG_DASH]), true);
+        }
+        g_free(col); }
+        for (int j = GRLG_MIN; j < GRLG_MAX; j++) {
+          int ndx = graphelem_type2ndx(j);
+          if (IS_GRLG_NDX(ndx)) { ex->elem[ndx] = gtk_label_new(NULL); NG_LG_GROUP(ndx); }
+        }
+        for (int j = GRLG_MIN; j < GRLG_MAX; j++)
+          nt_add_lgelem(ex->elem[j], ex->box, GTK_ALIGN_START, is_grelem_enabled(graphelem[j].type));
+      }
+    }
+  }
+  for (int i = 0; i < G_N_ELEMENTS(group); i++) if (group[i]) g_object_unref(group[i]);
+#ifdef WITH_DND
+  GtkDragSource *dnd_src = gtk_drag_source_new();
+  if (dnd_src) {
+    g_signal_connect(dnd_src, EV_DND_DRAG, G_CALLBACK(nt_lgnd_dnd_drag), nt);
+    g_signal_connect(dnd_src, EV_DND_ICON, G_CALLBACK(nt_lgnd_dnd_icon), nt);
+    gtk_widget_add_controller(box, GTK_EVENT_CONTROLLER(dnd_src));
+  }
+  GtkDropTarget *dnd_dst = gtk_drop_target_new(G_TYPE_POINTER, GDK_ACTION_COPY);
+  if (dnd_dst) {
+    g_signal_connect(dnd_dst, EV_DND_DROP, G_CALLBACK(nt_lgnd_on_drop), NULL);
+    gtk_widget_add_controller(over, GTK_EVENT_CONTROLLER(dnd_dst));
+  }
+#endif
+}
+
 static GtkWidget* nt_init(GtkWidget *base, t_notifier *nt) {
-  if (!nt || !GTK_IS_WIDGET(base)) return NULL;
+  if (!GTK_IS_WIDGET(base) || !nt) return NULL;
   GtkWidget *over = gtk_overlay_new();
-  g_return_val_if_fail(GTK_IS_OVERLAY(over), NULL);
+  g_return_val_if_fail(over, NULL);
   GtkWidget *box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-  g_return_val_if_fail(GTK_IS_BOX(box), NULL);
+  g_return_val_if_fail(box, NULL);
   if (style_loaded) {
     if (nt->defcss) gtk_widget_add_css_class(box, nt->defcss);
     if (nt->colcss) gtk_widget_add_css_class(box, nt->colcss);
@@ -182,82 +242,22 @@ static GtkWidget* nt_init(GtkWidget *base, t_notifier *nt) {
   switch (nt->type) {
     case NT_MAIN_NDX: {
       inbox = gtk_label_new(NULL);
-      if (GTK_IS_LABEL(inbox)) {
-        if (style_loaded && nt->dyncss) gtk_widget_add_css_class(inbox, CSS_INVERT);
-      } else FAILX("action notifier", "gtk_label_new()");
+      if (inbox && style_loaded && nt->dyncss) gtk_widget_add_css_class(inbox, CSS_INVERT);
     } break;
     case NT_GRAPH_NDX: {
       inbox = gtk_list_box_new();
-      if (GTK_IS_LIST_BOX(inbox)) {
-        g_signal_connect(inbox, EV_ROW_ACTIVE, G_CALLBACK(nt_lgnd_row_cb), NULL);
-        if (style_loaded) gtk_widget_add_css_class(inbox, CSS_GR_BG);
-        GtkSizeGroup* group[GRLG_MAX];
-        for (int i = 0; i < G_N_ELEMENTS(group); i++) {
-          group[i] = gtk_size_group_new(GTK_SIZE_GROUP_HORIZONTAL);
-          if (!GTK_IS_SIZE_GROUP(group[i])) GL_FAIL("gtk_size_group_new()");
-        }
-        for (int i = 0; i < MAXTTL; i++) {
-          t_nt_extra *ex = nt->extra ? &(nt->extra[i]) : NULL;
-          if (!ex) continue;
-          ex->box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, MARGIN);
-          if (GTK_IS_BOX(ex->box)) { // number, color dash, avrg±jttr, cc:as, hopname
-            gchar span[100]; g_snprintf(span, sizeof(span), LGND_LINE_TOGGLE_TIP, i + 1);
-            gtk_widget_set_tooltip_text(ex->box, span);
-            ex->row = line_row_new(ex->box, false);
-            if (GTK_IS_LIST_BOX_ROW(ex->row)) {
-              gtk_list_box_append(GTK_LIST_BOX(inbox), GTK_WIDGET(ex->row));
-              gtk_list_box_row_set_selectable(GTK_LIST_BOX_ROW(ex->row), LGND_ROW_DEF_STATE);
-              if (style_loaded) {
-                gtk_widget_add_css_class(GTK_WIDGET(ex->row), CSS_LEGEND_TEXT);
-                if (nt->colcss) gtk_widget_add_css_class(GTK_WIDGET(ex->row), nt->colcss);
-              }
-              NT_LG_LABEL(ex->elem[GRLG_NO], nb_lgnd_nth_state(i, LGND_ROW_DEF_STATE), GTK_ALIGN_END, true);
-              if (GTK_IS_WIDGET(ex->elem[GRLG_NO])) {
-                NG_LG_GROUP(GRLG_NO); gtk_label_set_use_markup(GTK_LABEL(ex->elem[GRLG_NO]), true);
-              }
-              { // colored dash
-                gchar *col = get_nth_color(i);
-                if (col) g_snprintf(span, sizeof(span), LGND_DASH_COL_FMT, col, DASH_CHAR);
-                else g_snprintf(span, sizeof(span), LGND_DASH_DEF_FMT, DASH_CHAR);
-                NT_LG_LABEL(ex->elem[GRLG_DASH], span, -1, is_grelem_enabled(GRLG_DASH));
-                if (GTK_IS_WIDGET(ex->elem[GRLG_DASH]) && col) {
-                  NG_LG_GROUP(GRLG_DASH); gtk_label_set_use_markup(GTK_LABEL(ex->elem[GRLG_DASH]), true);
-                }
-                g_free(col); }
-              for (int j = GRLG_MIN; j < GRLG_MAX; j++) {
-                int ndx = graphelem_type2ndx(j);
-                if (IS_GRLG_NDX(ndx)) { ex->elem[ndx] = gtk_label_new(NULL); NG_LG_GROUP(ndx); }
-              }
-              for (int j = GRLG_MIN; j < GRLG_MAX; j++)
-                nt_add_lgelem(ex->elem[j], ex->box, GTK_ALIGN_START, is_grelem_enabled(graphelem[j].type));
-            } else GL_FAIL("gtk_list_box_new()");
-          } else GL_FAIL("gtk_box_new()");
-        }
-        for (int i = 0; i < G_N_ELEMENTS(group); i++) if (GTK_IS_SIZE_GROUP(group[i])) g_object_unref(group[i]);
-#ifdef WITH_DND
-        GtkDragSource *dnd_src = gtk_drag_source_new();
-        if (GTK_IS_DRAG_SOURCE(dnd_src)) {
-          g_signal_connect(dnd_src, EV_DND_DRAG, G_CALLBACK(nt_lgnd_dnd_drag), nt);
-          g_signal_connect(dnd_src, EV_DND_ICON, G_CALLBACK(nt_lgnd_dnd_icon), nt);
-          gtk_widget_add_controller(box, GTK_EVENT_CONTROLLER(dnd_src));
-        } else GL_FAIL("gtk_drag_source_new()");
-        GtkDropTarget *dnd_dst = gtk_drop_target_new(G_TYPE_POINTER, GDK_ACTION_COPY);
-        if (GTK_IS_DROP_TARGET(dnd_dst)) {
-          g_signal_connect(dnd_dst, EV_DND_DROP, G_CALLBACK(nt_lgnd_on_drop), NULL);
-          gtk_widget_add_controller(over, GTK_EVENT_CONTROLLER(dnd_dst));
-        } else GL_FAIL("gtk_drop_target_new()");
-#endif
-      } else GL_FAIL("gtk_list_box_new()");
+      if (inbox) nt_init_graph_box(inbox, over, nt);
     } break;
+    default: WARN("Unknown notifier type: %d\n", nt->type);
   }
-  g_return_val_if_fail(GTK_IS_WIDGET(inbox), NULL);
+  g_return_val_if_fail(inbox, NULL);
   gtk_widget_set_visible(inbox, true);
   gtk_widget_set_can_focus(inbox, false);
   gtk_widget_set_hexpand(inbox, true);
   gtk_widget_set_halign(inbox, GTK_ALIGN_CENTER);
   gtk_widget_set_valign(inbox, GTK_ALIGN_CENTER);
   GtkWidget *reveal = gtk_revealer_new();
-  g_return_val_if_fail(GTK_IS_REVEALER(reveal), NULL);
+  g_return_val_if_fail(reveal, NULL);
   gtk_revealer_set_reveal_child(GTK_REVEALER(reveal), false);
   gtk_widget_set_visible(reveal, true);
   gtk_widget_set_can_focus(reveal, false);
@@ -349,5 +349,5 @@ void notifier_legend_reload_css(void) {
 }
 
 unsigned lgnd_excl_mask; // enough for MAXTTL(30) bitmask
-gboolean nt_dark, nt_on_graph;
+gboolean nt_dark;
 

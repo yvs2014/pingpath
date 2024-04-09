@@ -13,19 +13,24 @@
 #include "ui/notifier.h"
 #include "tabs/ping.h"
 #include "tabs/graph.h"
+#ifdef WITH_PPGL
+#include "tabs/ppgl.h"
+#endif
 #include "tabs/log.h"
 
 #define APPFLAGS G_APPLICATION_NON_UNIQUE
-#define SET_NT_REFS(tab) { nt_on_graph = ((tab) == graphtab_ref); \
-  nt_dark = !(nt_on_graph ? opts.darkgraph : opts.darktheme); }
 
-static GtkWidget* graphtab_ref;
+static GtkWidget *graphtab_ref;
+#ifdef WITH_PPGL
+static GtkWidget *tab3d_ref;
+#endif
+
 static int exit_code = EXIT_SUCCESS;
 
 static void on_win_destroy(GtkWidget *widget, gpointer unused) { atquit = true; }
 
 static void on_tab_switch(GtkNotebook *nb, GtkWidget *tab, guint ndx, gpointer unused) {
-  SET_NT_REFS(tab);
+  tab_dependent(tab);
   if (GTK_IS_BOX(tab)) for (GtkWidget *p = gtk_widget_get_first_child(tab); p; p = gtk_widget_get_next_sibling(p)) {
     if (GTK_IS_LIST_BOX(p)) gtk_list_box_unselect_all(GTK_LIST_BOX(p));
     else if (GTK_IS_SCROLLED_WINDOW(p)) {
@@ -57,10 +62,20 @@ static void app_cb(GtkApplication* app, gpointer unused) {
   if (style_loaded) gtk_widget_add_css_class(nb, CSS_BGROUND);
   gtk_notebook_set_tab_pos(GTK_NOTEBOOK(nb), GTK_POS_BOTTOM);
   nb_tabs[TAB_PING_NDX] = pingtab_init(win);
-  if (opts.graph) { nb_tabs[TAB_GRAPH_NDX] = graphtab_init(win); graphtab_ref = nb_tabs[TAB_GRAPH_NDX]->tab.w; }
+  if (opts.graph) {
+    nb_tabs[TAB_GRAPH_NDX] = graphtab_init(win);
+    if (nb_tabs[TAB_GRAPH_NDX]) graphtab_ref = nb_tabs[TAB_GRAPH_NDX]->tab.w; }
+#ifdef WITH_PPGL
+  if (opts.ppgl) {
+    nb_tabs[TAB_3D_NDX] = ppgltab_init(win);
+    if (nb_tabs[TAB_3D_NDX]) tab3d_ref = nb_tabs[TAB_3D_NDX]->tab.w; }
+#endif
   nb_tabs[TAB_LOG_NDX]  = logtab_init(win);
   for (int i = 0; i < G_N_ELEMENTS(nb_tabs); i++) {
     if (!opts.graph && (i == TAB_GRAPH_NDX)) continue;
+#ifdef WITH_PPGL
+    if (!opts.ppgl && (i == TAB_3D_NDX)) continue;
+#endif
     t_tab *tab = nb_tabs[i];
     if (!tab || !tab->tab.w || !tab->lab.w) APPQUIT("tab#%d", i);
     tab_setup(tab);
@@ -70,13 +85,16 @@ static void app_cb(GtkApplication* app, gpointer unused) {
   }
   tab_reload_theme();
   gtk_notebook_set_current_page(GTK_NOTEBOOK(nb), start_page);
-  if (graphtab_ref) gtk_widget_set_visible(graphtab_ref, opts.graph);
   g_signal_connect(nb, EV_TAB_SWITCH, G_CALLBACK(on_tab_switch), NULL);
   // nb overlay
   GtkWidget *over = notifier_init(NT_MAIN_NDX, nb);
   if (!GTK_IS_OVERLAY(over)) APPQUIT("%s", "notification window");
-  GtkWidget *curr = (start_page == TAB_GRAPH_NDX) ? graphtab_ref : nb_tabs[start_page]->tab.w;
-  SET_NT_REFS(curr);
+  GtkWidget *curr = (start_page == TAB_GRAPH_NDX) ? graphtab_ref : (
+#ifdef WITH_PPGL
+    (start_page == TAB_3D_NDX) ? tab3d_ref :
+#endif
+    nb_tabs[start_page]->tab.w);
+  tab_dependent(curr);
   gtk_window_set_child(GTK_WINDOW(win), over);
   //
   g_signal_connect(win, EV_DESTROY, G_CALLBACK(on_win_destroy), NULL);
@@ -96,6 +114,19 @@ static void recap_cb(GApplication* app, gpointer unused) {
   if (G_IS_APPLICATION(app)) g_application_hold(app);
   pinger_start();
   return;
+}
+
+
+// pub
+
+void tab_dependent(GtkWidget *tab) {
+  static GtkWidget *currtab_ref;
+  if (tab) currtab_ref = tab; else tab = currtab_ref;
+  if (tab == graphtab_ref) nt_dark = !opts.darkgraph;
+#ifdef WITH_PPGL
+  else if (tab == tab3d_ref) nt_dark = !opts.darkppgl;
+#endif
+  else nt_dark = !opts.darktheme;
 }
 
 int main(int argc, char **argv) {

@@ -1,3 +1,6 @@
+## 0.2.7
+- [in progress] base of 3D-plot with OpenGL support
+
 ## 0.2.6
 - DnD reorder: suppress not needed notifications
 - Clipboard: precalculate field lengths due to SizeGroups

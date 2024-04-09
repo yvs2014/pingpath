@@ -18,11 +18,10 @@ static void logtab_add(const gchar *str) {
   gchar *cp = strchr(str, '\n') ? g_strdup(str) : NULL;
   GtkWidget *line = gtk_label_new(cp ? g_strdelimit(cp, "\n", ',') : str);
   g_free(cp);
-  if (GTK_IS_LABEL(line)) {
-    gtk_widget_set_halign(line, GTK_ALIGN_START);
-    gtk_list_box_append(GTK_LIST_BOX(logtab.dyn.w), line);
-    loglines++;
-  }
+  g_return_if_fail(line);
+  gtk_widget_set_halign(line, GTK_ALIGN_START);
+  gtk_list_box_append(GTK_LIST_BOX(logtab.dyn.w), line);
+  loglines++;
   while (loglines > opts.logmax) {
     GtkWidget *line = gtk_widget_get_first_child(logtab.dyn.w);
     if (GTK_IS_LABEL(line)) gtk_label_set_text(GTK_LABEL(line), NULL);
@@ -37,20 +36,20 @@ static void logtab_add(const gchar *str) {
 
 t_tab* logtab_init(GtkWidget* win) {
   TW_TW(logtab.lab, gtk_box_new(GTK_ORIENTATION_VERTICAL, 2), CSS_PAD, NULL);
-  g_return_val_if_fail(GTK_IS_BOX(logtab.lab.w), NULL);
+  g_return_val_if_fail(logtab.lab.w, NULL);
   TW_TW(logtab.tab, gtk_box_new(GTK_ORIENTATION_VERTICAL, MARGIN), CSS_PAD, CSS_BGROUND);
-  g_return_val_if_fail(GTK_IS_BOX(logtab.tab.w), NULL);
+  g_return_val_if_fail(logtab.tab.w, NULL);
   TW_TW(logtab.dyn, gtk_list_box_new(), NULL, CSS_BGROUND);
-  g_return_val_if_fail(GTK_IS_LIST_BOX(logtab.dyn.w), NULL);
+  g_return_val_if_fail(logtab.dyn.w, NULL);
   gtk_list_box_set_selection_mode(GTK_LIST_BOX(logtab.dyn.w), GTK_SELECTION_MULTIPLE);
   gtk_list_box_set_activate_on_single_click(GTK_LIST_BOX(logtab.dyn.w), false);
   gtk_widget_set_halign(logtab.dyn.w, GTK_ALIGN_FILL);
   gtk_widget_set_hexpand(logtab.dyn.w, false);
   GtkWidget *box = gtk_box_new(GTK_ORIENTATION_VERTICAL, MARGIN);
-  g_return_val_if_fail(GTK_IS_BOX(box), NULL);
+  g_return_val_if_fail(box, NULL);
   gtk_box_append(GTK_BOX(box), logtab.dyn.w);
   GtkWidget *scroll = gtk_scrolled_window_new();
-  g_return_val_if_fail(GTK_IS_SCROLLED_WINDOW(scroll), NULL);
+  g_return_val_if_fail(scroll, NULL);
   gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scroll), box);
   gtk_widget_set_vexpand(GTK_WIDGET(scroll), true);
   gtk_box_append(GTK_BOX(logtab.tab.w), scroll);

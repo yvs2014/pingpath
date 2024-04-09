@@ -134,7 +134,7 @@ static char* cli_opt_charelem(char *str, const char *patt, int ch) {
     t_ent_bool *en = strchr(patt, *p) ? &ent_bool[char2ndx(ch, true, *p)] : NULL;
     if (!en) continue;
     gboolean *pb = EN_BOOLPTR(en);
-    if (pb) { *pb = true; g_message("%s: %s: %s", en->prefix, en->en.name, TOGGLE_ON_HDR); }
+    if (pb) { *pb = true; g_message("%s: %s: " TOGGLE_ON_HDR, en->prefix, en->en.name); }
   }
   return str;
 }
@@ -262,7 +262,7 @@ static gboolean config_opt_not_found(GError *opterr, const gchar *section, const
 static void cli_set_opt_dns(gboolean numeric, t_opts *opts) {
   if (!opts) return;
   gboolean dns = !numeric; if (opts->dns == dns) return;
-  opts->dns = dns; g_message(OPT_DNS_HDR " %s", dns ? TOGGLE_ON_HDR : TOGGLE_OFF_HDR);
+  opts->dns = dns; g_message(OPT_DNS_HDR " %s", onoff(dns));
 }
 
 static gboolean cli_opt_f(const char *name, const char *value, t_opts *opts, GError **error) {
@@ -317,7 +317,7 @@ static gboolean cli_opt_f(const char *name, const char *value, t_opts *opts, GEr
             if ((val == 4) || (val == 6)) {
               if (opts->ipv != val) {
                 opts->ipv = val;
-                g_message("%s only %s", (val == 4) ? OPT_IPV4_HDR : OPT_IPV6_HDR, TOGGLE_ON_HDR);
+                g_message("%s only " TOGGLE_ON_HDR, (val == 4) ? OPT_IPV4_HDR : OPT_IPV6_HDR);
               }
             } else { g_warning("%s:%s: %s", section, optname, "must be 4 or 6"); CLI_SET_ERR; return false; }
           }
@@ -420,8 +420,8 @@ gboolean cli_init(int *pargc, char ***pargv) {
     }
   }
   if (ipv4 && ipv6) CLI_FAIL("options %s are mutually exclusive", "-4/-6");
-  if (ipv4 && (opts.ipv != 4)) { opts.ipv = 4; g_message(OPT_IPV4_HDR " only %s", TOGGLE_ON_HDR); }
-  if (ipv6 && (opts.ipv != 6)) { opts.ipv = 6; g_message(OPT_IPV6_HDR " only %s", TOGGLE_ON_HDR); }
+  if (ipv4 && (opts.ipv != 4)) { opts.ipv = 4; g_message(OPT_IPV4_HDR " only " TOGGLE_ON_HDR); }
+  if (ipv6 && (opts.ipv != 6)) { opts.ipv = 6; g_message(OPT_IPV6_HDR " only " TOGGLE_ON_HDR); }
   if (num >= 0) cli_set_opt_dns(num, &opts);
   // arguments
   if (target) {

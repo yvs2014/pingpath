@@ -18,7 +18,7 @@ BASEICODIR ?= $(SHRDIR)/icons/hicolor
 SVGICODIR  ?= $(BASEICODIR)/scalable/apps
 SMPLDIR ?= $(SHRDIR)/doc/$(NAME)/examples
 
-PKGS ?= gtk4
+PKGS = gtk4
 
 CC ?= gcc
 CFLAGS = -Wall
@@ -32,6 +32,14 @@ endif
 
 ifndef NO_DND
 CFLAGS += -DWITH_DND
+endif
+
+NO_PPGL = 1 # at dev stage
+ifndef NO_PPGL
+CFLAGS += -DWITH_PPGL
+PKGS += gl
+PKGS += cglm
+PKGS += epoxy
 endif
 
 CFLAGS += $(shell $(PKGCONFIG) --cflags $(PKGS))
@@ -65,6 +73,10 @@ SRC += pinger.c parser.c stat.c dns.c whois.c cli.c
 SRC += ui/style.c ui/appbar.c ui/action.c ui/option.c
 SRC += ui/clipboard.c ui/notifier.c
 SRC += tabs/ping.c tabs/graph.c tabs/log.c
+#define NO_PPGL
+ifndef NO_PPGL
+SRC += tabs/ppgl.c tabs/ppgl_aux.c tabs/ppgl_pango.c
+endif
 
 OBJS = $(SRC:.c=.o)
 
@@ -78,7 +90,7 @@ all: $(NAME)
 	$(CC) -c -o $@ $(CFLAGS) $<
 
 $(NAME): $(OBJS)
-	$(CC) -o $@ $(OBJS) $(LIBS)
+	$(CC) -o $@ $(OBJS) $(LDFLAGS) $(LIBS)
 
 clean:
 	rm -f $(OBJS)

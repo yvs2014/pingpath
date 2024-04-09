@@ -160,6 +160,8 @@ t_elem_desc grex_desc = { .elems = graphelem, .mm = { .min = GREX_MEAN, .max = G
 
 static unsigned rgb2x(double c) { int n = c * 255; return n % 256; }
 
+inline const char* onoff(gboolean on) { return on ? TOGGLE_ON_HDR : TOGGLE_OFF_HDR; }
+
 gchar* get_nth_color(int i) {
   int n = i % n_colors;
   return g_strdup_printf("#%02x%02x%02x", rgb2x(colors[n][0]), rgb2x(colors[n][1]), rgb2x(colors[n][2]));
@@ -211,7 +213,7 @@ gchar* rtver(int ndx) {
 
 GtkListBoxRow* line_row_new(GtkWidget *child, gboolean visible) {
   GtkListBoxRow *row = GTK_LIST_BOX_ROW(gtk_list_box_row_new());
-  g_return_val_if_fail(GTK_IS_LIST_BOX_ROW(row), NULL);
+  g_return_val_if_fail(row, NULL);
   gtk_list_box_row_set_child(row, child);
   gtk_widget_set_visible(GTK_WIDGET(row), visible);
   return row;
@@ -225,13 +227,9 @@ void tab_setup(t_tab *tab) {
     if (GTK_IS_BOX(tab->lab.w)) {
       const char *ico = is_sysicon(tab->ico);
       if (!ico) WARN("No icon found for %s", tab->name);
-      GtkWidget *image = gtk_image_new_from_icon_name(ico);
-      if (GTK_IS_IMAGE(image)) gtk_box_append(GTK_BOX(tab->lab.w), image);
-      if (tab->tag) {
-        GtkWidget *tag = gtk_label_new(tab->tag);
-        if (GTK_IS_LABEL(tag)) gtk_box_append(GTK_BOX(tab->lab.w), tag);
-      }
-      gtk_widget_set_tooltip_text(tab->lab.w, tab->tip);
+      gtk_box_append(GTK_BOX(tab->lab.w), gtk_image_new_from_icon_name(ico));
+      if (tab->tag) gtk_box_append(GTK_BOX(tab->lab.w), gtk_label_new(tab->tag));
+      if (tab->tip) gtk_widget_set_tooltip_text(tab->lab.w, tab->tip);
     }
   }
   t_tab_widget tw[] = {tab->hdr, tab->dyn, tab->info};
