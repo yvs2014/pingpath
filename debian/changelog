@@ -1,3 +1,9 @@
+pingpath (0.2.8) mantic noble; urgency=low
+
+  * [draft] plot 3D data
+
+ -- yvs <VSYakovetsky@gmail.com>  Fri, 03 May 2024 23:13:10 +0300
+
 pingpath (0.2.7) mantic noble; urgency=low
 
   * [in progress] base of 3D-plot with OpenGL support

@@ -315,22 +315,22 @@ void pingtab_clear(void) {
 }
 
 void pingtab_update(void) {
-  if (!pinger_state.pause) for (int i = 0; i < hops_no; i++) {
+  if (!pinger_state.pause) for (int i = 0; i < tgtat; i++) {
     t_listline *line = &listbox.bodylines[i];
     for (int j = 0; j < ELEM_MAX; j++) {
       GtkWidget *lab = line->labs[j];
       if (GTK_IS_LABEL(lab) && is_statinfo_ndx(j) && pingelem[j].enable) {
-        const gchar *text = stat_str_elem(i, pingelem[j].type);
+        const char *text = stat_str_elem(i, pingelem[j].type);
         UPDATE_LABEL(lab, text);
       }
     }
   }
 }
 
-void pingtab_vis_rows(int no) {
-  LOG("set upto %d visible rows", no);
+void pingtab_vis_rows(int upto) {
+  LOG("set upto %d visible rows", upto);
   for (int i = 0; i < MAXTTL; i++) {
-    gboolean vis = (i >= opts.min) && (i < no);
+    gboolean vis = (i >= opts.min) && (i < upto);
     t_listline *line = &listbox.bodylines[i];
     if (GTK_IS_WIDGET(line->row)) gtk_widget_set_visible(GTK_WIDGET(line->row), vis);
     if (GTK_IS_WIDGET(line->box)) gtk_widget_set_visible(line->box, vis);
@@ -346,7 +346,7 @@ void pingtab_vis_cols(void) {
   pingtab_update();
 }
 
-void pingtab_set_error(const gchar *error) {
+void pingtab_set_error(const char *error) {
   gtk_label_set_label(GTK_LABEL(listbox.info.box), error);
   gboolean vis = error && error[0];
   gtk_widget_set_visible(GTK_WIDGET(listbox.info.row), vis);

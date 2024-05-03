@@ -10,7 +10,7 @@
 #define MIN_GTK_RUNTIME(major, minor, micro) (!gtk_check_version(major, minor, micro))
 
 #define APPNAME "pingpath"
-#define VERSION "0.2.7"
+#define VERSION "0.2.8"
 
 #define X_RES 1024
 #define Y_RES 720
@@ -276,8 +276,6 @@
 #define QOS_MAX    255
 #define LOGMAX_MAX 999
 
-// graph related
-#define CELL_SIZE    50
 #define GRAPH_LEFT   60
 #define GRAPH_TOP    50
 #define GRAPH_RIGHT  40
@@ -319,15 +317,15 @@ typedef struct minmax {
 } t_minmax;
 
 typedef struct host {
-  gchar *addr, *name;
+  char *addr, *name;
 } t_host;
 
 typedef struct whois {
-  gchar* elem[WHOIS_NDX_MAX];
+  char* elem[WHOIS_NDX_MAX];
 } t_whois;
 
 typedef struct whoaddr {
-  gchar *addr;
+  char *addr;
   t_whois whois;
 } t_whoaddr;
 
@@ -355,7 +353,7 @@ typedef struct hop {
   gboolean reach, tout;
   t_tseq mark;
   t_rseq rseq[2];
-  gchar* info;
+  char* info;
 } t_hop;
 
 typedef struct ref { t_hop *hop; int ndx; } t_ref;
@@ -386,11 +384,11 @@ typedef struct tab {
 typedef struct t_type_elem {
   int type;
   gboolean enable;
-  gchar *name, *tip;
+  char *name, *tip;
 } t_type_elem;
 
 typedef struct t_legend {
-  const gchar *name, *as, *cc, *av, *jt;
+  const char *name, *as, *cc, *av, *jt;
 } t_legend;
 
 typedef int (*type2ndx_fn)(int);
@@ -410,7 +408,7 @@ extern const char *unkn_whois;
 extern const char *log_empty;
 
 extern gboolean cli;
-extern gint verbose, start_page;
+extern int verbose, start_page;
 
 extern t_tab* nb_tabs[TAB_NDX_MAX];
 extern t_type_elem pingelem[ELEM_MAX];
@@ -421,7 +419,7 @@ extern const double colors[][3];
 extern const int n_colors;
 
 const char* onoff(gboolean on);
-gchar* get_nth_color(int i);
+char* get_nth_color(int i);
 
 int char2ndx(int cat, gboolean ent, char c);
 gboolean*  pingelem_enabler(int type);
@@ -443,12 +441,12 @@ void host_free(t_host *host);
 int host_cmp(const void *a, const void *b);
 int ref_cmp(const t_ref *a, const t_ref *b);
 t_ref* ref_new(t_hop *hop, int ndx);
-void print_refs(GSList *refs, const gchar *prefix);
-GSList* list_add_nodup(GSList **list, gpointer data, GCompareFunc cmp, int max);
+void print_refs(GSList *refs, const char *prefix);
+GSList* list_add_nodup(GSList **list, void *data, GCompareFunc cmp, int max);
 GSList* list_add_ref(GSList **list, t_hop *hop, int ndx);
-extern void log_add(const gchar *fmt, ...);
+extern void log_add(const char *fmt, ...);
 
-#define UPDATE_LABEL(label, str) { const gchar *txt = gtk_label_get_text(GTK_LABEL(label)); \
+#define UPDATE_LABEL(label, str) { const char *txt = gtk_label_get_text(GTK_LABEL(label)); \
   if (STR_NEQ(txt, str)) gtk_label_set_text(GTK_LABEL(label), str); }
 
 #define TW_TW(tw, widget, css_perm, css_dyn) { (tw).w = widget; (tw).css = css_perm; (tw).col = css_dyn; }

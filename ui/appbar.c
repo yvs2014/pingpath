@@ -9,9 +9,9 @@
 
 #define ENTER_HINT "Enter hostname or IP address ..."
 
-guint datetime_id;
+unsigned datetime_id;
 
-static int update_datetime(gpointer label) {
+static int update_datetime(void *label) {
   static char datetime_label[32]; // note: for 'datetime_id' timer only
   if (atquit) { datetime_id = 0; return G_SOURCE_REMOVE; }
   if (datetime_id) {
@@ -41,7 +41,7 @@ static gboolean start_datetime(GtkWidget *bar) {
 
 static void target_cb(GtkWidget *widget, GtkWidget *entry) {
   g_return_if_fail(GTK_IS_EDITABLE(entry));
-  gchar *target = parser_valid_target(gtk_editable_get_text(GTK_EDITABLE(entry)));
+  char *target = parser_valid_target(gtk_editable_get_text(GTK_EDITABLE(entry)));
   if (target) {
     g_free(opts.target); opts.target = target;
     action_update();
@@ -54,7 +54,7 @@ static gboolean add_target_input(GtkWidget *bar) {
   GtkWidget *entry = gtk_entry_new();
   g_return_val_if_fail(GTK_IS_ENTRY(entry), false);
   gtk_entry_set_max_length(GTK_ENTRY(entry), MAXHOSTNAME);
-  gchar *hint = ENTER_HINT;
+  char *hint = ENTER_HINT;
   gtk_entry_set_placeholder_text(GTK_ENTRY(entry), hint);
   gtk_editable_set_editable(GTK_EDITABLE(entry), true);
   gtk_editable_set_max_width_chars(GTK_EDITABLE(entry), g_utf8_strlen(hint, MAXHOSTNAME) - 5);

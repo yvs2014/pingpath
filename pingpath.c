@@ -12,11 +12,8 @@
 #include "ui/appbar.h"
 #include "ui/notifier.h"
 #include "tabs/ping.h"
-#include "tabs/graph.h"
-#ifdef WITH_PPGL
-#include "tabs/ppgl.h"
-#endif
 #include "tabs/log.h"
+#include "graph_rel.h"
 
 #define APPFLAGS G_APPLICATION_NON_UNIQUE
 
@@ -27,9 +24,9 @@ static GtkWidget *tab3d_ref;
 
 static int exit_code = EXIT_SUCCESS;
 
-static void on_win_destroy(GtkWidget *widget, gpointer unused) { atquit = true; }
+static void on_win_destroy(GtkWidget *widget, void *unused) { atquit = true; }
 
-static void on_tab_switch(GtkNotebook *nb, GtkWidget *tab, guint ndx, gpointer unused) {
+static void on_tab_switch(GtkNotebook *nb, GtkWidget *tab, unsigned ndx, void *unused) {
   tab_dependent(tab);
   if (GTK_IS_BOX(tab)) for (GtkWidget *p = gtk_widget_get_first_child(tab); p; p = gtk_widget_get_next_sibling(p)) {
     if (GTK_IS_LIST_BOX(p)) gtk_list_box_unselect_all(GTK_LIST_BOX(p));
@@ -45,7 +42,7 @@ static void on_tab_switch(GtkNotebook *nb, GtkWidget *tab, guint ndx, gpointer u
 #define APPQUIT(fmt, ...) { WARN("init " fmt " failed", __VA_ARGS__); \
   g_application_quit(G_APPLICATION(app)); exit_code = EXIT_FAILURE; return; }
 
-static void app_cb(GtkApplication* app, gpointer unused) {
+static void app_cb(GtkApplication* app, void *unused) {
   style_set(opts.darktheme, opts.darkgraph);
   GtkWidget *win = gtk_application_window_new(app);
   if (!GTK_IS_WINDOW(win)) APPQUIT("%s", "app window");
@@ -109,7 +106,7 @@ static void app_cb(GtkApplication* app, gpointer unused) {
   if (autostart && opts.target) { pinger_start(); appbar_update(); }
 }
 
-static void recap_cb(GApplication* app, gpointer unused) {
+static void recap_cb(GApplication* app, void *unused) {
   g_timeout_add_seconds(1, (GSourceFunc)pinger_recap_cb, app);
   if (G_IS_APPLICATION(app)) g_application_hold(app);
   pinger_start();

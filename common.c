@@ -11,7 +11,7 @@ const char *unkn_field = ""; // "?" "???"
 const char *unkn_whois = "";
 
 gboolean cli;
-gint verbose, start_page = TAB_PING_NDX;
+int verbose, start_page = TAB_PING_NDX;
 t_tab* nb_tabs[TAB_NDX_MAX]; // notebook tabs are reorderable
 
 t_type_elem pingelem[ELEM_MAX] = {
@@ -162,7 +162,7 @@ static unsigned rgb2x(double c) { int n = c * 255; return n % 256; }
 
 inline const char* onoff(gboolean on) { return on ? TOGGLE_ON_HDR : TOGGLE_OFF_HDR; }
 
-gchar* get_nth_color(int i) {
+char* get_nth_color(int i) {
   int n = i % n_colors;
   return g_strdup_printf("#%02x%02x%02x", rgb2x(colors[n][0]), rgb2x(colors[n][1]), rgb2x(colors[n][2]));
 }
@@ -198,7 +198,7 @@ const char *timestampit(void) {
   return now_ts;
 }
 
-gchar* rtver(int ndx) {
+char* rtver(int ndx) {
   int ver = 0;
   switch (ndx) {
     case GLIB_STRV: return
@@ -277,7 +277,7 @@ t_ref* ref_new(t_hop *hop, int ndx) {
 }
 
 #if DNS_DEBUGGING || WHOIS_DEBUGGING
-void print_refs(GSList *refs, const gchar *prefix) {
+void print_refs(GSList *refs, const char *prefix) {
   if (verbose < 3) return;
   int i = 0;
   for (GSList* p = refs; p; p = p->next, i++) {
@@ -288,7 +288,7 @@ void print_refs(GSList *refs, const gchar *prefix) {
 }
 #endif
 
-GSList* list_add_nodup(GSList **list, gpointer data, GCompareFunc cmp, int max) {
+GSList* list_add_nodup(GSList **list, void *data, GCompareFunc cmp, int max) {
   if (!list || !data || !cmp) return NULL;
   GSList *elem = g_slist_find_custom(*list, data, cmp);
   if (elem) { g_free(data); return elem; }

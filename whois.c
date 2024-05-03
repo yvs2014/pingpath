@@ -8,7 +8,7 @@
 #define WHOIS_REQUEST_FMT   "-m %s\n"
 
 typedef struct wc_elem { // whois cache element
-  gchar *addr;
+  char *addr;
   t_whois whois;
 } t_wc_elem;
 
@@ -37,7 +37,7 @@ void _pr_whois_qlist(GSList *qlist) {
   int i = 0;
   for (GSList *p = qlist; p; p = p->next, i++) {
     t_wq_elem *q = p->data; if (!q) continue;
-    gchar **w = q->data.whois.elem;
+    char **w = q->data.whois.elem;
     WHOIS_DEBUG("c[%d]: refs=%p addr=%s as=%s cc=%s rt=%s desc=%s", i, q->refs, q->data.addr, w[WHOIS_AS_NDX],
       w[WHOIS_CC_NDX], w[WHOIS_RT_NDX], w[WHOIS_DESC_NDX]);
     print_refs(q->refs, "WHOIS:  ");
@@ -79,19 +79,19 @@ static void wq_free(t_wq_elem *elem) {
   }
 }
 
-static t_wc_elem* wc_find(gchar* addr) {
+static t_wc_elem* wc_find(char* addr) {
   t_wc_elem find = { .addr = addr };
   GSList *found = g_slist_find_custom(whois_cache, &find, wc_cmp);
   return found ? found->data : NULL;
 }
 
-static t_wq_elem* wq_find(gchar* addr) {
+static t_wq_elem* wq_find(char* addr) {
   t_wq_elem find = { .data = { .addr = addr }};
   GSList *found = g_slist_find_custom(whois_query, &find, wq_cmp);
   return found ? found->data : NULL;
 }
 
-static gboolean whois_elems_not_null(gchar **welems) {
+static gboolean whois_elems_not_null(char **welems) {
   if (!welems) return false;
   for (int i = 0; i < WHOIS_NDX_MAX; i++) if (!welems[i]) return false;
   return true;
@@ -105,7 +105,7 @@ static void whois_query_close(t_wq_elem *elem) {
   wq_free(elem); g_free(elem);
 }
 
-static void whois_copy_elems(gchar* from[], gchar* to[], gboolean *wcached, gboolean *wcached_nl) {
+static void whois_copy_elems(char* from[], char* to[], gboolean *wcached, gboolean *wcached_nl) {
   if (!from || !to) return;
   for (int i = 0; i < WHOIS_NDX_MAX; i++) {
     UPD_NSTR(to[i], from[i], MAXHOSTNAME);
@@ -119,10 +119,10 @@ static void whois_query_complete(t_ref *ref, t_wq_elem *elem) {
   t_hop *hop = ref->hop;
   if (hop) {
     int ndx = ref->ndx;
-    gchar *orig = hop->host[ndx].addr;
-    gchar *addr = elem->data.addr;
+    char *orig = hop->host[ndx].addr;
+    char *addr = elem->data.addr;
     if (STR_EQ(orig, addr)) {
-      gchar **elems = hop->whois[ndx].elem;
+      char **elems = hop->whois[ndx].elem;
       whois_copy_elems(elem->data.whois.elem, elems, hop->wcached, hop->wcached_nl);
     } else LOG("whois(%s) origin is changed: %s", addr, orig);
   }
@@ -144,7 +144,7 @@ static GSList* list_add_wc(GSList **list, t_wc_elem *wc) {
   return *list;
 }
 
-static void whois_cache_update(gchar *addr, gchar* welem[]) {
+static void whois_cache_update(char *addr, char* welem[]) {
   if (!addr) return;
   t_wc_elem *cache = wc_find(addr);
   if (cache) {
@@ -154,7 +154,7 @@ static void whois_cache_update(gchar *addr, gchar* welem[]) {
   cache = g_malloc0(sizeof(t_wc_elem));
   if (cache) {
     cache->addr = g_strndup(addr, MAXHOSTNAME);
-    gchar **cwelem = cache->whois.elem;
+    char **cwelem = cache->whois.elem;
     for (int i = 0; i < WHOIS_NDX_MAX; i++) UPD_NSTR(cwelem[i], welem[i], MAXHOSTNAME);
     if (cache->addr && whois_elems_not_null(cwelem)) {
       if (list_add_wc(&whois_cache, cache)) {
@@ -168,7 +168,7 @@ static void whois_cache_update(gchar *addr, gchar* welem[]) {
   g_free(cache);
 }
 
-static t_wq_elem* whois_query_save(const gchar *addr, t_hop *hop, int ndx) {
+static t_wq_elem* whois_query_save(const char *addr, t_hop *hop, int ndx) {
   if (!hop || !addr) return NULL;
   t_wq_elem *elem = g_malloc0(sizeof(t_wq_elem));
   if (!elem) return NULL;
@@ -189,7 +189,7 @@ static t_wq_elem* whois_query_save(const gchar *addr, t_hop *hop, int ndx) {
   return NULL;
 }
 
-static t_wq_elem* whois_query_fill(gchar *addr, t_hop *hop, int ndx) {
+static t_wq_elem* whois_query_fill(char *addr, t_hop *hop, int ndx) {
   if (!hop || !addr) return NULL;
   t_wq_elem *found = wq_find(addr);
   if (found) {
@@ -202,10 +202,10 @@ static t_wq_elem* whois_query_fill(gchar *addr, t_hop *hop, int ndx) {
 
 static void on_whois_read(GObject *stream, GAsyncResult *result, t_wq_elem *elem);
 
-static gboolean whois_reset_read(GObject *stream, gssize size, t_wq_elem *elem) {
+static gboolean whois_reset_read(GObject *stream, ssize_t size, t_wq_elem *elem) {
   if (!elem || !elem->buff || !G_IS_INPUT_STREAM(stream)) return false;
   elem->size += size;
-  gssize left = NET_BUFF_SIZE - elem->size;
+  ssize_t left = NET_BUFF_SIZE - elem->size;
   gboolean reset_read = left > 0;
   if (reset_read) { // continue unless EOF
     char *off = elem->buff + elem->size;
@@ -222,13 +222,13 @@ static gboolean whois_reset_read(GObject *stream, gssize size, t_wq_elem *elem) 
 static void on_whois_read(GObject *stream, GAsyncResult *result, t_wq_elem *elem) {
   if (!elem || !G_IS_INPUT_STREAM(stream)) return;
   GError *error = NULL;
-  gssize size = g_input_stream_read_finish(G_INPUT_STREAM(stream), result, &error);
+  ssize_t size = g_input_stream_read_finish(G_INPUT_STREAM(stream), result, &error);
   if (size < 0) { ERROR("g_input_stream_read_finish()"); }
   else {
     if (!elem->buff) return; // possible at external exit
     if (size) { if (whois_reset_read(stream, size, elem)) return; }
     else { // EOF (size == 0)
-      gchar **welem = elem->data.whois.elem;
+      char **welem = elem->data.whois.elem;
       parser_whois(elem->buff, elem->size, welem);
       if (welem[WHOIS_AS_NDX] && !welem[WHOIS_AS_NDX][0]) WHOIS_DEBUG("%s unresolved", elem->data.addr);
       WHOIS_DEBUG("%s(%s) as=%s cc=%s rt=%s desc=%s", __func__, elem->data.addr,
@@ -242,7 +242,7 @@ static void on_whois_read(GObject *stream, GAsyncResult *result, t_wq_elem *elem
   }
 }
 
-static void on_whois_write_all(GObject *stream, GAsyncResult *result, gchar *request) {
+static void on_whois_write_all(GObject *stream, GAsyncResult *result, char *request) {
   if (!G_IS_OUTPUT_STREAM(stream)) return;
   GError *error = NULL;
   if (!g_output_stream_write_all_finish(G_OUTPUT_STREAM(stream), result, NULL, &error))
@@ -277,7 +277,7 @@ static void on_whois_connect(GObject* source, GAsyncResult *result, t_wq_elem *e
 
 void whois_resolv(t_hop *hop, int ndx) {
   if (!hop) return;
-  gchar *addr = hop->host[ndx].addr;
+  char *addr = hop->host[ndx].addr;
   if (!addr) return;
   PR_WHOIS_C;
   t_wc_elem *cached = wc_find(addr);

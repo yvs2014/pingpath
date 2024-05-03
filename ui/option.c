@@ -6,7 +6,7 @@
 #include "style.h"
 #include "notifier.h"
 #include "tabs/ping.h"
-#include "tabs/graph.h"
+#include "graph_rel.h"
 
 typedef gboolean (*optmenu_add_items_fn)(GtkWidget *);
 
@@ -150,14 +150,14 @@ static void set_ed_texthint(t_ent_str *en) {
 
 static void toggled_dns(void) { stat_reset_cache(); notifier_legend_update(); pinger_update_tabs(NULL); }
 
-static void toggle_graph_update(void) { graphtab_graph_refresh(false); }
-
 static void toggle_colors(void) {
   tab_dependent(NULL);
   style_set(opts.darktheme, opts.darkgraph);
   tab_reload_theme();
-  graphtab_full_refresh();
+  if (OPTS_GRAPH_REL) { GRAPH_REFRESH_REL; notifier_legend_reload_css(); }
 }
+
+static void toggle_legend(void) { if (opts.graph) notifier_set_visible(NT_GRAPH_NDX, opts.legend); }
 
 static void toggle_cb(GtkCheckButton *check, t_ent_bool *en) {
   if (!GTK_IS_CHECK_BUTTON(check) || !en) return;
@@ -189,7 +189,7 @@ static void toggle_cb(GtkCheckButton *check, t_ent_bool *en) {
       check_bool_val(check, en, toggle_colors);
       break;
     case ENT_BOOL_LGND:
-      check_bool_val(check, en, graphtab_toggle_legend);
+      check_bool_val(check, en, toggle_legend);
       break;
     case ENT_BOOL_AVJT:
     case ENT_BOOL_CCAS:
@@ -199,7 +199,7 @@ static void toggle_cb(GtkCheckButton *check, t_ent_bool *en) {
     case ENT_BOOL_MEAN:
     case ENT_BOOL_JRNG:
     case ENT_BOOL_AREA:
-      check_bool_val(check, en, toggle_graph_update);
+      check_bool_val(check, en, graphtab_update);
       break;
   }
 }
@@ -239,7 +239,7 @@ static void arrow_cb(GtkWidget *widget, t_ent_exp_common *en) {
 static void input_cb(GtkWidget *input, t_ent_str *en) {
   if (!en) return;
   g_return_if_fail(GTK_IS_EDITABLE(input));
-  const gchar *got = gtk_editable_get_text(GTK_EDITABLE(input));
+  const char *got = gtk_editable_get_text(GTK_EDITABLE(input));
   switch (en->en.type) {
     case ENT_STR_CYCLES:
     case ENT_STR_IVAL:
@@ -317,11 +317,11 @@ static void max_cb(GtkWidget *spin, t_ent_spn *en) {
 }
 
 static void graph_type_cb(void) {
-  if (opts.graph == GRAPH_TYPE_NONE) graphtab_free(false);
-  if (!pinger_state.pause) graphtab_graph_refresh(false);
+  if (opts.graph == GRAPH_TYPE_NONE) graphtab_restart();
+  if (!pinger_state.pause) graphtab_update();
 }
 
-static GtkWidget* label_box(const gchar *name) {
+static GtkWidget* label_box(const char *name) {
   GtkWidget *box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, MARGIN * 2);
   g_return_val_if_fail(GTK_IS_BOX(box), NULL);
   GtkWidget *label = gtk_label_new(name);
@@ -333,7 +333,7 @@ static GtkWidget* label_box(const gchar *name) {
   return box;
 }
 
-static GtkWidget* add_labelbox(GtkWidget* list, const gchar *name) {
+static GtkWidget* add_labelbox(GtkWidget* list, const char *name) {
   GtkWidget *box = label_box(name);
   if (box) gtk_list_box_append(GTK_LIST_BOX(list), box);
   return box;
@@ -588,11 +588,10 @@ void option_update(void) {
 gboolean option_update_pingmenu(void) {
   opt_reordering = true; gboolean re = create_ping_optmenu(NULL); opt_reordering = false; return re; }
 
-void option_toggled(int ndx) {
-  if ((ndx >= 0) && (ndx < ENT_BOOL_MAX)) {
-    t_ent_bool *en = &ent_bool[ndx];
-    gboolean *pb = EN_BOOLPTR(en);
-    if (en->check && pb) gtk_check_button_set_active(en->check, *pb);
-  }
+void option_legend(void) {
+  t_ent_bool *en = &ent_bool[ENT_BOOL_LGND];
+  gboolean *pb = EN_BOOLPTR(en);
+  if (en->check && pb) gtk_check_button_set_active(en->check, *pb);
+  toggle_legend();
 }
 

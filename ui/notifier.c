@@ -22,7 +22,7 @@ typedef struct nt_extra {
 
 typedef struct notifier {
   GtkWidget *box, *inbox, *reveal;
-  guint visible;
+  unsigned visible;
   const int type;
   const gboolean autohide, dyncss;
   const char *defcss, *colcss;
@@ -55,7 +55,7 @@ static gboolean nt_set_visible(t_notifier *nt, gboolean visible) {
 
 static gboolean nt_hide(t_notifier *nt) { return nt_set_visible(nt, false); }
 
-static void nt_inform(t_notifier *nt, gchar *mesg) {
+static void nt_inform(t_notifier *nt, char *mesg) {
   static int nt_curr_dark;
   if (!nt || !mesg) return;
   if (!GTK_IS_WIDGET(nt->inbox) || !GTK_IS_REVEALER(nt->reveal)) return;
@@ -103,20 +103,20 @@ static void nt_reveal_sets(GtkWidget *reveal, int align, int transition) {
   gtk_revealer_set_transition_type(GTK_REVEALER(reveal), transition);
 }
 
-static gchar* nb_lgnd_nth_state(int n, gboolean enable) {
-  static gchar nb_lgnd_state_buff[80]; n++;
+static char* nb_lgnd_nth_state(int n, gboolean enable) {
+  static char nb_lgnd_state_buff[80]; n++;
   if (enable) g_snprintf(nb_lgnd_state_buff, sizeof(nb_lgnd_state_buff), "%d", n);
   else g_snprintf(nb_lgnd_state_buff, sizeof(nb_lgnd_state_buff), LGND_DIS_MARK_FMT, n);
   return nb_lgnd_state_buff;
 }
 
-static void nt_lgnd_row_cb(GtkListBox* self, GtkListBoxRow* row, gpointer data) {
+static void nt_lgnd_row_cb(GtkListBox* self, GtkListBoxRow* row, void *data) {
   if (GTK_IS_LIST_BOX_ROW(row)) {
     GtkWidget *box = gtk_list_box_row_get_child(row);
     if (GTK_IS_BOX(box)) {
       GtkWidget *no = gtk_widget_get_first_child(box);
       if (GTK_IS_LABEL(no)) {
-        const gchar *txt = gtk_label_get_text(GTK_LABEL(no));
+        const char *txt = gtk_label_get_text(GTK_LABEL(no));
         if (txt) {
           int n = atoi(txt); n--;
           if ((n >= opts.min) && (n < opts.lim)) {
@@ -126,7 +126,7 @@ static void nt_lgnd_row_cb(GtkListBox* self, GtkListBoxRow* row, gpointer data) 
             gtk_label_set_use_markup(GTK_LABEL(no), true);
             gtk_list_box_row_set_selectable(row, en);
             gtk_widget_set_opacity(GTK_WIDGET(row), en ? 1 : 0.5);
-            if (pinger_state.gotdata && !pinger_state.run) graphtab_graph_refresh(false);
+            if (pinger_state.gotdata && !pinger_state.run) graphtab_update();
             LOG("graph exclusion mask: 0x%x", lgnd_excl_mask);
           }
         }
@@ -152,7 +152,7 @@ static void nt_lgnd_dnd_icon(GtkDragSource *src, GdkDrag *drag, t_notifier *nt) 
   DNDORD("DND-icon: dx=%d dy=%d", nt->dx, nt->dy);
 }
 
-static gboolean nt_lgnd_on_drop(GtkDropTarget *dst, const GValue *val, gdouble x, gdouble y, gpointer unused) {
+static gboolean nt_lgnd_on_drop(GtkDropTarget *dst, const GValue *val, gdouble x, gdouble y, void *unused) {
   if (!val || !G_VALUE_HOLDS_POINTER(val)) return false;
   t_notifier *nt = g_value_get_pointer(val);
   if (!nt) return false;
@@ -179,7 +179,7 @@ static void nt_init_graph_box(GtkWidget *box, GtkWidget *over, t_notifier *nt) {
     if (!ex) continue;
     ex->box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, MARGIN);
     if (ex->box) { // number, color dash, avrg±jttr, cc:as, hopname
-      gchar span[100]; g_snprintf(span, sizeof(span), LGND_LINE_TOGGLE_TIP, i + 1);
+      char span[100]; g_snprintf(span, sizeof(span), LGND_LINE_TOGGLE_TIP, i + 1);
       gtk_widget_set_tooltip_text(ex->box, span);
       ex->row = line_row_new(ex->box, false);
       if (ex->box) {
@@ -194,7 +194,7 @@ static void nt_init_graph_box(GtkWidget *box, GtkWidget *over, t_notifier *nt) {
           NG_LG_GROUP(GRLG_NO); gtk_label_set_use_markup(GTK_LABEL(ex->elem[GRLG_NO]), true);
         }
         { // colored dash
-          gchar *col = get_nth_color(i);
+          char *col = get_nth_color(i);
           if (col) g_snprintf(span, sizeof(span), LGND_DASH_COL_FMT, col, DASH_CHAR);
           else g_snprintf(span, sizeof(span), LGND_DASH_DEF_FMT, DASH_CHAR);
           NT_LG_LABEL(ex->elem[GRLG_DASH], span, -1, is_grelem_enabled(GRLG_DASH));
@@ -276,9 +276,9 @@ static GtkWidget* nt_init(GtkWidget *base, t_notifier *nt) {
   return over;
 }
 
-static void nt_fill_legend_elem(GtkWidget* label, const gchar *f1, const gchar *f2, const gchar *delim) {
+static void nt_fill_legend_elem(GtkWidget* label, const char *f1, const char *f2, const char *delim) {
   if (!GTK_IS_LABEL(label)) return;
-  gchar *str =((f1) && (f1)[0])
+  char *str =((f1) && (f1)[0])
     ? g_strdup_printf("%s%s%s", (f2) ? (f2) : "", delim ? delim : "", f1)
     : ((f2) ? g_strdup_printf("%s", f2) : NULL);
   UPDATE_LABEL(label, str);
@@ -293,10 +293,10 @@ inline GtkWidget* notifier_init(int ndx, GtkWidget *base) {
   return ((ndx >= 0) && (ndx < NT_NDX_MAX)) ? nt_init(base, &notifier[ndx]) : NULL;
 }
 
-void notifier_inform(const gchar *fmt, ...) {
+void notifier_inform(const char *fmt, ...) {
   va_list ap;
   va_start(ap, fmt);
-  gchar *str = g_strdup_vprintf(fmt, ap);
+  char *str = g_strdup_vprintf(fmt, ap);
   if (str) { nt_inform(&notifier[NT_MAIN_NDX], str); g_free(str); }
   va_end(ap);
 }
@@ -309,12 +309,12 @@ inline void notifier_set_visible(int ndx, gboolean visible) {
   if ((ndx >= 0) && (ndx < NT_NDX_MAX)) nt_set_visible(&notifier[ndx], visible);
 }
 
-void notifier_legend_vis_rows(int vis_n) {
+void notifier_legend_vis_rows(int upto) {
   static int nt_lgnd_vis_rows;
-  if (vis_n < 0) vis_n = nt_lgnd_vis_rows; else nt_lgnd_vis_rows = vis_n;
+  if (upto < 0) upto = nt_lgnd_vis_rows; else nt_lgnd_vis_rows = upto;
   t_nt_extra *ex = notifier[NT_GRAPH_NDX].extra;
   if (ex) for (int i = 0; i < MAXTTL; i++, ex++) {
-    gboolean vis = (i >= opts.min) && (i < vis_n);
+    gboolean vis = (i >= opts.min) && (i < upto);
     if (GTK_IS_WIDGET(ex->row)) gtk_widget_set_visible(GTK_WIDGET(ex->row), vis);
     if (GTK_IS_WIDGET(ex->box)) gtk_widget_set_visible(ex->box, vis);
     for (int j = GRLG_MIN; j < GRLG_MAX; j++) if (GTK_IS_WIDGET(ex->elem[j]))
@@ -328,7 +328,7 @@ void notifier_legend_vis_rows(int vis_n) {
 
 void notifier_legend_update(void) {
   t_nt_extra *ex = notifier[NT_GRAPH_NDX].extra; if (!ex) return;
-  for (int i = 0; i < hops_no; i++, ex++) {
+  for (int i = 0; i < tgtat; i++, ex++) {
     t_legend legend; stat_legend(i, &legend);
     for (int j = GRLG_MIN; j < GRLG_MAX; j++) {
       GtkWidget *w = ex->elem[j];

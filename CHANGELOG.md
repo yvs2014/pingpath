@@ -1,3 +1,6 @@
+## 0.2.8
+- [draft] plot 3D data
+
 ## 0.2.7
 - [in progress] base of 3D-plot with OpenGL support
 

@@ -13,9 +13,9 @@ static t_tab logtab = { .self = &logtab, .name = "log-tab",
   .act = { [POP_MENU_NDX_COPY] = { .activate = cb_on_copy_l1 },  [POP_MENU_NDX_SALL] = { .activate = cb_on_sall }},
 };
 
-static void logtab_add(const gchar *str) {
+static void logtab_add(const char *str) {
   if (atquit || !str || !GTK_IS_LIST_BOX(logtab.dyn.w)) return;
-  gchar *cp = strchr(str, '\n') ? g_strdup(str) : NULL;
+  char *cp = strchr(str, '\n') ? g_strdup(str) : NULL;
   GtkWidget *line = gtk_label_new(cp ? g_strdelimit(cp, "\n", ',') : str);
   g_free(cp);
   g_return_if_fail(line);
@@ -57,11 +57,11 @@ t_tab* logtab_init(GtkWidget* win) {
   return &logtab;
 }
 
-void log_add(const gchar *fmt, ...) {
+void log_add(const char *fmt, ...) {
   if (atquit && opts.recap) return;
   va_list ap;
   va_start(ap, fmt);
-  gchar *str = g_strdup_vprintf(fmt, ap);
+  char *str = g_strdup_vprintf(fmt, ap);
   if (str) { logtab_add(str); g_free(str); }
   va_end(ap);
 }

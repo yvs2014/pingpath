@@ -101,7 +101,7 @@ static gboolean cli_opt_t(const char *name, const char *value, t_opts *opts, GEr
   if (!value || !opts) return false;
   t_ent_spn *en = &ent_spn[ENT_SPN_TTL];
   if (!en) return false;
-  gchar *cp = g_strdup(value);
+  char *cp = g_strdup(value);
   gboolean okay = false;
   if (cp) {
     int *pmin = en->aux[SPN_AUX_MIN].pval;
@@ -215,15 +215,15 @@ static gboolean cli_opt_elem(const char *name, const char *value, GError **error
   CLI_SET_ERR; return false;
 }
 
-static gboolean cli_opt_p(const char *name, const char *value, gpointer unused, GError **error) {
+static gboolean cli_opt_p(const char *name, const char *value, void *unused, GError **error) {
   return cli_opt_elem(name, value, error, OPT_TYPE_PAD);
 }
 
-static gboolean cli_opt_I(const char *name, const char *value, gpointer unused, GError **error) {
+static gboolean cli_opt_I(const char *name, const char *value, void *unused, GError **error) {
   return cli_opt_elem(name, value, error, OPT_TYPE_INFO);
 }
 
-static gboolean cli_opt_S(const char *name, const char *value, gpointer unused, GError **error) {
+static gboolean cli_opt_S(const char *name, const char *value, void *unused, GError **error) {
   return cli_opt_elem(name, value, error, OPT_TYPE_STAT);
 }
 
@@ -247,12 +247,12 @@ static gboolean cli_opt_T(const char *name, const char *value, t_opts *opts, GEr
   return re;
 }
 
-static gboolean cli_opt_r(const char *name, const char *value, gpointer unused, GError **error) {
+static gboolean cli_opt_r(const char *name, const char *value, void *unused, GError **error) {
   return cli_opt_elem(name, value, error, OPT_TYPE_RECAP);
 }
 
-static gboolean config_opt_not_found(GError *opterr, const gchar *section, const gchar *name,
-   const gchar *value, GError **error) {
+static gboolean config_opt_not_found(GError *opterr, const char *section, const char *name,
+   const char *value, GError **error) {
   if (g_error_matches(opterr, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_KEY_NOT_FOUND) ||
       g_error_matches(opterr, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_GROUP_NOT_FOUND)) return true;
   g_warning("%s:%s: %s", section, name, opterr ? opterr->message : unkn_error);
@@ -301,7 +301,7 @@ static gboolean cli_opt_f(const char *name, const char *value, t_opts *opts, GEr
     for (const t_config_option *option = cfg_section->options; option; option++) {
       const char *optname = option->opt; if (!optname) break;
       g_autoptr(GError) opterr = NULL;
-      g_autofree gchar *optval = NULL;
+      g_autofree char *optval = NULL;
       { g_autoptr(GError) strerr = NULL;
         optval = g_key_file_get_string(file, section, optname, &strerr);
         if (strerr) {
@@ -312,7 +312,7 @@ static gboolean cli_opt_f(const char *name, const char *value, t_opts *opts, GEr
       }
       switch (option->type) {
         case CNF_OPT_IPV: {
-          gint val = g_key_file_get_integer(file, section, optname, &opterr);
+          int val = g_key_file_get_integer(file, section, optname, &opterr);
           if (!opterr) {
             if ((val == 4) || (val == 6)) {
               if (opts->ipv != val) {
@@ -373,7 +373,7 @@ gboolean autostart;
 
 gboolean cli_init(int *pargc, char ***pargv) {
   if (!pargc || !pargv) return false;
-  gchar** target = NULL;
+  char** target = NULL;
   gboolean num = -1, ipv4 = false, ipv6 = false, version = false;
   const GOptionEntry options[] = {
     CLI_OPT_CALL('f', "file",         cli_opt_f, "Read options from file", "<filename>"),
@@ -425,13 +425,13 @@ gboolean cli_init(int *pargc, char ***pargv) {
   if (num >= 0) cli_set_opt_dns(num, &opts);
   // arguments
   if (target) {
-    for (gchar **p = target; *p; p++) {
-      const gchar *arg = *p;
+    for (char **p = target; *p; p++) {
+      const char *arg = *p;
       if (!arg || !arg[0]) continue;
       if (arg[0] == '-') CLI_FAIL("Unknown option: '%s'", arg);
       if (opts.target) g_message(ENT_TARGET_HDR " is already set, skip '%s'", arg);
       else {
-        cli = true; gchar *pinghost = parser_valid_target(arg); cli = false;
+        cli = true; char *pinghost = parser_valid_target(arg); cli = false;
         if (pinghost) g_message(ENT_TARGET_HDR " %s", pinghost);
         else {
           g_message("Invalid " ENT_TARGET_HDR ": '%s'", arg);

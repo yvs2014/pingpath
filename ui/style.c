@@ -35,7 +35,7 @@ static const t_style_colors style_color = {
   .gr  = { "#f9f9f9", "#222222"},
 };
 
-static const gchar *css_common = " \
+static const char *css_common = " \
   notebook > header > tabs {padding-left:0; padding-right:0;} \
   notebook > header > tabs > tab {margin-left:0; margin-right:0;} \
   popover {background:transparent;} \
@@ -56,7 +56,7 @@ static const gchar *css_common = " \
   #" CSS_ID_DATETIME " {font-weight:500;} \
 ";
 
-static void style_css_load(GtkCssProvider *prov, const gchar *str) {
+static void style_css_load(GtkCssProvider *prov, const char *str) {
 #if GTK_CHECK_VERSION(4, 12, 0)
   gtk_css_provider_load_from_string(prov, str);
 #else
@@ -64,12 +64,12 @@ static void style_css_load(GtkCssProvider *prov, const gchar *str) {
 #endif
 }
 
-static gchar* style_extra_css(const gchar *common, gboolean dark, gboolean grdark) {
+static char* style_extra_css(const char *common, gboolean dark, gboolean grdark) {
   int ndx = dark ? 1 : 0, grndx = grdark ? 1 : 0;
   const char *def = style_color.def[ndx], *def_gr = style_color.def[grndx],
     *app = style_color.app[ndx], *app_inv = style_color.app[!ndx],
     *lgnd_bg = style_color.gr[grndx], *lgnd_fg = style_color.gr[!grndx];
-  gchar* items[] = {
+  char* items[] = {
     g_strdup_printf("%s\n", common),
     g_strdup_printf("." CSS_BGROUND " {background:%s;}", def),
     g_strdup_printf("popover > arrow, popover > contents {background:%s; box-shadow:none;}", app),
@@ -83,23 +83,23 @@ static gchar* style_extra_css(const gchar *common, gboolean dark, gboolean grdar
     g_strdup_printf("." CSS_GR_BG  " {background:%s;}", def_gr),
     g_strdup_printf("." CSS_LEGEND_COL " {background:%s; color:%s;}", lgnd_bg, lgnd_fg),
     NULL};
-  gchar *re = g_strjoinv(NULL, items);
-  for (gchar **p = items; *p; p++) g_free(*p);
+  char *re = g_strjoinv(NULL, items);
+  for (char **p = items; *p; p++) g_free(*p);
   return re;
 };
 
-static const gboolean is_theme_dark(const gchar *theme) {
+static const gboolean is_theme_dark(const char *theme) {
   gboolean re = g_str_has_suffix(theme, SFFX_DIV1 DARK_SFFX);
   if (!re) re = g_str_has_suffix(theme, SFFX_DIV2 DARK_SFFX);
   return re;
 }
 
-static gchar* style_basetheme(const gchar *theme) {
-  gchar *re = g_strdup(theme);
+static char* style_basetheme(const char *theme) {
+  char *re = g_strdup(theme);
   if (re) {
     gboolean is_dark = is_theme_dark(theme);
     if (is_dark) {
-      gchar *sfx = g_strrstr(re, SFFX_DIV1 DARK_SFFX);
+      char *sfx = g_strrstr(re, SFFX_DIV1 DARK_SFFX);
       if (!sfx) sfx = g_strrstr(re, SFFX_DIV2 DARK_SFFX);
       if (sfx) *sfx = 0;
     }
@@ -107,13 +107,13 @@ static gchar* style_basetheme(const gchar *theme) {
   return re;
 }
 
-static gchar* style_prefer(gboolean dark) {
+static char* style_prefer(gboolean dark) {
   GtkSettings *set = gtk_settings_get_default();
   if (!set) { WARN_("no default settings"); return NULL; }
   g_object_set(G_OBJECT(set), PROP_PREFER, dark, NULL);
-  gchar *theme = NULL; g_object_get(set, PROP_THEME, &theme, NULL);
+  char *theme = NULL; g_object_get(set, PROP_THEME, &theme, NULL);
   if (!theme) { WARN_("No theme"); return NULL; }
-  gchar *prefer = style_basetheme(theme); g_free(theme);
+  char *prefer = style_basetheme(theme); g_free(theme);
   ub_theme = prefer ? (strcasestr(prefer, "Yaru") != NULL) : false; // aux info for icons
   LOG("%stheme='%s' prefer-dark=%d", ub_theme ? "Ubuntu " : "", prefer, dark);
   return prefer;
@@ -121,7 +121,7 @@ static gchar* style_prefer(gboolean dark) {
 
 static GtkCssProvider *prov_theme, *prov_extra;
 
-static void style_load_theme(GdkDisplay *display, const gchar *theme, const gchar *variant) {
+static void style_load_theme(GdkDisplay *display, const char *theme, const char *variant) {
   if (!display || !theme) return;
   GtkCssProvider *prov = gtk_css_provider_new();
   g_return_if_fail(GTK_IS_CSS_PROVIDER(prov));
@@ -136,7 +136,7 @@ static void style_load_extra(GdkDisplay *display, gboolean dark, gboolean darkgr
   style_loaded = false;
   GtkCssProvider *prov = gtk_css_provider_new();
   g_return_if_fail(GTK_IS_CSS_PROVIDER(prov));
-  gchar *data = style_extra_css(css_common, dark, darkgr);
+  char *data = style_extra_css(css_common, dark, darkgr);
   if (!data) { WARN_("no CSS data"); g_object_unref(prov); return; }
   style_css_load(prov, data); g_free(data);
   if (prov_extra) gtk_style_context_remove_provider_for_display(display, GTK_STYLE_PROVIDER(prov_extra));
@@ -162,7 +162,7 @@ const char* is_sysicon(const char **icon) {
 
 void style_set(gboolean dark, gboolean darkgr) {
   STYLE_GET_DISPLAY();
-  gchar *prefer = style_prefer(dark);
+  char *prefer = style_prefer(dark);
   if (prefer) { style_load_theme(display, prefer, dark ? "dark" : NULL); g_free(prefer); }
   style_load_extra(display, dark, darkgr);
 }

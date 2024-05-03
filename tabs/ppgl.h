@@ -4,10 +4,9 @@
 #include "common.h"
 
 t_tab* ppgltab_init(GtkWidget *win);
-//void graphtab_free(gboolean finish);
-void ppgl_update(gboolean retrieve);
-void ppgl_final_update(void);
-//void graphtab_graph_refresh(gboolean pause_toggled);
-//void graphtab_full_refresh(void);
+void ppgl_free(void);
+void ppgl_restart(void);
+void ppgl_update(void);
+void ppgl_refresh(void);
 
 #endif

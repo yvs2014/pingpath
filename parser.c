@@ -89,26 +89,26 @@ static GRegex* compile_regex(const char *pattern, GRegexCompileFlags flags) {
   return regex;
 }
 
-static gchar* fetch_named_str(GMatchInfo* match, char *prop) {
-  gchar *s = g_match_info_fetch_named(match, prop);
-  gchar *val = (s && s[0]) ? g_strdup(s) : NULL;
+static char* fetch_named_str(GMatchInfo* match, char *prop) {
+  char *s = g_match_info_fetch_named(match, prop);
+  char *val = (s && s[0]) ? g_strdup(s) : NULL;
   g_free(s); return val;
 }
 
 static int fetch_named_int(GMatchInfo* match, char *prop) {
-  gchar *s = g_match_info_fetch_named(match, prop);
+  char *s = g_match_info_fetch_named(match, prop);
   int val = (s && s[0]) ? atoi(s) : -1;
   g_free(s); return val;
 }
 
 static long long fetch_named_ll(GMatchInfo* match, char *prop) {
-  gchar *s = g_match_info_fetch_named(match, prop);
+  char *s = g_match_info_fetch_named(match, prop);
   long long val = (s && s[0]) ? atoll(s) : -1;
   g_free(s); return val;
 }
 
 static int fetch_named_rtt(GMatchInfo* match, char *prop) {
-  gchar *s = g_match_info_fetch_named(match, prop);
+  char *s = g_match_info_fetch_named(match, prop);
   double val = -1;
   if (s && s[0]) {
     val = g_ascii_strtod(s, NULL);
@@ -204,7 +204,7 @@ static void analyze_line(int at, const char *line) {
 #define GREEDY false
 #define LAZY   true
 
-static gchar* split_pair(char **ps, int c, gboolean lazy) {
+static char* split_pair(char **ps, int c, gboolean lazy) {
   if (!ps || !*ps) return NULL;
   char *val = lazy ? strchr(*ps, c) : strrchr(*ps, c);
   if (!val) return NULL;
@@ -213,12 +213,12 @@ static gchar* split_pair(char **ps, int c, gboolean lazy) {
   return g_strstrip(val);
 }
 
-static inline gboolean parser_valid_char0(gchar *str) { return g_regex_match(hostname_char0_regex, str, 0, NULL); }
-static inline gboolean parser_valid_host(gchar *host) { return g_regex_match(hostname_chars_regex, host, 0, NULL); }
+static inline gboolean parser_valid_char0(char *str) { return g_regex_match(hostname_char0_regex, str, 0, NULL); }
+static inline gboolean parser_valid_host(char *host) { return g_regex_match(hostname_chars_regex, host, 0, NULL); }
 
 #define HNAME_ERROR(cause) PARSER_MESG("Hostname %s", cause)
 
-static gboolean target_meet_all_conditions(gchar *s, int len, int max) {
+static gboolean target_meet_all_conditions(char *s, int len, int max) {
   // rfc1123,rfc952 restrictions
   if (len > max) { PARSER_MESG("Hostname: out of length limit (%d > %d)", len, max); return false; }
   if (s[len - 1] == '-') { HNAME_ERROR("cannot end with hyphen"); return false; }
@@ -227,10 +227,10 @@ static gboolean target_meet_all_conditions(gchar *s, int len, int max) {
   return true;
 }
 
-static gchar* parser_valid_int(const gchar *option, const gchar *str) {
-  gchar *cpy = g_strdup(str);
+static char* parser_valid_int(const char *option, const char *str) {
+  char *cpy = g_strdup(str);
   if (!cpy) return NULL;
-  gchar *val = g_strstrip(cpy);
+  char *val = g_strstrip(cpy);
   gboolean valid = g_regex_match(str_rx[OPT_TYPE_INT].regex, val, 0, NULL);
   if (valid) { val = (val && val[0]) ? g_strdup(val) : NULL; }
   else { PARSER_MESG("%s: no match %s regex", option, str_rx[OPT_TYPE_INT].pattern); val = NULL; }
@@ -259,16 +259,16 @@ gboolean parser_init(void) {
 
 void parser_parse(int at, char *input) {
   if (input) {
-    gchar **lines = g_regex_split(multiline_regex, input, 0);
+    char **lines = g_regex_split(multiline_regex, input, 0);
     if (lines) {
-      for (gchar **s = lines; *s; s++) if ((*s)[0]) analyze_line(at, *s);
+      for (char **s = lines; *s; s++) if ((*s)[0]) analyze_line(at, *s);
       g_strfreev(lines);
     }
   }
 }
 
-int parser_int(const gchar *str, int type, const gchar *option, t_minmax mm) {
-  gchar *val = parser_valid_int(option, str);
+int parser_int(const char *str, int type, const char *option, t_minmax mm) {
+  char *val = parser_valid_int(option, str);
   if (!val) return -1;
   int n = atol(val); g_free(val);
   int min = (mm.min > 0) ? mm.min : 0;
@@ -290,7 +290,7 @@ int parser_int(const gchar *str, int type, const gchar *option, t_minmax mm) {
 }
 
 #define PARSE_MAX_CHARS 128
-char* parser_str(const gchar *str, const gchar *option, int cat) {
+char* parser_str(const char *str, const char *option, int cat) {
   char *buff = g_strndup(str, PARSE_MAX_CHARS);
   if (buff) {
     char *val = g_strdup(g_strstrip(buff)); g_free(buff);
@@ -303,10 +303,10 @@ char* parser_str(const gchar *str, const gchar *option, int cat) {
   return NULL;
 }
 
-gchar* parser_valid_target(const gchar *target) {
+char* parser_valid_target(const char *target) {
   if (!target || !target[0]) return NULL;
-  gchar *copy = g_strdup(target);
-  gchar *hostname = NULL, *s = g_strstrip(copy);
+  char *copy = g_strdup(target);
+  char *hostname = NULL, *s = g_strstrip(copy);
   int len = s ? g_utf8_strlen(s, MAXHOSTNAME + 1) : 0;
   if (len && target_meet_all_conditions(s, len, MAXHOSTNAME)) hostname = g_strdup(s);
   g_free(copy);
@@ -317,17 +317,17 @@ gchar* parser_valid_target(const gchar *target) {
   if (dst) { CLR_STR(dst); dst = g_strdup_printf("%s*", val); } \
   else dst = g_strndup(val, MAXHOSTNAME); }
 
-void parser_whois(gchar *buff, int sz, gchar* elem[]) {
+void parser_whois(char *buff, int sz, char* elem[]) {
   // if there are multiple sources (despite -m query), take the last tag and mark it with '*'
   static const char skip_as_prfx[] = "AS";
   static int as_prfx_len = sizeof(skip_as_prfx) - 1;
   if (!buff || !elem) return;
-  memset(elem, 0, sizeof(gchar*) * WHOIS_NDX_MAX);
-  gchar *p = buff, *s;
+  memset(elem, 0, sizeof(char*) * WHOIS_NDX_MAX);
+  char *p = buff, *s;
   while ((s = strsep(&p, WHOIS_NL))) {
     s = g_strstrip(s);
     if (s && s[0] && (s[0] != WHOIS_COMMENT)) {
-      gchar *val = split_pair(&s, WHOIS_DELIM, LAZY);
+      char *val = split_pair(&s, WHOIS_DELIM, LAZY);
       if (!val) continue;
       int ndx = -1;
       if (STR_EQ(s, WHOIS_RT_TAG)) ndx = WHOIS_RT_NDX;
@@ -338,7 +338,7 @@ void parser_whois(gchar *buff, int sz, gchar* elem[]) {
           val += as_prfx_len;
       } else if (STR_EQ(s, WHOIS_DESC_TAG)) {
         ndx = WHOIS_DESC_NDX;
-        gchar *cc = split_pair(&val, WHOIS_CCDEL, GREEDY);
+        char *cc = split_pair(&val, WHOIS_CCDEL, GREEDY);
         if (cc) DUP_WITH_MARK(elem[WHOIS_CC_NDX], cc);
       }
       if (ndx >= 0) DUP_WITH_MARK(elem[ndx], val);
@@ -348,11 +348,11 @@ void parser_whois(gchar *buff, int sz, gchar* elem[]) {
 }
 
 #define RANGE_DELIM ','
-t_minmax parser_range(gchar *range, const gchar *option) {
+t_minmax parser_range(char *range, const char *option) {
   t_minmax re = { .min = -1, .max = -1};
   if (range) {
-    gchar *min = range;
-    gchar *max = split_pair(&min, RANGE_DELIM, LAZY);
+    char *min = range;
+    char *max = split_pair(&min, RANGE_DELIM, LAZY);
     int min_val = -1, max_val = -1;
     if (min && min[0]) {
       min = parser_valid_int(option, min);

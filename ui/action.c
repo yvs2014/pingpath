@@ -4,7 +4,8 @@
 #include "appbar.h"
 #include "notifier.h"
 #include "pinger.h"
-#include "tabs/graph.h"
+#include "graph_rel.h"
+#include "series.h"
 #include "ui/style.h"
 
 #if PANGO_VERSION_MAJOR == 1
@@ -37,7 +38,7 @@ static const char* kb_ctrl_h[] = {"<Ctrl>h", NULL};
 static const char* kb_ctrl_x[] = {"<Ctrl>x", NULL};
 static const char* kb_ctrl_l[] = {"<Ctrl>l", NULL};
 
-static const gchar *help_message =
+static const char *help_message =
   SPANHDR("Actions")
   SPANOPT(ACT_START_HDR    "/" ACT_STOP_HDR "\t", "target pings")
   SPANOPT(ACT_PAUSE_HDR    "/" ACT_RESUME_HDR,    "displaying data")
@@ -68,6 +69,9 @@ static const gchar *help_message =
   SPANOPT(OPT_GREX_HDR,    "to display:")
     SPANSUB(GREX_MEAN_HDR  " " GREX_JRNG_HDR " " GREX_AREA_HDR)
   SPANOPT(OPT_LOGMAX_HDR,  "Max rows in log tab [" G_STRINGIFY(DEF_LOGMAX) "]")
+  "\n"
+  SPANHDR("CLI")
+  SPANSZ("1.5", "medium", "\tfor command-line options see <b>pingpath(1)</b> manual page")
 ;
 
 static t_act_desc act_desc[ACT_NDX_MAX] = {
@@ -79,12 +83,12 @@ static t_act_desc act_desc[ACT_NDX_MAX] = {
   [ACT_NDX_LGND]  = { .name = "app.act_lgnd",  .shortcut = kb_ctrl_l, .invisible = true },
 };
 
-static void on_startstop  (GSimpleAction*, GVariant*, gpointer);
-static void on_pauseresume(GSimpleAction*, GVariant*, gpointer);
-static void on_reset      (GSimpleAction*, GVariant*, gpointer);
-static void on_help       (GSimpleAction*, GVariant*, gpointer);
-static void on_quit       (GSimpleAction*, GVariant*, gpointer);
-static void on_legend     (GSimpleAction*, GVariant*, gpointer);
+static void on_startstop  (GSimpleAction*, GVariant*, void*);
+static void on_pauseresume(GSimpleAction*, GVariant*, void*);
+static void on_reset      (GSimpleAction*, GVariant*, void*);
+static void on_help       (GSimpleAction*, GVariant*, void*);
+static void on_quit       (GSimpleAction*, GVariant*, void*);
+static void on_legend     (GSimpleAction*, GVariant*, void*);
 
 static GActionEntry act_entries[ACT_NDX_MAX] = {
   [ACT_NDX_START] = { .activate = on_startstop },
@@ -109,22 +113,23 @@ static const char* action_label(int ndx) {
   return "";
 }
 
-static void on_startstop(GSimpleAction *action, GVariant *var, gpointer unused) {
+static void on_startstop(GSimpleAction *action, GVariant *var, void *unused) {
   if (!opts.target) return;
   MI_LOG(ACT_NDX_START);
   if (stat_timer) pinger_stop("by request"); else pinger_start();
   appbar_update();
 }
 
-static void on_pauseresume(GSimpleAction *action, GVariant *var, gpointer unused) {
+static void on_pauseresume(GSimpleAction *action, GVariant *var, void *unused) {
   MI_LOG(ACT_NDX_PAUSE);
   pinger_state.pause = !pinger_state.pause;
   action_update();
   pinger_update_tabs(NULL);
-  if (opts.graph) graphtab_graph_refresh(true);
+  GRAPH_UPDATE_REL;
+  if (OPTS_GRAPH_REL) { if (pinger_state.pause) series_lock(); else series_unlock(); }
 }
 
-static void on_reset(GSimpleAction *action, GVariant *var, gpointer unused) {
+static void on_reset(GSimpleAction *action, GVariant *var, void *unused) {
   MI_LOG(ACT_NDX_RESET);
   pinger_clear_data(false);
 }
@@ -133,7 +138,7 @@ static void hide_help_cb(GtkWidget *button, GtkWidget *dialog) {
   if (GTK_IS_WIDGET(dialog)) gtk_widget_set_visible(dialog, false);
 }
 
-static gboolean help_dialog_cb(GtkEventControllerKey *c, guint val, guint code, guint mo, GtkButton *btn) {
+static gboolean help_dialog_cb(GtkEventControllerKey *c, unsigned val, unsigned code, unsigned mo, GtkButton *btn) {
   if ((val != GDK_KEY_Escape) || (mo & GDK_MODIFIER_MASK) || !GTK_IS_BUTTON(btn)) return false;
   g_signal_emit_by_name(btn, EV_CLICK);
   return true;
@@ -144,7 +149,7 @@ static gboolean show_help_dialog(GtkWidget *win) {
   MA_LOG(ACT_NDX_HELP); gtk_widget_set_visible(win, true); return true;
 }
 
-static void on_help(GSimpleAction *action, GVariant *var, gpointer data) {
+static void on_help(GSimpleAction *action, GVariant *var, void *data) {
   static t_help_dialog_in help_dialog;
   GtkWidget *win = data; g_return_if_fail(GTK_IS_WINDOW(win));
   if (show_help_dialog(help_dialog.win)) return;
@@ -204,17 +209,16 @@ static void on_help(GSimpleAction *action, GVariant *var, gpointer data) {
   show_help_dialog(help_dialog.win);
 }
 
-static void on_quit(GSimpleAction *action, GVariant *var, gpointer data) {
+static void on_quit(GSimpleAction *action, GVariant *var, void *data) {
   g_return_if_fail(GTK_IS_WINDOW(data));
   MA_LOG(ACT_NDX_QUIT);
   gtk_window_close(GTK_WINDOW(data));
 }
 
-static void on_legend(GSimpleAction *action, GVariant *var, gpointer unused) {
+static void on_legend(GSimpleAction *action, GVariant *var, void *unused) {
   MA_LOG(ACT_NDX_LGND);
   opts.legend = !opts.legend;
-  option_toggled(ENT_BOOL_LGND);
-  graphtab_toggle_legend();
+  option_legend();
 }
 
 static GMenu* action_menu_init(GtkWidget *bar) {

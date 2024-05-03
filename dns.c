@@ -48,13 +48,13 @@ static int dns_query_cmp(const void *a, const void *b) {
   return g_strcmp0(((t_dns_elem*)a)->host.addr, ((t_dns_elem*)b)->host.addr);
 }
 
-static t_host* dns_cache_find(gchar* addr) {
+static t_host* dns_cache_find(char* addr) {
   t_host find = { .addr = addr };
   GSList *found = g_slist_find_custom(dns_cache, &find, host_cmp);
   return found ? found->data : NULL;
 }
 
-static t_dns_elem* dns_query_find(gchar* addr) {
+static t_dns_elem* dns_query_find(char* addr) {
   t_dns_elem find = { .host = { .addr = addr }};
   GSList *found = g_slist_find_custom(dns_query, &find, dns_query_cmp);
   return found ? found->data : NULL;
@@ -77,7 +77,7 @@ static void dns_query_complete(t_ref *ref, t_dns_elem *elem) {
   }
 }
 
-static void dns_cache_update(gchar *addr, gchar *name) {
+static void dns_cache_update(char *addr, char *name) {
   if (!addr) return;
   t_host *host = dns_cache_find(addr);
   if (host) { UPD_NSTR(host->name, name, MAXHOSTNAME); PR_DNS_C; return; }
@@ -96,7 +96,7 @@ static void dns_cache_update(gchar *addr, gchar *name) {
   g_free(host);
 }
 
-static t_dns_elem* dns_query_save(const gchar *addr, t_hop *hop, int ndx) {
+static t_dns_elem* dns_query_save(const char *addr, t_hop *hop, int ndx) {
   if (!hop || !addr) return NULL;
   t_dns_elem *elem = g_malloc0(sizeof(t_dns_elem));
   if (!elem) return NULL;
@@ -115,7 +115,7 @@ static t_dns_elem* dns_query_save(const gchar *addr, t_hop *hop, int ndx) {
   return NULL;
 }
 
-static t_dns_elem* dns_query_fill(gchar *addr, t_hop *hop, int ndx) {
+static t_dns_elem* dns_query_fill(char *addr, t_hop *hop, int ndx) {
   if (!hop || !addr) return NULL;
   t_dns_elem *found = dns_query_find(addr);
   if (found) {
@@ -128,7 +128,7 @@ static t_dns_elem* dns_query_fill(gchar *addr, t_hop *hop, int ndx) {
 
 static void on_dns_lookup(GObject* src, GAsyncResult *result, t_dns_elem *elem) {
   GError *error = NULL;
-  gchar *name = g_resolver_lookup_by_address_finish(G_RESOLVER(src), result, &error);
+  char *name = g_resolver_lookup_by_address_finish(G_RESOLVER(src), result, &error);
   if (elem) {
     if (!name) DNS_DEBUG("%s unresolved", elem->host.addr);
     elem->host.name = name;
@@ -149,7 +149,7 @@ static void on_dns_lookup(GObject* src, GAsyncResult *result, t_dns_elem *elem) 
 
 void dns_lookup(t_hop *hop, int ndx) {
   if (!hop) return;
-  gchar *addr = hop->host[ndx].addr;
+  char *addr = hop->host[ndx].addr;
   if (!addr) return;
   PR_DNS_C;
   t_host *cached = dns_cache_find(addr);

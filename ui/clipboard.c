@@ -80,8 +80,8 @@ static char* c_strjoinv(const char delim, const char **array) {
   return s;
 }
 
-static gchar* cb_collect_level1(GList *list) {
-  const gchar *lines[DEF_LOGMAX + 1] = {NULL};
+static char* cb_collect_level1(GList *list) {
+  const char *lines[DEF_LOGMAX + 1] = {NULL};
   int i = 0;
   for (GList *p = list; p && (i < DEF_LOGMAX); p = p->next) {
     GtkListBoxRow *row = p->data;
@@ -116,7 +116,7 @@ static void cb_calc_lengths(GList *list, int *maxes) {
     for (GtkWidget *lab = gtk_widget_get_first_child(box); GTK_IS_LABEL(lab) && (j < ELEM_MAX);
          lab = gtk_widget_get_next_sibling(lab)) {
       if (!gtk_widget_get_visible(lab)) continue;
-      const gchar *str = gtk_label_get_text(GTK_LABEL(lab));
+      const char *str = gtk_label_get_text(GTK_LABEL(lab));
       if (!str) continue;
       if (str[0]) { int l = g_utf8_strlen(str, MAXHOSTNAME); if (l > maxes[j]) maxes[j] = l; }
       j++;
@@ -130,8 +130,8 @@ static void cb_collect_maxes(GtkWidget *box, int *maxes) {
   if (list) cb_calc_lengths(list, maxes);
 }
 
-static gchar* cb_collect_level2(GList *list, int *maxes) {
-  gchar* elems[MAXT2][ELEM_MAX + 1] = {{NULL}}; // *2: supposedly it's enough for multihop lines
+static char* cb_collect_level2(GList *list, int *maxes) {
+  char* elems[MAXT2][ELEM_MAX + 1] = {{NULL}}; // *2: supposedly it's enough for multihop lines
   int i = 0;
   for (GList *p = list; p && (i < MAXT2); p = p->next) {
     GtkListBoxRow *row = p->data; if (!GTK_IS_LIST_BOX_ROW(row)) continue;
@@ -140,14 +140,14 @@ static gchar* cb_collect_level2(GList *list, int *maxes) {
     for (GtkWidget *lab = gtk_widget_get_first_child(box); GTK_IS_LABEL(lab) && (j < ELEM_MAX);
          lab = gtk_widget_get_next_sibling(lab)) {
       if (!gtk_widget_get_visible(lab)) continue;
-      const gchar *str = gtk_label_get_text(GTK_LABEL(lab));
+      const char *str = gtk_label_get_text(GTK_LABEL(lab));
       if (!str) continue;
       int l = maxes ? maxes[j] : 0;
       if (str[0]) {
-        gchar **multi = g_strsplit(str, "\n", MAXADDR);
+        char **multi = g_strsplit(str, "\n", MAXADDR);
         if (multi) {
           int ii = i;
-          for (gchar **s = multi; *s && (ii < MAXT2); s++) // put '\n'-elems ahead
+          for (char **s = multi; *s && (ii < MAXT2); s++) // put '\n'-elems ahead
             elems[ii++][j] = (l > 0) ? g_strdup_printf("%-*s", l, *s) : g_strdup(*s);
           g_strfreev(multi);
           if ((ii - i) > di) di = ii - i;
@@ -158,11 +158,11 @@ static gchar* cb_collect_level2(GList *list, int *maxes) {
     i += di;
   }
   C_NULL2SP(elems, 3); // if there are multihop lines
-  gchar *lines[MAXT2 + 1] = {NULL};
+  char *lines[MAXT2 + 1] = {NULL};
   for (int i = 0; i < MAXT2; i++) // combine collected elems into lines
     if (elems[i][0]) lines[i] = g_strjoinv(" ", elems[i]);
   C_FREE_T2LIST(elems); // free elems
-  gchar *text = g_strjoinv("\n", lines); // combines lines into table
+  char *text = g_strjoinv("\n", lines); // combines lines into table
   for (int i = 0; i < (MAXT2 + 1); i++) // free lines
     g_free(lines[i]);
   return text;
@@ -170,11 +170,11 @@ static gchar* cb_collect_level2(GList *list, int *maxes) {
 
 enum { DATA_AT_LEVEL1, DATA_AT_LEVEL2 };
 
-static gchar* cb_get_text(GtkWidget* lb, GdkClipboard *cb, int level, int *maxes) {
+static char* cb_get_text(GtkWidget* lb, GdkClipboard *cb, int level, int *maxes) {
   if (!GTK_IS_LIST_BOX(lb) || !GDK_IS_CLIPBOARD(cb)) return NULL;
   GList *list = gtk_list_box_get_selected_rows(GTK_LIST_BOX(lb));
   if (!list) return NULL;
-  gchar *text = NULL;
+  char *text = NULL;
   if (g_list_length(list)) switch (level) {
     case DATA_AT_LEVEL1: text = cb_collect_level1(list); break;
     case DATA_AT_LEVEL2: text = cb_collect_level2(list, maxes); break;
@@ -205,24 +205,24 @@ gboolean clipboard_init(GtkWidget *win, t_tab *tab) {
   return true;
 }
 
-void cb_on_copy_l1(GSimpleAction *action, GVariant *var, gpointer data) {
+void cb_on_copy_l1(GSimpleAction *action, GVariant *var, void *data) {
   t_tab *tab = data;
   if (!tab || !GTK_IS_LIST_BOX(tab->dyn.w)) return;
   GdkClipboard *cb = gtk_widget_get_clipboard(GTK_WIDGET(tab->tab.w));
   if (GDK_IS_CLIPBOARD(cb)) {
     VERBOSE("clipoard action %s", ACT_COPY_HDR);
-    gchar *text = cb_get_text(tab->dyn.w, cb, DATA_AT_LEVEL1, NULL);
+    char *text = cb_get_text(tab->dyn.w, cb, DATA_AT_LEVEL1, NULL);
     if (text) { gdk_clipboard_set_text(cb, text); g_free(text); }
   }
 }
 
-void cb_on_copy_l2(GSimpleAction *action, GVariant *var, gpointer data) {
+void cb_on_copy_l2(GSimpleAction *action, GVariant *var, void *data) {
   t_tab *tab = data;
   if (!tab || !GTK_IS_LIST_BOX(tab->dyn.w)) return;
   GdkClipboard *cb = gtk_widget_get_clipboard(GTK_WIDGET(tab->tab.w));
   if (GDK_IS_CLIPBOARD(cb)) {
     VERBOSE("clipoard action %s", ACT_COPY_HDR);
-    gchar* arr[4] = { NULL };
+    char* arr[4] = { NULL };
     static int n_cbl2_arr = G_N_ELEMENTS(arr);
     int maxes[ELEM_MAX]; memset(maxes, 0, sizeof(maxes));
     cb_collect_maxes(tab->hdr.w, maxes);
@@ -238,7 +238,7 @@ void cb_on_copy_l2(GSimpleAction *action, GVariant *var, gpointer data) {
   }
 }
 
-void cb_on_sall(GSimpleAction *action, GVariant *var, gpointer data) {
+void cb_on_sall(GSimpleAction *action, GVariant *var, void *data) {
   t_tab *tab = data;
   if (!tab || !GTK_IS_LIST_BOX(tab->dyn.w)) return;
   VERBOSE("%s action %s", tab->name, cb_menu_label(tab->sel));

@@ -13,7 +13,7 @@ enum { ENT_RAD_NONE, ENT_RAD_IPV, ENT_RAD_GRAPH, ENT_RAD_MAX };
 
 typedef struct ent_ndx {
   int type;
-  const gchar *name;
+  const char *name;
 } t_ent_ndx;
 
 typedef struct ent_str {
@@ -23,8 +23,8 @@ typedef struct ent_str {
   GtkWidget *box, *input;
   const int len, width;
   const t_minmax range;
-  gchar hint[ENT_BUFF_SIZE];
-  gchar buff[ENT_BUFF_SIZE];
+  char hint[ENT_BUFF_SIZE];
+  char buff[ENT_BUFF_SIZE];
 } t_ent_str;
 
 typedef gboolean* (*bool_fn)(int);
@@ -33,7 +33,7 @@ typedef struct ent_bool {
   t_ent_ndx en;
   gboolean *pval; // at compile-time
   bool_fn valfn; int valtype; // at run-time
-  const gchar *prefix;
+  const char *prefix;
   GtkCheckButton *check;
 } t_ent_bool;
 
@@ -50,7 +50,7 @@ typedef struct ent_exp {
 
 typedef struct ent_rad_map {
   int ndx, val;
-  gchar *str;
+  char *str;
 } t_ent_rad_map;
 
 typedef struct ent_rad {
@@ -74,7 +74,7 @@ typedef struct ent_spn {
 
 gboolean option_init(GtkWidget* bar);
 void option_update(void);
-void option_toggled(int ndx);
+void option_legend(void);
 gboolean option_update_pingmenu(void);
 
 extern t_ent_bool ent_bool[];

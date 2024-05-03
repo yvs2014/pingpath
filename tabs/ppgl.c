@@ -6,7 +6,9 @@
 #include "ppgl.h"
 #include "ppgl_aux.h"
 #include "ppgl_pango.h"
+#include "series.h"
 #include "pinger.h"
+#include "stat.h"
 #include "ui/style.h"
 
 #define PP_GLSL_VERSION "420 core"
@@ -14,23 +16,20 @@
 #define PP_VEC3(a, b, c) (vec3){a, b, c}
 
 #define PPGL_SETERR(fmt, ...) g_set_error(err, g_quark_from_static_string(""), -1, fmt, __VA_ARGS__)
-#define PPGL_RETFAIL(fmt, ...) { PPGL_SETERR(fmt, __VA_ARGS__); return false; }
 
 #define PPGL_GET_LOCATION(id, name, exec, fn, type) { id = fn(exec, name); \
-  if (id < 0) PPGL_RETFAIL("Could not bind %s '%s'", type, name); }
+  if (id < 0) { PPGL_SETERR("Could not bind %s '%s'", type, name); return false; }}
 #define PPGL_GET_ATTR(id, name, exec) PPGL_GET_LOCATION(id, name, exec, glGetAttribLocation, "attribute")
 #define PPGL_GET_FORM(id, name, exec) PPGL_GET_LOCATION(id, name, exec, glGetUniformLocation, "uniform")
 #define PPGL_GET_ATTR2(prog, loc, name) { PPGL_GET_ATTR((prog).loc, name, (prog).exec); }
 #define PPGL_GET_FORM2(prog, loc, name) { PPGL_GET_FORM((prog).loc, name, (prog).exec); }
 
-#define PPGL_TIME_RANGE 60 // in seconds
 // x - ttl, y - time, z - delay
 #define PLANE_XN 8
 #define PLANE_YN 10
 #define PLANE_ZN 10
 #define SURF_XN MAXTTL
 #define SURF_YN PPGL_TIME_RANGE
-#define SURF_ZN 10
 #define TTL_AXIS_TITLE "TTL"
 
 #define PPGL_VTR "vtr"
@@ -53,31 +52,28 @@
 
 enum { VO_SURF = 0, VO_XY, VO_LEFT, VO_BACK, VO_TEXT, VO_MAX };
 
-typedef struct ppgl_mat {
+typedef struct ppgl_trans {
   mat4 xy, left, back, text;
-} t_ppgl_mat;
-
-typedef struct ppgl_axs {
   vec4 ttl[PLANE_XN / 2 + 1];
   vec4 time[PLANE_YN / 2 + 1];
   vec4 rtt[PLANE_ZN / 2 + 1];
-} t_ppgl_axs;
+} t_ppgl_trans;
 
 typedef struct ppgl_dbo {
-  t_ppgl_idcnt surf, grid, xy, left, back;
+  t_ppgl_idc surf, grid, xy, left, back;
 } t_ppgl_dbo;
 
 typedef struct ppgl_prog {
   GLuint exec, vs, fs;
   GLint vtr, color, coord;
+  const char *vert, *frag;
 } t_ppgl_prog;
 
 typedef struct ppgl_res {
   t_ppgl_prog plot, text;
   t_ppgl_vo vo[VO_MAX];
-  t_ppgl_mat mat;
-  t_ppgl_axs axis;
   t_ppgl_dbo dbo;
+  gboolean base;
 } t_ppgl_res;
 
 typedef struct ppgl_char {
@@ -85,57 +81,69 @@ typedef struct ppgl_char {
   vec2 size;
 } t_ppgl_char;
 
-static const GLchar *ppgl_vert_plot =
-"uniform mat4 " PPGL_VTR ";\n"
-"uniform vec4 " PPGL_COL ";\n"
-"in vec3 " PPGL_CRD ";\n"
-"out vec4 vert_col;\n"
-"void main() {\n"
-"  vert_col = vec4(" PPGL_COL ".rgb, (1 - crd.z / 2) * " PPGL_COL ".a);\n"
-"  gl_Position = " PPGL_VTR " * vec4(" PPGL_CRD ".xyz, 1);\n"
-"}";
+typedef struct ppgl_aux_measures {
+//  int x, y, x1, y1, w, h, N, M, fs, no, ymax, at;
+  double dx;
+} t_ppgl_aux_measures;
 
-static const GLchar *ppgl_frag_plot =
-"in vec4 vert_col;\n"
-"out vec4 color;\n"
-"out int face;\n"
-"const vec2 factor = {" PPGL_FRAG_FACE_F ", " PPGL_FRAG_BACK_F "};\n"
-"const vec3 back_col = vec3(" PPGL_FRAG_BACKCOL ", " PPGL_FRAG_BACKCOL ", " PPGL_FRAG_BACKCOL ");\n"
-"void main() {\n"
-"  color = gl_FrontFacing ? (factor[0] * vert_col) :\n"
-"   (factor[1] * vec4(back_col, 1 - (1 - vert_col.w) * 0.5));\n"
-"}";
+enum { VERT_GLSL, FRAG_GLSL };
+static const GLchar *ppgl_plot_glsl[] = {
+[VERT_GLSL] =
+  "uniform mat4 " PPGL_VTR ";\n"
+  "uniform vec4 " PPGL_COL ";\n"
+  "in vec3 " PPGL_CRD ";\n"
+  "out vec4 face_col;\n"
+  "out vec4 back_col;\n"
+  "const vec3 bc = vec3(" PPGL_FRAG_BACKCOL ", " PPGL_FRAG_BACKCOL ", " PPGL_FRAG_BACKCOL ");\n"
+  "void main() {\n"
+  "  float c1 = 0.25 + crd.z / 4;\n"
+  "  float c2 = 1 - c1;\n"
+  "  face_col = vec4(c1 + c2 * " PPGL_COL ".rgb, " PPGL_COL ".a);\n"
+  "  back_col = vec4(c1 + c2 * bc, 1);\n"
+  "  gl_Position = " PPGL_VTR " * vec4(" PPGL_CRD ".xyz, 1); }",
+[FRAG_GLSL] =
+  "in vec4 face_col;\n"
+  "in vec4 back_col;\n"
+  "out vec4 color;\n"
+  "void main() { color = gl_FrontFacing ? face_col : back_col; }"
+};
 
-static const GLchar *ppgl_vert_text =
-"uniform mat4 " PPGL_VTR ";\n"
-"in vec4 " PPGL_CRD "; // <vec2 pos, vec2 tex>\n"
-"out vec2 tex_crd2;\n"
-"uniform mat4 projection;\n"
-"void main() {\n"
-"  tex_crd2 = " PPGL_CRD ".zw;\n"
-"  gl_Position = " PPGL_VTR " * vec4(" PPGL_CRD ".xy, 0, 1);\n"
-"}";
-
-static const GLchar *ppgl_frag_text =
-"in vec2 tex_crd2;\n"
-"out vec4 color;\n"
-"uniform sampler2D text;\n"
-"uniform vec4 " PPGL_COL ";\n"
-"void main() {\n"
-"  vec4 sampled = vec4(1, 1, 1, texture(text, tex_crd2).r);\n"
-"  color = " PPGL_COL " * sampled;\n"
-"}";
+static const GLchar *ppgl_text_glsl[] = {
+[VERT_GLSL] =
+  "uniform mat4 " PPGL_VTR ";\n"
+  "in vec4 " PPGL_CRD "; // .xy for position, .zw for texture\n"
+  "out vec2 tcrd;\n"
+  "void main() {\n"
+  "  tcrd = " PPGL_CRD ".zw;\n"
+  "  gl_Position = " PPGL_VTR " * vec4(" PPGL_CRD ".xy, 0, 1); }",
+[FRAG_GLSL] =
+  "in vec2 tcrd;\n"
+  "out vec4 color;\n"
+  "uniform sampler2D text;\n"
+  "uniform vec4 " PPGL_COL ";\n"
+  "void main() { color = " PPGL_COL " * vec4(1, 1, 1, texture(text, tcrd).r); }"
+};
 
 static t_tab ppgltab = { .self = &ppgltab, .name = "ppgl-tab",
   .tag = GL3D_TAB_TAG, .tip = GL3D_TAB_TIP, .ico = {GL3D_TAB_ICON, GL3D_TAB_ICOA, GL3D_TAB_ICOB},
 };
 
-static GtkWidget *ppgl_area;
-static t_ppgl_res ppgl_res;
+static GtkWidget *ppgl_base_area, *ppgl_dyn_area;
+static t_ppgl_res ppgl_base_res = { .base = true }, ppgl_dyna_res;
+static t_ppgl_trans ppgl_trans;
+
+static t_ppgl_vert_desc xy_desc = { .x = PLANE_XN, .y = PLANE_YN,
+  .xtick = true,  .ytick = true, .surf = false,  .off = {XTICK, 0, 0, YTICK} };
+static t_ppgl_vert_desc lp_desc = { .x = PLANE_XN, .y = PLANE_ZN,
+  .xtick = true,  .ytick = false, .surf = false, .off = {XTICK, 0, 0, 0} };
+static t_ppgl_vert_desc bp_desc = { .x = PLANE_ZN, .y = PLANE_YN,
+  .xtick = false, .ytick = false, .surf = false, .off = {0, 0, 0, YTICK} };
+static t_ppgl_vert_desc sf_desc = { .x = SURF_XN * 2, .y = SURF_YN * 2,
+  .xtick = false, .ytick = false, .surf = true,  .off = {XTICK, 0, 0, YTICK} };
 
 static const float scale = 1;
-static const vec4 surf_color = { 1., 0, 0, 1 };
-static const vec4 grid_color = { 0, 0, 0, 0.4 };
+static const vec4 surf_color = { 0.8, 0.4, 0.4, 1 };
+static const vec4 grid_color = { 0.75, 0.75, 0.75, 1 };
 static const vec4 text_color = { 0, 0, 0, 0.6 };
 
 static t_ppgl_char ppgl_char_table[255];
@@ -147,6 +155,9 @@ const int ppgl_api_req =
   1
 #endif
 ;
+
+static gboolean ppgl_res_ready;
+static int draw_plot_at;
 
 //
 
@@ -190,7 +201,7 @@ static gboolean ppgl_api_set(GtkGLArea *area, int req) {
 static void ppgl_set_shader_err(GLuint obj, GError **err) {
   if (!glIsShader(obj) || !err) return;
   GLint len = 0; glGetShaderiv(obj, GL_INFO_LOG_LENGTH, &len); if (len <= 0) return;
-  gchar *msg = g_malloc0(len); if (!msg) return;
+  char *msg = g_malloc0(len); if (!msg) return;
   glGetShaderInfoLog(obj, len, NULL, msg);
   PPGL_SETERR("Compilation failed: %s", msg);
   g_free(msg);
@@ -199,7 +210,7 @@ static void ppgl_set_shader_err(GLuint obj, GError **err) {
 static void ppgl_set_prog_err(GLuint obj, GError **err, const char *what) {
   if (!glIsProgram(obj) || !err) return;
   GLint len = 0; glGetProgramiv(obj, GL_INFO_LOG_LENGTH, &len); if (len <= 0) return;
-  gchar *msg = g_malloc0(len); if (!msg) return;
+  char *msg = g_malloc0(len); if (!msg) return;
   glGetProgramInfoLog(obj, len, NULL, msg);
   PPGL_SETERR("%s failed: %s", what, msg);
   g_free(msg);
@@ -253,14 +264,14 @@ static void ppgl_del_prog_glsl(t_ppgl_prog *prog) {
   if (prog->fs) { glDeleteShader(prog->fs); prog->fs = 0; }
 }
 
-static gboolean ppgl_compile_glsl(t_ppgl_prog *prog, const char *vert_glsl, const char *frag_glsl, GError **err) {
-  if (!prog) return false;
+static gboolean ppgl_compile_glsl(t_ppgl_prog *prog, GError **err) {
+  if (!prog || !prog->vert || !prog->frag) return false;
   prog->exec = glCreateProgram(); if (!prog->exec) return false;
   GLint okay = GL_FALSE;
-  prog->vs = ppgl_compile_shader(vert_glsl, GL_VERTEX_SHADER, err);
+  prog->vs = ppgl_compile_shader(prog->vert, GL_VERTEX_SHADER, err);
   if (prog->vs) {
     glAttachShader(prog->exec, prog->vs);
-    prog->fs = ppgl_compile_shader(frag_glsl, GL_FRAGMENT_SHADER, err);
+    prog->fs = ppgl_compile_shader(prog->frag, GL_FRAGMENT_SHADER, err);
     if (prog->fs) {
       glAttachShader(prog->exec, prog->fs);
       glLinkProgram(prog->exec); glGetProgramiv(prog->exec, GL_LINK_STATUS, &okay);
@@ -273,19 +284,34 @@ static gboolean ppgl_compile_glsl(t_ppgl_prog *prog, const char *vert_glsl, cons
 
 static gboolean ppgl_compile_res(t_ppgl_res *res, GError **err) {
   if (!res) return false;
-  if (!ppgl_compile_glsl(&res->plot, ppgl_vert_plot, ppgl_frag_plot, err)) return false;
-  if (!ppgl_compile_glsl(&res->text, ppgl_vert_text, ppgl_frag_text, err)) return false;
+  if (!ppgl_compile_glsl(&res->plot, err)) return false;
+  if (!ppgl_compile_glsl(&res->text, err)) return false;
   return true;
 }
 
-static void ppgl_plane_vert_init(t_ppgl_res *res, t_ppgl_vo *pvo, int xn, int yn,
-    GLfloat xtick, GLfloat ytick, GLfloat dx, GLfloat dy, bool isflat) {
-  if (!res || !pvo) return;
-  pvo->vbo = ppgl_aux_vert(xn, yn, xtick, ytick, dx, dy, isflat);
+static void ppgl_plane_vert_init(t_ppgl_vo *pvo, t_ppgl_vert_desc *desc, GLint coord, gboolean dyn) {
+  if (!pvo || !desc || (coord < 0)) return;
+  pvo->vbo = ppgl_aux_vert_init(desc, dyn);
+  if (!pvo->vbo.id) return;
   glBindVertexArray(pvo->vao);
-  glEnableVertexAttribArray(res->plot.coord);
-  glVertexAttribPointer(res->plot.coord, 3, GL_FLOAT, GL_FALSE, 0, 0);
+  glEnableVertexAttribArray(coord);
+  glVertexAttribPointer(coord, 3, GL_FLOAT, GL_FALSE, 0, 0);
 }
+
+#define PPGL_GLSL_PROG_SETUP(prog, glsl) { (prog).vtr = (prog).coord = (prog).color = -1; \
+  if (setup) { (prog).vert = (glsl)[VERT_GLSL]; (prog).frag = (glsl)[FRAG_GLSL]; }}
+
+static inline void ppgl_glsl_reset(t_ppgl_res *res, gboolean setup) {
+  if (res) {
+    PPGL_GLSL_PROG_SETUP(res->plot, ppgl_plot_glsl);
+    PPGL_GLSL_PROG_SETUP(res->text, ppgl_text_glsl);
+  }
+}
+
+#define PPGL_GLSL_ATTRIBS(prog) { \
+  PPGL_GET_FORM2(prog, vtr, PPGL_VTR); \
+  PPGL_GET_FORM2(prog, color, PPGL_COL); \
+  PPGL_GET_ATTR2(prog, coord, PPGL_CRD); }
 
 static gboolean ppgl_res_init(t_ppgl_res *res, GError **err) {
   if (!res) return false;
@@ -300,36 +326,47 @@ static gboolean ppgl_res_init(t_ppgl_res *res, GError **err) {
     ppgl_del_res_vao(res);
     return false;
   }
-  //
-  PPGL_GET_FORM2(res->plot, vtr, PPGL_VTR);
-  PPGL_GET_FORM2(res->plot, color, PPGL_COL);
-  PPGL_GET_ATTR2(res->plot, coord, PPGL_CRD);
-  ppgl_plane_vert_init(res, &(res->vo[VO_SURF]), SURF_XN,  SURF_YN,  // surface
-    0, 0, XTICK, YTICK, false);
-  ppgl_plane_vert_init(res, &(res->vo[VO_XY]),   PLANE_XN, PLANE_YN, // x,y plane
-    XTICK, YTICK, XTICK, YTICK, true);
-  ppgl_plane_vert_init(res, &(res->vo[VO_LEFT]), PLANE_XN, PLANE_ZN, // left plane
-    XTICK, 0, XTICK, 0, true);
-  ppgl_plane_vert_init(res, &(res->vo[VO_BACK]), PLANE_ZN, PLANE_YN, // back plane
-    0, 0, 0, YTICK, true);
-  glBindBuffer(GL_ARRAY_BUFFER, 0);
+  // plot related
+  PPGL_GLSL_ATTRIBS(res->plot);
+  if (res->base) {
+    ppgl_plane_vert_init(&res->vo[VO_XY],   &xy_desc, res->plot.coord, true);  // x,y plane
+    ppgl_plane_vert_init(&res->vo[VO_LEFT], &lp_desc, res->plot.coord, false); // left plane
+    ppgl_plane_vert_init(&res->vo[VO_BACK], &bp_desc, res->plot.coord, false); // back plane
+  } else
+    ppgl_plane_vert_init(&res->vo[VO_SURF], &sf_desc, res->plot.coord, true);  // surface
   glBindVertexArray(0);
   glDisableVertexAttribArray(res->plot.coord);
-  res->dbo.surf = ppgl_aux_surf(SURF_XN,  SURF_YN);     // triangles
-  res->dbo.grid = ppgl_aux_grid(SURF_XN,  SURF_YN,  false,     false,     2); // surface grid
-  res->dbo.xy   = ppgl_aux_grid(PLANE_XN, PLANE_YN, XTICK > 0, YTICK > 0, 1); // x,y plane grid
-  res->dbo.left = ppgl_aux_grid(PLANE_XN, PLANE_ZN, XTICK > 0, false,     1); // left plane grid
-  res->dbo.back = ppgl_aux_grid(PLANE_ZN, PLANE_YN, false,     false,     1); // back plane grid
-  //
-  PPGL_GET_FORM2(res->text, vtr, PPGL_VTR);
-  PPGL_GET_ATTR2(res->text, coord, PPGL_CRD);
-  PPGL_GET_FORM2(res->text, color, PPGL_COL);
+  glBindBuffer(GL_ARRAY_BUFFER, 0);
+  if (res->base) {
+    res->dbo.xy   = ppgl_aux_grid_init(&xy_desc, false); // x,y plane grid
+    res->dbo.left = ppgl_aux_grid_init(&lp_desc, false); // left plane grid
+    res->dbo.back = ppgl_aux_grid_init(&bp_desc, false); // back plane grid
+  } else {
+    res->dbo.grid = ppgl_aux_grid_init(&sf_desc, true);  // surface grid
+    res->dbo.surf = ppgl_aux_surf_init(&sf_desc);        // triangles
+  }
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+  // text related
+  PPGL_GLSL_ATTRIBS(res->text);
   res->vo[VO_TEXT] = ppgl_pango_vo_init(res->text.coord); // text vao-n-vbo
-  ppgl_init_char_table();
   glBindBuffer(GL_ARRAY_BUFFER, 0);
   glBindVertexArray(0);
   glDisableVertexAttribArray(res->text.coord);
   return true;
+}
+
+static void ppgl_res_free(t_ppgl_res *res) {
+  if (res) {
+    ppgl_del_prog_glsl(&(res->plot));
+    ppgl_del_res_vao(res);
+    ppgl_del_res_vbo_dbo(res);
+    ppgl_glsl_reset(res, false);
+  }
+  glDisable(GL_DEPTH_TEST); // glDisable(GL_BLEND);
+  if (!ppgl_res_ready) return;
+  ppgl_res_ready = false;
+  ppgl_pango_free();
+  ppgl_free_char_table();
 }
 
 static inline void ppgl_projview(mat4 projview) {
@@ -354,62 +391,46 @@ static void ppgl_mat_axis(vec4 src[], int n, int* c0, int* c1, int *c2, vec4 dst
   }
 }
 
-static void ppgl_matvec_init(t_ppgl_res *res) {
-  if (!res) return;
+static void ppgl_transform_init(void) {
   mat4 model = GLM_MAT4_IDENTITY_INIT, projview;
   glm_scale(model, PP_VEC3(scale, scale, scale));
   glm_rotate(model, glm_rad(VIEW_ANGLE), GLM_ZUP);
   ppgl_projview(projview);
-  if (res->plot.vtr >= 0) { // plot related
-    glm_mul(projview, model, res->mat.xy); // surface and bottom plane
-    ppgl_mat_rotate(model, projview, 90, GLM_YUP, res->mat.left); // left plane
-    ppgl_mat_rotate(model, projview, 90, GLM_XUP, res->mat.back); // back plane
+  { // plot related
+    glm_mul(projview, model, ppgl_trans.xy); // surface and bottom plane
+    ppgl_mat_rotate(model, projview, 90, GLM_YUP, ppgl_trans.left); // left plane
+    ppgl_mat_rotate(model, projview, 90, GLM_XUP, ppgl_trans.back); // back plane
   }
-  if (res->text.vtr >= 0) { // text related
+  { // text related
     mat4 model = GLM_MAT4_IDENTITY_INIT;
     glm_scale(model, PP_VEC3(scale, scale, scale));
-    glm_mat4_copy(model, res->mat.text); // text plane
+    glm_mat4_copy(model, ppgl_trans.text); // text plane
     int min = -1, max = 1;
-    ppgl_mat_axis(res->mat.left, G_N_ELEMENTS(res->axis.rtt), NULL, &min, &min, res->axis.rtt);  //  rtt axis (left)
-    ppgl_mat_axis(res->mat.xy,  G_N_ELEMENTS(res->axis.time), NULL, &min, &min, res->axis.time); // time axis (bottom)
-    ppgl_mat_axis(res->mat.xy,   G_N_ELEMENTS(res->axis.ttl), &max, NULL, &min, res->axis.ttl);  //  ttl axis (right)
+    ppgl_mat_axis(ppgl_trans.left, G_N_ELEMENTS(ppgl_trans.rtt), NULL, &min, &min, ppgl_trans.rtt);  //  rtt axis (left)
+    ppgl_mat_axis(ppgl_trans.xy,  G_N_ELEMENTS(ppgl_trans.time), NULL, &min, &min, ppgl_trans.time); // time axis (bottom)
+    ppgl_mat_axis(ppgl_trans.xy,   G_N_ELEMENTS(ppgl_trans.ttl), &max, NULL, &min, ppgl_trans.ttl);  //  ttl axis (right)
   }
 }
 
 static void ppgl_plot_init(GtkGLArea *area, t_ppgl_res *res) {
-  static gboolean ppgl_already_logged;
   if (!GTK_IS_GL_AREA(area) || !res) return;
   gtk_gl_area_make_current(area);
   if (gtk_gl_area_get_error(area)) return;
-  if (!ppgl_already_logged) {
-    const char *ver = (const char*)glGetString(GL_VERSION);
-    if (ver) { LOG("GL: %s", ver); ppgl_already_logged = true; }
-  }
+  { GError *error = NULL; if (!ppgl_res_init(res, &error)) { gtk_gl_area_set_error(area, error); ERROR("init resources"); }}
   if (!gtk_gl_area_get_has_depth_buffer(area)) gtk_gl_area_set_has_depth_buffer(area, true);
-  GError *error = NULL;
-  if (!ppgl_res_init(res, &error)) { gtk_gl_area_set_error(area, error); ERROR("init resources"); }
   glEnable(GL_DEPTH_TEST); //glEnable(GL_BLEND); glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-  ppgl_matvec_init(res);
-}
-
-static void ppgl_glsl_loc_reset(t_ppgl_res *res) {
-  if (!res) return;
-  res->plot.vtr = res->plot.coord = res->plot.color = -1;
-  res->text.vtr = res->text.coord = res->text.color = -1;
+  if (ppgl_res_ready) return;
+  ppgl_res_ready = true;
+  ppgl_init_char_table();
+  const char *ver = (const char*)glGetString(GL_VERSION);
+  if (ver) LOG("GL: %s", ver);
 }
 
 static void ppgl_plot_free(GtkGLArea *area, t_ppgl_res *res) {
-  ppgl_pango_free();
-  ppgl_free_char_table();
-  glDisable(GL_DEPTH_TEST); glDisable(GL_BLEND);
-  if (!res) return;
-  ppgl_del_prog_glsl(&(res->plot));
-  ppgl_del_res_vao(res);
-  ppgl_del_res_vbo_dbo(res);
-  ppgl_glsl_loc_reset(res);
+  ppgl_res_free(res);
 }
 
-static void ppgl_draw_elems(GLuint vao, t_ppgl_idcnt buff, GLint vtr,
+static void ppgl_draw_elems(GLuint vao, t_ppgl_idc buff, GLint vtr,
     const vec4 color, GLint loc, const mat4 mat, GLenum mode) {
   if (vao && buff.id) {
     glBindVertexArray(vao);
@@ -423,9 +444,6 @@ static void ppgl_draw_elems(GLuint vao, t_ppgl_idcnt buff, GLint vtr,
   }
 }
 
-#define PPGL_DRAWELEMS(ndx, dbon, ecol, matn, gltype) ppgl_draw_elems(res->vo[ndx].vao, (res->dbo).dbon, \
-  res->plot.vtr, ecol, res->plot.color, (res->mat).matn, gltype);
-
 #define FONT_WINH_PERCENT 1.5
 
 static void ppgl_draw_text(t_ppgl_res *res, const char *text, const vec4 color,
@@ -435,7 +453,7 @@ static void ppgl_draw_text(t_ppgl_res *res, const char *text, const vec4 color,
   if (!vao || !vbo) return;
   char *p0 = lr ? g_strdup(text) : g_strreverse(g_strdup(text));
   if (!p0) return;
-  glUniformMatrix4fv(res->text.vtr, 1, GL_FALSE, (const GLfloat*)res->mat.text);
+  glUniformMatrix4fv(res->text.vtr, 1, GL_FALSE, (const GLfloat*)ppgl_trans.text);
   if (color) glUniform4fv(res->text.color, 1, color);
   glActiveTexture(GL_TEXTURE0);
   glBindVertexArray(vao);
@@ -456,21 +474,26 @@ static void ppgl_draw_text(t_ppgl_res *res, const char *text, const vec4 color,
   glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-#define PPGL_IS_GLSL_VALID(prog) ((prog).exec && ((prog).vtr >= 0) && ((prog).color >= 0) && ((prog).coord >= 0))
+#define PPGL_DRAWELEMS(ndx, dboname, glcolor, matrix, gltype) { ppgl_draw_elems(res->vo[ndx].vao, \
+  res->dbo.dboname, res->plot.vtr, glcolor, res->plot.color, ppgl_trans.matrix, gltype); }
 #define PPGL_AXIS_TITLE(arr, atx, aty, title, lr, dx, dy) vec4 *ax = arr; int n = G_N_ELEMENTS(arr); \
   ppgl_draw_text(res, title, text_color, atx, aty, w, h, lr, dx, dy);
+#define PPGL_IS_GLSL_VALID(prog) ((prog).exec && ((prog).vtr >= 0) && ((prog).color >= 0) && ((prog).coord >= 0))
 
 static gboolean ppgl_plot_draw(GtkGLArea *area, GdkGLContext *context, t_ppgl_res *res) {
   if (!GTK_IS_GL_AREA(area) || !GDK_IS_GL_CONTEXT(context) || !res) return false;
+  glClearColor(0, 0, 0, 0);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   if (PPGL_IS_GLSL_VALID(res->plot)) {
     glUseProgram(res->plot.exec);
-    glClearColor(1, 1, 1, 1);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    PPGL_DRAWELEMS(VO_XY,   xy,   grid_color, xy,   GL_LINES);     // bottom plane
-    PPGL_DRAWELEMS(VO_LEFT, left, grid_color, left, GL_LINES);     // left plane
-    PPGL_DRAWELEMS(VO_BACK, back, grid_color, back, GL_LINES);     // back plane
-    PPGL_DRAWELEMS(VO_SURF, grid, grid_color, xy,   GL_LINES);     // surface gridlines
-    PPGL_DRAWELEMS(VO_SURF, surf, surf_color, xy,   GL_TRIANGLES); // surface
+    if (res->base) {
+      PPGL_DRAWELEMS(VO_XY,   xy,   grid_color, xy,   GL_LINES);     // bottom plane
+      PPGL_DRAWELEMS(VO_LEFT, left, grid_color, left, GL_LINES);     // left plane
+      PPGL_DRAWELEMS(VO_BACK, back, grid_color, back, GL_LINES);     // back plane
+    } else if (pinger_state.gotdata) {
+      PPGL_DRAWELEMS(VO_SURF, grid, grid_color, xy,   GL_LINES);     // surface gridlines
+      PPGL_DRAWELEMS(VO_SURF, surf, surf_color, xy,   GL_TRIANGLES); // surface
+    }
     glBindVertexArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
@@ -481,38 +504,55 @@ static gboolean ppgl_plot_draw(GtkGLArea *area, GdkGLContext *context, t_ppgl_re
     glUseProgram(res->text.exec);
     char buff[16];
     int w = gtk_widget_get_width(GTK_WIDGET(area)), h = gtk_widget_get_height(GTK_WIDGET(area));
-    { // left axis
-      PPGL_AXIS_TITLE(res->axis.rtt, ax[0][0], ax[0][1], Y_AXIS_TITLE, true, strlen(Y_AXIS_TITLE) / -2., 2);
-      GLfloat val = PP_RTT0 / PP_RTT_SCALE;
-      GLfloat step = - val * 2 / PLANE_ZN;
-      for (int i = 0; i < n; i++, val += step) {
-        snprintf(buff, sizeof(buff), PP_RTT_AXIS_FMT, val);
-        ppgl_draw_text(res, buff, text_color, ax[i][0], ax[i][1], w, h, false, -2, -0.2);
-    }}
-    { // bottom axis
-      PPGL_AXIS_TITLE(res->axis.time, (ax[0][0] + ax[n - 1][0]) / 2, (ax[0][1] + ax[n - 1][1]) / 2,
+    if (res->base) {
+      { // left axis
+        PPGL_AXIS_TITLE(ppgl_trans.rtt, ax[0][0], ax[0][1], Y_AXIS_TITLE, true, strlen(Y_AXIS_TITLE) / -2., 2);
+        GLfloat val = series_datamax / PP_RTT_SCALE;
+        GLfloat step = - val * 2 / PLANE_ZN;
+        for (int i = 0; i < n; i++, val += step) {
+          snprintf(buff, sizeof(buff), PP_RTT_AXIS_FMT, val);
+          ppgl_draw_text(res, buff, text_color, ax[i][0], ax[i][1], w, h, false, -2, -0.2);
+        }}
+      { // right axis
+        PPGL_AXIS_TITLE(ppgl_trans.ttl, (ax[0][0] + ax[n - 1][0]) / 2, (ax[0][1] + ax[n - 1][1]) / 2,
+          TTL_AXIS_TITLE, true, 5, -1);
+        int printed = -1;
+        GLfloat val = 1, step = (float)(tgtat - 1) / (n - 1);
+        for (int i = 0; i < n; i++, val += step) {
+          if (i && (i != (n - 1)) && ((int)val == printed)) continue; else printed = val;
+          float r = fmodf(val, 1);
+          snprintf(buff, sizeof(buff), "%.0f%s", val, r ? ((r < 0.5) ? "-" : "+") : "");
+          ppgl_draw_text(res, buff, text_color, ax[i][0], ax[i][1], w, h, true, 1.5, -0.3);
+      }}
+    } else { // bottom axis
+      PPGL_AXIS_TITLE(ppgl_trans.time, (ax[0][0] + ax[n - 1][0]) / 2, (ax[0][1] + ax[n - 1][1]) / 2,
         X_AXIS_TITLE, false, -4, -3.5);
-      int val = (time(NULL) - PPGL_TIME_RANGE) % 3600;
-      int step = PPGL_TIME_RANGE * 2 / PLANE_YN;
-      for (int i = 0; i < n; i++, val += step) {
-        if (val < 0) val += 3600;
-        int mm = val / 60, ss = val % 60;
-        snprintf(buff, sizeof(buff), PP_TIME_AXIS_FMT, mm, ss);
+      if (!draw_plot_at || (pinger_state.run && !pinger_state.pause)) draw_plot_at = time(NULL) % 3600;
+      int dt = PPGL_TIME_RANGE * 2 / PLANE_YN;
+      for (int i = 0, t = draw_plot_at - PPGL_TIME_RANGE; i < n; i++, t += dt) {
+        LIMVAL(t, 3600);
+        snprintf(buff, sizeof(buff), PP_TIME_AXIS_FMT, t / 60, t % 60);
         ppgl_draw_text(res, buff, text_color, ax[i][0], ax[i][1], w, h, false, 0.3, -1.5);
-    }}
-    { // right axis
-      PPGL_AXIS_TITLE(res->axis.ttl, (ax[0][0] + ax[n - 1][0]) / 2, (ax[0][1] + ax[n - 1][1]) / 2,
-        TTL_AXIS_TITLE, true, 5, -1);
-      GLfloat val = 1;
-      GLfloat step = (float)(MAXTTL - 1) / (n - 1);
-      for (int i = 0; i < n; i++, val += step) {
-        float r = fmodf(val, 1);
-        snprintf(buff, sizeof(buff), "%.0f%s", val, r ? ((r < 0.5) ? "-" : "+") : "");
-        ppgl_draw_text(res, buff, text_color, ax[i][0], ax[i][1], w, h, true, 1.5, -0.3);
     }}
     glUseProgram(0);
   }
   return true;
+}
+
+static GtkWidget* ppgl_init_glarea(t_ppgl_res *res) {
+  GtkWidget *area = gtk_gl_area_new();
+  g_return_val_if_fail(area, NULL);
+  if (!ppgl_api_set(GTK_GL_AREA(area), ppgl_api_req)) {
+    WARN("Cannot set reguired GL API: %d", ppgl_api_req);
+    g_object_ref_sink(area);
+    return NULL;
+  }
+  gtk_widget_set_hexpand(area, true);
+  gtk_widget_set_vexpand(area, true);
+  g_signal_connect(area, EV_PPGL_INIT, G_CALLBACK(ppgl_plot_init), res);
+  g_signal_connect(area, EV_PPGL_FREE, G_CALLBACK(ppgl_plot_free), res);
+  g_signal_connect(area, EV_PPGL_DRAW, G_CALLBACK(ppgl_plot_draw), res);
+  return area;
 }
 
 
@@ -523,43 +563,50 @@ t_tab* ppgltab_init(GtkWidget* win) {
   { int units = 1;
     glGetIntegerv(GL_MAX_VERTEX_TEXTURE_IMAGE_UNITS, &units);
     if (!units) { WARN_("No support for texture lookups in the vertex shader"); return NULL; }}
-  ppgl_glsl_loc_reset(&ppgl_res);
-  ppgl_area = gtk_gl_area_new();
-  if (!ppgl_api_set(GTK_GL_AREA(ppgl_area), ppgl_api_req)) {
-    WARN("Cannot set reguired GL API: %d", ppgl_api_req);
-    g_object_ref_sink(ppgl_area);
-    return NULL;
-  }
-  gtk_widget_set_hexpand(ppgl_area, true);
-  gtk_widget_set_vexpand(ppgl_area, true);
-  g_signal_connect(ppgl_area, EV_PPGL_INIT, G_CALLBACK(ppgl_plot_init), &ppgl_res);
-  g_signal_connect(ppgl_area, EV_PPGL_FREE, G_CALLBACK(ppgl_plot_free), &ppgl_res);
-  g_signal_connect(ppgl_area, EV_PPGL_DRAW, G_CALLBACK(ppgl_plot_draw), &ppgl_res);
+  ppgl_transform_init();
+  ppgl_glsl_reset(&ppgl_base_res, true);
+  ppgl_glsl_reset(&ppgl_dyna_res, true);
   //
   TW_TW(ppgltab.lab, gtk_box_new(GTK_ORIENTATION_VERTICAL, 2), CSS_PAD, NULL);
+  g_return_val_if_fail(ppgltab.lab.w, NULL);
   TW_TW(ppgltab.dyn, gtk_box_new(GTK_ORIENTATION_VERTICAL, 0), NULL, CSS_GR_BG);
+  g_return_val_if_fail(ppgltab.dyn.w, NULL);
+  // create layers
+  ppgl_base_area = ppgl_init_glarea(&ppgl_base_res); g_return_val_if_fail(ppgl_base_area, NULL);
+  ppgl_dyn_area  = ppgl_init_glarea(&ppgl_dyna_res); g_return_val_if_fail(ppgl_dyn_area,  NULL);
   // merge layers
   GtkWidget *over = gtk_overlay_new();
-  gtk_overlay_add_overlay(GTK_OVERLAY(over), ppgl_area);
+  g_return_val_if_fail(over, NULL);
+  gtk_overlay_add_overlay(GTK_OVERLAY(over), ppgl_base_area);
+  gtk_overlay_add_overlay(GTK_OVERLAY(over), ppgl_dyn_area);
   gtk_overlay_set_child(GTK_OVERLAY(over), ppgltab.dyn.w);
-  // wrap in scroll (not necessary yet)
+  // wrap scrolling
   ppgltab.tab.w = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
   GtkWidget *scroll = gtk_scrolled_window_new();
   gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scroll), over);
   // put into tab
   gtk_widget_set_vexpand(GTK_WIDGET(scroll), true);
   gtk_box_append(GTK_BOX(ppgltab.tab.w), scroll);
+  series_reg_on_scale(ppgl_base_area);
+  series_min(PPGL_TIME_RANGE);
   return &ppgltab;
 }
 
-void ppgl_update(gboolean retrieve) {
-  if (!pinger_state.run) return;
-//  if (retrieve) ppgl_data_update();
-  if (GTK_IS_WIDGET(ppgl_area)) gtk_widget_queue_draw(ppgl_area);
+//void ppgl_free(gboolean finish) {
+//  if (finish) ppgl_res_free(&ppgl_res);
+//}
+
+inline void ppgl_restart(void) { draw_plot_at = 0; }
+
+void ppgl_update(void) {
+  ppgl_aux_vbo_surf_update(&ppgl_dyna_res.vo[VO_SURF].vbo);
+  ppgl_aux_dbo_surf_update(&ppgl_dyna_res.dbo.surf);
+  ppgl_aux_dbo_grid_update(&ppgl_dyna_res.dbo.grid);
+  if (GTK_IS_WIDGET(ppgl_dyn_area)) gtk_gl_area_queue_render(GTK_GL_AREA(ppgl_dyn_area));
 }
 
-void ppgl_final_update(void) {
-//  ppgl_data_update();
-  if (GTK_IS_WIDGET(ppgl_area)) gtk_widget_queue_draw(ppgl_area);
+void ppgl_refresh(void) {
+  if (GTK_IS_WIDGET(ppgl_base_area)) gtk_gl_area_queue_render(GTK_GL_AREA(ppgl_base_area));
+  if (GTK_IS_WIDGET(ppgl_dyn_area)) gtk_gl_area_queue_render(GTK_GL_AREA(ppgl_dyn_area));
 }
 
