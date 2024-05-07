@@ -21,7 +21,7 @@
   if (!display) { WARN_("no default display"); return re; }
 
 typedef struct style_colors {
-  const char *def[2], *app[2], *gr[2];
+  const char *def[2], *app[2], *graph[2], *plot[2];
 } t_style_colors;
 
 int style_loaded;
@@ -30,31 +30,31 @@ gboolean ub_theme;
 //
 
 static const t_style_colors style_color = {
-  .def = { "#fdfdfd", "#151515"},
-  .app = { BG_CONTRAST_LIGHT, BG_CONTRAST_DARK},
-  .gr  = { "#f9f9f9", "#222222"},
+  .def   = { "#fdfdfd", "#151515"},
+  .app   = { BG_CONTRAST_LIGHT, BG_CONTRAST_DARK},
+  .graph = { "#f9f9f9", "#222222"},
+  .plot  = { "#f9f9f9", "#222222"},
 };
 
-static const char *css_common = " \
-  notebook > header > tabs {padding-left:0; padding-right:0;} \
-  notebook > header > tabs > tab {margin-left:0; margin-right:0;} \
-  popover {background:transparent;} \
-  vertical {padding:" PAD16 ";} \
-  .flat {padding:" PAD4 ";} \
-  ." CSS_PAD " {padding:" PAD ";} \
-  ." CSS_NOPAD " {min-height:0;} \
-  ." CSS_CHPAD " {padding-right:" PAD ";} \
-  ." CSS_PAD6  " {padding-right:" PAD6 ";} \
-  ." CSS_NOFRAME " {border:none;} \
-  ." CSS_ROUNDED " {border-radius:5px; padding:" PAD16 ";} \
-  ." CSS_ROUNDG " {border-radius:7px; padding:" PAD ";} \
-  ." CSS_INVERT " {filter:invert(100%);} \
-  ." CSS_LEGEND " {border: 1px outset " LEGEND_BORDER "; padding: " PAD4 " " PAD6 " " PAD4 " " PAD4 ";} \
-  ." CSS_LEGEND_TEXT " {padding:0;} \
-  ." CSS_BGONDARK  " {background:" BG_CONTRAST_DARK  ";color:" BG_CONTRAST_DARK  ";} \
-  ." CSS_BGONLIGHT " {background:" BG_CONTRAST_LIGHT ";color:" BG_CONTRAST_LIGHT ";} \
-  #" CSS_ID_DATETIME " {font-weight:500;} \
-";
+static const char *css_common = "\n\
+notebook > header > tabs {padding-left:0; padding-right:0;}\n\
+notebook > header > tabs > tab {margin-left:0; margin-right:0;}\n\
+popover {background:transparent;}\n\
+vertical {padding:" PAD16 ";}\n\
+.flat {padding:" PAD4 ";}\n\
+." CSS_PAD " {padding:" PAD ";}\n\
+." CSS_NOPAD " {min-height:0;}\n\
+." CSS_CHPAD " {padding-right:" PAD ";}\n\
+." CSS_PAD6  " {padding-right:" PAD6 ";}\n\
+." CSS_NOFRAME " {border:none;}\n\
+." CSS_ROUNDED " {border-radius:5px; padding:" PAD16 ";}\n\
+." CSS_ROUNDG " {border-radius:7px; padding:" PAD ";}\n\
+." CSS_INVERT " {filter:invert(100%);}\n\
+." CSS_LEGEND " {border: 1px outset " LEGEND_BORDER "; padding: " PAD4 " " PAD6 " " PAD4 " " PAD4 ";}\n\
+." CSS_LEGEND_TEXT " {padding:0;}\n\
+." CSS_BGONDARK  " {background:" BG_CONTRAST_DARK  ";color:" BG_CONTRAST_DARK  ";}\n\
+." CSS_BGONLIGHT " {background:" BG_CONTRAST_LIGHT ";color:" BG_CONTRAST_LIGHT ";}\n\
+#" CSS_ID_DATETIME " {font-weight:500;}\n";
 
 static void style_css_load(GtkCssProvider *prov, const char *str) {
 #if GTK_CHECK_VERSION(4, 12, 0)
@@ -64,24 +64,25 @@ static void style_css_load(GtkCssProvider *prov, const char *str) {
 #endif
 }
 
-static char* style_extra_css(const char *common, gboolean dark, gboolean grdark) {
-  int ndx = dark ? 1 : 0, grndx = grdark ? 1 : 0;
-  const char *def = style_color.def[ndx], *def_gr = style_color.def[grndx],
+static char* style_extra_css(const char *common, gboolean dark, gboolean darkgraph, gboolean darkplot) {
+  int ndx = dark ? 1 : 0, grndx = darkgraph ? 1 : 0, plndx = darkplot ? 1 : 0;
+  const char *def = style_color.def[ndx], *def_gr = style_color.def[grndx], *def_pl = style_color.def[plndx],
     *app = style_color.app[ndx], *app_inv = style_color.app[!ndx],
-    *lgnd_bg = style_color.gr[grndx], *lgnd_fg = style_color.gr[!grndx];
+    *lgnd_bg = style_color.graph[grndx], *lgnd_fg = style_color.graph[!grndx];
   char* items[] = {
     g_strdup_printf("%s\n", common),
-    g_strdup_printf("." CSS_BGROUND " {background:%s;}", def),
-    g_strdup_printf("popover > arrow, popover > contents {background:%s; box-shadow:none;}", app),
-    g_strdup_printf("entry, entry.flat {background:%s; text-decoration:underline; border:none;}", app),
-    g_strdup_printf("headerbar {background:%s;}", app),
-    g_strdup_printf("headerbar:backdrop {background:%s;}", app),
-    g_strdup_printf("notebook > header > tabs > tab {background-color:%s;}", app),
-    g_strdup_printf("." CSS_EXP " {background:%s;}", app),
-    g_strdup_printf("." CSS_DEF_BG " {background:%s; color:%s;}", app, app),
-    g_strdup_printf("." CSS_INV_BG " {background:%s; color:%s;}", app_inv, app_inv),
-    g_strdup_printf("." CSS_GR_BG  " {background:%s;}", def_gr),
-    g_strdup_printf("." CSS_LEGEND_COL " {background:%s; color:%s;}", lgnd_bg, lgnd_fg),
+    g_strdup_printf("." CSS_BGROUND " {background:%s;}\n", def),
+    g_strdup_printf("popover > arrow, popover > contents {background:%s; box-shadow:none;}\n", app),
+    g_strdup_printf("entry, entry.flat {background:%s; text-decoration:underline; border:none;}\n", app),
+    g_strdup_printf("headerbar {background:%s;}\n", app),
+    g_strdup_printf("headerbar:backdrop {background:%s;}\n", app),
+    g_strdup_printf("notebook > header > tabs > tab {background-color:%s;}\n", app),
+    g_strdup_printf("." CSS_EXP " {background:%s;}\n", app),
+    g_strdup_printf("." CSS_DEF_BG " {background:%s; color:%s;}\n", app, app),
+    g_strdup_printf("." CSS_INV_BG " {background:%s; color:%s;}\n", app_inv, app_inv),
+    g_strdup_printf("." CSS_GRAPH_BG  " {background:%s;}\n", def_gr),
+    g_strdup_printf("." CSS_PLOT_BG  " {background:%s; color:%s;}\n", def_pl, def_pl),
+    g_strdup_printf("." CSS_LEGEND_COL " {background:%s; color:%s;}\n", lgnd_bg, lgnd_fg),
     NULL};
   char *re = g_strjoinv(NULL, items);
   for (char **p = items; *p; p++) g_free(*p);
@@ -132,11 +133,11 @@ static void style_load_theme(GdkDisplay *display, const char *theme, const char 
     GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
 }
 
-static void style_load_extra(GdkDisplay *display, gboolean dark, gboolean darkgr) {
+static void style_load_extra(GdkDisplay *display, gboolean dark, gboolean darkgraph, gboolean darkplot) {
   style_loaded = false;
   GtkCssProvider *prov = gtk_css_provider_new();
   g_return_if_fail(GTK_IS_CSS_PROVIDER(prov));
-  char *data = style_extra_css(css_common, dark, darkgr);
+  char *data = style_extra_css(css_common, dark, darkgraph, darkplot);
   if (!data) { WARN_("no CSS data"); g_object_unref(prov); return; }
   style_css_load(prov, data); g_free(data);
   if (prov_extra) gtk_style_context_remove_provider_for_display(display, GTK_STYLE_PROVIDER(prov_extra));
@@ -160,11 +161,11 @@ const char* is_sysicon(const char **icon) {
   return NULL;
 }
 
-void style_set(gboolean dark, gboolean darkgr) {
+void style_set(gboolean darkmain, gboolean darkgraph, gboolean darkplot) {
   STYLE_GET_DISPLAY();
-  char *prefer = style_prefer(dark);
-  if (prefer) { style_load_theme(display, prefer, dark ? "dark" : NULL); g_free(prefer); }
-  style_load_extra(display, dark, darkgr);
+  char *prefer = style_prefer(darkmain);
+  if (prefer) { style_load_theme(display, prefer, darkmain ? "dark" : NULL); g_free(prefer); }
+  style_load_extra(display, darkmain, darkgraph, darkplot);
 }
 
 void style_free(void) {

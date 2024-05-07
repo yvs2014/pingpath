@@ -13,13 +13,13 @@
 #define DEF_LEGEND     true
 #define DEF_DARK_MAIN  true
 #define DEF_DARK_GRAPH false
-#define DEF_DARK_PPGL  false
+#define DEF_DARK_PLOT  false
 
 typedef struct opts {
   char *target;
   gboolean dns, whois, legend, darktheme, darkgraph;
-#ifdef WITH_PPGL
-  gboolean ppgl, darkppgl;
+#ifdef WITH_PLOT
+  gboolean plot, darkplot;
 #endif
   int cycles, timeout, qos, size, ipv, graph;
   int min, lim;       // TTL range
@@ -53,16 +53,18 @@ int pinger_recap_cb(GApplication *app);
 
 #define EN_BOOLPTR(en) ((en)->pval ? (en)->pval : ((en)->valfn ? (en)->valfn((en)->valtype) : NULL))
 
-#ifdef WITH_PPGL
-#define OPTS_GRAPH_REL (opts.graph || opts.ppgl)
-#define GRAPH_UPDATE_REL { if (opts.graph) graphtab_update(); if (opts.ppgl) ppgl_update(); }
-#define GRAPH_REFRESH_REL { if (opts.graph) graphtab_refresh(); if (opts.ppgl) ppgl_refresh(); }
-#define GRAPH_RESTART_REL { if (opts.graph) graphtab_restart(); if (opts.ppgl) ppgl_restart(); }
+#ifdef WITH_PLOT
+#define OPTS_GRAPH_REL (opts.graph || opts.plot)
+#define GRAPH_UPDATE_REL { if (opts.graph) graphtab_update(); if (opts.plot) plottab_update(); }
+#define GRAPH_REFRESH_REL { if (opts.graph) graphtab_refresh(); if (opts.plot) plottab_refresh(); }
+#define GRAPH_RESTART_REL { if (opts.graph) graphtab_restart(); if (opts.plot) plottab_restart(); }
+#define GRAPH_FREE_REL { graphtab_free(); plottab_free(); }
 #else
 #define OPTS_GRAPH_REL (opts.graph)
 #define GRAPH_UPDATE_REL { if (opts.graph) graphtab_update(); }
 #define GRAPH_REFRESH_REL { if (opts.graph) graphtab_refresh(); }
 #define GRAPH_RESTART_REL { if (opts.graph) graphtab_restart(); }
+#define GRAPH_FREE_REL { graphtab_free(); }
 #endif
 
 #endif

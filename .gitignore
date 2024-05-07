@@ -2,12 +2,15 @@
 *.o
 *.a
 /.cache/
+/_build/
+/_build3/
 
 /pingpath
+/pingpath3
+
 .*.swp
 *~
 compile_commands.json
-build-dir/
 *.snap
 /.flatpak-builder/
 /debs/

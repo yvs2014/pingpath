@@ -237,12 +237,20 @@ static gboolean cli_opt_G(const char *name, const char *value, t_opts *opts, GEr
 
 static gboolean cli_opt_T(const char *name, const char *value, t_opts *opts, GError **error) {
   if (!opts) return false;
-  int mask = opts->darktheme | (opts->darkgraph << 1) | (opts->legend << 2);
-  gboolean re = cli_int_opt(name, value, error, ENT_STR_THEME, "Theme bits", 0, 7, &mask);
+  int mask = opts->darktheme | (opts->darkgraph << 1) | (opts->legend << 2)
+#ifdef WITH_PLOT
+    | (opts->darkplot << 3), max = 0xf;
+#else
+    , max = 0x7;
+#endif
+  gboolean re = cli_int_opt(name, value, error, ENT_STR_THEME, "Theme bits", 0, max, &mask);
   if (re) {
     opts->darktheme = (mask & 0x1) ? true : false;
     opts->darkgraph = (mask & 0x2) ? true : false;
     opts->legend    = (mask & 0x4) ? true : false;
+#ifdef WITH_PLOT
+    opts->darkplot  = (mask & 0x8) ? true : false;
+#endif
   }
   return re;
 }

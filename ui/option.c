@@ -40,6 +40,9 @@ t_ent_bool ent_bool[ENT_BOOL_MAX] = {
     .valfn = pingelem_enabler, .valtype = ELEM_JTTR, .prefix = OPT_STAT_HDR },
   [ENT_BOOL_MN_DARK] = { .en = { .type = ENT_BOOL_MN_DARK, .name = OPT_MN_DARK_HDR }, .pval = &opts.darktheme },
   [ENT_BOOL_GR_DARK] = { .en = { .type = ENT_BOOL_GR_DARK, .name = OPT_GR_DARK_HDR }, .pval = &opts.darkgraph },
+#ifdef WITH_PLOT
+  [ENT_BOOL_PL_DARK] = { .en = { .type = ENT_BOOL_PL_DARK, .name = OPT_PL_DARK_HDR }, .pval = &opts.darkplot },
+#endif
   [ENT_BOOL_LGND] = { .en = { .type = ENT_BOOL_LGND, .name = OPT_LGND_HDR }, .pval = &opts.legend },
   [ENT_BOOL_AVJT] = { .en = { .type = ENT_BOOL_AVJT, .name = GRLG_AVJT_HEADER },
     .valfn = graphelem_enabler, .valtype = GRLG_AVJT, .prefix = OPT_GRLG_HDR },
@@ -152,7 +155,7 @@ static void toggled_dns(void) { stat_reset_cache(); notifier_legend_update(); pi
 
 static void toggle_colors(void) {
   tab_dependent(NULL);
-  style_set(opts.darktheme, opts.darkgraph);
+  STYLE_SET;
   tab_reload_theme();
   if (OPTS_GRAPH_REL) { GRAPH_REFRESH_REL; notifier_legend_reload_css(); }
 }
@@ -186,6 +189,9 @@ static void toggle_cb(GtkCheckButton *check, t_ent_bool *en) {
       break;
     case ENT_BOOL_MN_DARK:
     case ENT_BOOL_GR_DARK:
+#ifdef WITH_PLOT
+    case ENT_BOOL_PL_DARK:
+#endif
       check_bool_val(check, en, toggle_colors);
       break;
     case ENT_BOOL_LGND:
@@ -550,6 +556,9 @@ static gboolean create_graph_optmenu(GtkWidget *list) {
   gtk_compat_list_box_remove_all(GTK_LIST_BOX(list));
   if (!add_opt_check(list,  &ent_bool[ENT_BOOL_MN_DARK])) okay = false;
   if (!add_opt_check(list,  &ent_bool[ENT_BOOL_GR_DARK])) okay = false;
+#ifdef WITH_PLOT
+  if (!add_opt_check(list,  &ent_bool[ENT_BOOL_PL_DARK])) okay = false;
+#endif
   if (!add_opt_radio(list,  &ent_rad[ENT_RAD_GRAPH]))     okay = false;
   if (!add_opt_check(list,  &ent_bool[ENT_BOOL_LGND]))    okay = false;
   if (!add_opt_expand(list, &ent_exp[ENT_EXP_LGFL]))      okay = false;

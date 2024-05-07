@@ -18,7 +18,7 @@
 #define APPFLAGS G_APPLICATION_NON_UNIQUE
 
 static GtkWidget *graphtab_ref;
-#ifdef WITH_PPGL
+#ifdef WITH_PLOT
 static GtkWidget *tab3d_ref;
 #endif
 
@@ -43,7 +43,7 @@ static void on_tab_switch(GtkNotebook *nb, GtkWidget *tab, unsigned ndx, void *u
   g_application_quit(G_APPLICATION(app)); exit_code = EXIT_FAILURE; return; }
 
 static void app_cb(GtkApplication* app, void *unused) {
-  style_set(opts.darktheme, opts.darkgraph);
+  STYLE_SET;
   GtkWidget *win = gtk_application_window_new(app);
   if (!GTK_IS_WINDOW(win)) APPQUIT("%s", "app window");
   gtk_window_set_default_size(GTK_WINDOW(win), X_RES, Y_RES);
@@ -62,16 +62,16 @@ static void app_cb(GtkApplication* app, void *unused) {
   if (opts.graph) {
     nb_tabs[TAB_GRAPH_NDX] = graphtab_init(win);
     if (nb_tabs[TAB_GRAPH_NDX]) graphtab_ref = nb_tabs[TAB_GRAPH_NDX]->tab.w; }
-#ifdef WITH_PPGL
-  if (opts.ppgl) {
-    nb_tabs[TAB_3D_NDX] = ppgltab_init(win);
-    if (nb_tabs[TAB_3D_NDX]) tab3d_ref = nb_tabs[TAB_3D_NDX]->tab.w; }
+#ifdef WITH_PLOT
+  if (opts.plot) {
+    nb_tabs[TAB_PLOT_NDX] = plottab_init(win);
+    if (nb_tabs[TAB_PLOT_NDX]) tab3d_ref = nb_tabs[TAB_PLOT_NDX]->tab.w; }
 #endif
   nb_tabs[TAB_LOG_NDX]  = logtab_init(win);
   for (int i = 0; i < G_N_ELEMENTS(nb_tabs); i++) {
     if (!opts.graph && (i == TAB_GRAPH_NDX)) continue;
-#ifdef WITH_PPGL
-    if (!opts.ppgl && (i == TAB_3D_NDX)) continue;
+#ifdef WITH_PLOT
+    if (!opts.plot && (i == TAB_PLOT_NDX)) continue;
 #endif
     t_tab *tab = nb_tabs[i];
     if (!tab || !tab->tab.w || !tab->lab.w) APPQUIT("tab#%d", i);
@@ -87,8 +87,8 @@ static void app_cb(GtkApplication* app, void *unused) {
   GtkWidget *over = notifier_init(NT_MAIN_NDX, nb);
   if (!GTK_IS_OVERLAY(over)) APPQUIT("%s", "notification window");
   GtkWidget *curr = (start_page == TAB_GRAPH_NDX) ? graphtab_ref : (
-#ifdef WITH_PPGL
-    (start_page == TAB_3D_NDX) ? tab3d_ref :
+#ifdef WITH_PLOT
+    (start_page == TAB_PLOT_NDX) ? tab3d_ref :
 #endif
     nb_tabs[start_page]->tab.w);
   tab_dependent(curr);
@@ -120,8 +120,8 @@ void tab_dependent(GtkWidget *tab) {
   static GtkWidget *currtab_ref;
   if (tab) currtab_ref = tab; else tab = currtab_ref;
   if (tab == graphtab_ref) nt_dark = !opts.darkgraph;
-#ifdef WITH_PPGL
-  else if (tab == tab3d_ref) nt_dark = !opts.darkppgl;
+#ifdef WITH_PLOT
+  else if (tab == tab3d_ref) nt_dark = !opts.darkplot;
 #endif
   else nt_dark = !opts.darktheme;
 }

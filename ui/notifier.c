@@ -170,7 +170,7 @@ static gboolean nt_lgnd_on_drop(GtkDropTarget *dst, const GValue *val, gdouble x
 static void nt_init_graph_box(GtkWidget *box, GtkWidget *over, t_notifier *nt) {
   if (!GTK_IS_LIST_BOX(box) || !GTK_IS_OVERLAY(over) || !nt) return;
   g_signal_connect(box, EV_ROW_ACTIVE, G_CALLBACK(nt_lgnd_row_cb), NULL);
-  if (style_loaded) gtk_widget_add_css_class(box, CSS_GR_BG);
+  if (style_loaded) gtk_widget_add_css_class(box, CSS_GRAPH_BG);
   GtkSizeGroup* group[GRLG_MAX];
   for (int i = 0; i < G_N_ELEMENTS(group); i++)
     group[i] = gtk_size_group_new(GTK_SIZE_GROUP_HORIZONTAL);
@@ -268,7 +268,7 @@ static GtkWidget* nt_init(GtkWidget *base, t_notifier *nt) {
   } else nt_reveal_sets(reveal, GTK_ALIGN_CENTER, GTK_REVEALER_TRANSITION_TYPE_SWING_LEFT);
   // link widgets together
   gtk_box_append(GTK_BOX(box), inbox);
-  if (style_loaded && (nt->type == NT_GRAPH_NDX)) gtk_widget_add_css_class(box, CSS_GR_BG);
+  if (style_loaded && (nt->type == NT_GRAPH_NDX)) gtk_widget_add_css_class(box, CSS_GRAPH_BG);
   gtk_revealer_set_child(GTK_REVEALER(reveal), box);
   gtk_overlay_add_overlay(GTK_OVERLAY(over), reveal);
   gtk_overlay_set_child(GTK_OVERLAY(over), base);
@@ -344,8 +344,8 @@ void notifier_legend_update(void) {
 void notifier_legend_reload_css(void) {
   t_notifier *nt = &notifier[NT_GRAPH_NDX];
   if (!nt && !style_loaded) return;
-  if (nt->box) { gtk_widget_remove_css_class(nt->box, CSS_GR_BG); gtk_widget_add_css_class(nt->box, CSS_GR_BG); }
-  if (nt->inbox) { gtk_widget_remove_css_class(nt->inbox, CSS_GR_BG); gtk_widget_add_css_class(nt->inbox, CSS_GR_BG); }
+  if (nt->box) { gtk_widget_remove_css_class(nt->box, CSS_GRAPH_BG); gtk_widget_add_css_class(nt->box, CSS_GRAPH_BG); }
+  if (nt->inbox) { gtk_widget_remove_css_class(nt->inbox, CSS_GRAPH_BG); gtk_widget_add_css_class(nt->inbox, CSS_GRAPH_BG); }
 }
 
 unsigned lgnd_excl_mask; // enough for MAXTTL(30) bitmask

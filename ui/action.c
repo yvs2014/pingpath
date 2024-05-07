@@ -63,6 +63,9 @@ static const char *help_message =
   SPANHDR("Auxiliary")
   SPANOPT(OPT_MN_DARK_HEADER, "dark | light")
   SPANOPT(OPT_GR_DARK_HEADER, "light | dark")
+#ifdef WITH_PLOT
+  SPANOPT(OPT_PL_DARK_HEADER, "light | dark")
+#endif
   SPANOPT(OPT_GRAPH_HDR,   "either " OPT_GR_NONE_HDR ", or " OPT_GR_DOT_HDR ", or " OPT_GR_LINE_HDR ", or " OPT_GR_CURVE_HDR)
   SPANOPT(OPT_GRLG_HDR,    "to display:")
     SPANSUB(GRLG_AVJT_HDR  " " GRLG_CCAS_HDR " " GRLG_LGHN_HDR)

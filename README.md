@@ -19,7 +19,7 @@ What it displays:
 - Hop hostnames taken by DNS back resolving (see https://docs.gtk.org/gio/class.Resolver.html)
 - Whois lookup data received by querying RIPE whois (see http://www.ripe.net/ris/riswhois.html)
 - Statistics calculated on data from iputils-ping output (see ping(8) manual)
-- Graphs drawn in runtime providing visual representation to make it easier to analyze numerical information
+- Graphs and 3D plots providing visual representation at runtime
 
 DETAILS
 -------

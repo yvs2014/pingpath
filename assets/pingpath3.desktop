@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=pingpath3
+Comment=Graphical ping wrapper with 3D plotting
+Exec=pingpath3
+Icon=pingpath
+Terminal=false
+Type=Application
+StartupNotify=true
+Keywords=network;ping;wrapper;
+Categories=Utility;

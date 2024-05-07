@@ -47,9 +47,8 @@ typedef struct proc {
 t_opts opts = { .target = NULL, .dns = DEF_DNS, .whois = DEF_WHOIS, .cycles = DEF_CYCLES, .qos = DEF_QOS, .size = DEF_PSIZE,
   .min = 0, .lim = MAXTTL, .timeout = DEF_TOUT, .tout_usec = DEF_TOUT * G_USEC_PER_SEC, .logmax = DEF_LOGMAX,
   .graph = GRAPH_TYPE_CURVE, .legend = DEF_LEGEND, .darktheme = DEF_DARK_MAIN, .darkgraph = DEF_DARK_GRAPH,
-#ifdef WITH_PPGL
-  .ppgl = true,
-  .darkppgl = DEF_DARK_PPGL,
+#ifdef WITH_PLOT
+  .plot = true, .darkplot = DEF_DARK_PLOT,
 #endif
 };
 
@@ -597,7 +596,7 @@ void pinger_cleanup(void) {
   dns_cache_free();
   whois_cache_free();
   pinger_error_free();
-  graphtab_free();
+  GRAPH_FREE_REL;
   series_free();
   style_free();
 }

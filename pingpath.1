@@ -8,6 +8,9 @@
 .Nm
 .Op Fl cfgGhiILnpqrRsStTv46
 .Sy [ TARGET ]
+.Nm pingpath3
+.Op Fl cfgGhiILnpqrRsStTv46
+.Sy [ TARGET ]
 .Sh DESCRIPTION
 Network diagnostic tool based on parsing system
 .Sy ping
@@ -30,7 +33,7 @@ What it displays:
 .br
 - Statistics calculated on data from iputils-ping output (see\~ping(8)\~manual)
 .br
-- Graphs drawn in runtime providing visual representation to make it easier to analyze numerical information
+- Graphs and 3D plots providing visual representation at runtime
 .El
 .br
 .Sh OPTIONS
@@ -151,10 +154,12 @@ Main theme (0 - light, 1 - dark)
 Graph theme (0 - light, 1 - dark)
 .It Cm 3rd
 Graphs with legend
+.It Cm 4th
+3D-plot theme (0 - light, 1 - dark)
 .El
 Default
 .Ar 5
-(dark main, light graph, legend)
+(dark main, light graph, graph legend, light plot)
 .El
 .Bl -tag -width Ds
 .It Fl g, Fl -graph Ar TYPE

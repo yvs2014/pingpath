@@ -10,7 +10,7 @@
 #define MIN_GTK_RUNTIME(major, minor, micro) (!gtk_check_version(major, minor, micro))
 
 #define APPNAME "pingpath"
-#define VERSION "0.2.8"
+#define VERSION "0.2.9"
 
 #define X_RES 1024
 #define Y_RES 720
@@ -63,10 +63,10 @@
 #define EV_DND_ICON   "drag-begin"
 #define EV_DND_DROP   "drop"
 #define EV_DND_MOVE   "motion"
-#ifdef WITH_PPGL
-#define EV_PPGL_INIT   "realize"
-#define EV_PPGL_FREE   "unrealize"
-#define EV_PPGL_DRAW   "render"
+#ifdef WITH_PLOT
+#define EV_PLOT_INIT   "realize"
+#define EV_PLOT_FREE   "unrealize"
+#define EV_PLOT_DRAW   "render"
 #endif
 
 #define MAX_ICONS      4
@@ -87,10 +87,10 @@
 #define GRAPH_TAB_ICON "media-playlist-shuffle-symbolic"
 #define GRAPH_TAB_ICOA "utilities-system-monitor-symbolic"
 #define GRAPH_TAB_ICOB "media-playlist-repeat-symbolic"
-#ifdef WITH_PPGL
-#define GL3D_TAB_ICON  "application-x-appliance-symbolic"
-#define GL3D_TAB_ICOB  "network-cellular-connected-symbolic"
-#define GL3D_TAB_ICOA  "preferences-system-network-symbolic"
+#ifdef WITH_PLOT
+#define PLOT_TAB_ICON  "application-x-appliance-symbolic"
+#define PLOT_TAB_ICOB  "network-cellular-connected-symbolic"
+#define PLOT_TAB_ICOA  "preferences-system-network-symbolic"
 #endif
 #define LOG_TAB_ICON   "system-search-symbolic"
 #define LOG_TAB_ICOA   "edit-find-symbolic"
@@ -101,9 +101,9 @@
 #define LOG_TAB_TIP   "Auxiliary logs"
 #define GRAPH_TAB_TAG "Graph"
 #define GRAPH_TAB_TIP "Line graph"
-#ifdef WITH_PPGL
-#define GL3D_TAB_TAG  "3D"
-#define GL3D_TAB_TIP  "3D view"
+#ifdef WITH_PLOT
+#define PLOT_TAB_TAG  "3D"
+#define PLOT_TAB_TIP  "3D view"
 #endif
 
 #define PP_FONT_FAMILY "monospace"
@@ -206,6 +206,10 @@
 #define OPT_MN_DARK_HEADER "Main theme"
 #define OPT_GR_DARK_HDR  "Graph dark theme"
 #define OPT_GR_DARK_HEADER "Graph theme"
+#ifdef WITH_PLOT
+#define OPT_PL_DARK_HDR  "Plot dark theme"
+#define OPT_PL_DARK_HEADER "Plot theme"
+#endif
 #define OPT_GRAPH_HDR    "Graph type"
 #define OPT_GR_NONE_HDR  "None"
 #define OPT_GR_DOT_HDR   "Dots"
@@ -284,8 +288,8 @@
 enum { GLIB_STRV, GTK_STRV, CAIRO_STRV, PANGO_STRV };
 
 enum { TAB_PING_NDX, TAB_GRAPH_NDX,
-#ifdef WITH_PPGL
-TAB_3D_NDX,
+#ifdef WITH_PLOT
+TAB_PLOT_NDX,
 #endif
 TAB_LOG_NDX, TAB_NDX_MAX };
 
@@ -293,8 +297,11 @@ enum { ENT_EXP_NONE, ENT_EXP_INFO, ENT_EXP_STAT, ENT_EXP_LGFL, ENT_EXP_GREX, ENT
 
 enum { ENT_BOOL_NONE, ENT_BOOL_DNS, ENT_BOOL_HOST, ENT_BOOL_AS, ENT_BOOL_CC, ENT_BOOL_DESC, ENT_BOOL_RT,
   ENT_BOOL_LOSS, ENT_BOOL_SENT, ENT_BOOL_RECV, ENT_BOOL_LAST, ENT_BOOL_BEST, ENT_BOOL_WRST, ENT_BOOL_AVRG, ENT_BOOL_JTTR,
-  ENT_BOOL_MN_DARK, ENT_BOOL_GR_DARK, ENT_BOOL_LGND, ENT_BOOL_AVJT, ENT_BOOL_CCAS, ENT_BOOL_LGHN,
-  ENT_BOOL_MEAN, ENT_BOOL_JRNG, ENT_BOOL_AREA, ENT_BOOL_MAX };
+  ENT_BOOL_MN_DARK, ENT_BOOL_GR_DARK, ENT_BOOL_LGND,
+#ifdef WITH_PLOT
+  ENT_BOOL_PL_DARK,
+#endif
+  ENT_BOOL_AVJT, ENT_BOOL_CCAS, ENT_BOOL_LGHN, ENT_BOOL_MEAN, ENT_BOOL_JRNG, ENT_BOOL_AREA, ENT_BOOL_MAX };
 
 enum { ELEM_NO, ELEM_HOST, ELEM_AS, ELEM_CC, ELEM_DESC, ELEM_RT, ELEM_FILL,
   ELEM_LOSS, ELEM_SENT, ELEM_RECV, ELEM_LAST, ELEM_BEST, ELEM_WRST, ELEM_AVRG, ELEM_JTTR, ELEM_MAX,
@@ -400,6 +407,8 @@ typedef struct elem_desc {
   const char *patt;
   type2ndx_fn t2n, t2e;
 } t_elem_desc;
+
+typedef struct th_color { double ondark, onlight; } t_th_color;
 
 extern const char *appver;
 extern const char *unkn_error;

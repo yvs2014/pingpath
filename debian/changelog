@@ -1,3 +1,9 @@
+pingpath (0.2.9) mantic noble; urgency=low
+
+  * [almost finished] add 3D-plots
+
+ -- yvs <VSYakovetsky@gmail.com>  Wed, 08 May 2024 02:10:24 +0300
+
 pingpath (0.2.8) mantic noble; urgency=low
 
   * [draft] plot 3D data

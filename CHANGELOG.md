@@ -1,3 +1,6 @@
+## 0.2.9
+- [almost finished] add 3D-plots
+
 ## 0.2.8
 - [draft] plot 3D data
 

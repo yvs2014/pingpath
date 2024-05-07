@@ -31,13 +31,11 @@ typedef struct gr_point_desc {
   gboolean conn;
 } t_gr_point_desc;
 
-typedef struct gr_color { double ondark, onlight; } t_gr_color;
-
 typedef void (*draw_smth_fn)(int i, cairo_t *cr, double x);
 
-static const t_gr_color dash_col = { .ondark = 0.85, .onlight = 0.7 };
-static const t_gr_color text_col = { .ondark = 0.85, .onlight = 0   };
-#define GR_SETCOL(gcol) { double col = opts.darkgraph ? gcol.ondark : gcol.onlight; \
+static const t_th_color dash_col = { .ondark = 0.85, .onlight = 0.7 };
+static const t_th_color text_col = { .ondark = 0.85, .onlight = 0   };
+#define GR_SETCOL(thcol) { double col = opts.darkgraph ? thcol.ondark : thcol.onlight; \
   cairo_set_source_rgb(cr, col, col, col); }
 #define GR_TEXTCOL GR_SETCOL(text_col)
 
@@ -366,7 +364,7 @@ static void gr_draw_graph(GtkDrawingArea *area, cairo_t* cr, int w, int h, void 
 t_tab* graphtab_init(GtkWidget* win) {
   TW_TW(graphtab.lab, gtk_box_new(GTK_ORIENTATION_VERTICAL, 2), CSS_PAD, NULL);
   g_return_val_if_fail(graphtab.lab.w, NULL);
-  TW_TW(graphtab.dyn, gtk_box_new(GTK_ORIENTATION_VERTICAL, 0), NULL, CSS_GR_BG);
+  TW_TW(graphtab.dyn, gtk_box_new(GTK_ORIENTATION_VERTICAL, 0), NULL, CSS_GRAPH_BG);
   g_return_val_if_fail(graphtab.dyn.w, NULL);
   // create layers
   graph_grid = gtk_drawing_area_new();
