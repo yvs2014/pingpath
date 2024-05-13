@@ -1,3 +1,6 @@
+## 0.3.1
+- bump version to 0.3
+
 ## 0.3.0
 - support OpenGL 3D plotting: version .0
 

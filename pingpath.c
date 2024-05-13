@@ -127,8 +127,8 @@ void tab_dependent(GtkWidget *tab) {
 }
 
 int main(int argc, char **argv) {
-  setlocale(LC_ALL, ""); // parser: early l10n for CLI options
-  putenv("LANG=C");      // parser: disable ping's i18n output
+  setlocale(LC_ALL, "");  // parser: early l10n for CLI options
+  putenv("LANG=C.UTF-8"); // parser: disable ping's i18n output
   g_return_val_if_fail(parser_init(), EX_SOFTWARE);
   { gboolean valid_cli_options = cli_init(&argc, &argv);
     g_return_val_if_fail(valid_cli_options, EX_USAGE); }

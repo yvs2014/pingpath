@@ -1,7 +1,7 @@
 
 # SPEC for rpmbuild
 
-%define gtag 83e1033
+%define gtag d3da356
 %define subversion %(echo "$(git rev-list --count %{gtag}...HEAD)_$(git rev-parse --short HEAD)")
 
 Name:       pingpath

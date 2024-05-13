@@ -1,7 +1,7 @@
 # Maintainer: yvs <VSYakovetsky@gmail.com>
 
 _bver="0.3"
-_gtag="83e1033"
+_gtag="d3da356"
 
 pkgname=pingpath
 pkgver="$_bver"

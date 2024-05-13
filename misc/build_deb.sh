@@ -2,7 +2,7 @@
 
 APPNAME='pingpath'
 BASEVER='0.3'
-GTAG='83e1033'
+GTAG='d3da356'
 DDIR="debs"
 
 # build depends on: dpkg-dev debhelper
