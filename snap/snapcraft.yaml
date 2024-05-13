@@ -1,7 +1,7 @@
 
 name: pingpath
 base: core22
-version: 0.2.9
+version: 0.3.0
 summary: ping wrapper for network diagnostic
 description: |
   Network diagnostic tool based on parsing system 'ping' output with functionality of 'traceroute'.
@@ -25,6 +25,13 @@ apps:
       - network
       - network-observe # for system 'ping' tool
       - network-status  # for whois requests
+  pingpath3:
+    extensions: [gnome]
+    command: usr/bin/pingpath3
+    plugs:
+      - network
+      - network-observe # for system 'ping' tool
+      - network-status  # for whois requests
 
 parts:
   pingpath:
@@ -37,12 +44,19 @@ parts:
     build-packages:
       - build-essential
       - pkgconf
+      - libgl-dev
+      - libepoxy-dev
+      - libcglm-dev
     build-environment:
       - PREFIX: /usr
     stage-packages:
       - iputils-ping
+      - libgl1
+      - libepoxy0
+      - libcglm0
     prime:
       - usr/bin/pingpath
+      - usr/bin/pingpath3
       - usr/share/man/man1/pingpath.1.gz
       - usr/share/doc/pingpath/examples/pingpath.conf
 

@@ -68,10 +68,6 @@ static void plot_surf_vertex(vec3 *vertex, int xn, int yn, const vec4 off) {
   }
 }
 
-static inline void plot_fill_surf(vec3 *vertex, t_plot_idc *idc) {
-  if (idc && idc->id) plot_surf_vertex(vertex, idc->desc.x, idc->desc.y, idc->desc.off);
-}
-
 static void keep_surf_coords(vec3 *vertex, int sz, t_plot_idc *idc) {
   vec3 *dup = g_memdup2(vertex, sz);
   if (dup) {
@@ -79,6 +75,12 @@ static void keep_surf_coords(vec3 *vertex, int sz, t_plot_idc *idc) {
     surf_vertex = dup;
     if (idc) surf_vertex_idc = *idc;
   }
+}
+
+static inline void plot_fill_vbo_surf(vec3 *data, t_plot_idc *idc) {
+  if (!idc || !idc->id) return;
+  plot_surf_vertex(data, idc->desc.x, idc->desc.y, idc->desc.off);
+  keep_surf_coords(data, idc->hold, idc);
 }
 
 static inline gboolean surf_is_vert(int n) {
@@ -139,6 +141,20 @@ static void plot_fill_ndx_grid(GLushort *p, t_plot_idc *idc) {
 
 // pub
 
+static void plot_vert_array_init(vec3 *data, t_plot_idc *idc) {
+  if (!data || !idc) return;
+  int xn = idc->desc.x, yn = idc->desc.y;
+  int xn1 = xn + 1, yn1 = yn + 1;
+  GLfloat x0, y0, dx, dy; grid_params(idc->desc.off, xn, yn, &x0, &y0, &dx, &dy);
+  GLfloat filler = idc->desc.surf ? PLOT_NAN : -1;
+  int n = 0;
+  for (int i = 0; i < xn1; i++) for (int j = 0; j < yn1; j++)
+    vec3_set(data[n++], y0 + j * dy, x0 + i * dx, filler);
+  if (idc->desc.surf) plot_fill_vbo_surf(data, idc);
+  if (idc->desc.xtick) for (int j = 0; j < yn1; j++) vec3_set(data[n++], y0 + j * dy, -1, -1);
+  if (idc->desc.ytick) for (int i = 0; i < xn1; i++) vec3_set(data[n++], 1, x0 + i * dx, -1);
+}
+
 // vertex x,y,data,alpha
 t_plot_idc plot_aux_vert_init(t_plot_vert_desc *desc, gboolean dyn) {
   t_plot_idc idc = { .id = 0 };
@@ -146,39 +162,44 @@ t_plot_idc plot_aux_vert_init(t_plot_vert_desc *desc, gboolean dyn) {
     memcpy(&idc.desc, desc, sizeof(idc.desc));
     glGenBuffers(1, &idc.id);
     if (idc.id) {
-      GLfloat filler = desc->surf ? PLOT_NAN : -1;
-      int xn = desc->x, yn = desc->y;
-      int xn1 = xn + 1, yn1 = yn + 1;
-      idc.count = xn1 * yn1;
       idc.stride = sizeof(vec3);
-      if (desc->xtick) idc.count += yn1;
-      if (desc->ytick) idc.count += xn1;
-      vec3 vertex[idc.count]; memset(vertex, 0, sizeof(vertex));
-      GLfloat x0, y0, dx, dy; grid_params(desc->off, xn, yn, &x0, &y0, &dx, &dy);
-      int n = 0;
-      for (int i = 0; i < xn1; i++) for (int j = 0; j < yn1; j++)
-        vec3_set(vertex[n++], y0 + j * dy, x0 + i * dx, filler);
-      if (desc->surf) { // refill surf related indexes
-        plot_fill_surf(vertex, &idc);
-        keep_surf_coords(vertex, sizeof(vertex), &idc);
-      }
-      if (desc->xtick) for (int j = 0; j < yn1; j++) vec3_set(vertex[n++], y0 + j * dy, -1, -1);
-      if (desc->ytick) for (int i = 0; i < xn1; i++) vec3_set(vertex[n++], 1, x0 + i * dx, -1);
+      int xn1 = idc.desc.x + 1, yn1 = idc.desc.y + 1;
+      idc.count = xn1 * yn1;
+      if (idc.desc.xtick) idc.count += yn1;
+      if (idc.desc.ytick) idc.count += xn1;
+      vec3 vertex[idc.count]; idc.hold = sizeof(vertex);
+      memset(vertex, 0, idc.hold);
+      plot_vert_array_init(vertex, &idc);
       glBindBuffer(GL_ARRAY_BUFFER, idc.id);
-      glBufferData(GL_ARRAY_BUFFER, sizeof(vertex), vertex, dyn ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW);
+      glBufferData(GL_ARRAY_BUFFER, idc.hold, vertex, dyn ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW);
     } else FAIL("glGenBuffers()");
   }
   return idc;
 }
 
-void plot_aux_vbo_surf_update(t_plot_idc *vbo) {
-  if (!vbo || !vbo->id) return;
-  GLfloat *data = glMapNamedBuffer(vbo->id, GL_READ_WRITE);
-  if (data) {
-    plot_fill_surf((vec3*)data, vbo);
-    keep_surf_coords((vec3*)data, vbo->count * sizeof(vec3), vbo);
+void plot_aux_buff_update(t_plot_idc *idc, int typ) {
+  if (!idc || !idc->id) return;
+  char *data = glMapNamedBuffer(idc->id, GL_READ_WRITE);
+  if (!data) return;
+  switch (typ) {
+    case SURF_DBO: plot_fill_ndx_surf((GLushort*)data, idc); break;
+    case GRID_DBO: plot_fill_ndx_grid((GLushort*)data, idc); break;
+    case SURF_VBO: plot_fill_vbo_surf((vec3*)data, idc); break;
+    case VERT_IBO: plot_vert_array_init((vec3*)data, idc); break;
   }
-  glUnmapNamedBuffer(vbo->id);
+  glUnmapNamedBuffer(idc->id);
+}
+
+void plot_aux_update(t_plot_idc *vbo, t_plot_idc *surf, t_plot_idc *grid) {
+  plot_aux_buff_update(vbo, SURF_VBO);
+  plot_aux_buff_update(surf, SURF_DBO);
+  plot_aux_buff_update(grid, GRID_DBO);
+}
+
+void plot_aux_reset(t_plot_idc *ibo, t_plot_idc *surf, t_plot_idc *grid) {
+  plot_aux_buff_update(ibo, VERT_IBO);
+  plot_aux_buff_update(surf, SURF_DBO);
+  plot_aux_buff_update(grid, GRID_DBO);
 }
 
 // gridlines
@@ -194,20 +215,14 @@ t_plot_idc plot_aux_grid_init(t_plot_vert_desc *desc, gboolean dyn) {
       int hold = (xn * yn1 + xn1 * yn) * 2;
       if (desc->xtick) hold += yn1 * 2;
       if (desc->ytick) hold += xn1 * 2;
-      GLushort data[hold]; memset(data, 0, sizeof(data));
+      GLushort data[hold]; idc.hold = sizeof(data);
+      memset(data, 0, idc.hold);
       plot_fill_ndx_grid(data, &idc);
       glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, idc.id);
-      glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(data), data, dyn ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW);
+      glBufferData(GL_ELEMENT_ARRAY_BUFFER, idc.hold, data, dyn ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW);
     } else FAIL("glGenBuffers()");
   }
   return idc;
-}
-
-void plot_aux_dbo_grid_update(t_plot_idc *dbo) {
-  if (!dbo || !dbo->id) return;
-  GLushort *data = glMapNamedBuffer(dbo->id, GL_READ_WRITE);
-  if (data) plot_fill_ndx_grid(data, dbo);
-  glUnmapNamedBuffer(dbo->id);
 }
 
 // triangles
@@ -218,19 +233,13 @@ t_plot_idc plot_aux_surf_init(t_plot_vert_desc *desc) {
     glGenBuffers(1, &idc.id);
     if (idc.id) {
       idc.stride = sizeof(GLushort);
-      GLushort data[desc->x * desc->y * 6]; memset(data, 0, sizeof(data));
+      GLushort data[desc->x * desc->y * 6]; idc.hold = sizeof(data);
+      memset(data, 0, idc.hold);
       plot_fill_ndx_surf(data, &idc);
       glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, idc.id);
-      glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(data), data, GL_DYNAMIC_DRAW);
+      glBufferData(GL_ELEMENT_ARRAY_BUFFER, idc.hold, data, GL_DYNAMIC_DRAW);
     } else FAIL("glGenBuffers()");
   }
   return idc;
-}
-
-void plot_aux_dbo_surf_update(t_plot_idc *dbo) {
-  if (!dbo || !dbo->id) return;
-  GLushort *data = glMapNamedBuffer(dbo->id, GL_READ_WRITE);
-  if (data) plot_fill_ndx_surf(data, dbo);
-  glUnmapNamedBuffer(dbo->id);
 }
 

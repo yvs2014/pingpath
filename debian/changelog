@@ -1,3 +1,9 @@
+pingpath (0.3.0) mantic noble; urgency=low
+
+  * support OpenGL 3D plotting: version .0
+
+ -- yvs <VSYakovetsky@gmail.com>  Mon, 13 May 2024 18:55:21 +0300
+
 pingpath (0.2.9) mantic noble; urgency=low
 
   * [almost finished] add 3D-plots

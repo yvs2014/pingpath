@@ -90,13 +90,13 @@ void series_update(void) {
   }
 }
 
-void series_free(void) {
+void series_free(gboolean unreg) {
   series_datamax = PP_RTT0;
   for (int i = 0; i < series_count; i++) {
     SERIES_LEN(i) = 0; if (SERIES(i)) { g_slist_free_full(SERIES(i), g_free); SERIES(i) = NULL; }
     KEPT_SERIES_LEN(i) = 0; if (KEPT_SERIES(i)) { g_slist_free_full(KEPT_SERIES(i), g_free); KEPT_SERIES(i) = NULL; }
   }
-  if (on_scale_list) { g_slist_free(on_scale_list); on_scale_list = NULL; }
+  if (unreg && on_scale_list) { g_slist_free(on_scale_list); on_scale_list = NULL; }
 }
 
 void series_lock(void) {

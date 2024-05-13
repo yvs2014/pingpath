@@ -568,7 +568,7 @@ void pinger_clear_data(gboolean clean) {
   pinger_error_free();
   pinger_set_error(NULL);
   tgtat = opts.lim;
-  if (!opts.recap) pingtab_clear();
+  if (!opts.recap) { pingtab_clear(); series_free(false); }
 }
 
 void pinger_set_error(const char *error) {
@@ -597,7 +597,7 @@ void pinger_cleanup(void) {
   whois_cache_free();
   pinger_error_free();
   GRAPH_FREE_REL;
-  series_free();
+  series_free(true);
   style_free();
 }
 

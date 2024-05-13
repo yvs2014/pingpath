@@ -11,7 +11,7 @@ typedef struct series_list { // keeping len to not calculate it every time
 } t_series_list;
 
 void series_update(void);
-void series_free(void);
+void series_free(gboolean unreg);
 void series_lock(void);
 void series_unlock(void);
 void series_min(int no);

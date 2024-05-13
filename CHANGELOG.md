@@ -1,3 +1,6 @@
+## 0.3.0
+- support OpenGL 3D plotting: version .0
+
 ## 0.2.9
 - [almost finished] add 3D-plots
 

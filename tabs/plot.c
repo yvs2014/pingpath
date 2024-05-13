@@ -11,7 +11,7 @@
 #include "stat.h"
 #include "ui/style.h"
 
-#define PP_GLSL_VERSION "420 core"
+#define PP_GLSL_VERSION "400 core"
 
 #define PP_VEC3(a, b, c) (vec3){a, b, c}
 
@@ -127,7 +127,7 @@ static const GLchar *text_glsl[] = {
 };
 
 static t_tab plottab = { .self = &plottab, .name = "plot-tab",
-  .tag = PLOT_TAB_TAG, .tip = PLOT_TAB_TIP, .ico = {PLOT_TAB_ICON, PLOT_TAB_ICOA, PLOT_TAB_ICOB},
+  .tag = PLOT_TAB_TAG, .tip = PLOT_TAB_TIP, .ico = {PLOT_TAB_ICON, PLOT_TAB_ICOA, PLOT_TAB_ICOB, PLOT_TAB_ICOC},
 };
 
 static GtkWidget *plot_base_area, *plot_dyn_area;
@@ -173,7 +173,7 @@ static void plot_init_char_tables(void) {
   t_plot_char c; memset(&c, 0, sizeof(c));
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
   for (unsigned char i = MIN_ASCII_CCHAR; i < LIM_ASCII_CCHAR; i++) {
-    ivec2 sz;
+    ivec2_t sz;
     if (!(c.tid = plot_pango_text(i, sz))) break;
     c.size[0] = sz[0]; c.size[1] = sz[1]; char_table[i] = c;
   }
@@ -603,12 +603,15 @@ t_tab* plottab_init(GtkWidget* win) {
 }
 
 inline void plottab_free(void) { plot_res_free(&plot_dyna_res); plot_res_free(&plot_base_res); }
-inline void plottab_restart(void) { draw_plot_at = 0; }
+
+void plottab_restart(void) {
+  draw_plot_at = 0;
+  plot_aux_reset(&plot_dyna_res.vo[VO_SURF].vbo, &plot_dyna_res.dbo.surf, &plot_dyna_res.dbo.grid);
+  plottab_refresh();
+}
 
 void plottab_update(void) {
-  plot_aux_vbo_surf_update(&plot_dyna_res.vo[VO_SURF].vbo);
-  plot_aux_dbo_surf_update(&plot_dyna_res.dbo.surf);
-  plot_aux_dbo_grid_update(&plot_dyna_res.dbo.grid);
+  plot_aux_update(&plot_dyna_res.vo[VO_SURF].vbo, &plot_dyna_res.dbo.surf, &plot_dyna_res.dbo.grid);
   if (GTK_IS_WIDGET(plot_dyn_area)) gtk_gl_area_queue_render(GTK_GL_AREA(plot_dyn_area));
 }
 

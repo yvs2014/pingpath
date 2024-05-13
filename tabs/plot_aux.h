@@ -14,17 +14,19 @@ typedef struct plot_vert_desc {
 } t_plot_vert_desc;
 
 typedef struct plot_idc {
-  GLuint id; GLsizei count, stride;
+  GLuint id; GLsizei count, stride, hold;
   t_plot_vert_desc desc;
+  int typ;
 } t_plot_idc;
 
 typedef struct plot_vo { GLuint vao; t_plot_idc vbo; } t_plot_vo;
 
+enum { SURF_VBO, SURF_DBO, GRID_DBO, VERT_IBO };
+
 t_plot_idc plot_aux_vert_init(t_plot_vert_desc *desc, gboolean dyn);
 t_plot_idc plot_aux_grid_init(t_plot_vert_desc *desc, gboolean dyn);
 t_plot_idc plot_aux_surf_init(t_plot_vert_desc *desc);
-void plot_aux_vbo_surf_update(t_plot_idc *vbo);
-void plot_aux_dbo_grid_update(t_plot_idc *dbo);
-void plot_aux_dbo_surf_update(t_plot_idc *dbo);
+void plot_aux_update(t_plot_idc *vbo, t_plot_idc *surf, t_plot_idc *grid);
+void plot_aux_reset(t_plot_idc *ibo, t_plot_idc *surf, t_plot_idc *grid);
 
 #endif

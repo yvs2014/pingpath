@@ -1,17 +1,17 @@
 
 # SPEC for rpmbuild
 
-%define gtag b215bec
+%define gtag 83e1033
 %define subversion %(echo "$(git rev-list --count %{gtag}...HEAD)_$(git rev-parse --short HEAD)")
 
 Name:       pingpath
-Version:    0.2.%{subversion}
+Version:    0.3.%{subversion}
 Release:    1
 Summary:    'ping' wrapper to display path
 License:    GPL-2.0-or-later
 
-Requires: gtk4, json-glib, iputils
-BuildRequires: (gcc or clang), make, pkgconf, gtk4-devel, json-glib-devel
+Requires: iputils, gtk4, json-glib, libglvnd-opengl, libepoxy, cglm
+BuildRequires: (gcc or clang), make, pkgconf, gtk4-devel, json-glib-devel, libglvnd-devel, libepoxy-devel, cglm-devel
 
 %description
 Network diagnostic tool based on parsing system ping output with some functionality of traceroute.
@@ -33,6 +33,7 @@ PREFIX=/usr DESTDIR=%{buildroot} make install
 
 %files
 /usr/bin/pingpath
+/usr/bin/pingpath3
 /usr/share/applications/net.tools.pingpath.desktop
 /usr/share/icons/hicolor/scalable/apps/pingpath.svg
 /usr/share/doc/pingpath/examples/pingpath.conf

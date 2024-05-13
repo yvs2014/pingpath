@@ -4,8 +4,8 @@ set -e
 LANG=C
 
 NAME='pingpath'
-VERPRFX='0.2'
-TAG='b215bec'
+VERPRFX='0.3'
+TAG='83e1033'
 
 BACKUP=
 MD_CHANGELOG='CHANGELOG.md'

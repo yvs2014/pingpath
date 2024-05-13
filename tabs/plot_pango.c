@@ -14,7 +14,8 @@ static cairo_t* plot_create_cairo(void) {
   return cairo;
 }
 
-static cairo_t* plot_create_cairo_from_buff(ivec2 size, cairo_format_t format, cairo_surface_t **psurf, unsigned char **pbuff) {
+static cairo_t* plot_create_cairo_from_buff(ivec2_t size, cairo_format_t format,
+    cairo_surface_t **psurf, unsigned char **pbuff) {
   if (!pbuff || !psurf) return NULL;
   int stride = cairo_format_stride_for_width(format, size[0]);
   *pbuff = g_malloc0_n(size[1], stride);
@@ -27,7 +28,7 @@ static cairo_t* plot_create_cairo_from_buff(ivec2 size, cairo_format_t format, c
   return NULL;
 }
 
-static GLuint plot_create_texture(ivec2 size, const void *pixels) {
+static GLuint plot_create_texture(ivec2_t size, const void *pixels) {
   GLuint id = 0;
   glGenTextures(1, &id);
   if (id) {
@@ -62,7 +63,7 @@ void plot_pango_free(void) {
   if (plot_font) { pango_font_description_free(plot_font); plot_font = NULL; }
 }
 
-GLuint plot_pango_text(char ch, ivec2 size) {
+GLuint plot_pango_text(char ch, ivec2_t size) {
   if (!plot_font) return 0;
   GLuint tid = 0;
   cairo_t *cairo = plot_create_cairo();

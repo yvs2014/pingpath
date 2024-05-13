@@ -10,7 +10,7 @@
 #define MIN_GTK_RUNTIME(major, minor, micro) (!gtk_check_version(major, minor, micro))
 
 #define APPNAME "pingpath"
-#define VERSION "0.2.9"
+#define VERSION "0.3.0"
 
 #define X_RES 1024
 #define Y_RES 720
@@ -69,7 +69,7 @@
 #define EV_PLOT_DRAW   "render"
 #endif
 
-#define MAX_ICONS      4
+#define MAX_ICONS      5
 #define ICON_PROP      "icon-name"
 #define ACT_MENU_ICON  "open-menu-symbolic"
 #define ACT_MENU_ICOA  "view-more-symbolic"
@@ -89,8 +89,9 @@
 #define GRAPH_TAB_ICOB "media-playlist-repeat-symbolic"
 #ifdef WITH_PLOT
 #define PLOT_TAB_ICON  "application-x-appliance-symbolic"
-#define PLOT_TAB_ICOB  "network-cellular-connected-symbolic"
-#define PLOT_TAB_ICOA  "preferences-system-network-symbolic"
+#define PLOT_TAB_ICOA  "network-cellular-signal-excellent-symbolic"
+#define PLOT_TAB_ICOB  "zoom-original-symbolic"
+#define PLOT_TAB_ICOC  "edit-select-all-symbolic"
 #endif
 #define LOG_TAB_ICON   "system-search-symbolic"
 #define LOG_TAB_ICOA   "edit-find-symbolic"
