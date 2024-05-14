@@ -1,3 +1,11 @@
+pingpath (0.3.2) mantic noble; urgency=low
+
+  * add GLES support for wider compat (default for GTK>=4.13.4)
+
+  * pair GL bind/unbind functions, etc.
+
+ -- yvs <VSYakovetsky@gmail.com>  Wed, 15 May 2024 01:02:14 +0300
+
 pingpath (0.3.1) mantic noble; urgency=low
 
   * bump version to 0.3

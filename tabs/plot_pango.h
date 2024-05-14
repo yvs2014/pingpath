@@ -15,6 +15,6 @@ gboolean plot_pango_init(void);
 void plot_pango_free(void);
 GLuint plot_pango_text(char ch, ivec2_t size);
 t_plot_vo plot_pango_vo_init(GLuint loc);
-void plot_pango_drawtex(GLuint tid, GLuint vbo, GLfloat x0, GLfloat y0, GLfloat w, GLfloat h);
+void plot_pango_drawtex(GLuint id, GLuint vbo, GLuint typ, GLfloat x0, GLfloat y0, GLfloat w, GLfloat h);
 
 #endif

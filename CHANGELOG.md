@@ -1,3 +1,7 @@
+## 0.3.2
+- add GLES support for wider compat (default for GTK>=4.13.4)
+- pair GL bind/unbind functions, etc.
+
 ## 0.3.1
 - bump version to 0.3
 

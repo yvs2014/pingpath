@@ -38,6 +38,7 @@ static GLuint plot_create_texture(ivec2_t size, const void *pixels) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, size[0], size[1], 0, GL_BGRA, GL_UNSIGNED_BYTE, pixels);
+    glBindTexture(GL_TEXTURE_2D, 0);
   } else FAIL("glGenTextures()");
   return id;
 }
@@ -93,23 +94,26 @@ GLuint plot_pango_text(char ch, ivec2_t size) {
 }
 
 t_plot_vo plot_pango_vo_init(GLuint loc) {
-  t_plot_vo vo = { .vao = 0, .vbo = { .id = 0, .count = 6, .stride = sizeof(vec4) }};
-  glGenVertexArrays(1, &vo.vao);
-  if (vo.vao) {
-    glBindVertexArray(vo.vao);
-    glGenBuffers(1, &vo.vbo.id);
-    if (vo.vbo.id) {
-      glBindBuffer(GL_ARRAY_BUFFER, vo.vbo.id);
-      glBufferData(GL_ARRAY_BUFFER, vo.vbo.stride * vo.vbo.count, NULL, GL_DYNAMIC_DRAW);
+  t_plot_vo vo = { .vao = 0, .vbo = { .id = 0, .count = 6, .stride = sizeof(vec4), .typ = GL_ARRAY_BUFFER }};
+  glGenBuffers(1, &vo.vbo.id);
+  if (vo.vbo.id) {
+    glBindBuffer(vo.vbo.typ, vo.vbo.id);
+    glBufferData(vo.vbo.typ, vo.vbo.stride * vo.vbo.count, NULL, GL_DYNAMIC_DRAW);
+    glGenVertexArrays(1, &vo.vao);
+    if (vo.vao) {
+      glBindVertexArray(vo.vao);
       glEnableVertexAttribArray(loc);
       glVertexAttribPointer(loc, 4, GL_FLOAT, GL_FALSE, vo.vbo.stride, 0);
-    } else FAIL("glGenBuffers");
-  } else FAIL("glGenVertexArrays()");
+      glBindVertexArray(0);
+      glDisableVertexAttribArray(loc);
+    } else FAIL("glGenVertexArrays()");
+    glBindBuffer(vo.vbo.typ, 0);
+  } else FAIL("glGenBuffers");
   return vo;
 }
 
-void plot_pango_drawtex(GLuint tid, GLuint vbo, GLfloat x0, GLfloat y0, GLfloat w, GLfloat h) {
-  if (!tid || !vbo) return;
+void plot_pango_drawtex(GLuint id, GLuint vbo, GLuint typ, GLfloat x0, GLfloat y0, GLfloat w, GLfloat h) {
+  if (!id || !vbo || !typ) return;
   const int points = 6;
   vec4 vertex[points]; memset(vertex, 0, sizeof(vertex));
   GLfloat x1 = x0 + w, y1 = y0 + h;
@@ -119,10 +123,11 @@ void plot_pango_drawtex(GLuint tid, GLuint vbo, GLfloat x0, GLfloat y0, GLfloat 
   vec4_set(vertex[3], x0, y1, 0, 0);
   vec4_set(vertex[4], x1, y0, 1, 1);
   vec4_set(vertex[5], x1, y1, 1, 0);
-  glBindTexture(GL_TEXTURE_2D, tid);
-  glBindBuffer(GL_ARRAY_BUFFER, vbo);
-  glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertex), vertex);
-  glBindBuffer(GL_ARRAY_BUFFER, 0);
+  glBindTexture(GL_TEXTURE_2D, id);
+  glBindBuffer(typ, vbo);
+  glBufferSubData(typ, 0, sizeof(vertex), vertex);
+  glBindBuffer(typ, 0);
   glDrawArrays(GL_TRIANGLES, 0, points);
+  glBindTexture(GL_TEXTURE_2D, 0);
 }
 

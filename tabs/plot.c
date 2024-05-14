@@ -11,7 +11,13 @@
 #include "stat.h"
 #include "ui/style.h"
 
+#if GTK_CHECK_VERSION(4, 13, 4)
+#define PP_GLSL_VERSION "300 es"
+#define PP_GLSL_MEDIUMP "precision mediump float"
+#else
 #define PP_GLSL_VERSION "400 core"
+#define PP_GLSL_MEDIUMP ""
+#endif
 
 #define PP_VEC3(a, b, c) (vec3){a, b, c}
 
@@ -86,6 +92,7 @@ typedef struct plot_char {
 enum { VERT_GLSL, FRAG_GLSL };
 static const GLchar *plot_glsl[] = {
 [VERT_GLSL] =
+  PP_GLSL_MEDIUMP ";\n"
   "uniform mat4 " PLOT_VTR ";\n"
   "uniform vec4 " PLOT_COL1 ";\n"
   "uniform vec4 " PLOT_COL2 ";\n"
@@ -94,16 +101,17 @@ static const GLchar *plot_glsl[] = {
   "out vec4 back_col;\n"
   "const vec3 bc = vec3(" PLOT_FRAG_BACKCOL ", " PLOT_FRAG_BACKCOL ", " PLOT_FRAG_BACKCOL ");\n"
   "void main() {\n"
-  "  float c1 = 1 / " RTT_GRADIENT " + crd.z / " RTT_GRADIENT ";\n"
-  "  float c2 = 1 - c1;\n"
-  "  float c3 = 1 / " TTL_GRADIENT " + crd.y / " TTL_GRADIENT ";\n"
-  "  float c4 = 1 - c3;\n"
+  "  float c1 = 1.0 / " RTT_GRADIENT " + crd.z / " RTT_GRADIENT ";\n"
+  "  float c2 = 1.0 - c1;\n"
+  "  float c3 = 1.0 / " TTL_GRADIENT " + crd.y / " TTL_GRADIENT ";\n"
+  "  float c4 = 1.0 - c3;\n"
   "  vec4 col1 = vec4(c1 + c2 * " PLOT_COL1 ".rgb, " PLOT_COL1 ".a);\n"
   "  vec4 col2 = vec4(c1 + c2 * " PLOT_COL2 ".rgb, " PLOT_COL2 ".a);\n"
   "  face_col = c4 * col1 + c3 * col2;\n"
   "  back_col = vec4(c1 + c2 * bc, 1);\n"
-  "  gl_Position = " PLOT_VTR " * vec4(" PLOT_CRD ".xyz, 1); }",
+  "  gl_Position = " PLOT_VTR " * vec4(" PLOT_CRD ".xyz, 1.0); }",
 [FRAG_GLSL] =
+  PP_GLSL_MEDIUMP ";\n"
   "in vec4 face_col;\n"
   "in vec4 back_col;\n"
   "out vec4 color;\n"
@@ -112,18 +120,20 @@ static const GLchar *plot_glsl[] = {
 
 static const GLchar *text_glsl[] = {
 [VERT_GLSL] =
+  PP_GLSL_MEDIUMP ";\n"
   "uniform mat4 " PLOT_VTR ";\n"
   "in vec4 " PLOT_CRD "; // .xy for position, .zw for texture\n"
   "out vec2 tcrd;\n"
   "void main() {\n"
   "  tcrd = " PLOT_CRD ".zw;\n"
-  "  gl_Position = " PLOT_VTR " * vec4(" PLOT_CRD ".xy, 0, 1); }",
+  "  gl_Position = " PLOT_VTR " * vec4(" PLOT_CRD ".xy, 0.0, 1.0); }",
 [FRAG_GLSL] =
+  PP_GLSL_MEDIUMP ";\n"
   "in vec2 tcrd;\n"
   "out vec4 color;\n"
   "uniform sampler2D text;\n"
   "uniform vec4 " PLOT_COL1 ";\n"
-  "void main() { color = " PLOT_COL1 " * vec4(1, 1, 1, texture(text, tcrd).r); }"
+  "void main() { color = " PLOT_COL1 " * vec4(1.0, 1.0, 1.0, texture(text, tcrd).r); }"
 };
 
 static t_tab plottab = { .self = &plottab, .name = "plot-tab",
@@ -153,10 +163,14 @@ static const float text_alpha = 1;
 static t_plot_char char_table[255];
 
 const int plot_api_req =
+#if GTK_CHECK_VERSION(4, 13, 4)
+  GDK_GL_API_GLES
+#else
 #if GTK_CHECK_VERSION(4, 6, 0)
   GDK_GL_API_GL
 #else
   1
+#endif
 #endif
 ;
 
@@ -169,12 +183,14 @@ static int draw_plot_at;
 #define LIM_ASCII_CCHAR 0x7f
 
 static void plot_init_char_tables(void) {
-  if (!plot_pango_init()) return;;
+  static gboolean plot_chars_ready;
+  if (!plot_pango_init() || plot_chars_ready) return;;
+  plot_chars_ready = true;
   t_plot_char c; memset(&c, 0, sizeof(c));
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
   for (unsigned char i = MIN_ASCII_CCHAR; i < LIM_ASCII_CCHAR; i++) {
     ivec2_t sz;
-    if (!(c.tid = plot_pango_text(i, sz))) break;
+    if (!(c.tid = plot_pango_text(i, sz))) { plot_chars_ready = false; break; }
     c.size[0] = sz[0]; c.size[1] = sz[1]; char_table[i] = c;
   }
 }
@@ -291,15 +307,6 @@ static gboolean plot_compile_res(t_plot_res *res, GError **err) {
   return true;
 }
 
-static void plot_plane_vert_init(t_plot_vo *pvo, t_plot_vert_desc *desc, GLint coord, gboolean dyn) {
-  if (!pvo || !desc || (coord < 0)) return;
-  pvo->vbo = plot_aux_vert_init(desc, dyn);
-  if (!pvo->vbo.id) return;
-  glBindVertexArray(pvo->vao);
-  glEnableVertexAttribArray(coord);
-  glVertexAttribPointer(coord, 3, GL_FLOAT, GL_FALSE, 0, 0);
-}
-
 #define PLOT_GLSL_PROG_SETUP(prog, glsl) { (prog).vtr = (prog).coord = (prog).colo1 = (prog).colo2 = -1; \
   if (setup) { (prog).vert = (glsl)[VERT_GLSL]; (prog).frag = (glsl)[FRAG_GLSL]; }}
 
@@ -315,6 +322,19 @@ static inline void plot_glsl_reset(t_plot_res *res, gboolean setup) {
   PLOT_GET_FORM(prog, vtr, PLOT_VTR); \
   PLOT_GET_FORM(prog, colo1, PLOT_COL1); }
 #define PLOT_GLSL_EXT_ATTRIBS(prog) { PLOT_GLSL_BASE_ATTRIBS(prog); PLOT_GET_FORM(prog, colo2, PLOT_COL2); }
+
+#define PLOT_VERT_INIT(obj, desc, dyn, typ) { \
+  (obj).vbo = plot_aux_vert_init(desc, dyn, plot_plane_vert_attr, (obj).vao, res->plot.coord); \
+  res->dbo.typ = plot_aux_grid_init(desc, dyn); }
+
+static void plot_plane_vert_attr(GLuint vao, GLint coord) {
+  if (!vao || (coord < 0)) return;
+  glBindVertexArray(vao);
+  glEnableVertexAttribArray(coord);
+  glVertexAttribPointer(coord, 3, GL_FLOAT, GL_FALSE, 0, 0);
+  glBindVertexArray(0);
+  glDisableVertexAttribArray(coord);
+}
 
 static gboolean plot_res_init(t_plot_res *res, GError **err) {
   if (!res) return false;
@@ -332,29 +352,16 @@ static gboolean plot_res_init(t_plot_res *res, GError **err) {
   // plot related
   PLOT_GLSL_EXT_ATTRIBS(res->plot);
   if (res->base) {
-    plot_plane_vert_init(&res->vo[VO_XY],   &xy_desc, res->plot.coord, true);  // x,y plane
-    plot_plane_vert_init(&res->vo[VO_LEFT], &lp_desc, res->plot.coord, false); // left plane
-    plot_plane_vert_init(&res->vo[VO_BACK], &bp_desc, res->plot.coord, false); // back plane
-  } else
-    plot_plane_vert_init(&res->vo[VO_SURF], &sf_desc, res->plot.coord, true);  // surface
-  glBindVertexArray(0);
-  glDisableVertexAttribArray(res->plot.coord);
-  glBindBuffer(GL_ARRAY_BUFFER, 0);
-  if (res->base) {
-    res->dbo.xy   = plot_aux_grid_init(&xy_desc, false); // x,y plane grid
-    res->dbo.left = plot_aux_grid_init(&lp_desc, false); // left plane grid
-    res->dbo.back = plot_aux_grid_init(&bp_desc, false); // back plane grid
+    PLOT_VERT_INIT(res->vo[VO_XY],   &xy_desc, true,  xy);   // x,y plane
+    PLOT_VERT_INIT(res->vo[VO_LEFT], &lp_desc, false, left); // left plane
+    PLOT_VERT_INIT(res->vo[VO_BACK], &bp_desc, false, back); // back plane
   } else {
-    res->dbo.grid = plot_aux_grid_init(&sf_desc, true);  // surface grid
-    res->dbo.surf = plot_aux_surf_init(&sf_desc);        // triangles
+    PLOT_VERT_INIT(res->vo[VO_SURF], &sf_desc, true,  grid); // surface
+    res->dbo.surf = plot_aux_surf_init(&sf_desc);            // triangles
   }
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
   // text related
   PLOT_GLSL_BASE_ATTRIBS(res->text);
-  res->vo[VO_TEXT] = plot_pango_vo_init(res->text.coord); // text vao-n-vbo
-  glBindBuffer(GL_ARRAY_BUFFER, 0);
-  glBindVertexArray(0);
-  glDisableVertexAttribArray(res->text.coord);
+  res->vo[VO_TEXT] = plot_pango_vo_init(res->text.coord);    // text vao-n-vbo
   return true;
 }
 
@@ -419,14 +426,20 @@ static void area_init(GtkGLArea *area, t_plot_res *res) {
   if (!GTK_IS_GL_AREA(area) || !res) return;
   gtk_gl_area_make_current(area);
   if (gtk_gl_area_get_error(area)) return;
+  if (!gl_ver) {
+    gl_ver = epoxy_gl_version(); gl_named = gl_ver >= 45;
+    LOG("GL: %s", glGetString(GL_VERSION));
+    if (gl_ver < MIN_GL_VER) {
+      char *mesg = g_strdup_printf("GL: incompat version %d.%d (min %d.%d)",
+        gl_ver / 10, gl_ver % 10, MIN_GL_VER / 10, MIN_GL_VER % 10);
+      WARN_(mesg); LOG("%s", mesg); g_free(mesg);
+    }
+  }
   { GError *error = NULL; if (!plot_res_init(res, &error)) { gtk_gl_area_set_error(area, error); ERROR("init resources"); }}
   if (!gtk_gl_area_get_has_depth_buffer(area)) gtk_gl_area_set_has_depth_buffer(area, true);
   glEnable(GL_DEPTH_TEST); glEnable(GL_BLEND); glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-  if (plot_res_ready) return;
-  plot_res_ready = true;
   plot_init_char_tables();
-  const char *ver = (const char*)glGetString(GL_VERSION);
-  if (ver) LOG("GL: %s", ver);
+  plot_res_ready = true;
 }
 
 static void area_free(GtkGLArea *area, t_plot_res *res) {
@@ -435,17 +448,18 @@ static void area_free(GtkGLArea *area, t_plot_res *res) {
 
 static void plot_draw_elems(GLuint vao, t_plot_idc buff, GLint vtr,
     const vec4 colo1, GLint loc1, const vec4 colo2, GLint loc2, const mat4 mat, GLenum mode) {
-  if (vao && buff.id) {
-    glBindVertexArray(vao);
-    gboolean off = (mode == GL_TRIANGLES);
-    if (off) { glEnable(GL_POLYGON_OFFSET_FILL); glPolygonOffset(off, off); }
-    glUniformMatrix4fv(vtr, 1, GL_FALSE, (const GLfloat*)mat);
-    if (colo1) glUniform4fv(loc1, 1, colo1);
-    if (colo2) glUniform4fv(loc2, 1, colo2);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buff.id);
-    glDrawElements(mode, buff.count, GL_UNSIGNED_SHORT, 0);
-    if (off) { glPolygonOffset(0, 0); glDisable(GL_POLYGON_OFFSET_FILL); }
-  }
+  if (!vao || !buff.id) return;
+  glBindVertexArray(vao);
+  gboolean off = (mode == GL_TRIANGLES);
+  if (off) { glEnable(GL_POLYGON_OFFSET_FILL); glPolygonOffset(off, off); }
+  glUniformMatrix4fv(vtr, 1, GL_FALSE, (const GLfloat*)mat);
+  if (colo1) glUniform4fv(loc1, 1, colo1);
+  if (colo2) glUniform4fv(loc2, 1, colo2);
+  glBindBuffer(buff.typ, buff.id);
+  glDrawElements(mode, buff.count, GL_UNSIGNED_SHORT, 0);
+  if (off) { glPolygonOffset(0, 0); glDisable(GL_POLYGON_OFFSET_FILL); }
+  glBindBuffer(buff.typ, 0);
+  glBindVertexArray(0);
 }
 
 #define FONT_WINH_PERCENT 1.5
@@ -453,8 +467,8 @@ static void plot_draw_elems(GLuint vao, t_plot_idc buff, GLint vtr,
 static void plot_draw_text(t_plot_res *res, const char *text, const vec4 color,
     GLfloat xn, GLfloat yn, GLuint wx, GLuint hy, gboolean lr, GLfloat dw, GLfloat dh) {
   if (!res || !text) return;
-  GLuint vao = res->vo[VO_TEXT].vao, vbo = res->vo[VO_TEXT].vbo.id;
-  if (!vao || !vbo) return;
+  GLuint vao = res->vo[VO_TEXT].vao, vbo = res->vo[VO_TEXT].vbo.id, typ = res->vo[VO_TEXT].vbo.typ;
+  if (!vao || !vbo || !typ) return;
   char *dir = lr ? g_strdup(text) : g_strreverse(g_strdup(text));
   if (!dir) return;
   glUniformMatrix4fv(res->text.vtr, 1, GL_FALSE, (const GLfloat*)plot_trans.text);
@@ -470,12 +484,10 @@ static void plot_draw_text(t_plot_res *res, const char *text, const vec4 color,
     GLfloat h = c.size[1] * hs;
     GLfloat x = dw ? x0 + dw * w : x0;
     GLfloat y = dh ? y0 + dh * h : y0;
-    plot_pango_drawtex(c.tid, vbo, x, y, w, h);
+    plot_pango_drawtex(c.tid, vbo, typ, x, y, w, h);
     x0 += lr ? w : -w;
   }
   g_free(dir);
-  glBindVertexArray(0);
-  glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 #define PLOT_DRAWELEMS(ndx, dboname, glcolo1, glcolo2, matrix, gltype) { plot_draw_elems(res->vo[ndx].vao, \
@@ -501,9 +513,6 @@ static gboolean area_draw(GtkGLArea *area, GdkGLContext *context, t_plot_res *re
       PLOT_DRAWELEMS(VO_SURF, grid, grid_color, grid_color, xy,   GL_LINES);     // surface gridlines
       PLOT_DRAWELEMS(VO_SURF, surf, surf_colo1, surf_colo2, xy,   GL_TRIANGLES); // surface
     }
-    glBindVertexArray(0);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     glFlush();
     glUseProgram(0);
   }
@@ -516,9 +525,8 @@ static gboolean area_draw(GtkGLArea *area, GdkGLContext *context, t_plot_res *re
     if (res->base) {
       { // left axis
         PLOT_AXIS_TITLE(plot_trans.rtt, ax[0][0], ax[0][1], Y_AXIS_TITLE, true, strlen(Y_AXIS_TITLE) / -2., 2);
-        GLfloat val = series_datamax / PP_RTT_SCALE;
-        GLfloat step = - val * 2 / PLANE_ZN;
-        for (int i = 0; i < n; i++, val += step) {
+        GLfloat val = 0, step = series_datamax / PP_RTT_SCALE * 2 / PLANE_ZN;
+        for (int i = n - 1; i >= 0; i--, val += step) {
           snprintf(buff, sizeof(buff), PP_RTT_AXIS_FMT, val);
           plot_draw_text(res, buff, text_color, ax[i][0], ax[i][1], w, h, false, -2, -0.2);
         }}

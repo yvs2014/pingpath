@@ -7,6 +7,17 @@
 #include "pinger.h"
 #include "series.h"
 
+int gl_ver;
+gboolean gl_named;
+
+static GLenum last_known_gl_error = GL_NO_ERROR;
+
+static void plot_aux_chkerr(void) {
+  GLenum err = glGetError();
+  if ((err == GL_NO_ERROR) || (err == last_known_gl_error)) return;
+  last_known_gl_error = err; g_warning("GL error: 0x%04x", err);
+}
+
 static const GLfloat PLOT_NAN = -1.01;
 static vec3 *surf_vertex;
 static t_plot_idc surf_vertex_idc;
@@ -156,8 +167,9 @@ static void plot_vert_array_init(vec3 *data, t_plot_idc *idc) {
 }
 
 // vertex x,y,data,alpha
-t_plot_idc plot_aux_vert_init(t_plot_vert_desc *desc, gboolean dyn) {
-  t_plot_idc idc = { .id = 0 };
+t_plot_idc plot_aux_vert_init(t_plot_vert_desc *desc, gboolean dyn,
+    void (*attr_fn)(GLuint vao, GLint attr), GLuint vao, GLint attr) {
+  t_plot_idc idc = { .id = 0, .typ = GL_ARRAY_BUFFER };
   if (desc) {
     memcpy(&idc.desc, desc, sizeof(idc.desc));
     glGenBuffers(1, &idc.id);
@@ -170,8 +182,10 @@ t_plot_idc plot_aux_vert_init(t_plot_vert_desc *desc, gboolean dyn) {
       vec3 vertex[idc.count]; idc.hold = sizeof(vertex);
       memset(vertex, 0, idc.hold);
       plot_vert_array_init(vertex, &idc);
-      glBindBuffer(GL_ARRAY_BUFFER, idc.id);
-      glBufferData(GL_ARRAY_BUFFER, idc.hold, vertex, dyn ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW);
+      glBindBuffer(idc.typ, idc.id);
+      glBufferData(idc.typ, idc.hold, vertex, dyn ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW);
+      if (attr_fn) attr_fn(vao, attr);
+      glBindBuffer(idc.typ, 0);
     } else FAIL("glGenBuffers()");
   }
   return idc;
@@ -179,15 +193,19 @@ t_plot_idc plot_aux_vert_init(t_plot_vert_desc *desc, gboolean dyn) {
 
 void plot_aux_buff_update(t_plot_idc *idc, int typ) {
   if (!idc || !idc->id) return;
-  char *data = glMapNamedBuffer(idc->id, GL_READ_WRITE);
-  if (!data) return;
-  switch (typ) {
-    case SURF_DBO: plot_fill_ndx_surf((GLushort*)data, idc); break;
-    case GRID_DBO: plot_fill_ndx_grid((GLushort*)data, idc); break;
-    case SURF_VBO: plot_fill_vbo_surf((vec3*)data, idc); break;
-    case VERT_IBO: plot_vert_array_init((vec3*)data, idc); break;
-  }
-  glUnmapNamedBuffer(idc->id);
+  if (!gl_named) glBindBuffer(idc->typ, idc->id);
+  void *data = gl_named ? glMapNamedBuffer(idc->id, GL_READ_WRITE)
+    : glMapBufferRange(idc->typ, 0, idc->hold, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT);
+  if (data) {
+    switch (typ) {
+      case SURF_DBO: plot_fill_ndx_surf((GLushort*)data, idc); break;
+      case GRID_DBO: plot_fill_ndx_grid((GLushort*)data, idc); break;
+      case SURF_VBO: plot_fill_vbo_surf((vec3*)data, idc); break;
+      case VERT_IBO: plot_vert_array_init((vec3*)data, idc); break;
+    }
+    GLboolean rc = gl_named ? glUnmapNamedBuffer(idc->id) : glUnmapBuffer(idc->typ); if (!rc) plot_aux_chkerr();
+  } else plot_aux_chkerr();
+  if (!gl_named) glBindBuffer(idc->typ, 0);
 }
 
 void plot_aux_update(t_plot_idc *vbo, t_plot_idc *surf, t_plot_idc *grid) {
@@ -204,7 +222,7 @@ void plot_aux_reset(t_plot_idc *ibo, t_plot_idc *surf, t_plot_idc *grid) {
 
 // gridlines
 t_plot_idc plot_aux_grid_init(t_plot_vert_desc *desc, gboolean dyn) {
-  t_plot_idc idc = { .id = 0 };
+  t_plot_idc idc = { .id = 0, .typ = GL_ELEMENT_ARRAY_BUFFER };
   if (desc) {
     memcpy(&idc.desc, desc, sizeof(idc.desc));
     glGenBuffers(1, &idc.id);
@@ -218,8 +236,9 @@ t_plot_idc plot_aux_grid_init(t_plot_vert_desc *desc, gboolean dyn) {
       GLushort data[hold]; idc.hold = sizeof(data);
       memset(data, 0, idc.hold);
       plot_fill_ndx_grid(data, &idc);
-      glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, idc.id);
-      glBufferData(GL_ELEMENT_ARRAY_BUFFER, idc.hold, data, dyn ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW);
+      glBindBuffer(idc.typ, idc.id);
+      glBufferData(idc.typ, idc.hold, data, dyn ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW);
+      glBindBuffer(idc.typ, 0);
     } else FAIL("glGenBuffers()");
   }
   return idc;
@@ -227,7 +246,7 @@ t_plot_idc plot_aux_grid_init(t_plot_vert_desc *desc, gboolean dyn) {
 
 // triangles
 t_plot_idc plot_aux_surf_init(t_plot_vert_desc *desc) {
-  t_plot_idc idc = { .id = 0 };
+  t_plot_idc idc = { .id = 0, .typ = GL_ELEMENT_ARRAY_BUFFER };
   if (desc) {
     memcpy(&idc.desc, desc, sizeof(idc.desc));
     glGenBuffers(1, &idc.id);
@@ -236,8 +255,9 @@ t_plot_idc plot_aux_surf_init(t_plot_vert_desc *desc) {
       GLushort data[desc->x * desc->y * 6]; idc.hold = sizeof(data);
       memset(data, 0, idc.hold);
       plot_fill_ndx_surf(data, &idc);
-      glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, idc.id);
-      glBufferData(GL_ELEMENT_ARRAY_BUFFER, idc.hold, data, GL_DYNAMIC_DRAW);
+      glBindBuffer(idc.typ, idc.id);
+      glBufferData(idc.typ, idc.hold, data, GL_DYNAMIC_DRAW);
+      glBindBuffer(idc.typ, 0);
     } else FAIL("glGenBuffers()");
   }
   return idc;
