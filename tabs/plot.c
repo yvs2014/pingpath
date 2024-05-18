@@ -58,7 +58,7 @@
 #define RTT_GRADIENT "4.0"
 #define TTL_GRADIENT "2.0"
 
-enum { VO_SURF = 0, VO_XY, VO_LEFT, VO_BACK, VO_TEXT, VO_MAX };
+enum { VO_SURF = 0, VO_TEXT, VO_XY, VO_LEFT, VO_BACK, VO_TTL, VO_TIME, VO_RTT, VO_MAX };
 
 typedef struct plot_trans {
   mat4 xy, left, back, text;
@@ -66,10 +66,6 @@ typedef struct plot_trans {
   vec4 time[PLANE_YN / 2 + 1];
   vec4 rtt[PLANE_ZN / 2 + 1];
 } t_plot_trans;
-
-typedef struct plot_dbo {
-  t_plot_idc surf, grid, xy, left, back;
-} t_plot_dbo;
 
 typedef struct plot_prog {
   GLuint exec, vs, fs;
@@ -80,7 +76,6 @@ typedef struct plot_prog {
 typedef struct plot_res {
   t_plot_prog plot, text;
   t_plot_vo vo[VO_MAX];
-  t_plot_dbo dbo;
   gboolean base;
 } t_plot_res;
 
@@ -89,9 +84,9 @@ typedef struct plot_char {
   vec2 size;
 } t_plot_char;
 
-enum { VERT_GLSL, FRAG_GLSL };
+enum { GLSL_VERT, GLSL_FRAG };
 static const GLchar *plot_glsl[] = {
-[VERT_GLSL] =
+[GLSL_VERT] =
   PP_GLSL_MEDIUMP ";\n"
   "uniform mat4 " PLOT_VTR ";\n"
   "uniform vec4 " PLOT_COL1 ";\n"
@@ -110,7 +105,7 @@ static const GLchar *plot_glsl[] = {
   "  face_col = c4 * col1 + c3 * col2;\n"
   "  back_col = vec4(c1 + c2 * bc, 1);\n"
   "  gl_Position = " PLOT_VTR " * vec4(" PLOT_CRD ".xyz, 1.0); }",
-[FRAG_GLSL] =
+[GLSL_FRAG] =
   PP_GLSL_MEDIUMP ";\n"
   "in vec4 face_col;\n"
   "in vec4 back_col;\n"
@@ -119,7 +114,7 @@ static const GLchar *plot_glsl[] = {
 };
 
 static const GLchar *text_glsl[] = {
-[VERT_GLSL] =
+[GLSL_VERT] =
   PP_GLSL_MEDIUMP ";\n"
   "uniform mat4 " PLOT_VTR ";\n"
   "in vec4 " PLOT_CRD "; // .xy for position, .zw for texture\n"
@@ -127,7 +122,7 @@ static const GLchar *text_glsl[] = {
   "void main() {\n"
   "  tcrd = " PLOT_CRD ".zw;\n"
   "  gl_Position = " PLOT_VTR " * vec4(" PLOT_CRD ".xy, 0.0, 1.0); }",
-[FRAG_GLSL] =
+[GLSL_FRAG] =
   PP_GLSL_MEDIUMP ";\n"
   "in vec2 tcrd;\n"
   "out vec4 color;\n"
@@ -143,15 +138,6 @@ static t_tab plottab = { .self = &plottab, .name = "plot-tab",
 static GtkWidget *plot_base_area, *plot_dyn_area;
 static t_plot_res plot_base_res = { .base = true }, plot_dyna_res;
 static t_plot_trans plot_trans;
-
-static t_plot_vert_desc xy_desc = { .x = PLANE_XN, .y = PLANE_YN,
-  .xtick = true,  .ytick = true, .surf = false,  .off = {XTICK, 0, 0, YTICK} };
-static t_plot_vert_desc lp_desc = { .x = PLANE_XN, .y = PLANE_ZN,
-  .xtick = true,  .ytick = false, .surf = false, .off = {XTICK, 0, 0, 0} };
-static t_plot_vert_desc bp_desc = { .x = PLANE_ZN, .y = PLANE_YN,
-  .xtick = false, .ytick = false, .surf = false, .off = {0, 0, 0, YTICK} };
-static t_plot_vert_desc sf_desc = { .x = SURF_XN * 2, .y = SURF_YN * 2,
-  .xtick = false, .ytick = false, .surf = true,  .off = {XTICK, 0, 0, YTICK} };
 
 static const float scale = 1;
 static const vec4 surf_colo1 = { 0.3, 0.9, 0.3, 1 };
@@ -263,12 +249,9 @@ static void plot_del_vbo(GLuint *pid) {
 static void plot_del_res_vbo_dbo(t_plot_res *res) {
   if (res) for (int i = 0; i < G_N_ELEMENTS(res->vo); i++) {
     plot_del_vbo(&(res->vo[i].vbo.id));
+    plot_del_vbo(&(res->vo[i].dbo.main.id));
+    plot_del_vbo(&(res->vo[i].dbo.ext.id));
   }
-  plot_del_vbo(&(res->dbo.surf.id));
-  plot_del_vbo(&(res->dbo.grid.id));
-  plot_del_vbo(&(res->dbo.xy.id));
-  plot_del_vbo(&(res->dbo.left.id));
-  plot_del_vbo(&(res->dbo.back.id));
 }
 
 static void plot_del_prog_glsl(t_plot_prog *prog) {
@@ -308,7 +291,7 @@ static gboolean plot_compile_res(t_plot_res *res, GError **err) {
 }
 
 #define PLOT_GLSL_PROG_SETUP(prog, glsl) { (prog).vtr = (prog).coord = (prog).colo1 = (prog).colo2 = -1; \
-  if (setup) { (prog).vert = (glsl)[VERT_GLSL]; (prog).frag = (glsl)[FRAG_GLSL]; }}
+  if (setup) { (prog).vert = (glsl)[GLSL_VERT]; (prog).frag = (glsl)[GLSL_FRAG]; }}
 
 static inline void plot_glsl_reset(t_plot_res *res, gboolean setup) {
   if (res) {
@@ -323,9 +306,9 @@ static inline void plot_glsl_reset(t_plot_res *res, gboolean setup) {
   PLOT_GET_FORM(prog, colo1, PLOT_COL1); }
 #define PLOT_GLSL_EXT_ATTRIBS(prog) { PLOT_GLSL_BASE_ATTRIBS(prog); PLOT_GET_FORM(prog, colo2, PLOT_COL2); }
 
-#define PLOT_VERT_INIT(obj, desc, dyn, typ) { \
-  (obj).vbo = plot_aux_vert_init(desc, dyn, plot_plane_vert_attr, (obj).vao, res->plot.coord); \
-  res->dbo.typ = plot_aux_grid_init(desc, dyn); }
+#define PLOT_VERT_INIT(obj) { \
+  (obj).vbo = plot_aux_vert_init(&desc, plot_plane_vert_attr, (obj).vao, res->plot.coord); \
+  (obj).dbo.main = plot_aux_grid_init(&desc); }
 
 static void plot_plane_vert_attr(GLuint vao, GLint coord) {
   if (!vao || (coord < 0)) return;
@@ -352,12 +335,25 @@ static gboolean plot_res_init(t_plot_res *res, GError **err) {
   // plot related
   PLOT_GLSL_EXT_ATTRIBS(res->plot);
   if (res->base) {
-    PLOT_VERT_INIT(res->vo[VO_XY],   &xy_desc, true,  xy);   // x,y plane
-    PLOT_VERT_INIT(res->vo[VO_LEFT], &lp_desc, false, left); // left plane
-    PLOT_VERT_INIT(res->vo[VO_BACK], &bp_desc, false, back); // back plane
-  } else {
-    PLOT_VERT_INIT(res->vo[VO_SURF], &sf_desc, true,  grid); // surface
-    res->dbo.surf = plot_aux_surf_init(&sf_desc);            // triangles
+    { // x,y plane
+      t_plot_vert_desc desc = { .x = PLANE_XN, .y = PLANE_YN, .typ = VERT_GRID, .off = {XTICK, 0, 0, YTICK} };
+      PLOT_VERT_INIT(res->vo[VO_XY]);
+      desc.typ = VERT_XL_AXIS; PLOT_VERT_INIT(res->vo[VO_TIME]);
+      desc.typ = VERT_YR_AXIS; PLOT_VERT_INIT(res->vo[VO_TTL]);
+    }
+    { // left plane
+      t_plot_vert_desc desc = { .x = PLANE_XN, .y = PLANE_ZN, .typ = VERT_GRID, .off = {XTICK, 0, 0, 0} };
+      PLOT_VERT_INIT(res->vo[VO_LEFT]);
+      desc.typ = VERT_XL_AXIS; PLOT_VERT_INIT(res->vo[VO_RTT]);
+    }
+    { // back plane
+      t_plot_vert_desc desc = { .x = PLANE_ZN, .y = PLANE_YN, .typ = VERT_GRID, .off = {0, 0, 0, YTICK} };
+      PLOT_VERT_INIT(res->vo[VO_BACK]);
+    }
+  } else { // surface
+    t_plot_vert_desc desc = { .x = SURF_XN * 2, .y = SURF_YN * 2, .typ = VERT_SURF, .off = {XTICK, 0, 0, YTICK} };
+    PLOT_VERT_INIT(res->vo[VO_SURF]);
+    res->vo[VO_SURF].dbo.ext = plot_aux_surf_init(&desc); // triangles
   }
   // text related
   PLOT_GLSL_BASE_ATTRIBS(res->text);
@@ -490,8 +486,8 @@ static void plot_draw_text(t_plot_res *res, const char *text, const vec4 color,
   g_free(dir);
 }
 
-#define PLOT_DRAWELEMS(ndx, dboname, glcolo1, glcolo2, matrix, gltype) { plot_draw_elems(res->vo[ndx].vao, \
-  res->dbo.dboname, res->plot.vtr, glcolo1, res->plot.colo1, glcolo2, res->plot.colo2, plot_trans.matrix, gltype); }
+#define PLOT_DRAWELEMS(ndx, dbotype, glcolo1, glcolo2, matrix, gltype) { plot_draw_elems(res->vo[ndx].vao, \
+  res->vo[ndx].dbo.dbotype, res->plot.vtr, glcolo1, res->plot.colo1, glcolo2, res->plot.colo2, plot_trans.matrix, gltype); }
 #define PLOT_AXIS_TITLE(arr, atx, aty, title, lr, dx, dy) vec4 *ax = arr; int n = G_N_ELEMENTS(arr); \
   plot_draw_text(res, title, text_color, atx, aty, w, h, lr, dx, dy);
 #define PLOT_IS_BASE_GLSL_VALID(prog) ((prog).exec && ((prog).vtr >= 0) && \
@@ -506,12 +502,15 @@ static gboolean area_draw(GtkGLArea *area, GdkGLContext *context, t_plot_res *re
   if (PLOT_IS_EXT_GLSL_VALID(res->plot)) {
     glUseProgram(res->plot.exec);
     if (res->base) {
-      PLOT_DRAWELEMS(VO_XY,   xy,   grid_color, grid_color, xy,   GL_LINES);     // bottom plane
-      PLOT_DRAWELEMS(VO_LEFT, left, grid_color, grid_color, left, GL_LINES);     // left plane
-      PLOT_DRAWELEMS(VO_BACK, back, grid_color, grid_color, back, GL_LINES);     // back plane
+      PLOT_DRAWELEMS(VO_XY,   main, grid_color, grid_color, xy,   GL_LINES);     // plane: bottom
+      PLOT_DRAWELEMS(VO_LEFT, main, grid_color, grid_color, left, GL_LINES);     // plane: left
+      PLOT_DRAWELEMS(VO_BACK, main, grid_color, grid_color, back, GL_LINES);     // plane: back
+      PLOT_DRAWELEMS(VO_RTT,  main, grid_color, grid_color, left, GL_LINES);     // axis: rtt
+      PLOT_DRAWELEMS(VO_TIME, main, grid_color, grid_color, xy,   GL_LINES);     // axis: time
+      PLOT_DRAWELEMS(VO_TTL,  main, grid_color, grid_color, xy,   GL_LINES);     // axis: ttl
     } else if (pinger_state.gotdata) {
-      PLOT_DRAWELEMS(VO_SURF, grid, grid_color, grid_color, xy,   GL_LINES);     // surface gridlines
-      PLOT_DRAWELEMS(VO_SURF, surf, surf_colo1, surf_colo2, xy,   GL_TRIANGLES); // surface
+      PLOT_DRAWELEMS(VO_SURF, main, grid_color, grid_color, xy,   GL_LINES);     // surface gridlines
+      PLOT_DRAWELEMS(VO_SURF, ext,  surf_colo1, surf_colo2, xy,   GL_TRIANGLES); // surface
     }
     glFlush();
     glUseProgram(0);
@@ -610,16 +609,16 @@ t_tab* plottab_init(GtkWidget* win) {
   return &plottab;
 }
 
-inline void plottab_free(void) { plot_res_free(&plot_dyna_res); plot_res_free(&plot_base_res); }
+inline void plottab_free(void) { plot_res_free(&plot_dyna_res); plot_res_free(&plot_base_res); plot_aux_free(); }
 
 void plottab_restart(void) {
   draw_plot_at = 0;
-  plot_aux_reset(&plot_dyna_res.vo[VO_SURF].vbo, &plot_dyna_res.dbo.surf, &plot_dyna_res.dbo.grid);
+  plot_aux_reset(&plot_dyna_res.vo[VO_SURF]);
   plottab_refresh();
 }
 
 void plottab_update(void) {
-  plot_aux_update(&plot_dyna_res.vo[VO_SURF].vbo, &plot_dyna_res.dbo.surf, &plot_dyna_res.dbo.grid);
+  plot_aux_update(&plot_dyna_res.vo[VO_SURF]);
   if (GTK_IS_WIDGET(plot_dyn_area)) gtk_gl_area_queue_render(GTK_GL_AREA(plot_dyn_area));
 }
 

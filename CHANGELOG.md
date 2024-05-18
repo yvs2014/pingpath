@@ -1,3 +1,6 @@
+## 0.3.3
+- split grid/axis and optimize its drawing
+
 ## 0.3.2
 - add GLES support for wider compat (default for GTK>=4.13.4)
 - pair GL bind/unbind functions, etc.

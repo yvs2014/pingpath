@@ -14,7 +14,7 @@ Requires: iputils, gtk4, json-glib, libglvnd-opengl, libepoxy, cglm
 BuildRequires: (gcc or clang), make, pkgconf, gtk4-devel, json-glib-devel, libglvnd-devel, libepoxy-devel, cglm-devel
 
 %description
-Network diagnostic tool based on parsing system ping output with some functionality of traceroute.
+Network diagnostic tool based on parsing ping output with some functionality of traceroute.
 Written using GTK framework.
 
 %define srcdir %{name}

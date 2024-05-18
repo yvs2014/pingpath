@@ -1,3 +1,9 @@
+pingpath (0.3.3) mantic noble; urgency=low
+
+  * split grid/axis and optimize its drawing
+
+ -- yvs <VSYakovetsky@gmail.com>  Sat, 18 May 2024 22:18:25 +0300
+
 pingpath (0.3.2) mantic noble; urgency=low
 
   * add GLES support for wider compat (default for GTK>=4.13.4)
