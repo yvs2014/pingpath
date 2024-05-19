@@ -43,6 +43,14 @@ t_type_elem graphelem[GRGR_MAX] = {
   [GREX_AREA] = { .type = GREX_AREA,                 .name = GREX_AREA_HDR    },
 };
 
+#ifdef WITH_PLOT
+t_type_elem plotelem[PLEL_MAX] = {
+  [PLEL_BACK] = { .type = PLEL_BACK, .enable = true, .name = PLEL_BACK_HDR },
+  [PLEL_AXIS] = { .type = PLEL_AXIS, .enable = true, .name = PLEL_AXIS_HDR },
+  [PLEL_GRID] = { .type = PLEL_GRID, .enable = true, .name = PLEL_GRID_HDR },
+};
+#endif
+
 const double colors[][3] = { // 5x6 is enough for MAXTTL=30
   {1, 0, 0},     {0, 1, 0},     {0, 0, 1},     {1, 1, 0},         {1, 0, 1},         {0, 1, 1},
   {0.5, 0, 0},   {0, 0.5, 0},   {0, 0, 0.5},   {0.5, 0.5, 0},     {0.5, 0, 0.5},     {0, 0.5, 0.5},
@@ -61,9 +69,16 @@ static int elem_type2ndx(int type, t_type_elem *elem, int max) {
 }
 int  pingelem_type2ndx(int type) { return elem_type2ndx(type, pingelem,  G_N_ELEMENTS(pingelem));  }
 int graphelem_type2ndx(int type) { return elem_type2ndx(type, graphelem, G_N_ELEMENTS(graphelem)); }
+#ifdef WITH_PLOT
+int  plotelem_type2ndx(int type) { return elem_type2ndx(type, plotelem,  G_N_ELEMENTS(plotelem));  }
+#endif
 
 static const char* char_pattern[] = { [INFO_CHAR] = INFO_PATT, [STAT_CHAR] = STAT_PATT,
-  [GRLG_CHAR] = GRLG_PATT, [GREX_CHAR] = GREX_PATT };
+  [GRLG_CHAR] = GRLG_PATT, [GREX_CHAR] = GREX_PATT,
+#ifdef WITH_PLOT
+  [PLEL_CHAR] = PLEL_PATT,
+#endif
+};
 
 #define MAXCHARS_IN_PATTERN 8
 static int char_ndxs[][MAXCHARS_IN_PATTERN][2] = { // max pattern is 8 chars
@@ -102,8 +117,11 @@ int char2ndx(int cat, gboolean ent, char c) {
     case INFO_CHAR:
     case STAT_CHAR:
     case GRLG_CHAR:
-    case GREX_CHAR: {
-      char *p = strchr(char_pattern[cat], c);
+    case GREX_CHAR:
+#ifdef WITH_PLOT
+    case PLEL_CHAR:
+#endif
+    { char *p = strchr(char_pattern[cat], c);
       if (p) {
         int pos = p - char_pattern[cat];
         if (pos < MAXCHARS_IN_PATTERN) n = char_ndxs[cat][pos][ent ? 0 : 1];
@@ -146,6 +164,18 @@ static int graphelem_type2ent(int type) {
   return n;
 }
 
+#ifdef WITH_PLOT
+static int plotelem_type2ent(int type) {
+  int n = -1;
+  switch (type) {
+    case PLEL_BACK: n = ENT_BOOL_PLBK; break;
+    case PLEL_AXIS: n = ENT_BOOL_PLAX; break;
+    case PLEL_GRID: n = ENT_BOOL_PLGR; break;
+  }
+  return n;
+}
+#endif
+
 t_elem_desc info_desc = { .elems = pingelem, .mm = { .min = ELEM_HOST, .max = ELEM_RT },
   .cat = INFO_CHAR, .patt = INFO_PATT, .t2n = pingelem_type2ndx, .t2e = pingelem_type2ent };
 t_elem_desc stat_desc = { .elems = pingelem, .mm = { .min = ELEM_LOSS, .max = ELEM_JTTR },
@@ -155,6 +185,11 @@ t_elem_desc grlg_desc = { .elems = graphelem, .mm = { .min = GRLG_AVJT, .max = G
   .cat = GRLG_CHAR, .patt = GRLG_PATT, .t2n = graphelem_type2ndx, .t2e = graphelem_type2ent };
 t_elem_desc grex_desc = { .elems = graphelem, .mm = { .min = GREX_MEAN, .max = GREX_AREA },
   .cat = GREX_CHAR, .patt = GREX_PATT, .t2n = graphelem_type2ndx, .t2e = graphelem_type2ent };
+
+#ifdef WITH_PLOT
+t_elem_desc plel_desc = { .elems = plotelem, .mm = { .min = PLEL_BACK, .max = PLEL_GRID },
+  .cat = PLEL_CHAR, .patt = PLEL_PATT, .t2n = plotelem_type2ndx, .t2e = plotelem_type2ent };
+#endif
 
 //
 
@@ -171,13 +206,22 @@ static gboolean* elem_enabler(int type, t_type_elem *elem, int max) {
   for (int i = 0; i < max; i++) if (type == elem[i].type) return &elem[i].enable;
   return NULL;
 }
-inline gboolean*  pingelem_enabler(int type) { return elem_enabler(type, pingelem,  G_N_ELEMENTS(pingelem));  }
-inline gboolean* graphelem_enabler(int type) { return elem_enabler(type, graphelem, G_N_ELEMENTS(graphelem)); }
+gboolean*  pingelem_enabler(int type) { return elem_enabler(type, pingelem,  G_N_ELEMENTS(pingelem));  }
+gboolean* graphelem_enabler(int type) { return elem_enabler(type, graphelem, G_N_ELEMENTS(graphelem)); }
 
 gboolean is_grelem_enabled(int type) {
   int ndx = graphelem_type2ndx(type);
   return ((ndx >= 0) && (ndx < GRGR_MAX)) ? graphelem[ndx].enable : false;
 }
+
+#ifdef WITH_PLOT
+gboolean* plotelem_enabler(int type) { return elem_enabler(type, plotelem, G_N_ELEMENTS(plotelem)); }
+
+gboolean is_plelem_enabled(int type) {
+  int ndx = plotelem_type2ndx(type);
+  return ((ndx >= 0) && (ndx < PLEL_MAX)) ? plotelem[ndx].enable : false;
+}
+#endif
 
 #define CLEAN_ELEM_LOOP(elems, min, max) { for (int i = 0; i < G_N_ELEMENTS(elems); i++) \
   if ((min <= elems[i].type) && (elems[i].type <= max)) elems[i].enable = false; }

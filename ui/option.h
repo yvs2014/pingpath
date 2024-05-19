@@ -4,12 +4,21 @@
 #include "common.h"
 
 #define ENT_BUFF_SIZE 64
-#define SUBLIST_MAX   16
+#define SUBLIST_MAX   8
 
-enum { SPN_AUX_MIN, SPN_AUX_LIM, SPN_AUX_MAX };
+enum { SPN_AUX_MIN, SPN_AUX_LIM };
 
-enum { ENT_SPN_NONE, ENT_SPN_TTL, ENT_SPN_MAX };
-enum { ENT_RAD_NONE, ENT_RAD_IPV, ENT_RAD_GRAPH, ENT_RAD_MAX };
+enum { ENT_SPN_TTL,
+#ifdef WITH_PLOT
+  ENT_SPN_COL,
+#endif
+};
+enum { ENT_SPN_TTL_SPIN };
+#ifdef WITH_PLOT
+enum { ENT_SPN_COL_R, ENT_SPN_COL_G, ENT_SPN_COL_B };
+#endif
+
+enum { ENT_RAD_IPV, ENT_RAD_GRAPH };
 
 typedef struct ent_ndx {
   int type;
@@ -48,28 +57,24 @@ typedef struct ent_exp {
   t_elem_desc *desc; // reference to element group descripotion
 } t_ent_exp;
 
-typedef struct ent_rad_map {
-  int ndx, val;
-  char *str;
-} t_ent_rad_map;
-
-typedef struct ent_rad {
-  t_ent_exp_common c;
-  int *pval;
-  GCallback cb;
-  t_ent_rad_map map[SUBLIST_MAX]; // 0 str terminated map, otherwise max
-} t_ent_rad;
-
 typedef struct ent_spn_aux {
+  GCallback cb;
   int *pval; // indexed: 0 .. lim-1
   int def;   // not-indexed default: 1 .. lim
-  GtkWidget *spn;
-  GCallback cb;
+  t_minmax *mm;
+  const char *prfx, *sfx;
+  GtkWidget *spin;
 } t_ent_spn_aux;
+
+typedef struct ent_spn_elem {
+  const char *title, *delim;
+  gboolean asis;
+  t_ent_spn_aux aux[2];
+} t_ent_spn_elem;
 
 typedef struct ent_spn {
   t_ent_exp_common c;
-  t_ent_spn_aux aux[SPN_AUX_MAX];
+  t_ent_spn_elem list[SUBLIST_MAX];
 } t_ent_spn;
 
 gboolean option_init(GtkWidget* bar);

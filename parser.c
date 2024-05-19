@@ -68,7 +68,7 @@ static t_response_regex regexes[] = {
 
 #define NODUPCHARS "(?!.*(.).*\\1)"
 
-static t_parser_regex str_rx[OPT_TYPE_MAX] = {
+static t_parser_regex str_rx[] = {
   [OPT_TYPE_INT]   = { .pattern = "^\\d+$" },
   [OPT_TYPE_PAD]   = { .pattern = "^[\\da-fA-F]{1,32}$" },
   [OPT_TYPE_INFO]  = { .pattern = "^" NODUPCHARS "[" INFO_PATT "]*$" },
@@ -291,15 +291,17 @@ int parser_int(const char *str, int type, const char *option, t_minmax mm) {
 
 #define PARSE_MAX_CHARS 128
 char* parser_str(const char *str, const char *option, int cat) {
-  char *buff = g_strndup(str, PARSE_MAX_CHARS);
-  if (buff) {
-    char *val = g_strdup(g_strstrip(buff)); g_free(buff);
-    if (val) {
-      gboolean valid = g_regex_match(str_rx[cat].regex, val, 0, NULL);
-      if (valid) return val;
-    } else WARN_("g_strdup()");
-    PARSER_MESG("%s: no match %s regex", option, str_rx[cat].pattern);
-  } else WARN_("g_strndup()");
+  if ((cat >= 0) && (cat < G_N_ELEMENTS(str_rx))) {
+    char *buff = g_strndup(str, PARSE_MAX_CHARS);
+    if (buff) {
+      char *val = g_strdup(g_strstrip(buff)); g_free(buff);
+      if (val) {
+        gboolean valid = g_regex_match(str_rx[cat].regex, val, 0, NULL);
+        if (valid) return val;
+      } else WARN_("g_strdup()");
+      PARSER_MESG("%s: no match %s regex", option, str_rx[cat].pattern);
+    } else WARN_("g_strndup()");
+  } else WARN("wrong string category: %d", cat);
   return NULL;
 }
 

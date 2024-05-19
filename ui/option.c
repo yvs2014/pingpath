@@ -10,7 +10,19 @@
 
 typedef gboolean (*optmenu_add_items_fn)(GtkWidget *);
 
-t_ent_bool ent_bool[ENT_BOOL_MAX] = {
+typedef struct ent_rad_map {
+  int ndx, val;
+  char *str;
+} t_ent_rad_map;
+
+typedef struct ent_rad {
+  t_ent_exp_common c;
+  int *pval;
+  GCallback cb;
+  t_ent_rad_map map[SUBLIST_MAX];
+} t_ent_rad;
+
+t_ent_bool ent_bool[] = {
   [ENT_BOOL_DNS]  = { .en = { .type = ENT_BOOL_DNS,  .name = OPT_DNS_HDR }, .pval = &opts.dns },
   [ENT_BOOL_HOST] = { .en = { .type = ENT_BOOL_HOST, .name = ELEM_HOST_HDR },
     .valfn = pingelem_enabler, .valtype = ELEM_HOST, .prefix = OPT_INFO_HEADER },
@@ -56,9 +68,17 @@ t_ent_bool ent_bool[ENT_BOOL_MAX] = {
     .valfn = graphelem_enabler, .valtype = GREX_JRNG, .prefix = OPT_GREX_HDR },
   [ENT_BOOL_AREA] = { .en = { .type = ENT_BOOL_AREA, .name = GREX_AREA_HEADER },
     .valfn = graphelem_enabler, .valtype = GREX_AREA, .prefix = OPT_GREX_HDR },
+#ifdef WITH_PLOT
+  [ENT_BOOL_PLBK] = { .en = { .type = ENT_BOOL_PLBK, .name = PLEL_BACK_HDR },
+    .valfn = plotelem_enabler, .valtype = PLEL_BACK, .prefix = OPT_PLEL_HDR },
+  [ENT_BOOL_PLAX] = { .en = { .type = ENT_BOOL_PLAX, .name = PLEL_AXIS_HDR },
+    .valfn = plotelem_enabler, .valtype = PLEL_AXIS, .prefix = OPT_PLEL_HDR },
+  [ENT_BOOL_PLGR] = { .en = { .type = ENT_BOOL_PLGR, .name = PLEL_GRID_HDR },
+    .valfn = plotelem_enabler, .valtype = PLEL_GRID, .prefix = OPT_PLEL_HDR },
+#endif
 };
 
-t_ent_str ent_str[ENT_STR_MAX] = {
+t_ent_str ent_str[] = {
   [ENT_STR_CYCLES] = { .len = 6,  .width = 6, .range = { .min = CYCLES_MIN, .max = CYCLES_MAX },
     .en = { .type = ENT_STR_CYCLES, .name = OPT_CYCLES_HDR },
     .pint = &opts.cycles,  .idef = DEF_CYCLES },
@@ -79,25 +99,62 @@ t_ent_str ent_str[ENT_STR_MAX] = {
     .pint = &opts.logmax,  .idef = DEF_LOGMAX },
 };
 
-static t_ent_exp ent_exp[ENT_EXP_MAX] = {
+static t_ent_exp ent_exp[] = {
   [ENT_EXP_INFO] = { .c = {.en = {.type = ENT_EXP_INFO, .name = OPT_INFO_HEADER }}, .desc = &info_desc },
   [ENT_EXP_STAT] = { .c = {.en = {.type = ENT_EXP_STAT, .name = OPT_STAT_HDR }},    .desc = &stat_desc },
   [ENT_EXP_LGFL] = { .c = {.en = {.type = ENT_EXP_LGFL, .name = OPT_GRLG_HDR }},    .desc = &grlg_desc },
   [ENT_EXP_GREX] = { .c = {.en = {.type = ENT_EXP_GREX, .name = OPT_GREX_HDR }},    .desc = &grex_desc },
+#ifdef WITH_PLOT
+  [ENT_EXP_PLEL] = { .c = {.en = {.type = ENT_EXP_PLEL, .name = OPT_PLEL_HDR }},    .desc = &plel_desc },
+#endif
 };
 
-static void min_cb(GtkWidget*, t_ent_spn*);
-static void max_cb(GtkWidget*, t_ent_spn*);
-t_ent_spn ent_spn[ENT_SPN_MAX] = {
-  [ENT_SPN_TTL] = { .c = {.en = {.type = ENT_SPN_TTL, .name = OPT_TTL_HDR }}, .aux = {
-    [SPN_AUX_MIN] = {.cb = G_CALLBACK(min_cb), .pval = &opts.min, .def = 1},
-    [SPN_AUX_LIM] = {.cb = G_CALLBACK(max_cb), .pval = &opts.lim, .def = MAXTTL}
+static void minttl_cb(GtkWidget*, t_ent_spn_elem*);
+static void maxttl_cb(GtkWidget*, t_ent_spn_elem*);
+static t_minmax opt_mm_ttl = {MINTTL, MAXTTL};
+
+#ifdef WITH_PLOT
+#define MINCOLVAL 0
+#define MAXCOLVAL 0xff
+#define GRAD_COLR "Plot red gradient"
+#define GRAD_COLG "Plot green gradient"
+#define GRAD_COLB "Plot blue gradient"
+#define STR_FROM  "start with"
+#define STR_TO    "end with"
+static void colgrad_cb(GtkWidget*, t_ent_spn_aux*);
+static t_minmax opt_mm_col = {MINCOLVAL, MAXCOLVAL};
+#endif
+
+t_ent_spn ent_spn[] = {
+  [ENT_SPN_TTL] = { .c = {.en = {.type = ENT_SPN_TTL, .name = OPT_TTL_HDR }}, .list = {
+    [ENT_SPN_TTL_SPIN] = { .title = OPT_TTL_HDR, .delim = SPN_TTL_DELIM, .aux = {
+      [SPN_AUX_MIN] = {.cb = G_CALLBACK(minttl_cb), .pval = &opts.min, .def = MINTTL, .mm = &opt_mm_ttl},
+      [SPN_AUX_LIM] = {.cb = G_CALLBACK(maxttl_cb), .pval = &opts.lim, .def = MAXTTL, .mm = &opt_mm_ttl}
+  }}}},
+#ifdef WITH_PLOT
+  [ENT_SPN_COL] = { .c = {.en = {.type = ENT_SPN_COL, .name = OPT_COL_HDR }, .atrun = true}, .list = {
+    [ENT_SPN_COL_R] = { .title = GRAD_COLR, .delim = SPN_RCOL_DELIM, .asis = true, .aux = {
+      [SPN_AUX_MIN] = {.cb = G_CALLBACK(colgrad_cb), .pval = &opts.rcol.min, .def = DEF_RCOL_FROM,
+        .mm = &opt_mm_col, .prfx = GRAD_COLR, .sfx = STR_FROM },
+      [SPN_AUX_LIM] = {.cb = G_CALLBACK(colgrad_cb), .pval = &opts.rcol.max, .def = DEF_RCOL_TO,
+        .mm = &opt_mm_col, .prfx = GRAD_COLR, .sfx = STR_TO }}},
+    [ENT_SPN_COL_G] = { .title = GRAD_COLG, .delim = SPN_GCOL_DELIM, .asis = true, .aux = {
+      [SPN_AUX_MIN] = {.cb = G_CALLBACK(colgrad_cb), .pval = &opts.gcol.min, .def = DEF_GCOL_FROM,
+        .mm = &opt_mm_col, .prfx = GRAD_COLG, .sfx = STR_FROM },
+      [SPN_AUX_LIM] = {.cb = G_CALLBACK(colgrad_cb), .pval = &opts.gcol.max, .def = DEF_GCOL_TO,
+        .mm = &opt_mm_col, .prfx = GRAD_COLG, .sfx = STR_TO }}},
+    [ENT_SPN_COL_B] = { .title = GRAD_COLB, .delim = SPN_BCOL_DELIM, .asis = true, .aux = {
+      [SPN_AUX_MIN] = {.cb = G_CALLBACK(colgrad_cb), .pval = &opts.bcol.min, .def = DEF_BCOL_FROM,
+        .mm = &opt_mm_col, .prfx = GRAD_COLB, .sfx = STR_FROM },
+      [SPN_AUX_LIM] = {.cb = G_CALLBACK(colgrad_cb), .pval = &opts.bcol.max, .def = DEF_BCOL_TO,
+        .mm = &opt_mm_col, .prfx = GRAD_COLB, .sfx = STR_TO }}},
   }},
+#endif
 };
 
 static void graph_type_cb(void);
 
-static t_ent_rad ent_rad[ENT_RAD_MAX] = {
+static t_ent_rad ent_rad[] = {
   [ENT_RAD_IPV] = { .pval = &opts.ipv,
     .c = {.en = {.type = ENT_RAD_IPV, .name = OPT_IPV_HDR }},
     .map = {
@@ -207,26 +264,29 @@ static void toggle_cb(GtkCheckButton *check, t_ent_bool *en) {
     case ENT_BOOL_AREA:
       check_bool_val(check, en, graphtab_update);
       break;
+#ifdef WITH_PLOT
+    case ENT_BOOL_PLBK:
+    case ENT_BOOL_PLAX:
+    case ENT_BOOL_PLGR:
+      check_bool_val(check, en, plottab_refresh);
+      break;
+#endif
   }
 }
 
 static void radio_cb(GtkCheckButton *check, t_ent_rad_map *map) {
-  if (!map) return;
-  g_return_if_fail(GTK_IS_CHECK_BUTTON(check));
-  int ndx = map->ndx;
-  if ((ndx < 0) || (ndx >= G_N_ELEMENTS(ent_rad[0].map))) return;
-  t_ent_rad *en = &ent_rad[ndx];
-  switch (en->c.en.type) {
-    case ENT_RAD_GRAPH:
-    case ENT_RAD_IPV: {
+  if (!GTK_IS_CHECK_BUTTON(check) || !map) return;
+  int ndx = map->ndx; if ((ndx < 0) || (ndx >= G_N_ELEMENTS(ent_rad))) return;
+  t_ent_rad *en = &ent_rad[ndx]; int *pval = en->pval;
+  if (pval) switch (en->c.en.type) {
+    case ENT_RAD_IPV:
+    case ENT_RAD_GRAPH: {
       gboolean selected = gtk_check_button_get_active(check);
-      if (selected) {
-        if (map->val != *(en->pval)) {
-          *(en->pval) = map->val;
-          if (en->cb) en->cb();
-          if (map->str) notifier_inform("%s: %s", en->c.en.name, map->str);
-          else notifier_inform("%s: %d", en->c.en.name, map->val);
-        }
+      if (selected && (map->val != *pval)) {
+        *(en->pval) = map->val;
+        if (en->cb) en->cb();
+        if (map->str) notifier_inform("%s: %s", en->c.en.name, map->str);
+        else notifier_inform("%s: %d", en->c.en.name, map->val);
       }
     }
   }
@@ -271,56 +331,67 @@ static void input_cb(GtkWidget *input, t_ent_str *en) {
   DEBUG("%s: %s", en->en.name, got);
 }
 
-static void min_cb(GtkWidget *spin, t_ent_spn *en) {
-  if (!en) return;
-  int *pmin = en->aux[SPN_AUX_MIN].pval;
-  if (!pmin) return;
-  g_return_if_fail(GTK_IS_SPIN_BUTTON(spin));
+static void minttl_cb(GtkWidget *spin, t_ent_spn_elem *en) {
+  if (!GTK_IS_SPIN_BUTTON(spin) || !en) return;
+  int *pmin = en->aux[SPN_AUX_MIN].pval; if (!pmin) return;
   int got = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(spin));
   int val = got - 1;
   if (*pmin == val) return;
-  int *plim = en->aux[SPN_AUX_LIM].pval;
-  int max = plim ? *plim : MAXTTL;
-  if (pinger_within_range(1, max, got)) {
-    notifier_inform("%s: %d <=> %d", en->c.en.name, got, max);
+  t_ent_spn_aux *aux = &en->aux[SPN_AUX_LIM];
+  int *plim = aux->pval;
+  t_minmax *mm = aux->mm ? aux->mm : &opt_mm_ttl;
+  int max = plim ? *plim : mm->max;
+  if (pinger_within_range(mm->min, max, got)) {
+    notifier_inform("%s: %d <=> %d", en->title, got, max);
     *pmin = val;
     // then adjust right:range
     double cp_min, cp_max;
-    t_ent_spn_aux *cp = &en->aux[SPN_AUX_LIM];
-    gtk_spin_button_get_range(GTK_SPIN_BUTTON(cp->spn), &cp_min, &cp_max);
+    gtk_spin_button_get_range(GTK_SPIN_BUTTON(aux->spin), &cp_min, &cp_max);
     if (got != cp_min) {
-      int cp_val = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(cp->spn));
-      if (cp_val >= got) { // avoid callback triggering
-        gtk_spin_button_set_range(GTK_SPIN_BUTTON(cp->spn), got, cp_max);
-      }
+      int cp_val = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(aux->spin));
+      if (cp_val >= got) // avoid callback triggering
+        gtk_spin_button_set_range(GTK_SPIN_BUTTON(aux->spin), got, cp_max);
     }
-  } else WARN("out-of-range[%d,%d]: %d", 1, max, got);
+  } else WARN("out-of-range[%d,%d]: %d", mm->min, max, got);
 }
 
-static void max_cb(GtkWidget *spin, t_ent_spn *en) {
-  if (!en) return;
-  int *plim = en->aux[SPN_AUX_LIM].pval;
-  if (!plim) return;
-  g_return_if_fail(GTK_IS_SPIN_BUTTON(spin));
+static void maxttl_cb(GtkWidget *spin, t_ent_spn_elem *en) {
+  if (!GTK_IS_SPIN_BUTTON(spin) || !en) return;
+  int *plim = en->aux[SPN_AUX_LIM].pval; if (!plim) return;
   int got = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(spin));
   if (*plim == got) return;
-  int *pmin = en->aux[SPN_AUX_MIN].pval;
+  t_ent_spn_aux *aux = &en->aux[SPN_AUX_MIN];
+  int *pmin = aux->pval;
   int min = (pmin ? *pmin : 0) + 1;
-  if (pinger_within_range(min, MAXTTL, got)) {
-    notifier_inform("%s: %d <=> %d", en->c.en.name, min, got);
+  t_minmax *mm = aux->mm ? aux->mm : &opt_mm_ttl;
+  if (pinger_within_range(min, mm->max, got)) {
+    notifier_inform("%s: %d <=> %d", en->title, min, got);
     *plim = got;
     // then adjust left:range
     double cp_min, cp_max;
-    t_ent_spn_aux *cp = &en->aux[SPN_AUX_MIN];
-    gtk_spin_button_get_range(GTK_SPIN_BUTTON(cp->spn), &cp_min, &cp_max);
+    gtk_spin_button_get_range(GTK_SPIN_BUTTON(aux->spin), &cp_min, &cp_max);
     if (got != cp_max) {
-      int cp_val = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(cp->spn));
-      if (cp_val <= got) { // avoid callback triggering
-        gtk_spin_button_set_range(GTK_SPIN_BUTTON(cp->spn), cp_min, got);
-      }
+      int cp_val = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(aux->spin));
+      if (cp_val <= got) // avoid callback triggering
+        gtk_spin_button_set_range(GTK_SPIN_BUTTON(aux->spin), cp_min, got);
     }
-  } else WARN("out-of-range[%d,%d]: %d", min, MAXTTL, got);
+  } else WARN("out-of-range[%d,%d]: %d", min, mm->max, got);
 }
+
+#ifdef WITH_PLOT
+static void colgrad_cb(GtkWidget *spin, t_ent_spn_aux *aux) {
+  if (!GTK_IS_SPIN_BUTTON(spin) || !aux) return;
+  int *pval = aux->pval; if (!pval) return;
+  int got = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(spin));
+  if (*pval == got) return;
+  t_minmax *mm = aux->mm ? aux->mm : &opt_mm_col;
+  if ((mm->min <= got) && (got <= mm->max)) {
+    *pval = got;
+    notifier_inform("%s: %s 0x%02x", aux->prfx, aux->sfx, got);
+    plottab_gradient();
+  } else WARN("out-of-range[%d,%d]: %d", mm->min, mm->max, got);
+}
+#endif
 
 static void graph_type_cb(void) {
   if (opts.graph == GRAPH_TYPE_NONE) graphtab_restart();
@@ -426,45 +497,56 @@ static GtkWidget* add_opt_expand(GtkWidget* list, t_ent_exp *en) {
   return box;
 }
 
-static int spn_mm_or_def(t_ent_spn_aux *aux, int min, int def) {
-  return aux ? (aux->pval ? (*aux->pval + min) : aux->def) : def;
-}
+#define SPN_MM_OR_DEF(aux, inc) ((aux).pval ? (*((aux).pval) + (inc)) : (aux).def)
+#define SPN_MM_NDX(mm_ndx, inc) ((ndx == mm_ndx) ? (en->aux[mm_ndx].def) : SPN_MM_OR_DEF(en->aux[mm_ndx], inc))
+#ifdef WITH_PLOT
+#define SPN_DEF_MM (en->asis ? &opt_mm_col : &opt_mm_ttl)
+#else
+#define SPN_DEF_MM (&opt_mm_ttl)
+#endif
 
-static gboolean add_minmax(GtkWidget *box, t_ent_spn *en, int ndx) {
+static gboolean add_minmax(GtkWidget *box, t_ent_spn_elem *en, int ndx) {
   if (!en || !GTK_IS_BOX(box)) return false;
-  int min = (ndx == SPN_AUX_MIN) ? en->aux[SPN_AUX_MIN].def : spn_mm_or_def(&en->aux[SPN_AUX_MIN], 1, 1);
-  int max = (ndx == SPN_AUX_LIM) ? en->aux[SPN_AUX_LIM].def : spn_mm_or_def(&en->aux[SPN_AUX_LIM], 0, MAXTTL);
-  GtkWidget *spn = gtk_spin_button_new_with_range(min, max, 1);
-  g_return_val_if_fail(GTK_IS_SPIN_BUTTON(spn), false);
-  gtk_box_append(GTK_BOX(box), spn);
+  t_minmax *mm0 = en->aux[SPN_AUX_MIN].mm; if (!mm0) mm0 = SPN_DEF_MM;
+  t_minmax *mm1 = en->aux[SPN_AUX_LIM].mm; if (!mm1) mm1 = SPN_DEF_MM;
+  int min = en->asis ? mm0->min : SPN_MM_NDX(SPN_AUX_MIN, 1);
+  int max = en->asis ? mm1->max : SPN_MM_NDX(SPN_AUX_LIM, 0);
+  GtkWidget *spin = gtk_spin_button_new_with_range(min, max, 1);
+  g_return_val_if_fail(GTK_IS_SPIN_BUTTON(spin), false);
+  gtk_box_append(GTK_BOX(box), spin);
   int *pval = en->aux[ndx].pval;
   if (pval) {
     int val = *pval;
-    gtk_spin_button_set_value(GTK_SPIN_BUTTON(spn), (ndx == SPN_AUX_MIN) ? val + 1 : val);
+    if (!en->asis && (ndx == SPN_AUX_MIN)) val++;
+    gtk_spin_button_set_value(GTK_SPIN_BUTTON(spin), val);
   }
-  en->aux[ndx].spn = spn;
-  if (en->aux[ndx].cb) g_signal_connect(spn, EV_VAL_CHANGE, en->aux[ndx].cb, en);
+  en->aux[ndx].spin = spin;
+  if (en->aux[ndx].cb) g_signal_connect(spin, EV_VAL_CHANGE, en->aux[ndx].cb, en->asis ? &(en->aux[ndx]) : (void*)en);
   return true;
 }
 
-static void grey_into_box(GtkWidget *box, GtkWidget *widget) {
+static void grey_into_box(GtkWidget *box, GtkWidget *widget, gboolean expand) {
   if (!GTK_IS_BOX(box) || !GTK_IS_WIDGET(widget)) return;
   gtk_widget_set_sensitive(widget, false);
+  gtk_widget_set_hexpand(widget, expand);
   gtk_box_append(GTK_BOX(box), widget);
 }
 
-static GtkWidget* add_opt_range(GtkWidget* list, t_ent_spn *en) {
-  if (!en) return NULL;
-  GtkWidget *box = add_expand_common(list, &en->c);
+static GtkWidget* add_opt_range(GtkWidget* listbox, t_ent_spn *en) {
+  if (!GTK_LIST_BOX(listbox) || !en) return NULL;
+  GtkWidget *box = add_expand_common(listbox, &en->c);
   if (GTK_IS_BOX(box) && en->c.sub) {
-    GtkWidget *subrow = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, MARGIN);
-    g_return_val_if_fail(GTK_IS_BOX(subrow), box);
-    gtk_list_box_append(GTK_LIST_BOX(en->c.sub), subrow);
-    add_minmax(subrow, en, SPN_AUX_MIN);
-    grey_into_box(subrow, gtk_image_new_from_icon_name(GO_LEFT_ICON));
-    grey_into_box(subrow, gtk_label_new("range")); // "🡸 min max 🡺" "🡸 🡺" "🠔🠖" "←→" "⟷" "🡄🡆" "🢀 🢂"
-    grey_into_box(subrow, gtk_image_new_from_icon_name(GO_RIGHT_ICON));
-    add_minmax(subrow, en, SPN_AUX_LIM);
+    t_ent_spn_elem *elem = en->list;
+    for (int n = 0; (n < G_N_ELEMENTS(en->list)) && elem && elem->title; n++, elem++) {
+      GtkWidget *row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, MARGIN);
+      if (!GTK_IS_BOX(row)) continue;
+      gtk_list_box_append(GTK_LIST_BOX(en->c.sub), row);
+      add_minmax(row, elem, SPN_AUX_MIN);
+      grey_into_box(row, gtk_image_new_from_icon_name(GO_LEFT_ICON), false);
+      grey_into_box(row, gtk_label_new(elem->delim ? elem->delim : "min max"), true);
+      grey_into_box(row, gtk_image_new_from_icon_name(GO_RIGHT_ICON), false);
+      add_minmax(row, elem, SPN_AUX_LIM);
+    }
   }
   return box;
 }
@@ -474,9 +556,8 @@ static GtkWidget* add_opt_radio(GtkWidget* list, t_ent_rad *en) {
   GtkWidget *box = add_expand_common(list, &en->c);
   if (GTK_IS_BOX(box) && en->c.sub) {
     GtkWidget *group = NULL;
-    for (int i = 0; i < G_N_ELEMENTS(en->map); i++) {
-      t_ent_rad_map *map = &en->map[i];
-      if (!map->str) break;
+    t_ent_rad_map *map = en->map;
+    for (int i = 0; (i < G_N_ELEMENTS(en->map)) && map && map->str; i++, map++) {
       GtkWidget *rb = gtk_check_button_new_with_label(map->str);
       g_return_val_if_fail(GTK_CHECK_BUTTON(rb), box);
       if (style_loaded) gtk_widget_add_css_class(rb, CSS_PAD);
@@ -563,6 +644,10 @@ static gboolean create_graph_optmenu(GtkWidget *list) {
   if (!add_opt_check(list,  &ent_bool[ENT_BOOL_LGND]))    okay = false;
   if (!add_opt_expand(list, &ent_exp[ENT_EXP_LGFL]))      okay = false;
   if (!add_opt_expand(list, &ent_exp[ENT_EXP_GREX]))      okay = false;
+#ifdef WITH_PLOT
+  if (!add_opt_expand(list, &ent_exp[ENT_EXP_PLEL]))      okay = false;
+  if (!add_opt_range(list,  &ent_spn[ENT_SPN_COL]))       okay = false;
+#endif
   EN_PR_INT(ENT_STR_LOGMAX);
   return okay;
 }

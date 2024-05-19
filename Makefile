@@ -84,15 +84,19 @@ endif
 OBJS = $(SRC:%.c=$(BUILDDIR)/%.o)
 
 all:
-	make $(NAME)
-	make PLOT=1 $(NAME3)
+	@echo 'make $(NAME)'
+	@make $(NAME)
+	@echo 'make $(NAME3) with 3D plot'
+	@make PLOT=1 $(NAME3)
 
 $(OBJS): $(BUILDDIR)/%.o: %.c common.h
 	@mkdir -p $(@D)
-	$(CC) -c -o $@ $(CFLAGS) $<
+	@echo '  CC   $@'
+	@$(CC) -c -o $@ $(CFLAGS) $<
 
 $(APP): $(OBJS)
-	$(CC) -o $@ $(OBJS) $(LDFLAGS) $(LIBS)
+	@echo '  CCLD $@'
+	@$(CC) -o $@ $(OBJS) $(LDFLAGS) $(LIBS)
 
 clean:
 	rm -f -- $(NAME) $(NAME3)

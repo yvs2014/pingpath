@@ -10,23 +10,35 @@
 #define DEF_QOS    0
 #define DEF_PPAD  "00"
 #define DEF_PSIZE  56
+
 #define DEF_LEGEND     true
 #define DEF_DARK_MAIN  true
 #define DEF_DARK_GRAPH false
-#define DEF_DARK_PLOT  false
+
+#ifdef WITH_PLOT
+#define DEF_DARK_PLOT false
+
+#define DEF_RCOL_FROM 77
+#define DEF_RCOL_TO   77
+#define DEF_GCOL_FROM 230
+#define DEF_GCOL_TO   77
+#define DEF_BCOL_FROM 77
+#define DEF_BCOL_TO   230
+#endif
 
 typedef struct opts {
   char *target;
   gboolean dns, whois, legend, darktheme, darkgraph;
-#ifdef WITH_PLOT
-  gboolean plot, darkplot;
-#endif
   int cycles, timeout, qos, size, ipv, graph;
   int min, lim;       // TTL range
   char pad[PAD_SIZE]; // 16 x "00."
   char recap;         // type of summary at exit
   int tout_usec;      // internal: timeout in usecs
   int logmax;         // internal: max lines in log tab
+#ifdef WITH_PLOT
+  gboolean plot, darkplot;
+  t_minmax rcol, gcol, bcol; // color range
+#endif
 } t_opts;
 
 typedef struct pinger_state {

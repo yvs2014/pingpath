@@ -62,6 +62,6 @@ SCREENSHOTS
 ## the same with jitter area to clear display big-distance hops
 ![pp-screenshot08](https://raw.githubusercontent.com/yvs2014/pingpath/main/img/pp-screenshot08.png)
 
-## basic 3D plotting
+## ordinary 3D plot
 ![pp-screenshot30](https://raw.githubusercontent.com/yvs2014/pingpath/main/img/pp-screenshot30.png)
 

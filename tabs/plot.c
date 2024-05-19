@@ -2,7 +2,6 @@
 #include <cglm/cglm.h>
 #include <cglm/mat4.h>
 
-#include "common.h"
 #include "plot.h"
 #include "plot_aux.h"
 #include "plot_pango.h"
@@ -140,15 +139,11 @@ static t_plot_res plot_base_res = { .base = true }, plot_dyna_res;
 static t_plot_trans plot_trans;
 
 static const float scale = 1;
-static const vec4 surf_colo1 = { 0.3, 0.9, 0.3, 1 };
-static const vec4 surf_colo2 = { 0.3, 0.3, 0.9, 1 };
 static const vec4 grid_color = { 0.75, 0.75, 0.75, 1 };
 static const t_th_color text_val = { .ondark = 1, .onlight = 0 };
 static const float text_alpha = 1;
 
-static t_plot_char char_table[255];
-
-const int plot_api_req =
+static const int plot_api_req =
 #if GTK_CHECK_VERSION(4, 13, 4)
   GDK_GL_API_GLES
 #else
@@ -159,6 +154,11 @@ const int plot_api_req =
 #endif
 #endif
 ;
+
+static vec4 surf_colo1;
+static vec4 surf_colo2;
+
+static t_plot_char char_table[255];
 
 static gboolean plot_res_ready;
 static int draw_plot_at;
@@ -502,15 +502,20 @@ static gboolean area_draw(GtkGLArea *area, GdkGLContext *context, t_plot_res *re
   if (PLOT_IS_EXT_GLSL_VALID(res->plot)) {
     glUseProgram(res->plot.exec);
     if (res->base) {
-      PLOT_DRAWELEMS(VO_XY,   main, grid_color, grid_color, xy,   GL_LINES);     // plane: bottom
-      PLOT_DRAWELEMS(VO_LEFT, main, grid_color, grid_color, left, GL_LINES);     // plane: left
-      PLOT_DRAWELEMS(VO_BACK, main, grid_color, grid_color, back, GL_LINES);     // plane: back
-      PLOT_DRAWELEMS(VO_RTT,  main, grid_color, grid_color, left, GL_LINES);     // axis: rtt
-      PLOT_DRAWELEMS(VO_TIME, main, grid_color, grid_color, xy,   GL_LINES);     // axis: time
-      PLOT_DRAWELEMS(VO_TTL,  main, grid_color, grid_color, xy,   GL_LINES);     // axis: ttl
+      if (is_plelem_enabled(PLEL_BACK)) {
+        PLOT_DRAWELEMS(VO_XY,   main, grid_color, grid_color, xy,   GL_LINES); // plane: bottom
+        PLOT_DRAWELEMS(VO_LEFT, main, grid_color, grid_color, left, GL_LINES); // plane: left
+        PLOT_DRAWELEMS(VO_BACK, main, grid_color, grid_color, back, GL_LINES); // plane: back
+      }
+      if (is_plelem_enabled(PLEL_AXIS)) {
+        PLOT_DRAWELEMS(VO_RTT,  main, grid_color, grid_color, left, GL_LINES); // axis: rtt
+        PLOT_DRAWELEMS(VO_TIME, main, grid_color, grid_color, xy,   GL_LINES); // axis: time
+        PLOT_DRAWELEMS(VO_TTL,  main, grid_color, grid_color, xy,   GL_LINES); // axis: ttl
+      }
     } else if (pinger_state.gotdata) {
-      PLOT_DRAWELEMS(VO_SURF, main, grid_color, grid_color, xy,   GL_LINES);     // surface gridlines
-      PLOT_DRAWELEMS(VO_SURF, ext,  surf_colo1, surf_colo2, xy,   GL_TRIANGLES); // surface
+      if (is_plelem_enabled(PLEL_GRID))
+        PLOT_DRAWELEMS(VO_SURF, main, grid_color, grid_color, xy,   GL_LINES); // gridlines
+      PLOT_DRAWELEMS(VO_SURF,  ext, surf_colo1, surf_colo2, xy, GL_TRIANGLES); // surface
     }
     glFlush();
     glUseProgram(0);
@@ -521,36 +526,40 @@ static gboolean area_draw(GtkGLArea *area, GdkGLContext *context, t_plot_res *re
     int w = gtk_widget_get_width(GTK_WIDGET(area)), h = gtk_widget_get_height(GTK_WIDGET(area));
     GLfloat tcol = PLOT_TEXTCOL(text_val);
     vec4 text_color = { tcol, tcol, tcol, text_alpha };
+    gboolean with_axis = is_plelem_enabled(PLEL_AXIS);
     if (res->base) {
       { // left axis
         PLOT_AXIS_TITLE(plot_trans.rtt, ax[0][0], ax[0][1], Y_AXIS_TITLE, true, strlen(Y_AXIS_TITLE) / -2., 2);
-        GLfloat val = 0, step = series_datamax / PP_RTT_SCALE * 2 / PLANE_ZN;
-        for (int i = n - 1; i >= 0; i--, val += step) {
-          snprintf(buff, sizeof(buff), PP_RTT_AXIS_FMT, val);
-          plot_draw_text(res, buff, text_color, ax[i][0], ax[i][1], w, h, false, -2, -0.2);
-        }}
+        if (with_axis) {
+          GLfloat val = 0, step = series_datamax / PP_RTT_SCALE * 2 / PLANE_ZN;
+          for (int i = n - 1; i >= 0; i--, val += step) {
+            snprintf(buff, sizeof(buff), PP_RTT_AXIS_FMT, val);
+            plot_draw_text(res, buff, text_color, ax[i][0], ax[i][1], w, h, false, -2, -0.2);
+        }}}
       { // right axis
         PLOT_AXIS_TITLE(plot_trans.ttl, (ax[0][0] + ax[n - 1][0]) / 2, (ax[0][1] + ax[n - 1][1]) / 2,
           TTL_AXIS_TITLE, true, 5, -1);
-        int printed = -1;
-        GLfloat val = opts.min + 1;
-        GLfloat step = (tgtat - val) / (n - 1);
-        for (int i = 0; i < n; i++, val += step) {
-          if (i && (i != (n - 1)) && ((int)val == printed)) continue; else printed = val;
-          float r = fmodf(val, 1);
-          snprintf(buff, sizeof(buff), "%.0f%s", val, r ? ((r < 0.5) ? "-" : "+") : "");
-          plot_draw_text(res, buff, text_color, ax[i][0], ax[i][1], w, h, true, 1.5, -0.3);
-      }}
+        if (with_axis) {
+          int printed = -1;
+          GLfloat val = opts.min + 1;
+          GLfloat step = (tgtat - val) / (n - 1);
+          for (int i = 0; i < n; i++, val += step) {
+            if (i && (i != (n - 1)) && ((int)val == printed)) continue; else printed = val;
+            float r = fmodf(val, 1);
+            snprintf(buff, sizeof(buff), "%.0f%s", val, r ? ((r < 0.5) ? "-" : "+") : "");
+            plot_draw_text(res, buff, text_color, ax[i][0], ax[i][1], w, h, true, 1.5, -0.3);
+      }}}
     } else { // bottom axis
       PLOT_AXIS_TITLE(plot_trans.time, (ax[0][0] + ax[n - 1][0]) / 2, (ax[0][1] + ax[n - 1][1]) / 2,
         X_AXIS_TITLE, false, -4, -3.5);
-      if (!draw_plot_at || (pinger_state.run && !pinger_state.pause)) draw_plot_at = time(NULL) % 3600;
-      int dt = PLOT_TIME_RANGE * 2 / PLANE_YN;
-      for (int i = 0, t = draw_plot_at - PLOT_TIME_RANGE; i < n; i++, t += dt) {
-        LIMVAL(t, 3600);
-        snprintf(buff, sizeof(buff), PP_TIME_AXIS_FMT, t / 60, t % 60);
-        plot_draw_text(res, buff, text_color, ax[i][0], ax[i][1], w, h, false, 0.3, -1.5);
-    }}
+      if (with_axis) {
+        if (!draw_plot_at || (pinger_state.run && !pinger_state.pause)) draw_plot_at = time(NULL) % 3600;
+        int dt = PLOT_TIME_RANGE * 2 / PLANE_YN;
+        for (int i = 0, t = draw_plot_at - PLOT_TIME_RANGE; i < n; i++, t += dt) {
+          LIMVAL(t, 3600);
+          snprintf(buff, sizeof(buff), PP_TIME_AXIS_FMT, t / 60, t % 60);
+          plot_draw_text(res, buff, text_color, ax[i][0], ax[i][1], w, h, false, 0.3, -1.5);
+    }}}
     glUseProgram(0);
   }
   return true;
@@ -577,9 +586,9 @@ static GtkWidget* plot_init_glarea(t_plot_res *res) {
 //
 
 t_tab* plottab_init(GtkWidget* win) {
-  { int units = 1;
-    glGetIntegerv(GL_MAX_VERTEX_TEXTURE_IMAGE_UNITS, &units);
-    if (!units) { WARN_("No support for texture lookups in the vertex shader"); return NULL; }}
+  { int units = 1; glGetIntegerv(GL_MAX_VERTEX_TEXTURE_IMAGE_UNITS, &units);
+    if (!units) { WARN_("No support for texture lookups in the vertex shader"); return NULL; }
+    plottab_gradient(); }
   plot_transform_init();
   plot_glsl_reset(&plot_base_res, true);
   plot_glsl_reset(&plot_dyna_res, true);
@@ -626,4 +635,8 @@ void plottab_refresh(void) {
   if (GTK_IS_WIDGET(plot_base_area)) gtk_gl_area_queue_render(GTK_GL_AREA(plot_base_area));
   if (GTK_IS_WIDGET(plot_dyn_area)) gtk_gl_area_queue_render(GTK_GL_AREA(plot_dyn_area));
 }
+
+#define COL4_CMPNSET(dest, mm) { vec4 c = { opts.rcol.mm / 255., opts.gcol.mm / 255., opts.bcol.mm / 255., 1 }; \
+  if ((dest[0] != c[0]) || (dest[1] != c[1]) || (dest[2] != c[2])) glm_vec4_copy(c, dest); }
+void plottab_gradient(void) { COL4_CMPNSET(surf_colo1, min); COL4_CMPNSET(surf_colo2, max); }
 

@@ -8,5 +8,6 @@ void plottab_free(void);
 void plottab_restart(void);
 void plottab_update(void);
 void plottab_refresh(void);
+void plottab_gradient(void);
 
 #endif

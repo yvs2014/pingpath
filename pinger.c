@@ -49,6 +49,9 @@ t_opts opts = { .target = NULL, .dns = DEF_DNS, .whois = DEF_WHOIS, .cycles = DE
   .graph = GRAPH_TYPE_CURVE, .legend = DEF_LEGEND, .darktheme = DEF_DARK_MAIN, .darkgraph = DEF_DARK_GRAPH,
 #ifdef WITH_PLOT
   .plot = true, .darkplot = DEF_DARK_PLOT,
+  .rcol = {DEF_RCOL_FROM, DEF_RCOL_TO},
+  .gcol = {DEF_GCOL_FROM, DEF_GCOL_TO},
+  .bcol = {DEF_BCOL_FROM, DEF_BCOL_TO},
 #endif
 };
 
@@ -578,8 +581,8 @@ void pinger_set_error(const char *error) {
 
 gboolean pinger_within_range(int min, int max, int got) { // 1..MAXTTL
   if (min > max) return false;
-  if ((min < 1) || (min > MAXTTL)) return false;
-  if ((max < 1) || (max > MAXTTL)) return false;
+  if ((min < MINTTL) || (min > MAXTTL)) return false;
+  if ((max < MINTTL) || (max > MAXTTL)) return false;
   return ((min <= got) && (got <= max));
 }
 

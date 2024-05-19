@@ -10,13 +10,15 @@
 #define MIN_GTK_RUNTIME(major, minor, micro) (!gtk_check_version(major, minor, micro))
 
 #define APPNAME "pingpath"
-#define VERSION "0.3.3"
+#define VERSION "0.3.4"
 
 #define X_RES 1024
 #define Y_RES 720
 
-#define MAXTTL  30
 #define MAXADDR 10
+
+#define MINTTL  1
+#define MAXTTL  30
 
 #define REF_MAX         MAXTTL
 #define DNS_QUERY_MAX   MAXTTL
@@ -37,6 +39,9 @@
 #define STAT_PATT    "lsrmbwaj"
 #define GRLG_PATT    "dch"
 #define GREX_PATT    "lra"
+#ifdef WITH_PLOT
+#define PLEL_PATT    "bag"
+#endif
 
 #ifdef WITH_JSON
 #define RECAP_PATT   "tcjJ"
@@ -219,6 +224,9 @@
 #define OPT_LGND_HDR     "Graph legend"
 #define OPT_GRLG_HDR     "Legend fields"
 #define OPT_GREX_HDR     "Extra graph elements"
+#ifdef WITH_PLOT
+#define OPT_PLEL_HDR     "Plot elements"
+#endif
 
 #define OPT_LOGMAX_HDR   "LogTab rows"
 #define OPT_RECAP_HDR    "Summary"
@@ -269,6 +277,14 @@
 #define GREX_AREA_HDR    "JArea"
 #define GREX_AREA_HEADER "Jitter area"
 
+#ifdef WITH_PLOT
+#define PLEL_BACK_HDR    "Back"
+#define PLEL_AXIS_HDR    "Axis"
+#define PLEL_GRID_HDR    "Grid"
+
+#define OPT_COL_HDR      "Plot color"
+#endif
+
 #define TOGGLE_ON_HDR  "on"
 #define TOGGLE_OFF_HDR "off"
 
@@ -286,23 +302,36 @@
 #define GRAPH_RIGHT  40
 #define GRAPH_BOTTOM 40
 
+#define SPN_TTL_DELIM  "range"
+#define SPN_RCOL_DELIM "red"
+#define SPN_GCOL_DELIM "green"
+#define SPN_BCOL_DELIM "blue"
+
 enum { GLIB_STRV, GTK_STRV, CAIRO_STRV, PANGO_STRV };
 
 enum { TAB_PING_NDX, TAB_GRAPH_NDX,
 #ifdef WITH_PLOT
-TAB_PLOT_NDX,
+  TAB_PLOT_NDX,
 #endif
-TAB_LOG_NDX, TAB_NDX_MAX };
+  TAB_LOG_NDX, TAB_NDX_MAX };
 
-enum { ENT_EXP_NONE, ENT_EXP_INFO, ENT_EXP_STAT, ENT_EXP_LGFL, ENT_EXP_GREX, ENT_EXP_MAX };
+enum { ENT_EXP_INFO, ENT_EXP_STAT, ENT_EXP_LGFL, ENT_EXP_GREX,
+#ifdef WITH_PLOT
+  ENT_EXP_PLEL,
+#endif
+};
 
-enum { ENT_BOOL_NONE, ENT_BOOL_DNS, ENT_BOOL_HOST, ENT_BOOL_AS, ENT_BOOL_CC, ENT_BOOL_DESC, ENT_BOOL_RT,
+enum { ENT_BOOL_DNS, ENT_BOOL_HOST, ENT_BOOL_AS, ENT_BOOL_CC, ENT_BOOL_DESC, ENT_BOOL_RT,
   ENT_BOOL_LOSS, ENT_BOOL_SENT, ENT_BOOL_RECV, ENT_BOOL_LAST, ENT_BOOL_BEST, ENT_BOOL_WRST, ENT_BOOL_AVRG, ENT_BOOL_JTTR,
   ENT_BOOL_MN_DARK, ENT_BOOL_GR_DARK, ENT_BOOL_LGND,
 #ifdef WITH_PLOT
   ENT_BOOL_PL_DARK,
 #endif
-  ENT_BOOL_AVJT, ENT_BOOL_CCAS, ENT_BOOL_LGHN, ENT_BOOL_MEAN, ENT_BOOL_JRNG, ENT_BOOL_AREA, ENT_BOOL_MAX };
+  ENT_BOOL_AVJT, ENT_BOOL_CCAS, ENT_BOOL_LGHN, ENT_BOOL_MEAN, ENT_BOOL_JRNG, ENT_BOOL_AREA,
+#ifdef WITH_PLOT
+  ENT_BOOL_PLBK, ENT_BOOL_PLAX, ENT_BOOL_PLGR,
+#endif
+};
 
 enum { ELEM_NO, ELEM_HOST, ELEM_AS, ELEM_CC, ELEM_DESC, ELEM_RT, ELEM_FILL,
   ELEM_LOSS, ELEM_SENT, ELEM_RECV, ELEM_LAST, ELEM_BEST, ELEM_WRST, ELEM_AVRG, ELEM_JTTR, ELEM_MAX,
@@ -312,7 +341,15 @@ enum { GRLG_NO, GRLG_DASH, GRLG_AVJT, GRLG_CCAS, GRLG_LGHN, GREX_MEAN, GREX_JRNG
 #define GRLG_MIN GRLG_AVJT
 #define GRLG_MAX (GRLG_LGHN + 1)
 
-enum { INFO_CHAR, STAT_CHAR, GRLG_CHAR, GREX_CHAR };
+#ifdef WITH_PLOT
+enum { PLEL_BACK, PLEL_AXIS, PLEL_GRID, PLEL_MAX };
+#endif
+
+enum { INFO_CHAR, STAT_CHAR, GRLG_CHAR, GREX_CHAR,
+#ifdef WITH_PLOT
+  PLEL_CHAR,
+#endif
+};
 
 enum { WHOIS_AS_NDX, WHOIS_CC_NDX, WHOIS_DESC_NDX, WHOIS_RT_NDX, WHOIS_NDX_MAX };
 
@@ -424,6 +461,10 @@ extern t_tab* nb_tabs[TAB_NDX_MAX];
 extern t_type_elem pingelem[ELEM_MAX];
 extern t_type_elem graphelem[GRGR_MAX];
 extern t_elem_desc info_desc, stat_desc, grlg_desc, grex_desc;
+#ifdef WITH_PLOT
+extern t_type_elem plotelem[PLEL_MAX];
+extern t_elem_desc plel_desc;
+#endif
 
 extern const double colors[][3];
 extern const int n_colors;
@@ -438,6 +479,11 @@ int  pingelem_type2ndx(int type);
 int graphelem_type2ndx(int type);
 gboolean is_grelem_enabled(int type);
 void clean_elems(int type);
+#ifdef WITH_PLOT
+gboolean* plotelem_enabler(int type);
+int plotelem_type2ndx(int type);
+gboolean is_plelem_enabled(int type);
+#endif
 
 void tab_dependent(GtkWidget *tab);
 char* rtver(int ndx);

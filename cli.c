@@ -99,30 +99,30 @@ static gboolean cli_opt_g(const char *name, const char *value, t_opts *opts, GEr
 
 static gboolean cli_opt_t(const char *name, const char *value, t_opts *opts, GError **error) {
   if (!value || !opts) return false;
-  t_ent_spn *en = &ent_spn[ENT_SPN_TTL];
-  if (!en) return false;
   char *cp = g_strdup(value);
   gboolean okay = false;
   if (cp) {
-    int *pmin = en->aux[SPN_AUX_MIN].pval;
-    int *plim = en->aux[SPN_AUX_LIM].pval;
+    t_ent_ndx *enc = &ent_spn[ENT_SPN_TTL].c.en;
+    t_ent_spn_elem *elem = &ent_spn[ENT_SPN_TTL].list[ENT_SPN_TTL_SPIN];
+    int *pmin = elem->aux[SPN_AUX_MIN].pval;
+    int *plim = elem->aux[SPN_AUX_LIM].pval;
     int min = 0, lim = MAXTTL;
     t_minmax r = parser_range(cp, OPT_TTL_HDR);
     if ((r.min >= 0) && (r.max >= 0)) {
-      okay = pinger_within_range(1, r.max, r.min) && pinger_within_range(r.min, MAXTTL, r.max);
+      okay = pinger_within_range(MINTTL, r.max, r.min) && pinger_within_range(r.min, MAXTTL, r.max);
       if (okay) {
         min = r.min - 1; if (pmin) *pmin = min;
         lim = r.max; if (plim) *plim = lim;
       }
     } else if (r.min >= 0) {
-      okay = pinger_within_range(1, plim ? *plim : lim, r.min);
+      okay = pinger_within_range(MINTTL, plim ? *plim : lim, r.min);
       if (okay) { min = r.min - 1; if (pmin) *pmin = min; }
     } else if (r.max >= 0) {
       okay = pinger_within_range(pmin ? (*pmin + 1) : 1, MAXTTL, r.max);
       if (okay) { lim = r.max; if (plim) *plim = lim; }
     }
-    if (okay) g_message("%s: %d <=> %d", en->c.en.name, min + 1, lim);
-    else g_message("%s: no match with [%d,%d]", en->c.en.name, 1, MAXTTL);
+    if (okay) g_message("%s: %d <=> %d", enc->name, min + 1, lim);
+    else g_message("%s: no match with [%d,%d]", enc->name, MINTTL, MAXTTL);
     g_free(cp);
   } else FAILX(name, "g_sdtrdup()");
   if (!okay) CLI_SET_ERR;
@@ -131,8 +131,8 @@ static gboolean cli_opt_t(const char *name, const char *value, t_opts *opts, GEr
 
 static char* cli_opt_charelem(char *str, const char *patt, int ch) {
   if (str && patt && (ch >= 0)) for (const char *p = str; *p; p++) {
-    t_ent_bool *en = strchr(patt, *p) ? &ent_bool[char2ndx(ch, true, *p)] : NULL;
-    if (!en) continue;
+    int ndx = char2ndx(ch, true, *p); if (ndx < 0) continue;
+    t_ent_bool *en = strchr(patt, *p) ? &ent_bool[ndx] : NULL; if (!en) continue;
     gboolean *pb = EN_BOOLPTR(en);
     if (pb) { *pb = true; g_message("%s: %s: " TOGGLE_ON_HDR, en->prefix, en->en.name); }
   }
