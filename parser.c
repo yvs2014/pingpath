@@ -75,6 +75,9 @@ static t_parser_regex str_rx[] = {
   [OPT_TYPE_STAT]  = { .pattern = "^" NODUPCHARS "[" STAT_PATT "]*$" },
   [OPT_TYPE_GRLG]  = { .pattern = "^" NODUPCHARS "[" GRLG_PATT "]*$" },
   [OPT_TYPE_GREX]  = { .pattern = "^" NODUPCHARS "[" GREX_PATT "]*$" },
+#ifdef WITH_PLOT
+  [OPT_TYPE_PLEL]  = { .pattern = "^" NODUPCHARS "[" PLEL_PATT "]*$" },
+#endif
   [OPT_TYPE_RECAP] = { .pattern = "^[" RECAP_PATT "]$" },
 };
 
@@ -349,12 +352,11 @@ void parser_whois(char *buff, int sz, char* elem[]) {
   for (int i = 0; i < WHOIS_NDX_MAX; i++) if (!elem[i]) elem[i] = g_strdup(unkn_whois);
 }
 
-#define RANGE_DELIM ','
-t_minmax parser_range(char *range, const char *option) {
+t_minmax parser_range(char *range, char delim, const char *option) {
   t_minmax re = { .min = -1, .max = -1};
   if (range) {
     char *min = range;
-    char *max = split_pair(&min, RANGE_DELIM, LAZY);
+    char *max = split_pair(&min, delim, LAZY);
     int min_val = -1, max_val = -1;
     if (min && min[0]) {
       min = parser_valid_int(option, min);

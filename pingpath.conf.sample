@@ -19,7 +19,8 @@
 # stat = lsmbwaj
 
 [aux]
-## NOTE: 1st bit stands for dark main theme, 2nd - for dark graph theme, 3rd - for graph legend, 4th - for dark plot theme
+## NOTE: 1st bit stands for dark main theme, 2nd - for dark graph theme, 3rd - for graph legend,
+##       4th (pp3 only) - for dark plot theme
 # theme = 5 # i.e. "dark main" and "graph legend"
 
 ## NOTE: 0 - none, 1 - dot, 2 - line, 3 - curve
@@ -30,6 +31,13 @@
 
 ## NOTE: "dch" stands for "mean Delay, CCAS, Hopname"
 # legend = dch
+
+## NOTE: "bag" stands for "Backside, Axis, Grid" (pp3 only)
+# plot = bag
+
+## NOTE: syntax: tag=start_color:end_color
+##       tags are r/g/b, gradient range is from 0 to 255
+# color-gradient = r=77:77,g=230:77,b=77:230
 
 ## NOTE: not-interactive mode: t - text, c - csv, j - json, J - pretty json
 # recap =

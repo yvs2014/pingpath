@@ -34,11 +34,18 @@
 #define CNF_STR_GRAPH  "graph"
 #define CNF_STR_EXTRA  "extra"
 #define CNF_STR_LGND   "legend"
+#ifdef WITH_PLOT
+#define CNF_STR_PLEL   "plot"
+#define CNF_STR_PLCL   "color-gradient"
+#endif
 #define CNF_STR_RECAP  "recap"
 #define CNF_SECTION_AUX  "aux"
 
 enum { CNF_OPT_IPV, CNF_OPT_NODNS, CNF_OPT_CYCLES, CNF_OPT_IVAL, CNF_OPT_TTL, CNF_OPT_QOS, CNF_OPT_SIZE,
   CNF_OPT_PLOAD, CNF_OPT_INFO, CNF_OPT_STAT, CNF_OPT_THEME, CNF_OPT_GRAPH, CNF_OPT_EXTRA, CNF_OPT_LGND,
+#ifdef WITH_PLOT
+  CNF_OPT_PLEL, CNF_OPT_PLCL,
+#endif
   CNF_OPT_RECAP, CNF_OPT_MAX };
 
 typedef struct t_config_option {
@@ -106,28 +113,91 @@ static gboolean cli_opt_t(const char *name, const char *value, t_opts *opts, GEr
     t_ent_spn_elem *elem = &ent_spn[ENT_SPN_TTL].list[ENT_SPN_TTL_SPIN];
     int *pmin = elem->aux[SPN_AUX_MIN].pval;
     int *plim = elem->aux[SPN_AUX_LIM].pval;
-    int min = 0, lim = MAXTTL;
-    t_minmax r = parser_range(cp, OPT_TTL_HDR);
+    int min = opt_mm_ttl.min - 1, lim = opt_mm_ttl.max;
+    t_minmax r = parser_range(cp, TTL_RANGE_DELIM, OPT_TTL_HDR);
     if ((r.min >= 0) && (r.max >= 0)) {
-      okay = pinger_within_range(MINTTL, r.max, r.min) && pinger_within_range(r.min, MAXTTL, r.max);
+      okay = pinger_within_range(opt_mm_ttl.min, r.max, r.min) && pinger_within_range(r.min, opt_mm_ttl.max, r.max);
       if (okay) {
         min = r.min - 1; if (pmin) *pmin = min;
         lim = r.max; if (plim) *plim = lim;
       }
     } else if (r.min >= 0) {
-      okay = pinger_within_range(MINTTL, plim ? *plim : lim, r.min);
+      okay = pinger_within_range(opt_mm_ttl.min, plim ? *plim : lim, r.min);
       if (okay) { min = r.min - 1; if (pmin) *pmin = min; }
     } else if (r.max >= 0) {
-      okay = pinger_within_range(pmin ? (*pmin + 1) : 1, MAXTTL, r.max);
+      okay = pinger_within_range(pmin ? (*pmin + 1) : opt_mm_ttl.min, opt_mm_ttl.max, r.max);
       if (okay) { lim = r.max; if (plim) *plim = lim; }
     }
     if (okay) g_message("%s: %d <=> %d", enc->name, min + 1, lim);
-    else g_message("%s: no match with [%d,%d]", enc->name, MINTTL, MAXTTL);
+    else g_message("%s: no match with [%d,%d]", enc->name, opt_mm_ttl.min, opt_mm_ttl.max);
     g_free(cp);
   } else FAILX(name, "g_sdtrdup()");
   if (!okay) CLI_SET_ERR;
   return okay;
 }
+
+#ifdef WITH_PLOT
+static gboolean cli_opt_C_pair(const char *value, char tag, const char *name, t_opts *opts) {
+  gboolean okay = false;
+  if (value && opts) {
+    char *cp = g_strdup(value);
+    if (cp) {
+      int ndx = -1;
+      t_minmax *mm = &opt_mm_col;
+      switch (tag) {
+        case 'r': ndx = ENT_SPN_COL_R; mm = &opts->rcol; break;
+        case 'g': ndx = ENT_SPN_COL_G; mm = &opts->gcol; break;
+        case 'b': ndx = ENT_SPN_COL_B; mm = &opts->bcol; break;
+      }
+      if ((ndx >= 0) && mm) {
+        t_ent_ndx *enc = &ent_spn[ENT_SPN_COL].c.en;
+        t_ent_spn_elem *elem = &ent_spn[ENT_SPN_COL].list[ndx];
+        int *pfrom = elem->aux[SPN_AUX_MIN].pval;
+        int *pto = elem->aux[SPN_AUX_LIM].pval;
+        int min = mm->min, lim = mm->max;
+        t_minmax r = parser_range(cp, COL_GRAD_DELIM, elem->title);
+        if ((r.min >= 0) && (r.max >= 0)) {
+          okay = PLOT_COL_OKAY(opt_mm_col, r.min) && PLOT_COL_OKAY(opt_mm_col, r.max);
+          if (okay) {
+            min = r.min; if (pfrom) *pfrom = min;
+            lim = r.max; if (pto)   *pto   = lim;
+          }
+        } else if (r.min >= 0) {
+          okay = PLOT_COL_OKAY(opt_mm_col, r.min);
+          if (okay) { min = r.min; if (pfrom) *pfrom = min; }
+        } else if (r.max >= 0) {
+          okay = PLOT_COL_OKAY(opt_mm_col, r.max);
+          if (okay) { lim = r.max; if (pto)   *pto   = lim; }
+        }
+        if (okay) g_message("%s: from %d (0x%02x) to %d (0x%02x)", elem->title, min, min, lim, lim);
+        else g_message("%s: no match with [%d,%d]", enc->name, opt_mm_col.min, opt_mm_col.max);
+      } else g_message("%s: wrong tag: '%c'", name, tag);
+      g_free(cp);
+    } else FAILX(name, "g_sdtrdup()");
+  }
+  return okay;
+}
+
+static gboolean cli_opt_C(const char *name, const char *value, t_opts *opts, GError **error) {
+  gboolean okay = false;
+  if (value && opts) { // tag=color1:color2
+    char **arr = g_strsplit(value, ",", 3); // rgb pairs
+    if (arr) for (char **s = arr; *s; s++) {
+      okay = false;
+      char **pair = g_strsplit(*s, "=", 2); // tag=pair
+      if ((pair[0] && pair[0][0]) && (pair[1] && pair[1][0])) {
+        if (pair[0][1]) g_message("%s: no char tag: %s", name, pair[0]);
+        else okay = cli_opt_C_pair(pair[1], pair[0][0], name, opts);
+      } else g_message("%s: wrong pair: %s", name, *s);
+      g_strfreev(pair);
+      if (!okay) break;
+    } else FAILX(name, "g_strsplit()");
+    g_strfreev(arr);
+    if (!okay) CLI_SET_ERR;
+  }
+  return okay;
+}
+#endif
 
 static char* cli_opt_charelem(char *str, const char *patt, int ch) {
   if (str && patt && (ch >= 0)) for (const char *p = str; *p; p++) {
@@ -206,6 +276,10 @@ static gboolean cli_opt_elem(const char *name, const char *value, GError **error
       str = cli_char_opts(ENT_EXP_LGFL, value, cat, &grlg_desc, GRGR_MAX, OPT_GRLG_HDR);    break;
     case OPT_TYPE_GREX:
       str = cli_char_opts(ENT_EXP_GREX, value, cat, &grex_desc, GRGR_MAX, OPT_GREX_HDR);    break;
+#ifdef WITH_PLOT
+    case OPT_TYPE_PLEL:
+      str = cli_char_opts(ENT_EXP_PLEL, value, cat, &plot_desc, PLEL_MAX, OPT_PLOT_HDR);    break;
+#endif
     case OPT_TYPE_RECAP: {
       str = parser_str(value, OPT_RECAP_HDR, OPT_TYPE_RECAP);
       if (str) { opts.recap = str[0]; g_message("Summary: %s", RECAP_TYPE_EXPAND(opts.recap)); }
@@ -234,6 +308,12 @@ static gboolean cli_opt_L(const char *name, const char *value, t_opts *opts, GEr
 static gboolean cli_opt_G(const char *name, const char *value, t_opts *opts, GError **error) {
   return cli_opt_elem(name, value, error, OPT_TYPE_GREX);
 }
+
+#ifdef WITH_PLOT
+static gboolean cli_opt_P(const char *name, const char *value, t_opts *opts, GError **error) {
+  return cli_opt_elem(name, value, error, OPT_TYPE_PLEL);
+}
+#endif
 
 static gboolean cli_opt_T(const char *name, const char *value, t_opts *opts, GError **error) {
   if (!opts) return false;
@@ -293,6 +373,10 @@ static gboolean cli_opt_f(const char *name, const char *value, t_opts *opts, GEr
       { .opt = CNF_STR_GRAPH,  .type = CNF_OPT_GRAPH,  .data = cli_opt_g },
       { .opt = CNF_STR_EXTRA,  .type = CNF_OPT_EXTRA,  .data = cli_opt_G },
       { .opt = CNF_STR_LGND,   .type = CNF_OPT_LGND,   .data = cli_opt_L },
+#ifdef WITH_PLOT
+      { .opt = CNF_STR_PLEL,   .type = CNF_OPT_PLEL,   .data = cli_opt_P },
+      { .opt = CNF_STR_PLCL,   .type = CNF_OPT_PLCL,   .data = cli_opt_C },
+#endif
       { .opt = CNF_STR_RECAP,  .type = CNF_OPT_RECAP,  .data = cli_opt_r },
       {}
     }},
@@ -346,6 +430,10 @@ static gboolean cli_opt_f(const char *name, const char *value, t_opts *opts, GEr
         case CNF_OPT_GRAPH:
         case CNF_OPT_EXTRA:
         case CNF_OPT_LGND:
+#ifdef WITH_PLOT
+        case CNF_OPT_PLEL:
+        case CNF_OPT_PLCL:
+#endif
         case CNF_OPT_RECAP: if (optval) {
           if (option->data && !(((GOptionArgFunc)option->data)(optname, optval, opts, error))) return false;
         } break;
@@ -400,6 +488,10 @@ gboolean cli_init(int *pargc, char ***pargv) {
     CLI_OPT_CALL('g', CNF_STR_GRAPH,  cli_opt_g, OPT_GRAPH_HDR " to draw", "<type>"),
     CLI_OPT_CALL('G', CNF_STR_EXTRA,  cli_opt_G, OPT_GREX_HDR, "<elems>"),
     CLI_OPT_CALL('L', CNF_STR_LGND,   cli_opt_L, OPT_GRLG_HDR, "<fields>"),
+#ifdef WITH_PLOT
+    CLI_OPT_CALL('P', CNF_STR_PLEL,   cli_opt_P, OPT_PLOT_HDR, "<elems>"),
+    CLI_OPT_CALL('C', CNF_STR_PLCL,   cli_opt_C, OPT_GRAD_HDR, "<tag:from,to>"),
+#endif
     CLI_OPT_NONE('R', "run",          &autostart, "Autostart from CLI (if target is set)"),
     CLI_OPT_CALL('r', CNF_STR_RECAP,  cli_opt_r, OPT_RECAP_HDR " at exit (" RECAP_TYPE_MESG ")", "[" RECAP_PATT "]"),
     CLI_OPT_INTC('v', "verbose",      &verbose, "Messaging to stdout", "<level>"),

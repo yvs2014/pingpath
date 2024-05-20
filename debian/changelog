@@ -1,3 +1,11 @@
+pingpath (0.3.5) mantic noble; urgency=low
+
+  * plot: add customization options to config and CLI too
+
+  * update manual and help
+
+ -- yvs <VSYakovetsky@gmail.com>  Tue, 21 May 2024 02:47:18 +0300
+
 pingpath (0.3.4) mantic noble; urgency=low
 
   * plot: add customization options

@@ -9,7 +9,7 @@
 .Op Fl cfgGhiILnpqrRsStTv46
 .Sy [ TARGET ]
 .Nm pingpath3
-.Op Fl cfgGhiILnpqrRsStTv46
+.Op Fl cCfgGhiILnpPqrRsStTv46
 .Sy [ TARGET ]
 .Sh DESCRIPTION
 Network diagnostic tool based on parsing system
@@ -149,17 +149,21 @@ Toggle dark/light themes according to
 .Ar bits :
 .Bl -tag -offset Ds -compact
 .It Cm 1st
-Main theme (0 - light, 1 - dark)
+Main theme
 .It Cm 2nd
-Graph theme (0 - light, 1 - dark)
+Graph theme
 .It Cm 3rd
 Graphs with legend
 .It Cm 4th
-3D-plot theme (0 - light, 1 - dark)
+3D-plot theme (note:
+.Sy pp3
+only)
 .El
 Default
 .Ar 5
 (dark main, light graph, graph legend, light plot)
+.br
+Note: bit value 1 corresponds to `dark' or `on'
 .El
 .Bl -tag -width Ds
 .It Fl g, Fl -graph Ar TYPE
@@ -209,17 +213,51 @@ Default
 .Ar all
 .El
 .Bl -tag -width Ds
+.It Fl P, Fl -plot Ar KEYS
+Which parts of 3D-plot to display (note:
+.Sy pp3
+only)
+.Bl -tag -offset Ds -compact
+.It Cm b
+Backside with grid
+.It Cm a
+Axes with marks
+.It Cm g
+Grid on surface
+.El
+Default
+.Ar all
+.El
+.Bl -tag -width Ds
+.It Fl C, Fl -color-gradient Ar PAIRS
+3D-plot color gradient coded within start:end pairs and tagged with RGB colors (note:
+.Sy pp3
+only)
+.Bl -tag -offset Ds -compact
+.It Cm r
+Red
+.It Cm g
+Green
+.It Cm b
+Blue
+.El
+Default
+.Ar r=77:77,g=230:77,b=77:230
+.br
+Note: color values are in range from 0 to 255
+.El
+.Bl -tag -width Ds
 .It Fl r, Fl -recap Ar TYPE
 Run non-interactively and print summary at exit:
 .Bl -tag -offset Ds -compact
 .It Cm t
-simple text
+Simple text
 .It Cm c
 CSV delimited with a semicolon
 .It Cm J
-pretty printed JSON
+Pretty printed JSON
 .It Cm j
-more numeric JSON
+More numeric JSON
 .El
 Default
 .Ar none

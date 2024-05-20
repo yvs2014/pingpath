@@ -109,11 +109,19 @@ static int char_ndxs[][MAXCHARS_IN_PATTERN][2] = { // max pattern is 8 chars
     {ENT_BOOL_JRNG, GREX_JRNG}, // r
     {ENT_BOOL_AREA, GREX_AREA}, // a
   },
+#ifdef WITH_PLOT
+  [PLEL_CHAR] = {
+    {ENT_BOOL_PLBK, PLEL_BACK}, // b
+    {ENT_BOOL_PLAX, PLEL_AXIS}, // a
+    {ENT_BOOL_PLGR, PLEL_GRID}, // g
+  },
+#endif
 };
 
 int char2ndx(int cat, gboolean ent, char c) {
+  static int cat_no = G_N_ELEMENTS(char_ndxs);
   int n = -1;
-  switch (cat) {
+  if ((cat >= 0) && (cat < cat_no)) switch (cat) {
     case INFO_CHAR:
     case STAT_CHAR:
     case GRLG_CHAR:
@@ -187,7 +195,7 @@ t_elem_desc grex_desc = { .elems = graphelem, .mm = { .min = GREX_MEAN, .max = G
   .cat = GREX_CHAR, .patt = GREX_PATT, .t2n = graphelem_type2ndx, .t2e = graphelem_type2ent };
 
 #ifdef WITH_PLOT
-t_elem_desc plel_desc = { .elems = plotelem, .mm = { .min = PLEL_BACK, .max = PLEL_GRID },
+t_elem_desc plot_desc = { .elems = plotelem, .mm = { .min = PLEL_BACK, .max = PLEL_GRID },
   .cat = PLEL_CHAR, .patt = PLEL_PATT, .t2n = plotelem_type2ndx, .t2e = plotelem_type2ent };
 #endif
 
@@ -232,6 +240,9 @@ void clean_elems(int type) {
     case ENT_EXP_STAT: CLEAN_ELEM_LOOP(pingelem,  ELEM_LOSS, ELEM_JTTR); break;
     case ENT_EXP_LGFL: CLEAN_ELEM_LOOP(graphelem, GRLG_AVJT, GRLG_LGHN); break;
     case ENT_EXP_GREX: CLEAN_ELEM_LOOP(graphelem, GREX_MEAN, GREX_AREA); break;
+#ifdef WITH_PLOT
+    case ENT_EXP_PLEL: CLEAN_ELEM_LOOP(plotelem,  PLEL_BACK, PLEL_GRID); break;
+#endif
   }
 }
 

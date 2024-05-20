@@ -1,3 +1,7 @@
+## 0.3.5
+- plot: add customization options to config and CLI too
+- update manual and help
+
 ## 0.3.4
 - plot: add customization options
 

@@ -71,6 +71,12 @@ static const char *help_message =
     SPANSUB(GRLG_AVJT_HDR  " " GRLG_CCAS_HDR " " GRLG_LGHN_HDR)
   SPANOPT(OPT_GREX_HDR,    "to display:")
     SPANSUB(GREX_MEAN_HDR  " " GREX_JRNG_HDR " " GREX_AREA_HDR)
+#ifdef WITH_PLOT
+  SPANOPT(OPT_PLOT_HDR,    "to display:")
+    SPANSUB(PLEL_BACK_HDR  " " PLEL_AXIS_HDR " " PLEL_GRID_HDR)
+  SPANOPT(OPT_GRAD_HDR,    "to color 3D-surface:")
+    SPANSUB("Start-end pairs of RGB colors")
+#endif
   SPANOPT(OPT_LOGMAX_HDR,  "Max rows in log tab [" G_STRINGIFY(DEF_LOGMAX) "]")
   "\n"
   SPANHDR("CLI")

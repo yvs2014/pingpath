@@ -10,7 +10,7 @@
 #define MIN_GTK_RUNTIME(major, minor, micro) (!gtk_check_version(major, minor, micro))
 
 #define APPNAME "pingpath"
-#define VERSION "0.3.4"
+#define VERSION "0.3.5"
 
 #define X_RES 1024
 #define Y_RES 720
@@ -225,7 +225,8 @@
 #define OPT_GRLG_HDR     "Legend fields"
 #define OPT_GREX_HDR     "Extra graph elements"
 #ifdef WITH_PLOT
-#define OPT_PLEL_HDR     "Plot elements"
+#define OPT_PLOT_HDR     "Plot elements"
+#define OPT_GRAD_HDR     "Plot gradient"
 #endif
 
 #define OPT_LOGMAX_HDR   "LogTab rows"
@@ -278,11 +279,9 @@
 #define GREX_AREA_HEADER "Jitter area"
 
 #ifdef WITH_PLOT
-#define PLEL_BACK_HDR    "Back"
+#define PLEL_BACK_HDR    "Backside"
 #define PLEL_AXIS_HDR    "Axis"
 #define PLEL_GRID_HDR    "Grid"
-
-#define OPT_COL_HDR      "Plot color"
 #endif
 
 #define TOGGLE_ON_HDR  "on"
@@ -463,7 +462,7 @@ extern t_type_elem graphelem[GRGR_MAX];
 extern t_elem_desc info_desc, stat_desc, grlg_desc, grex_desc;
 #ifdef WITH_PLOT
 extern t_type_elem plotelem[PLEL_MAX];
-extern t_elem_desc plel_desc;
+extern t_elem_desc plot_desc;
 #endif
 
 extern const double colors[][3];

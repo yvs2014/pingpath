@@ -70,11 +70,11 @@ t_ent_bool ent_bool[] = {
     .valfn = graphelem_enabler, .valtype = GREX_AREA, .prefix = OPT_GREX_HDR },
 #ifdef WITH_PLOT
   [ENT_BOOL_PLBK] = { .en = { .type = ENT_BOOL_PLBK, .name = PLEL_BACK_HDR },
-    .valfn = plotelem_enabler, .valtype = PLEL_BACK, .prefix = OPT_PLEL_HDR },
+    .valfn = plotelem_enabler, .valtype = PLEL_BACK, .prefix = OPT_PLOT_HDR },
   [ENT_BOOL_PLAX] = { .en = { .type = ENT_BOOL_PLAX, .name = PLEL_AXIS_HDR },
-    .valfn = plotelem_enabler, .valtype = PLEL_AXIS, .prefix = OPT_PLEL_HDR },
+    .valfn = plotelem_enabler, .valtype = PLEL_AXIS, .prefix = OPT_PLOT_HDR },
   [ENT_BOOL_PLGR] = { .en = { .type = ENT_BOOL_PLGR, .name = PLEL_GRID_HDR },
-    .valfn = plotelem_enabler, .valtype = PLEL_GRID, .prefix = OPT_PLEL_HDR },
+    .valfn = plotelem_enabler, .valtype = PLEL_GRID, .prefix = OPT_PLOT_HDR },
 #endif
 };
 
@@ -105,13 +105,13 @@ static t_ent_exp ent_exp[] = {
   [ENT_EXP_LGFL] = { .c = {.en = {.type = ENT_EXP_LGFL, .name = OPT_GRLG_HDR }},    .desc = &grlg_desc },
   [ENT_EXP_GREX] = { .c = {.en = {.type = ENT_EXP_GREX, .name = OPT_GREX_HDR }},    .desc = &grex_desc },
 #ifdef WITH_PLOT
-  [ENT_EXP_PLEL] = { .c = {.en = {.type = ENT_EXP_PLEL, .name = OPT_PLEL_HDR }},    .desc = &plel_desc },
+  [ENT_EXP_PLEL] = { .c = {.en = {.type = ENT_EXP_PLEL, .name = OPT_PLOT_HDR }},    .desc = &plot_desc },
 #endif
 };
 
 static void minttl_cb(GtkWidget*, t_ent_spn_elem*);
 static void maxttl_cb(GtkWidget*, t_ent_spn_elem*);
-static t_minmax opt_mm_ttl = {MINTTL, MAXTTL};
+t_minmax opt_mm_ttl = {MINTTL, MAXTTL};
 
 #ifdef WITH_PLOT
 #define MINCOLVAL 0
@@ -122,7 +122,7 @@ static t_minmax opt_mm_ttl = {MINTTL, MAXTTL};
 #define STR_FROM  "start with"
 #define STR_TO    "end with"
 static void colgrad_cb(GtkWidget*, t_ent_spn_aux*);
-static t_minmax opt_mm_col = {MINCOLVAL, MAXCOLVAL};
+t_minmax opt_mm_col = {MINCOLVAL, MAXCOLVAL};
 #endif
 
 t_ent_spn ent_spn[] = {
@@ -132,7 +132,7 @@ t_ent_spn ent_spn[] = {
       [SPN_AUX_LIM] = {.cb = G_CALLBACK(maxttl_cb), .pval = &opts.lim, .def = MAXTTL, .mm = &opt_mm_ttl}
   }}}},
 #ifdef WITH_PLOT
-  [ENT_SPN_COL] = { .c = {.en = {.type = ENT_SPN_COL, .name = OPT_COL_HDR }, .atrun = true}, .list = {
+  [ENT_SPN_COL] = { .c = {.en = {.type = ENT_SPN_COL, .name = OPT_GRAD_HDR }, .atrun = true}, .list = {
     [ENT_SPN_COL_R] = { .title = GRAD_COLR, .delim = SPN_RCOL_DELIM, .asis = true, .aux = {
       [SPN_AUX_MIN] = {.cb = G_CALLBACK(colgrad_cb), .pval = &opts.rcol.min, .def = DEF_RCOL_FROM,
         .mm = &opt_mm_col, .prfx = GRAD_COLR, .sfx = STR_FROM },
@@ -387,7 +387,7 @@ static void colgrad_cb(GtkWidget *spin, t_ent_spn_aux *aux) {
   t_minmax *mm = aux->mm ? aux->mm : &opt_mm_col;
   if ((mm->min <= got) && (got <= mm->max)) {
     *pval = got;
-    notifier_inform("%s: %s 0x%02x", aux->prfx, aux->sfx, got);
+    notifier_inform("%s: %s %d (0x%02x)", aux->prfx, aux->sfx, got, got);
     plottab_gradient();
   } else WARN("out-of-range[%d,%d]: %d", mm->min, mm->max, got);
 }

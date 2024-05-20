@@ -86,4 +86,10 @@ extern t_ent_bool ent_bool[];
 extern t_ent_str  ent_str[];
 extern t_ent_spn  ent_spn[];
 
+extern t_minmax opt_mm_ttl;
+#ifdef WITH_PLOT
+extern t_minmax opt_mm_col;
+#define PLOT_COL_OKAY(mm, val) (((mm).min <= val) && (val <= (mm).max))
+#endif
+
 #endif
