@@ -6,6 +6,9 @@
 #include "ui/style.h"
 #include "ui/notifier.h"
 
+#define GR_XAXIS_TITLE "Time"
+#define GR_YAXIS_TITLE "Delay [msec]"
+
 #define CELL_SIZE 50
 #define TICK_SIZE 6
 #define DOT_SIZE  5
@@ -245,10 +248,10 @@ static void gr_draw_grid(GtkDrawingArea *area, cairo_t* cr, int w, int h, void *
   if (grid_pango) {
     double ts = TICK_SIZE * 2;
     cairo_move_to(cr, grm.x1 + ts, grm.y1 - 0.5 * fs_size);
-    pango_layout_set_text(grid_pango, X_AXIS_TITLE, -1);
+    pango_layout_set_text(grid_pango, GR_XAXIS_TITLE, -1);
     pango_cairo_show_layout(cr, grid_pango);
     cairo_move_to(cr, grm.x0 / 4., grm.y0 - (ts + 1.5 * fs_size));
-    pango_layout_set_text(grid_pango, Y_AXIS_TITLE, -1);
+    pango_layout_set_text(grid_pango, GR_YAXIS_TITLE, -1);
     pango_cairo_show_layout(cr, grid_pango);
   }
 }
@@ -266,10 +269,10 @@ static void gr_draw_marks(GtkDrawingArea *area, cairo_t* cr, int w, int h, void 
   if (mark_pango) {
     if (grm.nh > 0) {
       GR_TEXTCOL;
-      char buff[16];
+      char buff[PP_MARK_MAXLEN];
       double dy = series_datamax / PP_RTT_SCALE / grm.nh;
       for (int j = grm.nh, y = grm.y0 - 0.6 * fs_size; j >= 0; j--, y += CELL_SIZE) {
-        g_snprintf(buff, sizeof(buff), PP_RTT_AXIS_FMT, dy * j);
+        double val = dy * j; snprintf(buff, sizeof(buff), PP_FMT10(val), val);
         cairo_move_to(cr, 0, y);
         pango_layout_set_text(mark_pango, buff, -1);
         pango_cairo_show_layout(cr, mark_pango);
@@ -330,11 +333,10 @@ static void gr_draw_graph(GtkDrawingArea *area, cairo_t* cr, int w, int h, void 
     GR_TEXTCOL;
     if (!draw_graph_at || (pinger_state.run && !pinger_state.pause)) draw_graph_at = time(NULL) % 3600;
     int dt = SUBCELLS; if (opts.timeout > 0) dt *= opts.timeout;
-    char buff[8];
+    char buff[PP_MARK_MAXLEN];
     for (int i = 0, x = grm.x1 - graph_tsz / 2, y = grm.y1 + fs_size, t = draw_graph_at;
         i <= grm.nw; i++, x -= CELL_SIZE, t -= dt) if ((i + 1) % X_FREQ) {
-      LIMVAL(t, 3600);
-      g_snprintf(buff, sizeof(buff), PP_TIME_AXIS_FMT, t / 60, t % 60);
+      LIMVAL(t, 3600); snprintf(buff, sizeof(buff), PP_TIME_FMT, t / 60, t % 60);
       cairo_move_to(cr, x, y);
       pango_layout_set_text(graph_pango, buff, -1);
       pango_cairo_show_layout(cr, graph_pango);

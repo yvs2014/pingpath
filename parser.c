@@ -69,7 +69,7 @@ static t_response_regex regexes[] = {
 #define NODUPCHARS "(?!.*(.).*\\1)"
 
 static t_parser_regex str_rx[] = {
-  [OPT_TYPE_INT]   = { .pattern = "^\\d+$" },
+  [OPT_TYPE_INT]   = { .pattern = "^[\\-\\+]*(\\d+|0x[\\da-fA-F]+|0[0-7]+)$" },
   [OPT_TYPE_PAD]   = { .pattern = "^[\\da-fA-F]{1,32}$" },
   [OPT_TYPE_INFO]  = { .pattern = "^" NODUPCHARS "[" INFO_PATT "]*$" },
   [OPT_TYPE_STAT]  = { .pattern = "^" NODUPCHARS "[" STAT_PATT "]*$" },
@@ -270,26 +270,16 @@ void parser_parse(int at, char *input) {
   }
 }
 
-int parser_int(const char *str, int type, const char *option, t_minmax mm) {
-  char *val = parser_valid_int(option, str);
-  if (!val) return -1;
-  int n = atol(val); g_free(val);
-  int min = (mm.min > 0) ? mm.min : 0;
-  int max = (mm.max < INT_MAX) ? mm.max : INT_MAX;
-  if ((n < min) || (n > max)) PARSER_MESG("%s: out of range[%d,%d]", option, min, max)
-  else switch (type) {
-    case ENT_STR_CYCLES:
-    case ENT_STR_IVAL:
-    case ENT_STR_LOGMAX:
-    case ENT_STR_QOS:
-    case ENT_STR_PSIZE:
-    case ENT_STR_GRAPH:
-    case ENT_STR_GEXTRA:
-    case ENT_STR_LEGEND:
-    case ENT_STR_THEME:
-      return n;
-  }
-  return -1;
+gboolean parser_mmint(const char *str, const char *option, t_minmax mm, int *re) {
+  gboolean okay = false;
+  if (str) {
+    char *val = parser_valid_int(option, str);
+    if (val) {
+      errno = 0; int n = strtol(val, NULL, 0); okay = !errno; errno = 0; g_free(val);
+      if (okay && MM_OKAY(mm, n)) { okay = true; if (re) *re = n; }
+      else PARSER_MESG("%s: out of range[%d,%d]", option, mm.min, mm.max)
+  }}
+  return okay;
 }
 
 #define PARSE_MAX_CHARS 128
@@ -352,24 +342,43 @@ void parser_whois(char *buff, int sz, char* elem[]) {
   for (int i = 0; i < WHOIS_NDX_MAX; i++) if (!elem[i]) elem[i] = g_strdup(unkn_whois);
 }
 
-t_minmax parser_range(char *range, char delim, const char *option) {
-  t_minmax re = { .min = -1, .max = -1};
-  if (range) {
-    char *min = range;
-    char *max = split_pair(&min, delim, LAZY);
-    int min_val = -1, max_val = -1;
-    if (min && min[0]) {
-      min = parser_valid_int(option, min);
-      if (min && min[0]) min_val = atoi(min);
-      g_free(min); if (min_val < 0) return re;
-    }
-    if (max && max[0]) {
-      max = parser_valid_int(option, max);
-      if (max && max[0]) max_val = atoi(max);
-      g_free(max); if (max_val < 0) return re;
-    }
-    re.min = min_val; re.max = max_val;
+static gboolean parser_valint(const char* inp, int* outp, const char *option) {
+  gboolean okay = true;
+  if (inp && inp[0]) {
+    char *valid = parser_valid_int(option, inp);
+    if (valid) {
+      errno = 0; *outp = strtol(valid, NULL, 0);
+      okay &= !errno; errno = 0;
+      g_free(valid);
+    } else okay = false;
   }
-  return re;
+  return okay;
 }
+
+gboolean parser_range(char *range, char delim, const char *option, t_minmax *re) {
+  if (!range || !re) return false;
+  char *min = range;
+  char *max = split_pair(&min, delim, LAZY);
+  t_minmax val = { INT_MIN, INT_MIN };
+  gboolean okay = true;
+  okay &= parser_valint(min, &val.min, option);
+  okay &= parser_valint(max, &val.max, option);
+  if (okay) *re = val;
+  return okay;
+}
+
+#ifdef WITH_PLOT
+gboolean parser_ivec4(char *range, char delim, const char *option, ivec4_t re) {
+  if (!range) return false;
+  const char delims[] = { delim, 0 };
+  char **abcs = g_strsplit(range, delims, 4);
+  ivec4_t val = { INT_MIN, INT_MIN, INT_MIN, INT_MIN };
+  gboolean okay = true;
+  if (abcs) for (int i = 0; abcs[i] && (i < G_N_ELEMENTS(val)); i++)
+    okay &= parser_valint(abcs[i], &val[i], option);
+  g_strfreev(abcs);
+  if (okay) { re[0] = val[0]; re[1] = val[1]; re[2] = val[2]; re[3] = val[3]; }
+  return okay;
+}
+#endif
 

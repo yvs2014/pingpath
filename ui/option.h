@@ -6,17 +6,18 @@
 #define ENT_BUFF_SIZE 64
 #define SUBLIST_MAX   8
 
-enum { SPN_AUX_MIN, SPN_AUX_LIM };
+#ifdef WITH_PLOT
+#define MIN_VIEW_ANGLE -180
+#define MAX_VIEW_ANGLE  180
+#endif
+
+enum { MINIMAX_SPIN, ROTOR_COLUMN };
 
 enum { ENT_SPN_TTL,
 #ifdef WITH_PLOT
-  ENT_SPN_COL,
+  ENT_SPN_COLOR, ENT_SPN_ROTOR,
 #endif
 };
-enum { ENT_SPN_TTL_SPIN };
-#ifdef WITH_PLOT
-enum { ENT_SPN_COL_R, ENT_SPN_COL_G, ENT_SPN_COL_B };
-#endif
 
 enum { ENT_RAD_IPV, ENT_RAD_GRAPH };
 
@@ -63,13 +64,15 @@ typedef struct ent_spn_aux {
   int def;   // not-indexed default: 1 .. lim
   t_minmax *mm;
   const char *prfx, *sfx;
-  GtkWidget *spin;
+  GtkSpinButton *spin;
+  int *step;
 } t_ent_spn_aux;
 
 typedef struct ent_spn_elem {
   const char *title, *delim;
-  gboolean asis;
-  t_ent_spn_aux aux[2];
+  gboolean bond;
+  int kind;
+  t_ent_spn_aux aux[4];
 } t_ent_spn_elem;
 
 typedef struct ent_spn {
@@ -80,7 +83,8 @@ typedef struct ent_spn {
 gboolean option_init(GtkWidget* bar);
 void option_update(void);
 void option_legend(void);
-gboolean option_update_pingmenu(void);
+void option_up_menu_main(void);
+void option_up_menu_ext(void);
 
 extern t_ent_bool ent_bool[];
 extern t_ent_str  ent_str[];
@@ -89,7 +93,8 @@ extern t_ent_spn  ent_spn[];
 extern t_minmax opt_mm_ttl;
 #ifdef WITH_PLOT
 extern t_minmax opt_mm_col;
-#define PLOT_COL_OKAY(mm, val) (((mm).min <= val) && (val <= (mm).max))
+extern t_minmax opt_mm_rot;
+extern t_minmax opt_mm_ang;
 #endif
 
 #endif

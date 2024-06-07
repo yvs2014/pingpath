@@ -17,12 +17,11 @@
 
 #define APPFLAGS G_APPLICATION_NON_UNIQUE
 
-static GtkWidget *graphtab_ref;
-#ifdef WITH_PLOT
-static GtkWidget *tab3d_ref;
-#endif
+#define APPQUIT(fmt, ...) { WARN("init " fmt " failed", __VA_ARGS__); \
+  g_application_quit(G_APPLICATION(app)); exit_code = EXIT_FAILURE; return; }
 
 static int exit_code = EXIT_SUCCESS;
+static GtkWidget *currtabref, *tabrefs[TAB_NDX_MAX];
 
 static void on_win_destroy(GtkWidget *widget, void *unused) { atquit = true; }
 
@@ -38,9 +37,6 @@ static void on_tab_switch(GtkNotebook *nb, GtkWidget *tab, unsigned ndx, void *u
     }
   }
 }
-
-#define APPQUIT(fmt, ...) { WARN("init " fmt " failed", __VA_ARGS__); \
-  g_application_quit(G_APPLICATION(app)); exit_code = EXIT_FAILURE; return; }
 
 static void app_cb(GtkApplication* app, void *unused) {
   STYLE_SET;
@@ -59,39 +55,31 @@ static void app_cb(GtkApplication* app, void *unused) {
   if (style_loaded) gtk_widget_add_css_class(nb, CSS_BGROUND);
   gtk_notebook_set_tab_pos(GTK_NOTEBOOK(nb), GTK_POS_BOTTOM);
   nb_tabs[TAB_PING_NDX] = pingtab_init(win);
-  if (opts.graph) {
-    nb_tabs[TAB_GRAPH_NDX] = graphtab_init(win);
-    if (nb_tabs[TAB_GRAPH_NDX]) graphtab_ref = nb_tabs[TAB_GRAPH_NDX]->tab.w; }
+  if (opts.graph) nb_tabs[TAB_GRAPH_NDX] = graphtab_init(win);
 #ifdef WITH_PLOT
-  if (opts.plot) {
-    nb_tabs[TAB_PLOT_NDX] = plottab_init(win);
-    if (nb_tabs[TAB_PLOT_NDX]) tab3d_ref = nb_tabs[TAB_PLOT_NDX]->tab.w; }
+  if (opts.plot) nb_tabs[TAB_PLOT_NDX] = plottab_init(win);
 #endif
   nb_tabs[TAB_LOG_NDX]  = logtab_init(win);
   for (int i = 0; i < G_N_ELEMENTS(nb_tabs); i++) {
-    if (!opts.graph && (i == TAB_GRAPH_NDX)) continue;
+    { if (!opts.graph && (i == TAB_GRAPH_NDX)) continue;
 #ifdef WITH_PLOT
-    if (!opts.plot && (i == TAB_PLOT_NDX)) continue;
+      if (!opts.plot && (i == TAB_PLOT_NDX)) continue;
 #endif
+    } // TODO: replace with -1,-2,-3 options
     t_tab *tab = nb_tabs[i];
     if (!tab || !tab->tab.w || !tab->lab.w) APPQUIT("tab#%d", i);
-    tab_setup(tab);
+    tab_setup(tab); tabrefs[i] = tab->tab.w;
     int ndx = gtk_notebook_append_page(GTK_NOTEBOOK(nb), tab->tab.w, tab->lab.w);
     if (ndx < 0) APPQUIT("tab page#%d", i);
     gtk_notebook_set_tab_reorderable(GTK_NOTEBOOK(nb), tab->tab.w, true);
   }
   tab_reload_theme();
-  gtk_notebook_set_current_page(GTK_NOTEBOOK(nb), start_page);
+  gtk_notebook_set_current_page(GTK_NOTEBOOK(nb), startpage);
   g_signal_connect(nb, EV_TAB_SWITCH, G_CALLBACK(on_tab_switch), NULL);
-  // nb overlay
   GtkWidget *over = notifier_init(NT_MAIN_NDX, nb);
   if (!GTK_IS_OVERLAY(over)) APPQUIT("%s", "notification window");
-  GtkWidget *curr = (start_page == TAB_GRAPH_NDX) ? graphtab_ref : (
-#ifdef WITH_PLOT
-    (start_page == TAB_PLOT_NDX) ? tab3d_ref :
-#endif
-    nb_tabs[start_page]->tab.w);
-  tab_dependent(curr);
+  GtkWidget *curr = gtk_notebook_get_nth_page(GTK_NOTEBOOK(nb), gtk_notebook_get_current_page(GTK_NOTEBOOK(nb)));
+  tab_dependent(curr ? curr : nb_tabs[startpage]->tab.w);
   gtk_window_set_child(GTK_WINDOW(win), over);
   //
   g_signal_connect(win, EV_DESTROY, G_CALLBACK(on_win_destroy), NULL);
@@ -110,21 +98,23 @@ static void recap_cb(GApplication* app, void *unused) {
   g_timeout_add_seconds(1, (GSourceFunc)pinger_recap_cb, app);
   if (G_IS_APPLICATION(app)) g_application_hold(app);
   pinger_start();
-  return;
 }
 
 
 // pub
 
 void tab_dependent(GtkWidget *tab) {
-  static GtkWidget *currtab_ref;
-  if (tab) currtab_ref = tab; else tab = currtab_ref;
-  if (tab == graphtab_ref) nt_dark = !opts.darkgraph;
+  if (tab) currtabref = tab; else tab = currtabref;
+  if (tab == tabrefs[TAB_GRAPH_NDX]) nt_dark = !opts.darkgraph;
 #ifdef WITH_PLOT
-  else if (tab == tab3d_ref) nt_dark = !opts.darkplot;
+  else if (tab == tabrefs[TAB_PLOT_NDX]) nt_dark = !opts.darkplot;
 #endif
   else nt_dark = !opts.darktheme;
 }
+
+#ifdef WITH_PLOT
+inline gboolean is_tab_that(unsigned ndx) { return (ndx < G_N_ELEMENTS(tabrefs)) ? (currtabref == tabrefs[ndx]) : false; }
+#endif
 
 int main(int argc, char **argv) {
   setlocale(LC_ALL, "");  // parser: early l10n for CLI options

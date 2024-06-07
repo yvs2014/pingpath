@@ -11,7 +11,8 @@ const char *unkn_field = ""; // "?" "???"
 const char *unkn_whois = "";
 
 gboolean cli;
-int verbose, start_page = TAB_PING_NDX;
+int verbose, startpage = TAB_PING_NDX;
+
 t_tab* nb_tabs[TAB_NDX_MAX]; // notebook tabs are reorderable
 
 t_type_elem pingelem[ELEM_MAX] = {

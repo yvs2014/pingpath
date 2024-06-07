@@ -1,3 +1,7 @@
+## 0.3.6
+- add rotation
+- misc optimization
+
 ## 0.3.5
 - plot: add customization options to config and CLI too
 - update manual and help

@@ -52,6 +52,8 @@ t_opts opts = { .target = NULL, .dns = DEF_DNS, .whois = DEF_WHOIS, .cycles = DE
   .rcol = {DEF_RCOL_FROM, DEF_RCOL_TO},
   .gcol = {DEF_GCOL_FROM, DEF_GCOL_TO},
   .bcol = {DEF_BCOL_FROM, DEF_BCOL_TO},
+  .orient  = {DEF_YAW, DEF_PITCH, DEF_ROLL},
+  .angstep = DEF_ANGSTEP,
 #endif
 };
 

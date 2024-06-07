@@ -10,7 +10,7 @@
 #define MIN_GTK_RUNTIME(major, minor, micro) (!gtk_check_version(major, minor, micro))
 
 #define APPNAME "pingpath"
-#define VERSION "0.3.5"
+#define VERSION "0.3.6"
 
 #define X_RES 1024
 #define Y_RES 720
@@ -78,10 +78,10 @@
 #define ICON_PROP      "icon-name"
 #define ACT_MENU_ICON  "open-menu-symbolic"
 #define ACT_MENU_ICOA  "view-more-symbolic"
-#define OPT_PING_MENU_ICON  "emblem-system-symbolic"
-#define OPT_PING_MENU_ICOA  "application-x-executable-symbolic"
-#define OPT_GRAPH_MENU_ICON "media-playlist-consecutive-symbolic"
-#define OPT_GRAPH_MENU_ICOA "go-next-symbolic"
+#define OPT_MAIN_MENU_ICON "emblem-system-symbolic"
+#define OPT_MAIN_MENU_ICOA "application-x-executable-symbolic"
+#define OPT_EXT_MENU_ICON  "media-playlist-consecutive-symbolic"
+#define OPT_EXT_MENU_ICOA  "go-next-symbolic"
 #define GO_UP_ICON     "go-up-symbolic"
 #define GO_DOWN_ICON   "go-down-symbolic"
 #define GO_LEFT_ICON   "go-previous-symbolic"
@@ -113,12 +113,14 @@
 #endif
 
 #define PP_FONT_FAMILY "monospace"
-#define X_AXIS_TITLE   "time"
-#define Y_AXIS_TITLE   "delay [msec]"
 #define PP_RTT0      1000  // 1msec
 #define PP_RTT_SCALE 1000. // usec to msec
-#define PP_RTT_AXIS_FMT  "%.1f"
-#define PP_TIME_AXIS_FMT "%02d:%02d"
+#define PP_RTT_FMT_LT10  "%.1f"
+#define PP_RTT_FMT_GE10  "%.0f"
+#define PP_TIME_FMT "%02d:%02d"
+#define PP_FMT_LT10(val) ((val < 1e-3f) ? PP_RTT_FMT_GE10 : PP_RTT_FMT_LT10)
+#define PP_FMT10(val) ((val < 10) ? PP_FMT_LT10(val) : PP_RTT_FMT_GE10)
+#define PP_MARK_MAXLEN 16
 
 #define MARGIN  8
 #define ACT_DOT 4 // beyond of "app." or "win."
@@ -185,11 +187,19 @@
 #define ACT_COPY_HDR   "Copy"
 #define ACT_SALL_HDR   "Select all"
 #define ACT_UNSALL_HDR "Unselect all"
+#ifdef WITH_PLOT
+#define ACT_LEFT_K_HDR  "Rotate Left"
+#define ACT_RIGHT_K_HDR "Rotate Right"
+#define ACT_UP_K_HDR    "Rotate Up"
+#define ACT_DOWN_K_HDR  "Rotate Down"
+#define ACT_PGUP_K_HDR  "Rotate Clockwise"
+#define ACT_PGDN_K_HDR  "Rotate AntiClockwise"
+#endif
 
 #define ENT_TARGET_HDR "Target"
 #define ENT_TSTAMP_HDR "Timestamp"
 
-#define OPT_MAIN_TOOLTIP "Main options"
+#define OPT_MAIN_MENU_TIP "Main options"
 #define OPT_CYCLES_HDR   "Cycles"
 #define OPT_IVAL_HDR     "Interval"
 #define OPT_IVAL_HEADER  OPT_IVAL_HDR ", sec"
@@ -207,7 +217,7 @@
 #define OPT_IPV4_HDR     "IPv4"
 #define OPT_IPV6_HDR     "IPv6"
 
-#define OPT_AUX_TOOLTIP  "Auxiliary"
+#define OPT_EXT_MENU_TIP "Auxiliary"
 #define OPT_MN_DARK_HDR  "Main dark theme"
 #define OPT_MN_DARK_HEADER "Main theme"
 #define OPT_GR_DARK_HDR  "Graph dark theme"
@@ -226,7 +236,9 @@
 #define OPT_GREX_HDR     "Extra graph elements"
 #ifdef WITH_PLOT
 #define OPT_PLOT_HDR     "Plot elements"
+#define OPT_PLEX_HDR     "Plot parameters"
 #define OPT_GRAD_HDR     "Plot gradient"
+#define OPT_ROT_HDR      "Plot rotation"
 #endif
 
 #define OPT_LOGMAX_HDR   "LogTab rows"
@@ -359,6 +371,15 @@ enum { GRAPH_TYPE_NONE, GRAPH_TYPE_DOT, GRAPH_TYPE_LINE, GRAPH_TYPE_CURVE, GRAPH
 typedef struct minmax {
   int min, max;
 } t_minmax;
+#define MM_OKAY(mm, val) (((mm).min <= val) && (val <= (mm).max))
+
+#ifdef WITH_PLOT
+typedef struct iv3s { int a, b, c; } iv3s_t;
+// not defined in cglm < 0.9
+typedef int ivec2_t[2];
+typedef int ivec3_t[3];
+typedef int ivec4_t[4];
+#endif
 
 typedef struct host {
   char *addr, *name;
@@ -401,17 +422,14 @@ typedef struct hop {
 } t_hop;
 
 typedef struct ref { t_hop *hop; int ndx; } t_ref;
+typedef struct tab_widget { GtkWidget *w; const char *css, *col; } t_tab_widget;
 
-typedef struct t_act_desc {
+typedef struct t_sa_desc {
   GSimpleAction* sa;
   const char *name;
   const char *const *shortcut;
-  const gboolean invisible;
-} t_act_desc;
-
-typedef struct tab_widget { // widget and its dark/light css
-  GtkWidget *w; const char *css, *col;
-} t_tab_widget;
+  void *data;
+} t_sa_desc;
 
 typedef struct tab {
   struct tab *self;
@@ -421,7 +439,7 @@ typedef struct tab {
   GMenu *menu;       // menu template
   GtkWidget *pop;    // popover menu
   gboolean sel;      // flag of selection
-  t_act_desc desc[POP_MENU_NDX_MAX];
+  t_sa_desc desc[POP_MENU_NDX_MAX];
   GActionEntry act[POP_MENU_NDX_MAX];
 } t_tab;
 
@@ -431,9 +449,7 @@ typedef struct t_type_elem {
   char *name, *tip;
 } t_type_elem;
 
-typedef struct t_legend {
-  const char *name, *as, *cc, *av, *jt;
-} t_legend;
+typedef struct t_legend { const char *name, *as, *cc, *av, *jt; } t_legend;
 
 typedef int (*type2ndx_fn)(int);
 
@@ -454,7 +470,7 @@ extern const char *unkn_whois;
 extern const char *log_empty;
 
 extern gboolean cli;
-extern int verbose, start_page;
+extern int verbose, startpage;
 
 extern t_tab* nb_tabs[TAB_NDX_MAX];
 extern t_type_elem pingelem[ELEM_MAX];
@@ -484,13 +500,16 @@ int plotelem_type2ndx(int type);
 gboolean is_plelem_enabled(int type);
 #endif
 
-void tab_dependent(GtkWidget *tab);
 char* rtver(int ndx);
 const char *timestampit(void);
 GtkListBoxRow* line_row_new(GtkWidget *child, gboolean visible);
 void tab_setup(t_tab *tab);
 void tab_color(t_tab *tab);
 void tab_reload_theme(void);
+void tab_dependent(GtkWidget *tab);
+#ifdef WITH_PLOT
+gboolean is_tab_that(unsigned ndx);
+#endif
 
 void host_free(t_host *host);
 int host_cmp(const void *a, const void *b);

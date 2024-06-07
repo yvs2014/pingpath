@@ -229,22 +229,33 @@ Default
 .Ar all
 .El
 .Bl -tag -width Ds
-.It Fl C, Fl -color-gradient Ar PAIRS
-3D-plot color gradient coded within start:end pairs and tagged with RGB colors (note:
+.It Fl X, Fl -extra-params Ar PAIRS
+3D-plot extra parameters tagged with characters (note:
 .Sy pp3
 only)
 .Bl -tag -offset Ds -compact
 .It Cm r
-Red
+Red surface gradient
 .It Cm g
-Green
+Green surface gradient
 .It Cm b
-Blue
+Blue surface gradient
+.It Cm o
+Orientation and rotation
 .El
 Default
-.Ar r=77:77,g=230:77,b=77:230
+.Ar r=77:77,g=230:77,b=77:230,o=-20:0:0:5
 .br
-Note: color values are in range from 0 to 255
+Note: \fBrgb\fR colors are in range from 0 to 255
+.br
+.in +.6i
+\fBo\fRrientation is set with yaw:pitch:roll:step, where
+.br
+.in +.6i
+orientation angles are from -180 to 180
+.br
+rotation step is in range from 1 to 180
+.in
 .El
 .Bl -tag -width Ds
 .It Fl r, Fl -recap Ar TYPE
@@ -306,6 +317,18 @@ Toggle graph legend on/off
 Display help
 .It Cm Ctrl+X
 Exit
+.It Cm Ctrl+Left
+Yaw Left
+.It Cm Ctrl+Right
+Yaw Right
+.It Cm Ctrl+Up
+Roll Clockwise (Up)
+.It Cm Ctrl+Down
+Roll Contra (Down)
+.It Cm Ctrl+PgUp
+Pitch Up (Clockwise)
+.It Cm Ctrl+PgDn
+Pitch Down (Contra)
 .El
 .Sh DRAG-N-DROP
  Items that can be reordered ot relocated:

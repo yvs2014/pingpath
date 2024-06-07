@@ -1,3 +1,11 @@
+pingpath (0.3.6) mantic noble; urgency=low
+
+  * add rotation
+
+  * misc optimization
+
+ -- yvs <VSYakovetsky@gmail.com>  Fri, 07 Jun 2024 10:32:46 +0300
+
 pingpath (0.3.5) mantic noble; urgency=low
 
   * plot: add customization options to config and CLI too

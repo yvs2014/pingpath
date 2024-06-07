@@ -196,7 +196,7 @@ static gboolean pt_hdr_on_drop(GtkDropTarget *dst, const GValue *val, gdouble x,
   }
   PT_REORDER_PRINT_ELEMS("group: >>>", &(ddnd->desc->elems[ddnd->desc->mm.min]), ddnd->desc->mm.max - ddnd->desc->mm.min + 1);
   PT_REORDER_PRINT_ELEMS("array: >>>", ddnd->desc->elems, ELEM_MAX);
-  option_update_pingmenu();
+  option_up_menu_main();
   return true;
 }
 #endif

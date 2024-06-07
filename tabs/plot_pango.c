@@ -43,7 +43,7 @@ static GLuint plot_create_texture(ivec2_t size, const void *pixels) {
   return id;
 }
 
-static inline void vec4_set(vec4 vec, GLfloat a, GLfloat b, GLfloat c, GLfloat d) {
+static inline void vec4_set(vec4 vec, float a, float b, float c, float d) {
   vec[0] = a; vec[1] = b; vec[2] = c; vec[3] = d; }
 
 
@@ -112,11 +112,11 @@ t_plot_vo plot_pango_vo_init(GLuint loc) {
   return vo;
 }
 
-void plot_pango_drawtex(GLuint id, GLuint vbo, GLuint typ, GLfloat x0, GLfloat y0, GLfloat w, GLfloat h) {
+void plot_pango_drawtex(GLuint id, GLuint vbo, GLuint typ, float x0, float y0, float w, float h) {
   if (!id || !vbo || !typ) return;
   const int points = 6;
   vec4 vertex[points]; memset(vertex, 0, sizeof(vertex));
-  GLfloat x1 = x0 + w, y1 = y0 + h;
+  float x1 = x0 + w, y1 = y0 + h;
   vec4_set(vertex[0], x0, y1, 0, 0);
   vec4_set(vertex[1], x0, y0, 0, 1);
   vec4_set(vertex[2], x1, y0, 1, 1);

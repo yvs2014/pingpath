@@ -24,6 +24,11 @@
 #define DEF_GCOL_TO   77
 #define DEF_BCOL_FROM 77
 #define DEF_BCOL_TO   230
+
+#define DEF_YAW     -20
+#define DEF_PITCH     0
+#define DEF_ROLL      0
+#define DEF_ANGSTEP   5
 #endif
 
 typedef struct opts {
@@ -38,6 +43,8 @@ typedef struct opts {
 #ifdef WITH_PLOT
   gboolean plot, darkplot;
   t_minmax rcol, gcol, bcol; // color range
+  iv3s_t orient;             // orientation angles
+  int angstep;               // rotation step
 #endif
 } t_opts;
 
@@ -68,7 +75,7 @@ int pinger_recap_cb(GApplication *app);
 #ifdef WITH_PLOT
 #define OPTS_GRAPH_REL (opts.graph || opts.plot)
 #define GRAPH_UPDATE_REL { if (opts.graph) graphtab_update(); if (opts.plot) plottab_update(); }
-#define GRAPH_REFRESH_REL { if (opts.graph) graphtab_refresh(); if (opts.plot) plottab_refresh(); }
+#define GRAPH_REFRESH_REL { if (opts.graph) graphtab_refresh(); if (opts.plot) plottab_refresh(PL_PARAM_COLOR); }
 #define GRAPH_RESTART_REL { if (opts.graph) graphtab_restart(); if (opts.plot) plottab_restart(); }
 #define GRAPH_FREE_REL { graphtab_free(); plottab_free(); }
 #else

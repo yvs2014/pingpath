@@ -36,7 +36,7 @@
 #define CNF_STR_LGND   "legend"
 #ifdef WITH_PLOT
 #define CNF_STR_PLEL   "plot"
-#define CNF_STR_PLCL   "color-gradient"
+#define CNF_STR_PLEX   "plot-params"
 #endif
 #define CNF_STR_RECAP  "recap"
 #define CNF_SECTION_AUX  "aux"
@@ -44,7 +44,7 @@
 enum { CNF_OPT_IPV, CNF_OPT_NODNS, CNF_OPT_CYCLES, CNF_OPT_IVAL, CNF_OPT_TTL, CNF_OPT_QOS, CNF_OPT_SIZE,
   CNF_OPT_PLOAD, CNF_OPT_INFO, CNF_OPT_STAT, CNF_OPT_THEME, CNF_OPT_GRAPH, CNF_OPT_EXTRA, CNF_OPT_LGND,
 #ifdef WITH_PLOT
-  CNF_OPT_PLEL, CNF_OPT_PLCL,
+  CNF_OPT_PLEL, CNF_OPT_PLEX,
 #endif
   CNF_OPT_RECAP, CNF_OPT_MAX };
 
@@ -73,35 +73,36 @@ static void cli_pr_elems(t_type_elem *elems, int max) {
 
 //
 
-static gboolean cli_int_opt(const char *name, const char *value, GError **error, int type, const char *hdr,
+static gboolean cli_int_opt(const char *name, const char *value, GError **error, const char *hdr,
     int min, int max, int *opt) {
-  if (!value || !hdr) return false;
-  t_minmax range = { .min = min, .max = max };
-  int n = parser_int(value, type, hdr, range);
-  if (n < 0) { CLI_SET_ERR; return false; }
-  if (opt) *opt = n;
-  g_message("%s: %d", hdr, n);
-  return true;
+  gboolean okay = false;
+  if (value && hdr) {
+    t_minmax mm = { .min = min, .max = max };
+    okay = parser_mmint(value, hdr, mm, opt);
+    if (okay) { if (opt) g_message("%s: %d", hdr, *opt); }
+    else CLI_SET_ERR;
+  }
+  return okay;
 }
 
 static gboolean cli_opt_c(const char *name, const char *value, t_opts *opts, GError **error) {
-  return opts ? cli_int_opt(name, value, error, ENT_STR_CYCLES, OPT_CYCLES_HDR, CYCLES_MIN, CYCLES_MAX, &opts->cycles) : false;
+  return opts ? cli_int_opt(name, value, error, OPT_CYCLES_HDR, CYCLES_MIN, CYCLES_MAX, &opts->cycles) : false;
 }
 
 static gboolean cli_opt_i(const char *name, const char *value, t_opts *opts, GError **error) {
-  return opts ? cli_int_opt(name, value, error, ENT_STR_IVAL, OPT_IVAL_HDR, IVAL_MIN, IVAL_MAX, &opts->timeout) : false;
+  return opts ? cli_int_opt(name, value, error, OPT_IVAL_HDR, IVAL_MIN, IVAL_MAX, &opts->timeout) : false;
 }
 
 static gboolean cli_opt_q(const char *name, const char *value, t_opts *opts, GError **error) {
-  return opts ? cli_int_opt(name, value, error, ENT_STR_QOS, OPT_QOS_HDR, 0, QOS_MAX, &opts->qos) : false;
+  return opts ? cli_int_opt(name, value, error, OPT_QOS_HDR, 0, QOS_MAX, &opts->qos) : false;
 }
 
 static gboolean cli_opt_s(const char *name, const char *value, t_opts *opts, GError **error) {
-  return opts ? cli_int_opt(name, value, error, ENT_STR_PSIZE, OPT_PSIZE_HDR, PSIZE_MIN, PSIZE_MAX, &opts->size) : false;
+  return opts ? cli_int_opt(name, value, error, OPT_PSIZE_HDR, PSIZE_MIN, PSIZE_MAX, &opts->size) : false;
 }
 
 static gboolean cli_opt_g(const char *name, const char *value, t_opts *opts, GError **error) {
-  return opts ? cli_int_opt(name, value, error, ENT_STR_GRAPH, OPT_GRAPH_HDR, 0, GRAPH_TYPE_MAX - 1, &opts->graph) : false;
+  return opts ? cli_int_opt(name, value, error, OPT_GRAPH_HDR, 0, GRAPH_TYPE_MAX - 1, &opts->graph) : false;
 }
 
 static gboolean cli_opt_t(const char *name, const char *value, t_opts *opts, GError **error) {
@@ -110,23 +111,20 @@ static gboolean cli_opt_t(const char *name, const char *value, t_opts *opts, GEr
   gboolean okay = false;
   if (cp) {
     t_ent_ndx *enc = &ent_spn[ENT_SPN_TTL].c.en;
-    t_ent_spn_elem *elem = &ent_spn[ENT_SPN_TTL].list[ENT_SPN_TTL_SPIN];
-    int *pmin = elem->aux[SPN_AUX_MIN].pval;
-    int *plim = elem->aux[SPN_AUX_LIM].pval;
+    t_ent_spn_elem *elem = &ent_spn[ENT_SPN_TTL].list[0];
+    int *pmin = elem->aux[0].pval;
+    int *plim = elem->aux[1].pval;
     int min = opt_mm_ttl.min - 1, lim = opt_mm_ttl.max;
-    t_minmax r = parser_range(cp, TTL_RANGE_DELIM, OPT_TTL_HDR);
-    if ((r.min >= 0) && (r.max >= 0)) {
-      okay = pinger_within_range(opt_mm_ttl.min, r.max, r.min) && pinger_within_range(r.min, opt_mm_ttl.max, r.max);
-      if (okay) {
-        min = r.min - 1; if (pmin) *pmin = min;
-        lim = r.max; if (plim) *plim = lim;
+    t_minmax range; okay = parser_range(cp, COMMA, OPT_TTL_HDR, &range);
+    if (okay) {
+      if (range.min != INT_MIN) {
+        okay &= pinger_within_range(opt_mm_ttl.min, plim ? *plim : lim, range.min);
+        if (okay) { min = range.min - 1; if (pmin) *pmin = min; }
       }
-    } else if (r.min >= 0) {
-      okay = pinger_within_range(opt_mm_ttl.min, plim ? *plim : lim, r.min);
-      if (okay) { min = r.min - 1; if (pmin) *pmin = min; }
-    } else if (r.max >= 0) {
-      okay = pinger_within_range(pmin ? (*pmin + 1) : opt_mm_ttl.min, opt_mm_ttl.max, r.max);
-      if (okay) { lim = r.max; if (plim) *plim = lim; }
+      if (range.max != INT_MIN) {
+        okay &= pinger_within_range(pmin ? (*pmin + 1) : opt_mm_ttl.min, opt_mm_ttl.max, range.max);
+        if (okay) { lim = range.max; if (plim) *plim = lim; }
+      }
     }
     if (okay) g_message("%s: %d <=> %d", enc->name, min + 1, lim);
     else g_message("%s: no match with [%d,%d]", enc->name, opt_mm_ttl.min, opt_mm_ttl.max);
@@ -137,40 +135,52 @@ static gboolean cli_opt_t(const char *name, const char *value, t_opts *opts, GEr
 }
 
 #ifdef WITH_PLOT
-static gboolean cli_opt_C_pair(const char *value, char tag, const char *name, t_opts *opts) {
+
+static gboolean set_xparam_tag(int inp, int *outp, t_minmax mm) {
+  gboolean okay = true;
+  if (inp != INT_MIN) { okay = MM_OKAY(mm, inp); if (okay && outp) *outp = inp; }
+  return okay;
+}
+
+#define R_TAG 'r'
+#define G_TAG 'g'
+#define B_TAG 'b'
+#define O_TAG 'o'
+static const char opt_X_tags[] = { R_TAG, G_TAG, B_TAG, O_TAG };
+
+static gboolean cli_opt_X_pair(const char *value, char tag, const char *name, t_opts *opts) {
   gboolean okay = false;
   if (value && opts) {
     char *cp = g_strdup(value);
     if (cp) {
-      int ndx = -1;
-      t_minmax *mm = &opt_mm_col;
+      int ndx = -1, typ = -1; t_minmax *grad = NULL; iv3s_t *orient = NULL;
       switch (tag) {
-        case 'r': ndx = ENT_SPN_COL_R; mm = &opts->rcol; break;
-        case 'g': ndx = ENT_SPN_COL_G; mm = &opts->gcol; break;
-        case 'b': ndx = ENT_SPN_COL_B; mm = &opts->bcol; break;
+        case R_TAG: typ = ENT_SPN_COLOR; ndx = 0; grad = &opts->rcol; break;
+        case G_TAG: typ = ENT_SPN_COLOR; ndx = 1; grad = &opts->gcol; break;
+        case B_TAG: typ = ENT_SPN_COLOR; ndx = 2; grad = &opts->bcol; break;
+        case O_TAG: typ = ENT_SPN_ROTOR; ndx = 0; orient = &opts->orient; break;
       }
-      if ((ndx >= 0) && mm) {
-        t_ent_ndx *enc = &ent_spn[ENT_SPN_COL].c.en;
-        t_ent_spn_elem *elem = &ent_spn[ENT_SPN_COL].list[ndx];
-        int *pfrom = elem->aux[SPN_AUX_MIN].pval;
-        int *pto = elem->aux[SPN_AUX_LIM].pval;
-        int min = mm->min, lim = mm->max;
-        t_minmax r = parser_range(cp, COL_GRAD_DELIM, elem->title);
-        if ((r.min >= 0) && (r.max >= 0)) {
-          okay = PLOT_COL_OKAY(opt_mm_col, r.min) && PLOT_COL_OKAY(opt_mm_col, r.max);
-          if (okay) {
-            min = r.min; if (pfrom) *pfrom = min;
-            lim = r.max; if (pto)   *pto   = lim;
-          }
-        } else if (r.min >= 0) {
-          okay = PLOT_COL_OKAY(opt_mm_col, r.min);
-          if (okay) { min = r.min; if (pfrom) *pfrom = min; }
-        } else if (r.max >= 0) {
-          okay = PLOT_COL_OKAY(opt_mm_col, r.max);
-          if (okay) { lim = r.max; if (pto)   *pto   = lim; }
+      if ((ndx >= 0) && (typ >= 0)) {
+        t_ent_ndx *enc = &ent_spn[typ].c.en;
+        t_ent_spn_elem *elem = &ent_spn[typ].list[ndx];
+        if (grad) {
+          int *pfrom = elem->aux[0].pval, *pto = elem->aux[1].pval;
+          t_minmax inp; okay = parser_range(cp, COLON, elem->title, &inp);
+          if (okay) okay &= set_xparam_tag(inp.min, pfrom, opt_mm_col);
+          if (okay) okay &= set_xparam_tag(inp.max, pto,   opt_mm_col);
+          if (okay) g_message("%s: from %d (0x%02x) to %d (0x%02x)", elem->title, grad->min, grad->min, grad->max, grad->max);
+          else g_message("%s: no match with [%d,%d]", enc->name, opt_mm_col.min, opt_mm_col.max);
+        } else if (orient) {
+          int* ps[] = { elem->aux[0].pval, elem->aux[1].pval, elem->aux[2].pval, elem->aux[3].pval };
+          ivec4_t i4; okay = parser_ivec4(cp, COLON, elem->title, i4);
+          t_minmax *mm = &opt_mm_rot;
+          if (okay) okay &= set_xparam_tag(i4[0], ps[0], *mm);
+          if (okay) okay &= set_xparam_tag(i4[1], ps[1], *mm);
+          if (okay) okay &= set_xparam_tag(i4[2], ps[2], *mm);
+          if (okay) { mm = &opt_mm_ang; if (okay) okay &= set_xparam_tag(i4[3], ps[3], *mm); }
+          if (okay) g_message("%s: %d,%d,%d step=%d", elem->title, orient->a, orient->b, orient->c, opts->angstep);
+          else g_message("%s: no match with [%d,%d]", enc->name, mm->min, mm->max);
         }
-        if (okay) g_message("%s: from %d (0x%02x) to %d (0x%02x)", elem->title, min, min, lim, lim);
-        else g_message("%s: no match with [%d,%d]", enc->name, opt_mm_col.min, opt_mm_col.max);
       } else g_message("%s: wrong tag: '%c'", name, tag);
       g_free(cp);
     } else FAILX(name, "g_sdtrdup()");
@@ -178,21 +188,23 @@ static gboolean cli_opt_C_pair(const char *value, char tag, const char *name, t_
   return okay;
 }
 
-static gboolean cli_opt_C(const char *name, const char *value, t_opts *opts, GError **error) {
+#define X_MAXTAGS 4 // r,g,b,o
+
+static gboolean cli_opt_X(const char *name, const char *value, t_opts *opts, GError **error) {
   gboolean okay = false;
-  if (value && opts) { // tag=color1:color2
-    char **arr = g_strsplit(value, ",", 3); // rgb pairs
-    if (arr) for (char **s = arr; *s; s++) {
+  if (value && opts) { // tag=subvalues
+    char **pairs = g_strsplit(value, ",", G_N_ELEMENTS(opt_X_tags));
+    if (pairs) for (char **s = pairs; *s; s++) {
       okay = false;
       char **pair = g_strsplit(*s, "=", 2); // tag=pair
       if ((pair[0] && pair[0][0]) && (pair[1] && pair[1][0])) {
         if (pair[0][1]) g_message("%s: no char tag: %s", name, pair[0]);
-        else okay = cli_opt_C_pair(pair[1], pair[0][0], name, opts);
+        else okay = cli_opt_X_pair(pair[1], pair[0][0], name, opts);
       } else g_message("%s: wrong pair: %s", name, *s);
       g_strfreev(pair);
       if (!okay) break;
     } else FAILX(name, "g_strsplit()");
-    g_strfreev(arr);
+    g_strfreev(pairs);
     if (!okay) CLI_SET_ERR;
   }
   return okay;
@@ -323,7 +335,7 @@ static gboolean cli_opt_T(const char *name, const char *value, t_opts *opts, GEr
 #else
     , max = 0x7;
 #endif
-  gboolean re = cli_int_opt(name, value, error, ENT_STR_THEME, "Theme bits", 0, max, &mask);
+  gboolean re = cli_int_opt(name, value, error, "Theme bits", 0, max, &mask);
   if (re) {
     opts->darktheme = (mask & 0x1) ? true : false;
     opts->darkgraph = (mask & 0x2) ? true : false;
@@ -375,7 +387,7 @@ static gboolean cli_opt_f(const char *name, const char *value, t_opts *opts, GEr
       { .opt = CNF_STR_LGND,   .type = CNF_OPT_LGND,   .data = cli_opt_L },
 #ifdef WITH_PLOT
       { .opt = CNF_STR_PLEL,   .type = CNF_OPT_PLEL,   .data = cli_opt_P },
-      { .opt = CNF_STR_PLCL,   .type = CNF_OPT_PLCL,   .data = cli_opt_C },
+      { .opt = CNF_STR_PLEX,   .type = CNF_OPT_PLEX,   .data = cli_opt_X },
 #endif
       { .opt = CNF_STR_RECAP,  .type = CNF_OPT_RECAP,  .data = cli_opt_r },
       {}
@@ -432,7 +444,7 @@ static gboolean cli_opt_f(const char *name, const char *value, t_opts *opts, GEr
         case CNF_OPT_LGND:
 #ifdef WITH_PLOT
         case CNF_OPT_PLEL:
-        case CNF_OPT_PLCL:
+        case CNF_OPT_PLEX:
 #endif
         case CNF_OPT_RECAP: if (optval) {
           if (option->data && !(((GOptionArgFunc)option->data)(optname, optval, opts, error))) return false;
@@ -490,7 +502,7 @@ gboolean cli_init(int *pargc, char ***pargv) {
     CLI_OPT_CALL('L', CNF_STR_LGND,   cli_opt_L, OPT_GRLG_HDR, "<fields>"),
 #ifdef WITH_PLOT
     CLI_OPT_CALL('P', CNF_STR_PLEL,   cli_opt_P, OPT_PLOT_HDR, "<elems>"),
-    CLI_OPT_CALL('C', CNF_STR_PLCL,   cli_opt_C, OPT_GRAD_HDR, "<tag:from,to>"),
+    CLI_OPT_CALL('X', CNF_STR_PLEX,   cli_opt_X, OPT_PLEX_HDR, "<tag:values>"),
 #endif
     CLI_OPT_NONE('R', "run",          &autostart, "Autostart from CLI (if target is set)"),
     CLI_OPT_CALL('r', CNF_STR_RECAP,  cli_opt_r, OPT_RECAP_HDR " at exit (" RECAP_TYPE_MESG ")", "[" RECAP_PATT "]"),

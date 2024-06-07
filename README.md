@@ -11,7 +11,7 @@ SYNOPSIS
 DESCRIPTION
 -----------
 
-Network diagnostic tool based on parsing system **ping** output with functionality of **traceroute**.  
+Network diagnostic tool based on parsing iputils **ping** output with functionality of **traceroute**.  
 No need set‐root‐uid or raw‐socket‐perms itself to run due to being a wrapper for **ping**.  
 Inspired by ncurses look of **mtr** and written in **GTK4**.
 

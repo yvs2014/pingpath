@@ -91,11 +91,11 @@ all:
 
 $(OBJS): $(BUILDDIR)/%.o: %.c common.h
 	@mkdir -p $(@D)
-	@echo '  CC   $@'
+	@echo '  CC $@'
 	@$(CC) -c -o $@ $(CFLAGS) $<
 
 $(APP): $(OBJS)
-	@echo '  CCLD $@'
+	@echo '  LD $@'
 	@$(CC) -o $@ $(OBJS) $(LDFLAGS) $(LIBS)
 
 clean:

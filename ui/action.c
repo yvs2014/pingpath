@@ -20,8 +20,8 @@
 #define SPANHDR(txt)  SPANSZ("1.5", "large",  txt)
 #define SPANOPT(l, r) SPANSZ("1.5", "medium", "<b>\t" l "\t</b>" r)
 #define SPANSUB(txt)  SPANSZ("1",   "medium", "\t\t<tt>" txt "</tt>")
-#define MA_LOG(ndx) LOG("Action %s", action_label(ndx))
-#define MI_LOG(ndx) notifier_inform("Action %s", action_label(ndx))
+#define MA_LOG(ndx, lab) LOG("Action %s", lab(ndx))
+#define MI_LOG(ndx, lab) notifier_inform("Action %s", lab(ndx))
 
 #define OKAY_BUTTON "Okay"
 
@@ -29,14 +29,35 @@ typedef struct help_dialog_in {
   GtkWidget *win, *box, *hdr, *scroll, *body, *btn;
 } t_help_dialog_in;
 
-enum { ACT_NDX_START, ACT_NDX_PAUSE, ACT_NDX_RESET, ACT_NDX_HELP, ACT_NDX_QUIT, ACT_NDX_LGND, ACT_NDX_MAX };
+#ifdef WITH_PLOT
+typedef struct kb_rotaux {
+  const t_ent_spn_aux *aux;
+  int ndx, *pval, inc, *scale;
+} t_kb_rotaux;
+#endif
 
-static const char* kb_ctrl_s[] = {"<Ctrl>s", NULL};
-static const char* kb_space[]  = {"space",   NULL};
-static const char* kb_ctrl_r[] = {"<Ctrl>r", NULL};
-static const char* kb_ctrl_h[] = {"<Ctrl>h", NULL};
-static const char* kb_ctrl_x[] = {"<Ctrl>x", NULL};
-static const char* kb_ctrl_l[] = {"<Ctrl>l", NULL};
+enum { MENU_SA_START, MENU_SA_PAUSE, MENU_SA_RESET, MENU_SA_HELP, MENU_SA_QUIT, MENU_SA_MAX };
+
+enum { ACCL_SA_LGND,
+#ifdef WITH_PLOT
+  ACCL_SA_LEFT, ACCL_SA_RIGHT, ACCL_SA_UP, ACCL_SA_DOWN, ACCL_SA_PGUP, ACCL_SA_PGDN,
+#endif
+ACCL_SA_MAX };
+
+static const char* kb_space[]      = {"space",   NULL};
+static const char* kb_ctrl_h[]     = {"<Ctrl>h", NULL};
+static const char* kb_ctrl_l[]     = {"<Ctrl>l", NULL};
+static const char* kb_ctrl_r[]     = {"<Ctrl>r", NULL};
+static const char* kb_ctrl_s[]     = {"<Ctrl>s", NULL};
+static const char* kb_ctrl_x[]     = {"<Ctrl>x", NULL};
+#ifdef WITH_PLOT
+static const char* kb_ctrl_left[]  = {"<Ctrl>Left",      NULL};
+static const char* kb_ctrl_right[] = {"<Ctrl>Right",     NULL};
+static const char* kb_ctrl_up[]    = {"<Ctrl>Up",        NULL};
+static const char* kb_ctrl_down[]  = {"<Ctrl>Down",      NULL};
+static const char* kb_ctrl_pgup[]  = {"<Ctrl>Page_Up",   NULL};
+static const char* kb_ctrl_pgdn[]  = {"<Ctrl>Page_Down", NULL};
+#endif
 
 static const char *help_message =
   SPANHDR("Actions")
@@ -59,6 +80,7 @@ static const char *help_message =
   SPANOPT(OPT_PLOAD_HDR    "\t", "Up to 16 bytes in hex format [" DEF_PPAD "]")
   SPANOPT(OPT_PSIZE_HDR    "\t\t", "ICMP data size [" G_STRINGIFY(DEF_PSIZE) "]")
   SPANOPT(OPT_IPV_HDR,     "either " OPT_IPVA_HDR ", or " OPT_IPV4_HDR ", or " OPT_IPV6_HDR)
+  SPANOPT(OPT_LOGMAX_HDR,  "Max rows in log tab [" G_STRINGIFY(DEF_LOGMAX) "]")
   "\n"
   SPANHDR("Auxiliary")
   SPANOPT(OPT_MN_DARK_HEADER, "dark | light")
@@ -67,70 +89,121 @@ static const char *help_message =
   SPANOPT(OPT_PL_DARK_HEADER, "light | dark")
 #endif
   SPANOPT(OPT_GRAPH_HDR,   "either " OPT_GR_NONE_HDR ", or " OPT_GR_DOT_HDR ", or " OPT_GR_LINE_HDR ", or " OPT_GR_CURVE_HDR)
-  SPANOPT(OPT_GRLG_HDR,    "to display:")
-    SPANSUB(GRLG_AVJT_HDR  " " GRLG_CCAS_HDR " " GRLG_LGHN_HDR)
-  SPANOPT(OPT_GREX_HDR,    "to display:")
-    SPANSUB(GREX_MEAN_HDR  " " GREX_JRNG_HDR " " GREX_AREA_HDR)
+  SPANOPT(OPT_GRLG_HDR,    GRLG_AVJT_HDR  " " GRLG_CCAS_HDR " " GRLG_LGHN_HDR)
+  SPANOPT(OPT_GREX_HDR,    GREX_MEAN_HDR  " " GREX_JRNG_HDR " " GREX_AREA_HDR)
 #ifdef WITH_PLOT
-  SPANOPT(OPT_PLOT_HDR,    "to display:")
-    SPANSUB(PLEL_BACK_HDR  " " PLEL_AXIS_HDR " " PLEL_GRID_HDR)
+  SPANOPT(OPT_PLOT_HDR,    PLEL_BACK_HDR  " " PLEL_AXIS_HDR " " PLEL_GRID_HDR)
   SPANOPT(OPT_GRAD_HDR,    "to color 3D-surface:")
     SPANSUB("Start-end pairs of RGB colors")
+  SPANOPT(OPT_ROT_HDR,     "3D-plot orientation")
 #endif
-  SPANOPT(OPT_LOGMAX_HDR,  "Max rows in log tab [" G_STRINGIFY(DEF_LOGMAX) "]")
   "\n"
   SPANHDR("CLI")
   SPANSZ("1.5", "medium", "\tfor command-line options see <b>pingpath(1)</b> manual page")
 ;
 
-static t_act_desc act_desc[ACT_NDX_MAX] = {
-  [ACT_NDX_START] = { .name = "app.act_start", .shortcut = kb_ctrl_s },
-  [ACT_NDX_PAUSE] = { .name = "app.act_pause", .shortcut = kb_space  },
-  [ACT_NDX_RESET] = { .name = "app.act_reset", .shortcut = kb_ctrl_r },
-  [ACT_NDX_HELP]  = { .name = "app.act_help",  .shortcut = kb_ctrl_h },
-  [ACT_NDX_QUIT]  = { .name = "app.act_exit",  .shortcut = kb_ctrl_x },
-  [ACT_NDX_LGND]  = { .name = "app.act_lgnd",  .shortcut = kb_ctrl_l, .invisible = true },
+#ifdef WITH_PLOT
+#define KBROTITEM(auxndx, kbndx, tag, sign) { .aux = &ent_spn[ENT_SPN_ROTOR].list[0].aux[auxndx], \
+  .ndx = kbndx, .pval = &opts.orient.tag, .inc = sign, .scale = &opts.angstep }
+
+t_kb_rotaux kb_rotaux[ACCL_SA_MAX] = {
+  [ACCL_SA_LEFT]  = KBROTITEM(0, ACCL_SA_LEFT,  a, -1),
+  [ACCL_SA_RIGHT] = KBROTITEM(0, ACCL_SA_RIGHT, a,  1),
+  [ACCL_SA_UP]    = KBROTITEM(1, ACCL_SA_UP,    c, -1),
+  [ACCL_SA_DOWN]  = KBROTITEM(1, ACCL_SA_DOWN,  c,  1),
+  [ACCL_SA_PGUP]  = KBROTITEM(2, ACCL_SA_PGUP,  b,  1),
+  [ACCL_SA_PGDN]  = KBROTITEM(2, ACCL_SA_PGDN,  b, -1),
+};
+#endif
+
+static t_sa_desc menu_sa_desc[MENU_SA_MAX] = {
+  [MENU_SA_START] = { .name = "app.act_start", .shortcut = kb_ctrl_s },
+  [MENU_SA_PAUSE] = { .name = "app.act_pause", .shortcut = kb_space  },
+  [MENU_SA_RESET] = { .name = "app.act_reset", .shortcut = kb_ctrl_r },
+  [MENU_SA_HELP]  = { .name = "app.act_help",  .shortcut = kb_ctrl_h },
+  [MENU_SA_QUIT]  = { .name = "app.act_exit",  .shortcut = kb_ctrl_x },
+};
+
+static t_sa_desc accl_sa_desc[ACCL_SA_MAX] = {
+  [ACCL_SA_LGND]  = { .name = "app.act_lgnd",  .shortcut = kb_ctrl_l },
+#ifdef WITH_PLOT
+  [ACCL_SA_LEFT]  = { .name = "app.act_left",  .shortcut = kb_ctrl_left,  .data = &kb_rotaux[ACCL_SA_LEFT]  },
+  [ACCL_SA_RIGHT] = { .name = "app.act_right", .shortcut = kb_ctrl_right, .data = &kb_rotaux[ACCL_SA_RIGHT] },
+  [ACCL_SA_UP]    = { .name = "app.act_up",    .shortcut = kb_ctrl_up,    .data = &kb_rotaux[ACCL_SA_UP]    },
+  [ACCL_SA_DOWN]  = { .name = "app.act_down",  .shortcut = kb_ctrl_down,  .data = &kb_rotaux[ACCL_SA_DOWN]  },
+  [ACCL_SA_PGUP]  = { .name = "app.act_pgup",  .shortcut = kb_ctrl_pgup,  .data = &kb_rotaux[ACCL_SA_PGUP]  },
+  [ACCL_SA_PGDN]  = { .name = "app.act_pgdn",  .shortcut = kb_ctrl_pgdn,  .data = &kb_rotaux[ACCL_SA_PGDN]  },
+#endif
 };
 
 static void on_startstop  (GSimpleAction*, GVariant*, void*);
 static void on_pauseresume(GSimpleAction*, GVariant*, void*);
 static void on_reset      (GSimpleAction*, GVariant*, void*);
-static void on_help       (GSimpleAction*, GVariant*, void*);
-static void on_quit       (GSimpleAction*, GVariant*, void*);
+static void on_help       (GSimpleAction*, GVariant*, GtkWindow*);
+static void on_quit       (GSimpleAction*, GVariant*, GtkWindow*);
 static void on_legend     (GSimpleAction*, GVariant*, void*);
+#ifdef WITH_PLOT
+static void on_rotation   (GSimpleAction*, GVariant*, t_kb_rotaux*);
+#endif
+typedef void (*ae_sa_fn)  (GSimpleAction*, GVariant*, void*);
 
-static GActionEntry act_entries[ACT_NDX_MAX] = {
-  [ACT_NDX_START] = { .activate = on_startstop },
-  [ACT_NDX_PAUSE] = { .activate = on_pauseresume },
-  [ACT_NDX_RESET] = { .activate = on_reset },
-  [ACT_NDX_HELP]  = { .activate = on_help },
-  [ACT_NDX_QUIT]  = { .activate = on_quit },
-  [ACT_NDX_LGND]  = { .activate = on_legend },
+static GActionEntry menu_sa_entries[MENU_SA_MAX] = {
+  [MENU_SA_START] = { .activate = on_startstop      },
+  [MENU_SA_PAUSE] = { .activate = on_pauseresume    },
+  [MENU_SA_RESET] = { .activate = on_reset          },
+  [MENU_SA_HELP]  = { .activate = (ae_sa_fn)on_help },
+  [MENU_SA_QUIT]  = { .activate = (ae_sa_fn)on_quit },
+};
+
+static GActionEntry accl_sa_entries[ACCL_SA_MAX] = {
+  [ACCL_SA_LGND]  = { .activate = on_legend },
+#ifdef WITH_PLOT
+  [ACCL_SA_LEFT]  = { .activate = (ae_sa_fn)on_rotation },
+  [ACCL_SA_RIGHT] = { .activate = (ae_sa_fn)on_rotation },
+  [ACCL_SA_UP]    = { .activate = (ae_sa_fn)on_rotation },
+  [ACCL_SA_DOWN]  = { .activate = (ae_sa_fn)on_rotation },
+  [ACCL_SA_PGUP]  = { .activate = (ae_sa_fn)on_rotation },
+  [ACCL_SA_PGDN]  = { .activate = (ae_sa_fn)on_rotation },
+#endif
 };
 
 static GMenu *action_menu;
 
-static const char* action_label(int ndx) {
+static const char* menu_sa_label(int ndx) {
   switch (ndx) {
-    case ACT_NDX_START: return pinger_state.run ? ACT_STOP_HDR : ACT_START_HDR;
-    case ACT_NDX_PAUSE: return pinger_state.pause ? ACT_RESUME_HDR : ACT_PAUSE_HDR;
-    case ACT_NDX_RESET: return ACT_RESET_HDR;
-    case ACT_NDX_HELP:  return ACT_HELP_HDR;
-    case ACT_NDX_QUIT:  return ACT_QUIT_HDR;
-    case ACT_NDX_LGND:  return ACT_LGND_HDR;
+    case MENU_SA_START: return pinger_state.run ? ACT_STOP_HDR : ACT_START_HDR;
+    case MENU_SA_PAUSE: return pinger_state.pause ? ACT_RESUME_HDR : ACT_PAUSE_HDR;
+    case MENU_SA_RESET: return ACT_RESET_HDR;
+    case MENU_SA_HELP:  return ACT_HELP_HDR;
+    case MENU_SA_QUIT:  return ACT_QUIT_HDR;
+  }
+  return "";
+}
+
+static const char* accl_sa_label(int ndx) {
+  switch (ndx) {
+    case ACCL_SA_LGND:  return ACT_LGND_HDR;
+#ifdef WITH_PLOT
+    case ACCL_SA_LEFT:  return ACT_LEFT_K_HDR;
+    case ACCL_SA_RIGHT: return ACT_RIGHT_K_HDR;
+    case ACCL_SA_UP:    return ACT_UP_K_HDR;
+    case ACCL_SA_DOWN:  return ACT_DOWN_K_HDR;
+    case ACCL_SA_PGUP:  return ACT_PGUP_K_HDR;
+    case ACCL_SA_PGDN:  return ACT_PGDN_K_HDR;
+#endif
   }
   return "";
 }
 
 static void on_startstop(GSimpleAction *action, GVariant *var, void *unused) {
   if (!opts.target) return;
-  MI_LOG(ACT_NDX_START);
+  MI_LOG(MENU_SA_START, menu_sa_label);
   if (stat_timer) pinger_stop("by request"); else pinger_start();
   appbar_update();
 }
 
 static void on_pauseresume(GSimpleAction *action, GVariant *var, void *unused) {
-  MI_LOG(ACT_NDX_PAUSE);
+  MI_LOG(MENU_SA_PAUSE, menu_sa_label);
   pinger_state.pause = !pinger_state.pause;
   action_update();
   pinger_update_tabs(NULL);
@@ -139,7 +212,7 @@ static void on_pauseresume(GSimpleAction *action, GVariant *var, void *unused) {
 }
 
 static void on_reset(GSimpleAction *action, GVariant *var, void *unused) {
-  MI_LOG(ACT_NDX_RESET);
+  MI_LOG(MENU_SA_RESET, menu_sa_label);
   pinger_clear_data(false);
 }
 
@@ -155,12 +228,14 @@ static gboolean help_dialog_cb(GtkEventControllerKey *c, unsigned val, unsigned 
 
 static gboolean show_help_dialog(GtkWidget *win) {
   if (!GTK_IS_WIDGET(win)) return false;
-  MA_LOG(ACT_NDX_HELP); gtk_widget_set_visible(win, true); return true;
+  MA_LOG(MENU_SA_HELP, menu_sa_label)
+  gtk_widget_set_visible(win, true);
+  return true;
 }
 
-static void on_help(GSimpleAction *action, GVariant *var, void *data) {
+static void on_help(GSimpleAction *action, GVariant *var, GtkWindow *win) {
   static t_help_dialog_in help_dialog;
-  GtkWidget *win = data; g_return_if_fail(GTK_IS_WINDOW(win));
+  if (!GTK_IS_WINDOW(win)) return;
   if (show_help_dialog(help_dialog.win)) return;
   //
   if (!GTK_IS_WINDOW(help_dialog.win)) {
@@ -169,7 +244,7 @@ static void on_help(GSimpleAction *action, GVariant *var, void *data) {
     gtk_window_set_hide_on_close(GTK_WINDOW(help_dialog.win), true);
     gtk_window_set_decorated(GTK_WINDOW(help_dialog.win), false);
     gtk_window_set_modal(GTK_WINDOW(help_dialog.win), true);
-    gtk_window_set_transient_for(GTK_WINDOW(help_dialog.win), GTK_WINDOW(win));
+    gtk_window_set_transient_for(GTK_WINDOW(help_dialog.win), win);
     if (style_loaded) gtk_widget_add_css_class(help_dialog.win, CSS_ROUNDG);
   }
   //
@@ -218,17 +293,32 @@ static void on_help(GSimpleAction *action, GVariant *var, void *data) {
   show_help_dialog(help_dialog.win);
 }
 
-static void on_quit(GSimpleAction *action, GVariant *var, void *data) {
-  g_return_if_fail(GTK_IS_WINDOW(data));
-  MA_LOG(ACT_NDX_QUIT);
-  gtk_window_close(GTK_WINDOW(data));
+static void on_quit(GSimpleAction *action, GVariant *var, GtkWindow *win) {
+  if (GTK_IS_WINDOW(win)) { MA_LOG(MENU_SA_QUIT, menu_sa_label); gtk_window_close(win); }
 }
 
 static void on_legend(GSimpleAction *action, GVariant *var, void *unused) {
-  MA_LOG(ACT_NDX_LGND);
+  MA_LOG(ACCL_SA_LGND, accl_sa_label);
   opts.legend = !opts.legend;
   option_legend();
 }
+
+#ifdef WITH_PLOT
+static void on_rotation(GSimpleAction *action, GVariant *var, t_kb_rotaux *data) {
+  if (!data || !is_tab_that(TAB_PLOT_NDX)) return;
+  int *p = data->pval, inc = data->inc; if (!p || !inc) return;
+  int want = *p + inc * (data->scale ? *data->scale : 1);
+  if (want < MIN_VIEW_ANGLE) want = MIN_VIEW_ANGLE;
+  if (want > MAX_VIEW_ANGLE) want = MAX_VIEW_ANGLE;
+  if (*p == want) return;
+  *p = want;
+  MA_LOG(data->ndx, accl_sa_label);
+  const t_ent_spn_aux *aux = data->aux;
+  option_up_menu_ext();
+  if (aux) notifier_inform("%s: %s %d", aux->prfx, aux->sfx, *p);
+  plottab_refresh(PL_PARAM_TRANS);
+}
+#endif
 
 static GMenu* action_menu_init(GtkWidget *bar) {
   g_return_val_if_fail(GTK_IS_HEADER_BAR(bar), NULL);
@@ -251,34 +341,49 @@ static GMenu* action_menu_init(GtkWidget *bar) {
   return okay ? menu : NULL;
 }
 
+static void map_sa_entries(GActionMap *map, GActionEntry entr[], t_sa_desc desc[], int n, void *data) {
+  for (int i = 0; i < n; i++) entr[i].name = desc[i].name + ACT_DOT;
+  g_action_map_add_action_entries(map, entr, n, data);
+  for (int i = 0; i < n; i++) desc[i].sa = G_SIMPLE_ACTION(g_action_map_lookup_action(map, entr[i].name));
+}
+
+#define LOOP_SET_ACCELS(desc) { for (int i = 0; i < G_N_ELEMENTS(desc); i++) \
+  gtk_application_set_accels_for_action(app, desc[i].name, desc[i].shortcut); }
+
 static gboolean create_action_menu(GtkApplication *app, GtkWidget *win, GtkWidget *bar) {
-  g_return_val_if_fail(GTK_IS_APPLICATION(app), false);
-  g_return_val_if_fail(GTK_IS_WINDOW(win), false);
-  g_return_val_if_fail(GTK_IS_HEADER_BAR(bar), false);
-  for (int i = 0; i < ACT_NDX_MAX; i++) act_entries[i].name = act_desc[i].name + ACT_DOT;
-  g_action_map_add_action_entries(G_ACTION_MAP(app), act_entries, ACT_NDX_MAX, win);
-  for (int i = 0; i < ACT_NDX_MAX; i++)
-    act_desc[i].sa = G_SIMPLE_ACTION(g_action_map_lookup_action(G_ACTION_MAP(app), act_entries[i].name));
+  g_return_val_if_fail(GTK_IS_APPLICATION(app) && GTK_IS_WINDOW(win) && GTK_IS_HEADER_BAR(bar), false);
+  GActionMap *map = G_ACTION_MAP(app);
+  map_sa_entries(map, menu_sa_entries, menu_sa_desc, G_N_ELEMENTS(menu_sa_entries), win);
+  for (int i = 0; i < G_N_ELEMENTS(accl_sa_entries); i++)
+    map_sa_entries(map, &accl_sa_entries[i], &accl_sa_desc[i], 1, accl_sa_desc[i].data);
   if (!(action_menu = action_menu_init(bar))) return false;
-  for (int i = 0; i < ACT_NDX_MAX; i++)
-    gtk_application_set_accels_for_action(app, act_desc[i].name, act_desc[i].shortcut);
-  SET_SA(act_desc, ACT_NDX_LGND, opts.graph);
+  LOOP_SET_ACCELS(menu_sa_desc);
+  LOOP_SET_ACCELS(accl_sa_desc);
+  SET_SA(accl_sa_desc, ACCL_SA_LGND, opts.graph);
+#ifdef WITH_PLOT
+  SET_SA(accl_sa_desc, ACCL_SA_LEFT,  opts.plot);
+  SET_SA(accl_sa_desc, ACCL_SA_RIGHT, opts.plot);
+  SET_SA(accl_sa_desc, ACCL_SA_UP,    opts.plot);
+  SET_SA(accl_sa_desc, ACCL_SA_DOWN,  opts.plot);
+  SET_SA(accl_sa_desc, ACCL_SA_PGUP,  opts.plot);
+  SET_SA(accl_sa_desc, ACCL_SA_PGDN,  opts.plot);
+#endif
   return true;
 }
 
 static void action_update_internal(GMenu *menu) {
   if (G_IS_MENU(menu)) {
     g_menu_remove_all(menu);
-    for (int i = 0; i < ACT_NDX_MAX; i++) if (!act_desc[i].invisible) {
-      GMenuItem *item = g_menu_item_new(action_label(i), act_desc[i].name);
+    for (int i = 0; i < G_N_ELEMENTS(menu_sa_desc); i++) {
+      GMenuItem *item = g_menu_item_new(menu_sa_label(i), menu_sa_desc[i].name);
       if (item) { g_menu_append_item(menu, item); g_object_unref(item); }
       else FAIL("g_menu_item_new()");
     }
   }
   gboolean run = pinger_state.run, pause = pinger_state.pause;
-  SET_SA(act_desc, ACT_NDX_START, opts.target != NULL);
-  SET_SA(act_desc, ACT_NDX_PAUSE, pause || (!pause && run));
-  SET_SA(act_desc, ACT_NDX_RESET, run);
+  SET_SA(menu_sa_desc, MENU_SA_START, opts.target != NULL);
+  SET_SA(menu_sa_desc, MENU_SA_PAUSE, pause || (!pause && run));
+  SET_SA(menu_sa_desc, MENU_SA_RESET, run);
 }
 
 
