@@ -20,7 +20,7 @@
 #endif
 
 #define CNF_SECTION_MAIN "ping"
-#define CNF_STR_IPV    "ipversion"
+#define CNF_STR_IPV    "ip-version"
 #define CNF_STR_NODNS  "numeric"
 #define CNF_STR_CYCLES "cycles"
 #define CNF_STR_IVAL   "interval"
@@ -30,6 +30,7 @@
 #define CNF_STR_PLOAD  "payload"
 #define CNF_STR_INFO   "info"
 #define CNF_STR_STAT   "stat"
+#define CNF_STR_ATAB   "active-tab"
 #define CNF_STR_THEME  "theme"
 #define CNF_STR_GRAPH  "graph"
 #define CNF_STR_EXTRA  "extra"
@@ -42,11 +43,13 @@
 #define CNF_SECTION_AUX  "aux"
 
 enum { CNF_OPT_IPV, CNF_OPT_NODNS, CNF_OPT_CYCLES, CNF_OPT_IVAL, CNF_OPT_TTL, CNF_OPT_QOS, CNF_OPT_SIZE,
-  CNF_OPT_PLOAD, CNF_OPT_INFO, CNF_OPT_STAT, CNF_OPT_THEME, CNF_OPT_GRAPH, CNF_OPT_EXTRA, CNF_OPT_LGND,
+  CNF_OPT_PLOAD, CNF_OPT_INFO, CNF_OPT_STAT, CNF_OPT_ATAB, CNF_OPT_THEME, CNF_OPT_GRAPH, CNF_OPT_EXTRA, CNF_OPT_LGND,
 #ifdef WITH_PLOT
   CNF_OPT_PLEL, CNF_OPT_PLEX,
 #endif
   CNF_OPT_RECAP, CNF_OPT_MAX };
+
+enum { ONOFF_IPV4, ONOFF_IPV6, ONOFF_VERSION, ONOFF_MAX };
 
 typedef struct t_config_option {
   const char *opt;
@@ -351,6 +354,13 @@ static gboolean cli_opt_r(const char *name, const char *value, void *unused, GEr
   return cli_opt_elem(name, value, error, OPT_TYPE_RECAP);
 }
 
+static gboolean cli_opt_A(const char *name, const char *value, t_opts *opts, GError **error) {
+  int aopt = activetab + 1;
+  gboolean valid = cli_int_opt(name, value, error, OPT_ATAB_HDR, ATAB_MIN + 1, ATAB_MAX + 1, &aopt);
+  if (valid) activetab = aopt - 1;
+  return valid;
+}
+
 static gboolean config_opt_not_found(GError *opterr, const char *section, const char *name,
    const char *value, GError **error) {
   if (g_error_matches(opterr, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_KEY_NOT_FOUND) ||
@@ -381,6 +391,7 @@ static gboolean cli_opt_f(const char *name, const char *value, t_opts *opts, GEr
       {}
     }},
     { .name = CNF_SECTION_AUX, .options = {
+      { .opt = CNF_STR_ATAB,   .type = CNF_OPT_ATAB,   .data = cli_opt_A },
       { .opt = CNF_STR_THEME,  .type = CNF_OPT_THEME,  .data = cli_opt_T },
       { .opt = CNF_STR_GRAPH,  .type = CNF_OPT_GRAPH,  .data = cli_opt_g },
       { .opt = CNF_STR_EXTRA,  .type = CNF_OPT_EXTRA,  .data = cli_opt_G },
@@ -438,6 +449,7 @@ static gboolean cli_opt_f(const char *name, const char *value, t_opts *opts, GEr
         case CNF_OPT_PLOAD:
         case CNF_OPT_INFO:
         case CNF_OPT_STAT:
+        case CNF_OPT_ATAB:
         case CNF_OPT_THEME:
         case CNF_OPT_GRAPH:
         case CNF_OPT_EXTRA:
@@ -482,11 +494,9 @@ gboolean autostart;
 gboolean cli_init(int *pargc, char ***pargv) {
   if (!pargc || !pargv) return false;
   char** target = NULL;
-  gboolean num = -1, ipv4 = false, ipv6 = false, version = false;
+  int num = -1; gboolean onoff[ONOFF_MAX] = {false};
   const GOptionEntry options[] = {
     CLI_OPT_CALL('f', "file",         cli_opt_f, "Read options from file", "<filename>"),
-    CLI_OPT_NONE('4', "ipv4",         &ipv4, OPT_IPV4_HDR " only"),
-    CLI_OPT_NONE('6', "ipv6",         &ipv6, OPT_IPV4_HDR " only"),
     CLI_OPT_NONE('n', CNF_STR_NODNS,  &num, "Numeric output (i.e. disable " OPT_DNS_HDR " resolv)"),
     CLI_OPT_CALL('c', CNF_STR_CYCLES, cli_opt_c, OPT_CYCLES_HDR " per target", "<number>"),
     CLI_OPT_CALL('i', CNF_STR_IVAL,   cli_opt_i, OPT_IVAL_HDR " between pings", "<seconds>"),
@@ -504,10 +514,13 @@ gboolean cli_init(int *pargc, char ***pargv) {
     CLI_OPT_CALL('P', CNF_STR_PLEL,   cli_opt_P, OPT_PLOT_HDR, "<elems>"),
     CLI_OPT_CALL('X', CNF_STR_PLEX,   cli_opt_X, OPT_PLEX_HDR, "<tag:values>"),
 #endif
-    CLI_OPT_NONE('R', "run",          &autostart, "Autostart from CLI (if target is set)"),
     CLI_OPT_CALL('r', CNF_STR_RECAP,  cli_opt_r, OPT_RECAP_HDR " at exit (" RECAP_TYPE_MESG ")", "[" RECAP_PATT "]"),
+    CLI_OPT_NONE('R', "run",          &autostart, "Autostart from CLI (if target is set)"),
+    CLI_OPT_CALL('A', CNF_STR_ATAB,   cli_opt_A, OPT_ATAB_HDR, "<number>"),
     CLI_OPT_INTC('v', "verbose",      &verbose, "Messaging to stdout", "<level>"),
-    CLI_OPT_NONE('V', "version",      &version, "Runtime versions"),
+    CLI_OPT_NONE('V', "version",      &onoff[ONOFF_VERSION], "Runtime versions"),
+    CLI_OPT_NONE('4', "ipv4",         &onoff[ONOFF_IPV4], OPT_IPV4_HDR " only"),
+    CLI_OPT_NONE('6', "ipv6",         &onoff[ONOFF_IPV6], OPT_IPV6_HDR " only"),
     { .long_name = G_OPTION_REMAINING, .arg = G_OPTION_ARG_STRING_ARRAY, .arg_data = &target, .arg_description = "TARGET" },
     {}
   };
@@ -523,7 +536,7 @@ gboolean cli_init(int *pargc, char ***pargv) {
     if (!okay) {
       g_message("%s", error ? error->message : unkn_error); g_error_free(error);
       g_option_context_free(oc); return false; }
-    if (version) { g_print("%s", appver); char *ver;
+    if (onoff[ONOFF_VERSION]) { g_print("%s", appver); char *ver;
       if ((ver = rtver(GTK_STRV)))   { g_print(" +gtk-%s", ver);   g_free(ver); }
       if ((ver = rtver(GLIB_STRV)))  { g_print(" +glib-%s", ver);  g_free(ver); }
       if ((ver = rtver(CAIRO_STRV))) { g_print(" +cairo-%s", ver); g_free(ver); }
@@ -531,9 +544,9 @@ gboolean cli_init(int *pargc, char ***pargv) {
       g_print("\n"); g_option_context_free(oc); exit(EXIT_SUCCESS);
     }
   }
-  if (ipv4 && ipv6) CLI_FAIL("options %s are mutually exclusive", "-4/-6");
-  if (ipv4 && (opts.ipv != 4)) { opts.ipv = 4; g_message(OPT_IPV4_HDR " only " TOGGLE_ON_HDR); }
-  if (ipv6 && (opts.ipv != 6)) { opts.ipv = 6; g_message(OPT_IPV6_HDR " only " TOGGLE_ON_HDR); }
+  if (onoff[ONOFF_IPV4] && onoff[ONOFF_IPV6]) CLI_FAIL("options %s are mutually exclusive", "-4/-6");
+  if (onoff[ONOFF_IPV4] && (opts.ipv != 4)) { opts.ipv = 4; g_message(OPT_IPV4_HDR " only " TOGGLE_ON_HDR); }
+  if (onoff[ONOFF_IPV6] && (opts.ipv != 6)) { opts.ipv = 6; g_message(OPT_IPV6_HDR " only " TOGGLE_ON_HDR); }
   if (num >= 0) cli_set_opt_dns(num, &opts);
   // arguments
   if (target) {
@@ -565,5 +578,7 @@ gboolean cli_init(int *pargc, char ***pargv) {
   }
   g_option_context_free(oc);
   return true;
+#undef EXCL_OPT123
+#undef ON_STARTPAGE
 }
 

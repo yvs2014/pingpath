@@ -6,7 +6,7 @@
 #include "style.h"
 #include "notifier.h"
 #include "tabs/ping.h"
-#include "graph_rel.h"
+#include "draw_rel.h"
 
 typedef gboolean (*optmenu_add_items_fn)(GtkWidget *);
 
@@ -79,6 +79,8 @@ t_ent_bool ent_bool[] = {
     .valfn = plotelem_enabler, .valtype = PLEL_AXIS, .prefix = OPT_PLOT_HDR },
   [ENT_BOOL_PLGR] = { .en = { .type = ENT_BOOL_PLGR, .name = PLEL_GRID_HDR },
     .valfn = plotelem_enabler, .valtype = PLEL_GRID, .prefix = OPT_PLOT_HDR },
+  [ENT_BOOL_PLRR] = { .en = { .type = ENT_BOOL_PLRR, .name = PLEL_RTRR_HDR },
+    .valfn = plotelem_enabler, .valtype = PLEL_RTRR, .prefix = OPT_PLOT_HDR },
 #endif
 };
 
@@ -240,12 +242,13 @@ static void toggle_colors(void) {
   tab_dependent(NULL);
   STYLE_SET;
   tab_reload_theme();
-  if (OPTS_GRAPH_REL) { GRAPH_REFRESH_REL; notifier_legend_reload_css(); }
+  if (OPTS_DRAW_REL) DRAW_REFRESH_REL;
 }
 
 static void toggle_legend(void) { if (opts.graph) notifier_set_visible(NT_GRAPH_NDX, opts.legend); }
 #ifdef WITH_PLOT
 static void toggle_pl_elems(void) { plottab_refresh(PL_PARAM_NONE); }
+static void toggle_pl_rotor(void) { notifier_set_visible(NT_PLOT_NDX, is_plelem_enabled(PLEL_RTRR)); }
 #endif
 
 static void toggle_cb(GtkCheckButton *check, t_ent_bool *en) {
@@ -298,6 +301,9 @@ static void toggle_cb(GtkCheckButton *check, t_ent_bool *en) {
     case ENT_BOOL_PLAX:
     case ENT_BOOL_PLGR:
       check_bool_val(check, en, toggle_pl_elems);
+      break;
+    case ENT_BOOL_PLRR:
+      check_bool_val(check, en, toggle_pl_rotor);
       break;
 #endif
   }

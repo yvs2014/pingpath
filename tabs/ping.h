@@ -1,7 +1,7 @@
 #ifndef TABS_PING_H
 #define TABS_PING_H
 
-#include "common.h"
+#include "aux.h"
 
 t_tab* pingtab_init(GtkWidget* win);
 void pingtab_update(void);

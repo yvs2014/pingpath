@@ -73,17 +73,17 @@ int pinger_recap_cb(GApplication *app);
 #define EN_BOOLPTR(en) ((en)->pval ? (en)->pval : ((en)->valfn ? (en)->valfn((en)->valtype) : NULL))
 
 #ifdef WITH_PLOT
-#define OPTS_GRAPH_REL (opts.graph || opts.plot)
-#define GRAPH_UPDATE_REL { if (opts.graph) graphtab_update(); if (opts.plot) plottab_update(); }
-#define GRAPH_REFRESH_REL { if (opts.graph) graphtab_refresh(); if (opts.plot) plottab_refresh(PL_PARAM_COLOR); }
-#define GRAPH_RESTART_REL { if (opts.graph) graphtab_restart(); if (opts.plot) plottab_restart(); }
-#define GRAPH_FREE_REL { graphtab_free(); plottab_free(); }
+#define OPTS_DRAW_REL (opts.graph || opts.plot)
+#define DRAW_UPDATE_REL  { if (opts.graph) graphtab_update(); if (opts.plot) plottab_update(); }
+#define DRAW_REFRESH_REL { if (opts.graph) graphtab_refresh(); if (opts.plot) plottab_refresh(PL_PARAM_COLOR); }
+#define DRAW_RESTART_REL { if (opts.graph) graphtab_restart(); if (opts.plot) plottab_restart(); }
+#define DRAW_FREE_REL    { graphtab_free(); plottab_free(); }
 #else
-#define OPTS_GRAPH_REL (opts.graph)
-#define GRAPH_UPDATE_REL { if (opts.graph) graphtab_update(); }
-#define GRAPH_REFRESH_REL { if (opts.graph) graphtab_refresh(); }
-#define GRAPH_RESTART_REL { if (opts.graph) graphtab_restart(); }
-#define GRAPH_FREE_REL { graphtab_free(); }
+#define OPTS_DRAW_REL (opts.graph)
+#define DRAW_UPDATE_REL  { if (opts.graph) graphtab_update(); }
+#define DRAW_REFRESH_REL { if (opts.graph) graphtab_refresh(); }
+#define DRAW_RESTART_REL { if (opts.graph) graphtab_restart(); }
+#define DRAW_FREE_REL    { graphtab_free(); }
 #endif
 
 #endif

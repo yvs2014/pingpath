@@ -1,5 +1,6 @@
 
 #include "ping.h"
+#include "aux.h"
 #include "pinger.h"
 #include "stat.h"
 #include "ui/style.h"
@@ -241,7 +242,7 @@ static gboolean pt_init_line_elems(t_type_elem *elem, t_listline *line,
   return true;
 }
 
-static GtkWidget* pt_init_list_box(t_listline *lines, int len, t_type_elem *elems,
+static GtkWidget* pt_make_dynlist(t_listline *lines, int len, t_type_elem *elems,
     t_listline* bodylines, GtkSizeGroup* group[ELEM_MAX]) {
   static char stat_no_at_buff[MAXTTL][ELEM_BUFF_SIZE];
   GtkWidget *list = gtk_list_box_new();
@@ -271,24 +272,34 @@ static GtkWidget* pt_init_list_box(t_listline *lines, int len, t_type_elem *elem
   return list;
 }
 
-static GtkWidget* pt_init_info(void) {
-  GtkWidget *list = gtk_list_box_new();
-  g_return_val_if_fail(list, NULL);
+static void pt_set_vis_cells(GtkWidget **labs) {
+  if (labs) for (int i = 0; i < ELEM_MAX; i++) if (GTK_IS_WIDGET(labs[i]))
+    gtk_widget_set_visible(labs[i], pingelem[i].enable);
+}
+
+static GtkWidget* pt_make_info(void) {
+  pingtab.info.col = CSS_BGROUND;
+  GtkWidget *list = gtk_list_box_new(); g_return_val_if_fail(list, NULL);
   gtk_list_box_set_selection_mode(GTK_LIST_BOX(list), GTK_SELECTION_MULTIPLE);
   gtk_list_box_set_activate_on_single_click(GTK_LIST_BOX(list), false);
-  GtkWidget *label = listbox.info.box = gtk_label_new(NULL);
-  g_return_val_if_fail(label, NULL);
+  GtkWidget *label = listbox.info.box = gtk_label_new(NULL); g_return_val_if_fail(label, NULL);
   gtk_widget_set_visible(label, false);
   gtk_widget_set_halign(label, GTK_ALIGN_START);
-  listbox.info.row = line_row_new(label, false);
-  g_return_val_if_fail(listbox.info.row, NULL);
+  listbox.info.row = line_row_new(label, false); g_return_val_if_fail(listbox.info.row, NULL);
   gtk_list_box_append(GTK_LIST_BOX(list), GTK_WIDGET(listbox.info.row));
   return list;
 }
 
-static void pt_set_vis_cells(GtkWidget **labs) {
-  if (labs) for (int i = 0; i < ELEM_MAX; i++) if (GTK_IS_WIDGET(labs[i]))
-    gtk_widget_set_visible(labs[i], pingelem[i].enable);
+static GtkWidget* pt_make_dyn(void) {
+  GtkSizeGroup* group[ELEM_MAX];
+  for (int i = 0; i < G_N_ELEMENTS(group); i++) {
+    group[i] = gtk_size_group_new(GTK_SIZE_GROUP_HORIZONTAL); g_return_val_if_fail(group[i], NULL); }
+  TW_CSS_COL(pingtab.hdr, pt_make_dynlist(listbox.hdrlines, HDRLINES, pingelem, listbox.bodylines, group),
+    NULL, CSS_BGROUND);
+  gtk_box_append(GTK_BOX(pingtab.tab.w), pingtab.hdr.w);
+  GtkWidget *dyn = pt_make_dynlist(listbox.bodylines, MAXTTL, NULL, NULL, group);
+  for (int i = 0; i < G_N_ELEMENTS(group); i++) if (group[i]) g_object_unref(group[i]);
+  return dyn;
 }
 
 
@@ -354,36 +365,7 @@ void pingtab_set_error(const char *error) {
 }
 
 t_tab* pingtab_init(GtkWidget* win) {
-  TW_TW(pingtab.lab, gtk_box_new(GTK_ORIENTATION_VERTICAL, 2), CSS_PAD, NULL);
-  g_return_val_if_fail(pingtab.lab.w, NULL);
-  TW_TW(pingtab.tab, gtk_box_new(GTK_ORIENTATION_VERTICAL, MARGIN), CSS_PAD, CSS_BGROUND);
-  g_return_val_if_fail(pingtab.tab.w, NULL);
-  //
-  GtkSizeGroup* group[ELEM_MAX];
-  for (int i = 0; i < G_N_ELEMENTS(group); i++) {
-    group[i] = gtk_size_group_new(GTK_SIZE_GROUP_HORIZONTAL);
-    g_return_val_if_fail(group[i], NULL);
-  }
-  TW_TW(pingtab.dyn, pt_init_list_box(listbox.bodylines, MAXTTL, NULL, NULL, group), NULL, CSS_BGROUND);
-  g_return_val_if_fail(GTK_IS_LIST_BOX(pingtab.dyn.w), NULL);
-  //
-  GtkWidget *box = gtk_box_new(GTK_ORIENTATION_VERTICAL, MARGIN);
-  g_return_val_if_fail(box, NULL);
-  gtk_box_append(GTK_BOX(box), pingtab.dyn.w);
-  TW_TW(pingtab.info, pt_init_info(), NULL, CSS_BGROUND);
-  g_return_val_if_fail(GTK_IS_WIDGET(pingtab.info.w), NULL);
-  gtk_box_append(GTK_BOX(box), pingtab.info.w);
-  //
-  TW_TW(pingtab.hdr, pt_init_list_box(listbox.hdrlines, HDRLINES, pingelem, listbox.bodylines, group), NULL, CSS_BGROUND);
-  g_return_val_if_fail(GTK_IS_LIST_BOX(pingtab.hdr.w), NULL);
-  gtk_box_append(GTK_BOX(pingtab.tab.w), pingtab.hdr.w);
-  for (int i = 0; i < G_N_ELEMENTS(group); i++) if (GTK_IS_SIZE_GROUP(group[i])) g_object_unref(group[i]);
-  //
-  GtkWidget *scroll = gtk_scrolled_window_new();
-  g_return_val_if_fail(scroll, NULL);
-  gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scroll), box);
-  gtk_widget_set_vexpand(GTK_WIDGET(scroll), true);
-  gtk_box_append(GTK_BOX(pingtab.tab.w), scroll);
+  if (!basetab_init(&pingtab, pt_make_dyn, pt_make_info)) return NULL;
   if (!clipboard_init(win, &pingtab)) LOG("no %s clipboard", pingtab.name);
   return &pingtab;
 }

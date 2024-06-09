@@ -1,3 +1,7 @@
+## 0.3.7
+- add rotator
+- update manual and .conf example
+
 ## 0.3.6
 - add rotation
 - misc optimization

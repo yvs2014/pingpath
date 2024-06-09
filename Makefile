@@ -76,7 +76,7 @@ SRC = $(NAME).c common.c
 SRC += pinger.c parser.c stat.c series.c dns.c whois.c cli.c
 SRC += ui/style.c ui/appbar.c ui/action.c ui/option.c
 SRC += ui/clipboard.c ui/notifier.c
-SRC += tabs/ping.c tabs/graph.c tabs/log.c
+SRC += tabs/aux.c tabs/ping.c tabs/graph.c tabs/log.c
 ifdef PLOT
 SRC += tabs/plot.c tabs/plot_aux.c tabs/plot_pango.c
 endif

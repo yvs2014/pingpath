@@ -8,6 +8,7 @@
 #include "pinger.h"
 #include "stat.h"
 #include "ui/style.h"
+#include "ui/notifier.h"
 
 #if GTK_CHECK_VERSION(4, 13, 4)
 #define PP_GLSL_VERSION "300 es"
@@ -18,11 +19,6 @@
 #endif
 
 #define PLOT_SETERR(fmt, ...) g_set_error(err, g_quark_from_static_string(""), -1, fmt, __VA_ARGS__)
-
-#define PLOT_GET_LOC(id, name, exec, fn, type) { id = fn(exec, name); \
-  if (id < 0) { PLOT_SETERR("Could not bind %s '%s'", type, name); return false; }}
-#define PLOT_GET_ATTR(prog, loc, name) { PLOT_GET_LOC((prog).loc, name, (prog).exec, glGetAttribLocation, "attribute"); }
-#define PLOT_GET_FORM(prog, loc, name) { PLOT_GET_LOC((prog).loc, name, (prog).exec, glGetUniformLocation, "uniform"); }
 
 #define TIM_AXIS_TITLE "Time"
 #define RTT_AXIS_TITLE "Delay"
@@ -63,6 +59,8 @@
 
 #define MIN_ASCII_CCHAR 0x20
 #define LIM_ASCII_CCHAR 0x7f
+
+#define FONT_HEIGHT_PERCENT 1.5
 
 // locations: VO (virtual object), PO (plane object), AN (axis object)
 enum { VO_SURF = 0, VO_TEXT, PO_BOT, PO_LOR, PO_FON,
@@ -218,8 +216,7 @@ static vec4 axrect1[RNO_MAX], axrectN[RNO_MAX]; // firs-n-last axis marks
 
 static const vec2 plot_mrk_pad = { 2, 3};
 
-#define FONT_WINH_PERCENT 1.5
-static const float hfontf = 6 * (FONT_WINH_PERCENT / 100.) / (2 * PLOT_FONT_SIZE);
+static const float hfontf = 6 * (FONT_HEIGHT_PERCENT / 100.) / (2 * PLOT_FONT_SIZE);
 static vec2 char0sz, char0nm;
 static ivec2_t area_size;
 
@@ -307,9 +304,7 @@ static void plot_del_res_vao(t_plot_res *res) {
   }
 }
 
-static void plot_del_vbo(GLuint *pid) {
-  if (pid && *pid) { glDeleteBuffers(1, pid); *pid = 0; }
-}
+static void plot_del_vbo(GLuint *pid) { if (pid && *pid) { glDeleteBuffers(1, pid); *pid = 0; }}
 
 static void plot_del_res_vbo_dbo(t_plot_res *res) {
   if (res) for (int i = 0; i < G_N_ELEMENTS(res->vo); i++) {
@@ -355,29 +350,15 @@ static gboolean plot_compile_res(t_plot_res *res, GError **err) {
   return true;
 }
 
-#define PLOT_GLSL_PROG_SETUP(prog, glsl) { (prog).vtr = (prog).coord = (prog).colo1 = (prog).colo2 = -1; \
-  if (setup) { (prog).vert = (glsl)[GLSL_VERT]; (prog).frag = (glsl)[GLSL_FRAG]; }}
-
 static inline void plot_glsl_reset(t_plot_res *res, gboolean setup) {
+#define PLOT_SET_PROG(prog, glsl) { (prog).vtr = (prog).coord = (prog).colo1 = (prog).colo2 = -1; \
+    if (setup) { (prog).vert = (glsl)[GLSL_VERT]; (prog).frag = (glsl)[GLSL_FRAG]; }}
   if (res) {
-    PLOT_GLSL_PROG_SETUP(res->plot, plot_glsl);
-    PLOT_GLSL_PROG_SETUP(res->text, text_glsl);
+    PLOT_SET_PROG(res->plot, plot_glsl);
+    PLOT_SET_PROG(res->text, text_glsl);
   }
+#undef PLOT_SET_PROG
 }
-
-#define PLOT_GLSL_BASE_ATTRIBS(prog) { \
-  PLOT_GET_ATTR(prog, coord, PLOT_CRD); \
-  PLOT_GET_FORM(prog, vtr, PLOT_VTR); \
-  PLOT_GET_FORM(prog, colo1, PLOT_COL1); }
-#define PLOT_GLSL_EXT_ATTRIBS(prog) { PLOT_GLSL_BASE_ATTRIBS(prog); PLOT_GET_FORM(prog, colo2, PLOT_COL2); }
-
-#define PLOT_VERT_INIT_FLAT(obj, typ) { \
-  (obj).vbo = plot_aux_vert_init_plane(dim[0], dim[1], typ, plot_plane_vert_attr, (obj).vao, res->plot.coord); \
-  (obj).dbo.main = plot_aux_grid_init(dim[0], dim[1], typ); }
-
-#define PLOT_VERT_INIT_AXIS(obj, typ, width) { \
-  (obj).vbo = plot_aux_vert_init_axis(dim[0], dim[1], typ, width, plot_plane_vert_attr, (obj).vao, res->plot.coord); \
-  (obj).dbo.main = plot_aux_grid_init(dim[0], dim[1], typ); }
 
 static void plot_plane_vert_attr(GLuint vao, GLint coord) {
   if (!vao || (coord < 0)) return;
@@ -389,6 +370,23 @@ static void plot_plane_vert_attr(GLuint vao, GLint coord) {
 }
 
 static gboolean plot_res_init(t_plot_res *res, GError **err) {
+#define PLOT_FLAT_VERT(obj, typ) { \
+  (obj).vbo = plot_aux_vert_init_plane(dim[0], dim[1], typ, plot_plane_vert_attr, (obj).vao, res->plot.coord); \
+  (obj).dbo.main = plot_aux_grid_init(dim[0], dim[1], typ); }
+#define PLOT_AXIS_VERT(obj, typ, width) { \
+  (obj).vbo = plot_aux_vert_init_axis(dim[0], dim[1], typ, width, plot_plane_vert_attr, (obj).vao, res->plot.coord); \
+  (obj).dbo.main = plot_aux_grid_init(dim[0], dim[1], typ); }
+//
+#define PLOT_GET_LOC(id, name, exec, fn, type) { id = fn(exec, name); \
+  if (id < 0) { PLOT_SETERR("Could not bind %s '%s'", type, name); return false; }}
+#define PLOT_GET_ATTR(prog, loc, name) { PLOT_GET_LOC((prog).loc, name, (prog).exec, glGetAttribLocation, "attribute"); }
+#define PLOT_GET_FORM(prog, loc, name) { PLOT_GET_LOC((prog).loc, name, (prog).exec, glGetUniformLocation, "uniform"); }
+//
+#define PLOT_BASE_ATTR(prog) { \
+  PLOT_GET_ATTR(prog, coord, PLOT_CRD); \
+  PLOT_GET_FORM(prog, vtr,   PLOT_VTR); \
+  PLOT_GET_FORM(prog, colo1, PLOT_COL1); }
+#define PLOT_EXT_ATTR(prog) { PLOT_BASE_ATTR(prog); PLOT_GET_FORM(prog, colo2, PLOT_COL2); }
   if (!res) return false;
   if (!plot_compile_res(res, err)) return false;
   for (int i = 0; i < G_N_ELEMENTS(res->vo); i++) {
@@ -402,35 +400,42 @@ static gboolean plot_res_init(t_plot_res *res, GError **err) {
     return false;
   }
   // plot related
-  PLOT_GLSL_EXT_ATTRIBS(res->plot);
+  PLOT_EXT_ATTR(res->plot);
   if (res->base) {
     { // flat: bottom-o-top
       ivec2_t dim = { PLANE_XN, PLANE_YN };
-      PLOT_VERT_INIT_FLAT(res->vo[PO_BOT],  PLO_GRID);
-      PLOT_VERT_INIT_AXIS(res->vo[A1_TIM], PLO_AXIS_XL, TICK);
-      PLOT_VERT_INIT_AXIS(res->vo[A2_TIM], PLO_AXIS_XR, TICK);
-      PLOT_VERT_INIT_AXIS(res->vo[A1_TTL], PLO_AXIS_YR, TICK);
-      PLOT_VERT_INIT_AXIS(res->vo[A2_TTL], PLO_AXIS_YL, TICK);
+      PLOT_FLAT_VERT(res->vo[PO_BOT],  PLO_GRID);
+      PLOT_AXIS_VERT(res->vo[A1_TIM], PLO_AXIS_XL, TICK);
+      PLOT_AXIS_VERT(res->vo[A2_TIM], PLO_AXIS_XR, TICK);
+      PLOT_AXIS_VERT(res->vo[A1_TTL], PLO_AXIS_YR, TICK);
+      PLOT_AXIS_VERT(res->vo[A2_TTL], PLO_AXIS_YL, TICK);
     }
     { // flat: left-o-right
       ivec2_t dim = { PLANE_XN, PLANE_ZN };
-      PLOT_VERT_INIT_FLAT(res->vo[PO_LOR], PLO_GRID);
-      PLOT_VERT_INIT_AXIS(res->vo[A1_RTT], PLO_AXIS_XL, TICK);
-      PLOT_VERT_INIT_AXIS(res->vo[A2_RTT], PLO_AXIS_XR, TICK);
+      PLOT_FLAT_VERT(res->vo[PO_LOR], PLO_GRID);
+      PLOT_AXIS_VERT(res->vo[A1_RTT], PLO_AXIS_XL, TICK);
+      PLOT_AXIS_VERT(res->vo[A2_RTT], PLO_AXIS_XR, TICK);
     }
     { // flat: far-o-near
       ivec2_t dim = { PLANE_ZN, PLANE_YN };
-      PLOT_VERT_INIT_FLAT(res->vo[PO_FON], PLO_GRID);
+      PLOT_FLAT_VERT(res->vo[PO_FON], PLO_GRID);
     }
   } else { // surface
     ivec2_t dim = { SURF_XN * 2, SURF_YN * 2 };
-    PLOT_VERT_INIT_FLAT(res->vo[VO_SURF], PLO_SURF);
+    PLOT_FLAT_VERT(res->vo[VO_SURF], PLO_SURF);
     res->vo[VO_SURF].dbo.ext = plot_aux_surf_init(dim[0], dim[1], PLO_SURF); // triangles
   }
   // text related
-  PLOT_GLSL_BASE_ATTRIBS(res->text);
+  PLOT_BASE_ATTR(res->text);
   res->vo[VO_TEXT] = plot_pango_vo_init(res->text.coord); // text vao-n-vbo
   return true;
+#undef PLOT_FLAT_VERT
+#undef PLOT_AXIS_VERT
+#undef PLOT_GET_LOC
+#undef PLOT_GET_ATTR
+#undef PLOT_GET_FORM
+#undef PLOT_BASE_ATTR
+#undef PLOT_EXT_ATTR
 }
 
 static void plot_res_free(t_plot_res *res) {
@@ -490,13 +495,11 @@ static float plot_mark_shift(float chsz, float cw, int len, float pad, float cs)
   return cw * pad * cs - (1 - cs) * (chsz * len) / 2;
 }
 
-#define MARKMAXLEN 64
-
-#define SET_PVEC4(ptr, a, b, c, d) { float dx = c, dy = d; \
-  (ptr)[0] = a - dx; (ptr)[1] = b - dy; (ptr)[2] = a + dx; (*rect)[3] = b + dy; }
-
 static void plot_draw_text(t_plot_res *res, const char *text, int len,
     const vec4 color, const vec2 crd, const vec2 shift, const vec2 pad, vec4 *rect) {
+#define CENTER_TEXT(ptr, a, b, c, d) { float dx = c / 2, dy = d / 2; \
+  (ptr)[0] = a - dx; (ptr)[1] = b - dy; (ptr)[2] = a + dx; (ptr)[3] = b + dy; }
+#define MARKMAXLEN 64
   if (!(len > 0) || !res || !text) return;
   GLuint vao = res->vo[VO_TEXT].vao, vbo = res->vo[VO_TEXT].vbo.id, typ = res->vo[VO_TEXT].vbo.typ;
   if (!vao || !vbo || !typ) return;
@@ -507,12 +510,14 @@ static void plot_draw_text(t_plot_res *res, const char *text, int len,
   float cw = char0nm[0], ch = char0nm[1];
   float x = crd[0] + plot_mark_shift(cw, cw, len, pad[0], shift[0]);
   float y = crd[1] + plot_mark_shift(ch, cw, 1,   pad[1], shift[1]);
-  if (rect) SET_PVEC4(*rect, x, y, (len + 1) * cw / 2, ch / 2);
+  if (rect) CENTER_TEXT(*rect, x, y, (len + 1) * cw, ch);
   int i = 0;
   for (const char *p = text; *p && (i < MARKMAXLEN); p++, i++, x += cw) {
     unsigned tid = char_table[(unsigned char)*p].tid;
     if (tid) plot_pango_drawtex(tid, vbo, typ, x, y, cw, ch);
   }
+#undef CENTER_TEXT
+#undef MARKMAXLEN
 }
 
 static void plot_rtt_marks(t_mark_text mark[], int n) {
@@ -529,8 +534,8 @@ static void plot_tim_marks(t_mark_text mark[], int n) {
   }
 }
 
-#define PLOT_TTL_FMT "%.0f%s"
 static void plot_ttl_marks(t_mark_text mark[], int n) {
+#define PLOT_TTL_FMT "%.0f%s"
   float val = opts.min + 1; float step = (tgtat - val) / (n - 1);
   for (int i = 0, printed = -1; i < n; i++, val += step) {
     if ((i == (n - 1)) || ((int)val != printed)) printed = val;
@@ -538,6 +543,7 @@ static void plot_ttl_marks(t_mark_text mark[], int n) {
     float r = fmodf(val, 1);
     mark[i].len = snprintf(mark[i].text, sizeof(mark[i]), PLOT_TTL_FMT, val, r ? ((r < 0.5) ? "-" : "+") : "");
   }
+#undef PLOT_TTL_FMT
 }
 
 static inline gboolean rect_overlapped(vec4 curr, vec4 prev) {
@@ -546,10 +552,6 @@ static inline gboolean rect_overlapped(vec4 curr, vec4 prev) {
   return over;
 }
 
-#define PLOT_DRAW_MARK(rect)  plot_draw_text(res, mark[i].text, mark[i].len, \
-  color, axis->crd[i], axis->shift, plot_mrk_pad, rect)
-#define PLOT_DRAW_TITLE(rect) plot_draw_text(res, axis->title,  axis->title_len, \
-  color, axis->at,     axis->shift, axis->pad,    rect)
 
 static inline gboolean plot_cache_overlapping(int rno, vec4 curr, vec4 prev, vec4 trec, gboolean first) {
   gboolean   over = rect_overlapped(curr, prev);
@@ -568,6 +570,10 @@ static inline gboolean plot_cache_overlapping(int rno, vec4 curr, vec4 prev, vec
 }
 
 static void glsl_draw_axis(t_plot_res *res, vec4 color, gboolean name_only, t_plot_axis_params *axis) {
+#define PLOT_DRAW_MARK(rect)  plot_draw_text(res, mark[i].text, mark[i].len, \
+    color, axis->crd[i], axis->shift, plot_mrk_pad, rect)
+#define PLOT_DRAW_TITLE(rect) plot_draw_text(res, axis->title,  axis->title_len, \
+    color, axis->at,     axis->shift, axis->pad,    rect)
   if (name_only) { PLOT_DRAW_TITLE(NULL); return; }
   vec4 trec; gboolean cached = axis->overlap.cached;
   PLOT_DRAW_TITLE(cached ? NULL : &trec);
@@ -587,6 +593,8 @@ static void glsl_draw_axis(t_plot_res *res, vec4 color, gboolean name_only, t_pl
     glm_vec4_copy(prev, axrectN[rno]);
     axis->overlap.cached = true;
   }
+#undef PLOT_DRAW_MARK
+#undef PLOT_DRAW_TITLE
 }
 
 static void glsl_draw_text(t_plot_res *res) {
@@ -602,16 +610,14 @@ static void glsl_draw_text(t_plot_res *res) {
   glUseProgram(0);
 }
 
+static void glsl_draw_plot(t_plot_res *res) {
 #define AXIS_VO(axis) (plparam.axes.axis.ndx)
 #define PO_RTT AXIS_VO(rtt)
 #define PO_TIM AXIS_VO(tim)
 #define PO_TTL AXIS_VO(ttl)
-
+#define PO_DRAWELEM(pondx, matrix) { PLOT_DRAWELEMS(pondx, main, grid_color, grid_color, matrix, GL_LINES); }
 #define PLOT_DRAWELEMS(ndx, dbotype, glcolo1, glcolo2, matrix, gltype) { plot_draw_elems(res->vo[ndx].vao, \
   res->vo[ndx].dbo.dbotype, res->plot.vtr, glcolo1, res->plot.colo1, glcolo2, res->plot.colo2, plot_trans.matrix, gltype); }
-#define PO_DRAWELEM(pondx, matrix) { PLOT_DRAWELEMS(pondx, main, grid_color, grid_color, matrix, GL_LINES); }
-
-static void glsl_draw_plot(t_plot_res *res) {
   glUseProgram(res->plot.exec);
   if (res->base) {
     if (is_plelem_enabled(PLEL_BACK)) {
@@ -631,14 +637,19 @@ static void glsl_draw_plot(t_plot_res *res) {
   }
   glFlush();
   glUseProgram(0);
+#undef AXIS_VO
+#undef PO_RTT
+#undef PO_TIM
+#undef PO_TTL
+#undef PO_DRAWELEM
+#undef PLOT_DRAWELEMS
 }
-
-#define PLOT_IS_BASE_GLSL_VALID(prog) ((prog).exec && ((prog).vtr >= 0) && ((prog).colo1 >= 0) && ((prog).coord >= 0))
-#define PLOT_IS_EXT_GLSL_VALID(prog) (PLOT_IS_BASE_GLSL_VALID(prog) && ((prog).colo2 >= 0))
 
 static inline void plot_clear_area(void) { glClearColor(0, 0, 0, 0); glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); }
 
 static gboolean area_draw(GtkGLArea *area, GdkGLContext *context, t_plot_res *res) {
+#define BASE_PROG_VALID(prog) ((prog).exec && ((prog).vtr >= 0) && ((prog).colo1 >= 0) && ((prog).coord >= 0))
+#define EXT_PROG_VALID(prog) (BASE_PROG_VALID(prog) && ((prog).colo2 >= 0))
   if (!GTK_IS_GL_AREA(area) || !GDK_IS_GL_CONTEXT(context) || !res) return false;
   plot_clear_area();
   { int w = gtk_widget_get_width (GTK_WIDGET(area));
@@ -646,12 +657,14 @@ static gboolean area_draw(GtkGLArea *area, GdkGLContext *context, t_plot_res *re
     if (((w != area_size[0]) || (h != area_size[1])) && ((w > 0) && (h > 0)))
       plot_set_char_norm(w, h);
   }
-  if (PLOT_IS_BASE_GLSL_VALID(res->text)) {
+  if (BASE_PROG_VALID(res->text)) {
     if (not_cached_yet) { glsl_draw_text(res); plot_clear_area(); if (!res->base) not_cached_yet = false; }
     glsl_draw_text(res);
   }
-  if (PLOT_IS_EXT_GLSL_VALID(res->plot))  glsl_draw_plot(res);
+  if (EXT_PROG_VALID(res->plot)) glsl_draw_plot(res);
   return true;
+#undef BASE_PROG_VALID
+#undef EXT_PROG_VALID
 }
 
 static GtkWidget* plot_init_glarea(t_plot_res *res) {
@@ -670,9 +683,8 @@ static GtkWidget* plot_init_glarea(t_plot_res *res) {
   return area;
 }
 
-#define AUXDST_HALF(arr) { (arr[0][0] + arr[n - 1][0]) / 2, (arr[0][1] + arr[n - 1][1]) / 2 }
-
 static void plot_form_axis(mat4 src, t_plot_axis_params *param, gboolean ndx, gboolean atmax, gboolean rev) {
+#define MIDDLE_POINT(arr) { (arr[0][0] + arr[n - 1][0]) / 2, (arr[0][1] + arr[n - 1][1]) / 2 }
   if (!param) return;
   int n = param->crd_len; vec4 *dst = param->crd;
   float at = atmax ? 1 : -1;
@@ -684,12 +696,13 @@ static void plot_form_axis(mat4 src, t_plot_axis_params *param, gboolean ndx, gb
     glm_mat4_mulv(src, dir, axs);
     glm_vec4_divs(axs, axs[3], aux[i]);
   }
-  vec2 p1 = AUXDST_HALF(dst), p2 = AUXDST_HALF(aux);
+  vec2 p1 = MIDDLE_POINT(dst), p2 = MIDDLE_POINT(aux);
   glm_vec2_sub(p2, p1, param->shift);
   glm_vec2_normalize(param->shift);
   glm_vec2_copy(p1, param->at);
   param->overlap.cached = false;
   memset(param->overlap.over, 0, sizeof(param->overlap.over));
+#undef MIDDLE_POINT
 }
 
 static inline void plot_trans_axes(t_plot_plane_at at) {
@@ -714,11 +727,12 @@ static inline void plot_trans_planes(mat4 model, mat4 projview, ivec3_t cube, t_
   plot_rotate_copy(projview, model, rot[2], GLM_YUP, at.bot ? NULL : &GLM_ZUP, plot_trans.bot);
 }
 
-#define COL4_CMPNSET(dest, mm) { vec4 c = { opts.rcol.mm / 255., opts.gcol.mm / 255., opts.bcol.mm / 255., 1 }; \
-  if ((dest[0] != c[0]) || (dest[1] != c[1]) || (dest[2] != c[2])) glm_vec4_copy(c, dest); }
 static inline void plottab_on_color_opts(void) {
+#define COL4_CMPNSET(dest, mm) { vec4 c = { opts.rcol.mm / 255., opts.gcol.mm / 255., opts.bcol.mm / 255., 1 }; \
+    if ((dest[0] != c[0]) || (dest[1] != c[1]) || (dest[2] != c[2])) glm_vec4_copy(c, dest); }
   COL4_CMPNSET(surf_colo1, min);
   COL4_CMPNSET(surf_colo2, max);
+#undef COL4_CMPNSET
 }
 
 static inline void plot_main_rotation(mat4 R, iv3s_t o) {
@@ -776,7 +790,7 @@ static void plottab_on_opts(unsigned flags) {
 
 static inline void plottab_redraw(void) {
   if (GTK_IS_WIDGET(plot_base_area)) gtk_gl_area_queue_render(GTK_GL_AREA(plot_base_area));
-  if (GTK_IS_WIDGET(plot_dyn_area)) gtk_gl_area_queue_render(GTK_GL_AREA(plot_dyn_area));
+  if (GTK_IS_WIDGET(plot_dyn_area))  gtk_gl_area_queue_render(GTK_GL_AREA(plot_dyn_area));
 }
 
 
@@ -784,35 +798,21 @@ static inline void plottab_redraw(void) {
 //
 
 t_tab* plottab_init(GtkWidget* win) {
+#define PL_INIT_LAYER(widget, descr) { widget = plot_init_glarea(descr); \
+    g_return_val_if_fail(widget, NULL); layers = g_slist_append(layers, widget); }
   { int units = 1; glGetIntegerv(GL_MAX_VERTEX_TEXTURE_IMAGE_UNITS, &units);
     if (!units) { WARN_("No support for texture lookups in the vertex shader"); return NULL; }}
-  plottab_on_opts(PL_PARAM_ALL);
-  plot_glsl_reset(&plot_base_res, true);
-  plot_glsl_reset(&plot_dyna_res, true);
-  //
-  TW_TW(plottab.lab, gtk_box_new(GTK_ORIENTATION_VERTICAL, 2), CSS_PAD, NULL);
-  g_return_val_if_fail(plottab.lab.w, NULL);
-  TW_TW(plottab.dyn, gtk_box_new(GTK_ORIENTATION_VERTICAL, 0), NULL, CSS_PLOT_BG);
-  g_return_val_if_fail(plottab.dyn.w, NULL);
-  // create layers
-  plot_base_area = plot_init_glarea(&plot_base_res); g_return_val_if_fail(plot_base_area, NULL);
-  plot_dyn_area  = plot_init_glarea(&plot_dyna_res); g_return_val_if_fail(plot_dyn_area,  NULL);
-  // merge layers
-  GtkWidget *over = gtk_overlay_new();
-  g_return_val_if_fail(over, NULL);
-  gtk_overlay_add_overlay(GTK_OVERLAY(over), plot_base_area);
-  gtk_overlay_add_overlay(GTK_OVERLAY(over), plot_dyn_area);
-  gtk_overlay_set_child(GTK_OVERLAY(over), plottab.dyn.w);
-  // wrap scrolling
-  plottab.tab.w = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-  GtkWidget *scroll = gtk_scrolled_window_new();
-  gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scroll), over);
-  // put into tab
-  gtk_widget_set_vexpand(GTK_WIDGET(scroll), true);
-  gtk_box_append(GTK_BOX(plottab.tab.w), scroll);
-  series_reg_on_scale(plot_base_area);
-  series_min(PLOT_TIME_RANGE);
+  { plottab_on_opts(PL_PARAM_ALL);
+    plot_glsl_reset(&plot_base_res, true);
+    plot_glsl_reset(&plot_dyna_res, true); }
+  { GSList *layers = NULL;
+    PL_INIT_LAYER(plot_base_area, &plot_base_res);
+    PL_INIT_LAYER(plot_dyn_area,  &plot_dyna_res);
+    if (!drawtab_init(&plottab, CSS_PLOT_BG, layers, NT_PLOT_NDX)) return NULL;
+    g_slist_free(layers); }
+  { series_reg_on_scale(plot_base_area); series_min(PLOT_TIME_RANGE); }
   return &plottab;
+#undef PL_INIT_LAYER
 }
 
 inline void plottab_free(void) { plot_res_free(&plot_dyna_res); plot_res_free(&plot_base_res); plot_aux_free(); }

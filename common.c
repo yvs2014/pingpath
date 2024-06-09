@@ -2,7 +2,6 @@
 #include <time.h>
 
 #include "common.h"
-#include "ui/style.h"
 
 const char *appver = APPNAME "-" VERSION;
 
@@ -11,9 +10,7 @@ const char *unkn_field = ""; // "?" "???"
 const char *unkn_whois = "";
 
 gboolean cli;
-int verbose, startpage = TAB_PING_NDX;
-
-t_tab* nb_tabs[TAB_NDX_MAX]; // notebook tabs are reorderable
+int verbose, activetab = TAB_PING_NDX;
 
 t_type_elem pingelem[ELEM_MAX] = {
   [ELEM_NO]   = { .type = ELEM_NO,   .enable = true, .name = "" },
@@ -49,6 +46,7 @@ t_type_elem plotelem[PLEL_MAX] = {
   [PLEL_BACK] = { .type = PLEL_BACK, .enable = true, .name = PLEL_BACK_HDR },
   [PLEL_AXIS] = { .type = PLEL_AXIS, .enable = true, .name = PLEL_AXIS_HDR },
   [PLEL_GRID] = { .type = PLEL_GRID, .enable = true, .name = PLEL_GRID_HDR },
+  [PLEL_RTRR] = { .type = PLEL_RTRR, .enable = true, .name = PLEL_RTRR_HDR },
 };
 #endif
 
@@ -115,6 +113,7 @@ static int char_ndxs[][MAXCHARS_IN_PATTERN][2] = { // max pattern is 8 chars
     {ENT_BOOL_PLBK, PLEL_BACK}, // b
     {ENT_BOOL_PLAX, PLEL_AXIS}, // a
     {ENT_BOOL_PLGR, PLEL_GRID}, // g
+    {ENT_BOOL_PLRR, PLEL_RTRR}, // r
   },
 #endif
 };
@@ -180,6 +179,7 @@ static int plotelem_type2ent(int type) {
     case PLEL_BACK: n = ENT_BOOL_PLBK; break;
     case PLEL_AXIS: n = ENT_BOOL_PLAX; break;
     case PLEL_GRID: n = ENT_BOOL_PLGR; break;
+    case PLEL_RTRR: n = ENT_BOOL_PLRR; break;
   }
   return n;
 }
@@ -196,7 +196,7 @@ t_elem_desc grex_desc = { .elems = graphelem, .mm = { .min = GREX_MEAN, .max = G
   .cat = GREX_CHAR, .patt = GREX_PATT, .t2n = graphelem_type2ndx, .t2e = graphelem_type2ent };
 
 #ifdef WITH_PLOT
-t_elem_desc plot_desc = { .elems = plotelem, .mm = { .min = PLEL_BACK, .max = PLEL_GRID },
+t_elem_desc plot_desc = { .elems = plotelem, .mm = { .min = PLEL_BACK, .max = PLEL_RTRR },
   .cat = PLEL_CHAR, .patt = PLEL_PATT, .t2n = plotelem_type2ndx, .t2e = plotelem_type2ent };
 #endif
 
@@ -242,7 +242,7 @@ void clean_elems(int type) {
     case ENT_EXP_LGFL: CLEAN_ELEM_LOOP(graphelem, GRLG_AVJT, GRLG_LGHN); break;
     case ENT_EXP_GREX: CLEAN_ELEM_LOOP(graphelem, GREX_MEAN, GREX_AREA); break;
 #ifdef WITH_PLOT
-    case ENT_EXP_PLEL: CLEAN_ELEM_LOOP(plotelem,  PLEL_BACK, PLEL_GRID); break;
+    case ENT_EXP_PLEL: CLEAN_ELEM_LOOP(plotelem,  PLEL_BACK, PLEL_RTRR); break;
 #endif
   }
 }
@@ -273,43 +273,6 @@ GtkListBoxRow* line_row_new(GtkWidget *child, gboolean visible) {
   gtk_list_box_row_set_child(row, child);
   gtk_widget_set_visible(GTK_WIDGET(row), visible);
   return row;
-}
-
-void tab_setup(t_tab *tab) {
-  if (!tab) return;
-  if (GTK_IS_WIDGET(tab->lab.w)) {
-    gtk_widget_set_hexpand(tab->lab.w, true);
-    if (style_loaded && tab->lab.css) gtk_widget_add_css_class(tab->lab.w, tab->lab.css);
-    if (GTK_IS_BOX(tab->lab.w)) {
-      const char *ico = is_sysicon(tab->ico);
-      if (!ico) WARN("No icon found for %s", tab->name);
-      gtk_box_append(GTK_BOX(tab->lab.w), gtk_image_new_from_icon_name(ico));
-      if (tab->tag) gtk_box_append(GTK_BOX(tab->lab.w), gtk_label_new(tab->tag));
-      if (tab->tip) gtk_widget_set_tooltip_text(tab->lab.w, tab->tip);
-    }
-  }
-  t_tab_widget tw[] = {tab->hdr, tab->dyn, tab->info};
-  for (int i = 0; i < G_N_ELEMENTS(tw); i++) if (GTK_IS_WIDGET(tw[i].w))
-    gtk_widget_set_can_focus(tw[i].w, false);
-  if (style_loaded && tab->tab.css && GTK_IS_WIDGET(tab->tab.w))
-    gtk_widget_add_css_class(tab->tab.w, tab->tab.css);
-}
-
-#define RELOAD_TW_CSS(tw, reload) { const char *col = reload; \
-  if ((tw).col) gtk_widget_remove_css_class((tw).w, (tw).col); \
-  (tw).col = col; gtk_widget_add_css_class((tw).w, (tw).col); }
-
-void tab_color(t_tab *tab) {
-  if (!style_loaded || !tab) return;
-  t_tab_widget tw[] = {tab->hdr, tab->dyn, tab->info};
-  for (int i = 0; i < G_N_ELEMENTS(tw); i++) if (tw[i].col && GTK_IS_WIDGET(tw[i].w))
-    RELOAD_TW_CSS(tw[i], tw[i].col);
-  if (tab->tab.col && GTK_IS_WIDGET(tab->tab.w))
-    RELOAD_TW_CSS(tab->tab, tab->tab.col);
-}
-
-void tab_reload_theme(void) {
-  for (int i = 0; i < G_N_ELEMENTS(nb_tabs); i++) if (nb_tabs[i]) tab_color(nb_tabs[i]);
 }
 
 void host_free(t_host *host) {

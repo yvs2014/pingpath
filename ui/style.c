@@ -21,7 +21,7 @@
   if (!display) { WARN_("no default display"); return re; }
 
 typedef struct style_colors {
-  const char *def[2], *app[2], *graph[2], *plot[2];
+  const char *def[2], *app[2], *alt[2], *gry[2];
 } t_style_colors;
 
 int style_loaded;
@@ -30,10 +30,10 @@ gboolean ub_theme;
 //
 
 static const t_style_colors style_color = {
-  .def   = { "#fdfdfd", "#151515"},
-  .app   = { BG_CONTRAST_LIGHT, BG_CONTRAST_DARK},
-  .graph = { "#f9f9f9", "#222222"},
-  .plot  = { "#f9f9f9", "#222222"},
+  .def = { "#fdfdfd", "#151515"},
+  .app = { BG_CONTRAST_LIGHT, BG_CONTRAST_DARK},
+  .alt = { "#f9f9f9", "#222222"},
+  .gry = { "#e0e0e0", "#414141"},
 };
 
 static const char *css_common = "\n\
@@ -52,6 +52,7 @@ vertical {padding:" PAD16 ";}\n\
 ." CSS_INVERT " {filter:invert(100%);}\n\
 ." CSS_LEGEND " {border: 1px outset " LEGEND_BORDER "; padding: " PAD4 " " PAD6 " " PAD4 " " PAD4 ";}\n\
 ." CSS_LEGEND_TEXT " {padding:0;}\n\
+." CSS_ROTOR  " {border: 0; padding: " PAD4 " " PAD6 " " PAD4 " " PAD4 ";}\n\
 ." CSS_BGONDARK  " {background:" BG_CONTRAST_DARK  ";color:" BG_CONTRAST_DARK  ";}\n\
 ." CSS_BGONLIGHT " {background:" BG_CONTRAST_LIGHT ";color:" BG_CONTRAST_LIGHT ";}\n\
 #" CSS_ID_DATETIME " {font-weight:500;}\n";
@@ -64,29 +65,40 @@ static void style_css_load(GtkCssProvider *prov, const char *str) {
 #endif
 }
 
-static char* style_extra_css(const char *common, gboolean dark, gboolean darkgraph, gboolean darkplot) {
-  int ndx = dark ? 1 : 0, grndx = darkgraph ? 1 : 0, plndx = darkplot ? 1 : 0;
-  const char *def = style_color.def[ndx], *def_gr = style_color.def[grndx], *def_pl = style_color.def[plndx],
-    *app = style_color.app[ndx], *app_inv = style_color.app[!ndx],
-    *lgnd_bg = style_color.graph[grndx], *lgnd_fg = style_color.graph[!grndx];
+static char* style_extra_css(const char *common, unsigned darkbits) {
+  int n0 = (darkbits >> 0) & 0x1; // main
+  int n1 = (darkbits >> 1) & 0x1; // graph
+#ifdef WITH_PLOT
+  int n2 = (darkbits >> 2) & 0x1; // plot
+#endif
+  const char *col = style_color.app[n0];
   char* items[] = {
     g_strdup_printf("%s\n", common),
-    g_strdup_printf("." CSS_BGROUND " {background:%s;}\n", def),
-    g_strdup_printf("popover > arrow, popover > contents {background:%s; box-shadow:none;}\n", app),
-    g_strdup_printf("entry, entry.flat {background:%s; text-decoration:underline; border:none;}\n", app),
-    g_strdup_printf("headerbar {background:%s;}\n", app),
-    g_strdup_printf("headerbar:backdrop {background:%s;}\n", app),
-    g_strdup_printf("notebook > header > tabs > tab {background-color:%s;}\n", app),
-    g_strdup_printf("." CSS_EXP " {background:%s;}\n", app),
-    g_strdup_printf("." CSS_DEF_BG " {background:%s; color:%s;}\n", app, app),
-    g_strdup_printf("." CSS_INV_BG " {background:%s; color:%s;}\n", app_inv, app_inv),
-    g_strdup_printf("." CSS_GRAPH_BG  " {background:%s;}\n", def_gr),
-    g_strdup_printf("." CSS_PLOT_BG  " {background:%s; color:%s;}\n", def_pl, def_pl),
-    g_strdup_printf("." CSS_LEGEND_COL " {background:%s; color:%s;}\n", lgnd_bg, lgnd_fg),
+    g_strdup_printf("." CSS_BGROUND " {background:%s;}\n", style_color.def[n0]),
+    g_strdup_printf("popover > arrow, popover > contents {background:%s; box-shadow:none;}\n", col),
+    g_strdup_printf("entry, entry.flat {background:%s; text-decoration:underline; border:none;}\n", col),
+    g_strdup_printf("headerbar {background:%s;}\n", col),
+    g_strdup_printf("headerbar:backdrop {background:%s;}\n", col),
+    g_strdup_printf("notebook > header > tabs > tab {background-color:%s;}\n", col),
+    g_strdup_printf("." CSS_EXP " {background:%s;}\n", col),
+    g_strdup_printf("." CSS_DEF_BG " {background:%s; color:%s;}\n", col, col),
+    g_strdup_printf("." CSS_INV_BG " {background:%s; color:%s;}\n", style_color.app[!n0], style_color.app[!n0]),
+    g_strdup_printf("." CSS_GRAPH_BG   " {background:%s;}\n", style_color.def[n1]),
+    g_strdup_printf("." CSS_LEGEND_COL " {background:%s; color:%s;}\n", style_color.alt[n1], style_color.alt[!n1]),
+#ifdef WITH_PLOT
+    g_strdup_printf("." CSS_PLOT_BG    " {background:%s; color:%s;}\n", style_color.def[n2], style_color.def[!n2]),
+    g_strdup_printf("." CSS_ROTOR_COL  " {color:%s;}\n", style_color.def[!n2]),
+    g_strdup_printf("." CSS_ROTOR_COL  ":hover {background:%s;}\n", style_color.gry[n2]),
+#endif
     NULL};
   char *re = g_strjoinv(NULL, items);
   for (char **p = items; *p; p++) g_free(*p);
   return re;
+#undef MN_NDX
+#undef GR_NDX
+#ifdef WITH_PLOT
+#undef PL_NDX
+#endif
 };
 
 static const gboolean is_theme_dark(const char *theme) {
@@ -137,7 +149,11 @@ static void style_load_extra(GdkDisplay *display, gboolean dark, gboolean darkgr
   style_loaded = false;
   GtkCssProvider *prov = gtk_css_provider_new();
   g_return_if_fail(GTK_IS_CSS_PROVIDER(prov));
-  char *data = style_extra_css(css_common, dark, darkgraph, darkplot);
+  char *data = style_extra_css(css_common, dark | (darkgraph << 1)
+#ifdef WITH_PLOT
+    | (darkplot << 2)
+#endif
+  );
   if (!data) { WARN_("no CSS data"); g_object_unref(prov); return; }
   style_css_load(prov, data); g_free(data);
   if (prov_extra) gtk_style_context_remove_provider_for_display(display, GTK_STYLE_PROVIDER(prov_extra));

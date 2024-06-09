@@ -1,7 +1,7 @@
 #ifndef CLIPBOARD_H
 #define CLIPBOARD_H
 
-#include "common.h"
+#include "tabs/aux.h"
 
 gboolean clipboard_init(GtkWidget *win, t_tab *tab);
 void cb_on_sall(GSimpleAction *action, GVariant *var, void *data);

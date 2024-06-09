@@ -80,8 +80,6 @@ static inline void gr_draw_line_at(cairo_t *cr, double x0, double rtt0, double x
   cairo_line_to(cr, x1, rtt2y(rtt1));
 }
 
-#define RTT_OR_NEG(d) (IS_RTT_DATA(d) ? (d)->rtt : -1)
-
 static void gr_draw_dot_loop(int i, cairo_t *cr, double x) {
   for (GSList *item = SERIES(i); item; item = item->next, x -= dx_step) {
     if (x < grm.x0) break;
@@ -109,7 +107,7 @@ static void gr_draw_dot_scope_loop(int i, cairo_t *cr, double x) {
   }
 }
 
-#define FULL_DRAW_DOT(x, rtt) { cairo_stroke(cr); cairo_set_line_width(cr, DOT_SIZE); \
+#define GRAPH_STROKE_DOT(x, rtt) { cairo_stroke(cr); cairo_set_line_width(cr, DOT_SIZE); \
   gr_draw_dot_at(cr, x, rtt); cairo_stroke(cr); cairo_set_line_width(cr, line_width); }
 
 static void gr_draw_line_loop(int i, cairo_t *cr, double x) {
@@ -124,7 +122,7 @@ static void gr_draw_line_loop(int i, cairo_t *cr, double x) {
       if (data->rtt > 0) {
         gr_draw_line_at(cr, prev.x, prev.rtt, x, data->rtt);
         connected = true;
-      } else if (!prev.conn) FULL_DRAW_DOT(prev.x, prev.rtt);
+      } else if (!prev.conn) GRAPH_STROKE_DOT(prev.x, prev.rtt);
     }
     prev.x = x; prev.rtt = data->rtt; prev.conn = connected;
   }
@@ -140,11 +138,12 @@ static inline int centripetal(double d1, double q1, double d2, double q2, int p0
 }
 
 static void gr_draw_curve_loop(int i, cairo_t *cr, double x0) {
+#define RTT_OR_NEG(d) (IS_RTT_DATA(d) ? (d)->rtt : -1)
   if (!SERIES(i)) return;
   double line_width = cairo_get_line_width(cr);
   { t_rseq *data = SERIES(i)->data; int r0 = RTT_OR_NEG(data); if (r0 > 0) {
     data = g_slist_nth_data(SERIES(i), 1); int r1 = RTT_OR_NEG(data);
-    if (r1 > 0) gr_draw_line_at(cr, x0, r0, x0 - dx_step, r1); else FULL_DRAW_DOT(x0, r0);
+    if (r1 > 0) gr_draw_line_at(cr, x0, r0, x0 - dx_step, r1); else GRAPH_STROKE_DOT(x0, r0);
   }}
   for (GSList *item = SERIES(i); item; item = item->next, x0 -= dx_step) {
     int r0, r1, r2, r3;
@@ -180,8 +179,9 @@ static void gr_draw_curve_loop(int i, cairo_t *cr, double x0) {
           x2, y2);
       }
     } else if ((r1 > 0) && (r2 > 0)) gr_draw_line_at(cr, x1, r1, x2, r2);
-    else if ((r1 > 0) && !(r0 > 0)) FULL_DRAW_DOT(x1, r1);
+    else if ((r1 > 0) && !(r0 > 0)) GRAPH_STROKE_DOT(x1, r1);
   }
+#undef RTT_OR_NEG
 }
 
 #define SKIP_EXCLUDED { if (lgnd_excl_mask && (lgnd_excl_mask & (1 << n))) continue; }
@@ -364,40 +364,18 @@ static void gr_draw_graph(GtkDrawingArea *area, cairo_t* cr, int w, int h, void 
 //
 
 t_tab* graphtab_init(GtkWidget* win) {
-  TW_TW(graphtab.lab, gtk_box_new(GTK_ORIENTATION_VERTICAL, 2), CSS_PAD, NULL);
-  g_return_val_if_fail(graphtab.lab.w, NULL);
-  TW_TW(graphtab.dyn, gtk_box_new(GTK_ORIENTATION_VERTICAL, 0), NULL, CSS_GRAPH_BG);
-  g_return_val_if_fail(graphtab.dyn.w, NULL);
-  // create layers
-  graph_grid = gtk_drawing_area_new();
-  g_return_val_if_fail(graph_grid, NULL);
-  gtk_drawing_area_set_draw_func(GTK_DRAWING_AREA(graph_grid), gr_draw_grid, NULL, NULL);
-  graph_marks = gtk_drawing_area_new();
-  g_return_val_if_fail(graph_marks, NULL);
-  gtk_drawing_area_set_draw_func(GTK_DRAWING_AREA(graph_marks), gr_draw_marks, NULL, NULL);
-  graph_graph = gtk_drawing_area_new();
-  g_return_val_if_fail(graph_graph, NULL);
-  gtk_drawing_area_set_draw_func(GTK_DRAWING_AREA(graph_graph), gr_draw_graph, NULL, NULL);
-  // merge layers
-  GtkWidget *over = gtk_overlay_new();
-  g_return_val_if_fail(over, NULL);
-  gtk_overlay_add_overlay(GTK_OVERLAY(over), graph_grid);
-  gtk_overlay_add_overlay(GTK_OVERLAY(over), graph_marks);
-  gtk_overlay_add_overlay(GTK_OVERLAY(over), graph_graph);
-  gtk_overlay_set_child(GTK_OVERLAY(over), graphtab.dyn.w);
-  // wrap scrolling
-  graphtab.tab.w = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-  g_return_val_if_fail(graphtab.tab.w, NULL);
-  GtkWidget *scroll = gtk_scrolled_window_new();
-  g_return_val_if_fail(scroll, NULL);
-  gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scroll), over);
-  // put into tab
-  gtk_widget_set_vexpand(GTK_WIDGET(scroll), true);
-  GtkWidget* graph_win = notifier_init(NT_GRAPH_NDX, scroll);
-  gtk_box_append(GTK_BOX(graphtab.tab.w), graph_win ? graph_win : scroll);
-  gr_set_font();
-  series_reg_on_scale(graph_marks);
+#define GR_INIT_LAYER(widget, drawfunc) { widget = gtk_drawing_area_new(); g_return_val_if_fail(widget, NULL); \
+    gtk_drawing_area_set_draw_func(GTK_DRAWING_AREA(widget), drawfunc, NULL, NULL); \
+    layers = g_slist_append(layers, widget); }
+  { GSList *layers = NULL;
+    GR_INIT_LAYER(graph_grid,  gr_draw_grid);
+    GR_INIT_LAYER(graph_marks, gr_draw_marks);
+    GR_INIT_LAYER(graph_graph, gr_draw_graph);
+    if (!drawtab_init(&graphtab, CSS_GRAPH_BG, layers, NT_GRAPH_NDX)) return NULL;
+    g_slist_free(layers); }
+  { gr_set_font(); series_reg_on_scale(graph_marks); }
   return &graphtab;
+#undef GR_INIT_LAYER
 }
 
 void graphtab_free(void) {

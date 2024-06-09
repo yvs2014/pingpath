@@ -1,10 +1,9 @@
 
 #include "action.h"
-#include "option.h"
 #include "appbar.h"
 #include "notifier.h"
 #include "pinger.h"
-#include "graph_rel.h"
+#include "draw_rel.h"
 #include "series.h"
 #include "ui/style.h"
 
@@ -29,20 +28,7 @@ typedef struct help_dialog_in {
   GtkWidget *win, *box, *hdr, *scroll, *body, *btn;
 } t_help_dialog_in;
 
-#ifdef WITH_PLOT
-typedef struct kb_rotaux {
-  const t_ent_spn_aux *aux;
-  int ndx, *pval, inc, *scale;
-} t_kb_rotaux;
-#endif
-
 enum { MENU_SA_START, MENU_SA_PAUSE, MENU_SA_RESET, MENU_SA_HELP, MENU_SA_QUIT, MENU_SA_MAX };
-
-enum { ACCL_SA_LGND,
-#ifdef WITH_PLOT
-  ACCL_SA_LEFT, ACCL_SA_RIGHT, ACCL_SA_UP, ACCL_SA_DOWN, ACCL_SA_PGUP, ACCL_SA_PGDN,
-#endif
-ACCL_SA_MAX };
 
 static const char* kb_space[]      = {"space",   NULL};
 static const char* kb_ctrl_h[]     = {"<Ctrl>h", NULL};
@@ -92,7 +78,7 @@ static const char *help_message =
   SPANOPT(OPT_GRLG_HDR,    GRLG_AVJT_HDR  " " GRLG_CCAS_HDR " " GRLG_LGHN_HDR)
   SPANOPT(OPT_GREX_HDR,    GREX_MEAN_HDR  " " GREX_JRNG_HDR " " GREX_AREA_HDR)
 #ifdef WITH_PLOT
-  SPANOPT(OPT_PLOT_HDR,    PLEL_BACK_HDR  " " PLEL_AXIS_HDR " " PLEL_GRID_HDR)
+  SPANOPT(OPT_PLOT_HDR,    PLEL_BACK_HDR  " " PLEL_AXIS_HDR " " PLEL_GRID_HDR " " PLEL_RTRR_HDR)
   SPANOPT(OPT_GRAD_HDR,    "to color 3D-surface:")
     SPANSUB("Start-end pairs of RGB colors")
   SPANOPT(OPT_ROT_HDR,     "3D-plot orientation")
@@ -105,7 +91,6 @@ static const char *help_message =
 #ifdef WITH_PLOT
 #define KBROTITEM(auxndx, kbndx, tag, sign) { .aux = &ent_spn[ENT_SPN_ROTOR].list[0].aux[auxndx], \
   .ndx = kbndx, .pval = &opts.orient.tag, .inc = sign, .scale = &opts.angstep }
-
 t_kb_rotaux kb_rotaux[ACCL_SA_MAX] = {
   [ACCL_SA_LEFT]  = KBROTITEM(0, ACCL_SA_LEFT,  a, -1),
   [ACCL_SA_RIGHT] = KBROTITEM(0, ACCL_SA_RIGHT, a,  1),
@@ -114,6 +99,7 @@ t_kb_rotaux kb_rotaux[ACCL_SA_MAX] = {
   [ACCL_SA_PGUP]  = KBROTITEM(2, ACCL_SA_PGUP,  b,  1),
   [ACCL_SA_PGDN]  = KBROTITEM(2, ACCL_SA_PGDN,  b, -1),
 };
+#undef KBROTITEM
 #endif
 
 static t_sa_desc menu_sa_desc[MENU_SA_MAX] = {
@@ -143,7 +129,7 @@ static void on_help       (GSimpleAction*, GVariant*, GtkWindow*);
 static void on_quit       (GSimpleAction*, GVariant*, GtkWindow*);
 static void on_legend     (GSimpleAction*, GVariant*, void*);
 #ifdef WITH_PLOT
-static void on_rotation   (GSimpleAction*, GVariant*, t_kb_rotaux*);
+       void on_rotation   (GSimpleAction*, GVariant*, t_kb_rotaux*);
 #endif
 typedef void (*ae_sa_fn)  (GSimpleAction*, GVariant*, void*);
 
@@ -207,8 +193,8 @@ static void on_pauseresume(GSimpleAction *action, GVariant *var, void *unused) {
   pinger_state.pause = !pinger_state.pause;
   action_update();
   pinger_update_tabs(NULL);
-  GRAPH_UPDATE_REL;
-  if (OPTS_GRAPH_REL) { if (pinger_state.pause) series_lock(); else series_unlock(); }
+  DRAW_UPDATE_REL;
+  if (OPTS_DRAW_REL) { if (pinger_state.pause) series_lock(); else series_unlock(); }
 }
 
 static void on_reset(GSimpleAction *action, GVariant *var, void *unused) {
@@ -304,7 +290,7 @@ static void on_legend(GSimpleAction *action, GVariant *var, void *unused) {
 }
 
 #ifdef WITH_PLOT
-static void on_rotation(GSimpleAction *action, GVariant *var, t_kb_rotaux *data) {
+void on_rotation(GSimpleAction *action, GVariant *var, t_kb_rotaux *data) {
   if (!data || !is_tab_that(TAB_PLOT_NDX)) return;
   int *p = data->pval, inc = data->inc; if (!p || !inc) return;
   int want = *p + inc * (data->scale ? *data->scale : 1);

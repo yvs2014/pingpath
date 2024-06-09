@@ -13,7 +13,7 @@
 #include "ui/notifier.h"
 #include "tabs/ping.h"
 #include "tabs/log.h"
-#include "graph_rel.h"
+#include "draw_rel.h"
 
 #define APPFLAGS G_APPLICATION_NON_UNIQUE
 
@@ -74,12 +74,12 @@ static void app_cb(GtkApplication* app, void *unused) {
     gtk_notebook_set_tab_reorderable(GTK_NOTEBOOK(nb), tab->tab.w, true);
   }
   tab_reload_theme();
-  gtk_notebook_set_current_page(GTK_NOTEBOOK(nb), startpage);
+  gtk_notebook_set_current_page(GTK_NOTEBOOK(nb), activetab);
   g_signal_connect(nb, EV_TAB_SWITCH, G_CALLBACK(on_tab_switch), NULL);
   GtkWidget *over = notifier_init(NT_MAIN_NDX, nb);
   if (!GTK_IS_OVERLAY(over)) APPQUIT("%s", "notification window");
   GtkWidget *curr = gtk_notebook_get_nth_page(GTK_NOTEBOOK(nb), gtk_notebook_get_current_page(GTK_NOTEBOOK(nb)));
-  tab_dependent(curr ? curr : nb_tabs[startpage]->tab.w);
+  tab_dependent(curr ? curr : nb_tabs[activetab]->tab.w);
   gtk_window_set_child(GTK_WINDOW(win), over);
   //
   g_signal_connect(win, EV_DESTROY, G_CALLBACK(on_win_destroy), NULL);

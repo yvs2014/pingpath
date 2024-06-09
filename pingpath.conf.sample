@@ -10,7 +10,7 @@
 # ttl = 1,30
 
 ## NOTE: 4 - IPv4, 6 - IPv6
-# ipversion =
+# ip-version =
 
 ## NOTE: "hacdr" stands for "Hostname, ASN, CC, Description, Route"
 # info = hac
@@ -19,6 +19,9 @@
 # stat = lsmbwaj
 
 [aux]
+## NOTE: 1 - ping, 2 - graph, 3 - plot (pp3 only)
+# active-tab = 1
+
 ## NOTE: 1st bit stands for dark main theme, 2nd - for dark graph theme, 3rd - for graph legend,
 ##       4th (pp3 only) - for dark plot theme
 # theme = 5 # i.e. "dark main" and "graph legend"
@@ -32,8 +35,8 @@
 ## NOTE: "dch" stands for "mean Delay, CCAS, Hopname"
 # legend = dch
 
-## NOTE: "bag" stands for "Backside, Axis, Grid" (pp3 only)
-# plot = bag
+## NOTE: "bagr" stands for "Backside, Axis, Grid, Rotator" (pp3 only)
+# plot = bagr
 
 ## NOTE: syntax: tag=values
 ##      `rgb' color gradients (start:end) within range 0 through 255

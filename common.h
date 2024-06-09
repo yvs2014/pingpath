@@ -10,7 +10,7 @@
 #define MIN_GTK_RUNTIME(major, minor, micro) (!gtk_check_version(major, minor, micro))
 
 #define APPNAME "pingpath"
-#define VERSION "0.3.6"
+#define VERSION "0.3.7"
 
 #define X_RES 1024
 #define Y_RES 720
@@ -40,7 +40,7 @@
 #define GRLG_PATT    "dch"
 #define GREX_PATT    "lra"
 #ifdef WITH_PLOT
-#define PLEL_PATT    "bag"
+#define PLEL_PATT    "bagr"
 #endif
 
 #ifdef WITH_JSON
@@ -97,6 +97,21 @@
 #define PLOT_TAB_ICOA  "network-cellular-signal-excellent-symbolic"
 #define PLOT_TAB_ICOB  "zoom-original-symbolic"
 #define PLOT_TAB_ICOC  "edit-select-all-symbolic"
+#define RTR_LEFT_ICON  "go-previous-symbolic"
+#define RTR_LEFT_ICOA  "pan-start-symbolic"
+#define RTR_LEFT_ICOB  "go-first-symbolic"
+#define RTR_RIGHT_ICON "go-next-symbolic"
+#define RTR_RIGHT_ICOA "pan-end-symbolic"
+#define RTR_RIGHT_ICOB "go-last-symbolic"
+#define RTR_UP_ICON    "go-up-symbolic"
+#define RTR_UP_ICOA    "pan-up-symbolic"
+#define RTR_UP_ICOB    "go-top-symbolic"
+#define RTR_DOWN_ICON  "go-down-symbolic"
+#define RTR_DOWN_ICOA  "pan-down-symbolic"
+#define RTR_DOWN_ICOB  "go-bottom-symbolic"
+#define RTR_ROLL_ICON  "view-refresh-symbolic"
+#define RTR_ROLL_ICOA  "object-rotate-right-symbolic"
+#define RTR_ROLL_ICOB  "system-reboot-symbolic"
 #endif
 #define LOG_TAB_ICON   "system-search-symbolic"
 #define LOG_TAB_ICOA   "edit-find-symbolic"
@@ -241,6 +256,7 @@
 #define OPT_ROT_HDR      "Plot rotation"
 #endif
 
+#define OPT_ATAB_HDR     "Active tab at start"
 #define OPT_LOGMAX_HDR   "LogTab rows"
 #define OPT_RECAP_HDR    "Summary"
 
@@ -294,6 +310,7 @@
 #define PLEL_BACK_HDR    "Backside"
 #define PLEL_AXIS_HDR    "Axis"
 #define PLEL_GRID_HDR    "Grid"
+#define PLEL_RTRR_HDR    "Rotator"
 #endif
 
 #define TOGGLE_ON_HDR  "on"
@@ -325,6 +342,12 @@ enum { TAB_PING_NDX, TAB_GRAPH_NDX,
   TAB_PLOT_NDX,
 #endif
   TAB_LOG_NDX, TAB_NDX_MAX };
+#define ATAB_MIN TAB_PING_NDX
+#ifdef WITH_PLOT
+#define ATAB_MAX TAB_PLOT_NDX
+#else
+#define ATAB_MAX TAB_GRAPH_NDX
+#endif
 
 enum { ENT_EXP_INFO, ENT_EXP_STAT, ENT_EXP_LGFL, ENT_EXP_GREX,
 #ifdef WITH_PLOT
@@ -340,7 +363,7 @@ enum { ENT_BOOL_DNS, ENT_BOOL_HOST, ENT_BOOL_AS, ENT_BOOL_CC, ENT_BOOL_DESC, ENT
 #endif
   ENT_BOOL_AVJT, ENT_BOOL_CCAS, ENT_BOOL_LGHN, ENT_BOOL_MEAN, ENT_BOOL_JRNG, ENT_BOOL_AREA,
 #ifdef WITH_PLOT
-  ENT_BOOL_PLBK, ENT_BOOL_PLAX, ENT_BOOL_PLGR,
+  ENT_BOOL_PLBK, ENT_BOOL_PLAX, ENT_BOOL_PLGR, ENT_BOOL_PLRR,
 #endif
 };
 
@@ -353,7 +376,7 @@ enum { GRLG_NO, GRLG_DASH, GRLG_AVJT, GRLG_CCAS, GRLG_LGHN, GREX_MEAN, GREX_JRNG
 #define GRLG_MAX (GRLG_LGHN + 1)
 
 #ifdef WITH_PLOT
-enum { PLEL_BACK, PLEL_AXIS, PLEL_GRID, PLEL_MAX };
+enum { PLEL_BACK, PLEL_AXIS, PLEL_GRID, PLEL_RTRR, PLEL_MAX };
 #endif
 
 enum { INFO_CHAR, STAT_CHAR, GRLG_CHAR, GREX_CHAR,
@@ -422,26 +445,6 @@ typedef struct hop {
 } t_hop;
 
 typedef struct ref { t_hop *hop; int ndx; } t_ref;
-typedef struct tab_widget { GtkWidget *w; const char *css, *col; } t_tab_widget;
-
-typedef struct t_sa_desc {
-  GSimpleAction* sa;
-  const char *name;
-  const char *const *shortcut;
-  void *data;
-} t_sa_desc;
-
-typedef struct tab {
-  struct tab *self;
-  const char *name;
-  t_tab_widget tab, lab, dyn, hdr, info;
-  const char *tag, *tip, *ico[MAX_ICONS];
-  GMenu *menu;       // menu template
-  GtkWidget *pop;    // popover menu
-  gboolean sel;      // flag of selection
-  t_sa_desc desc[POP_MENU_NDX_MAX];
-  GActionEntry act[POP_MENU_NDX_MAX];
-} t_tab;
 
 typedef struct t_type_elem {
   int type;
@@ -470,9 +473,8 @@ extern const char *unkn_whois;
 extern const char *log_empty;
 
 extern gboolean cli;
-extern int verbose, startpage;
+extern int verbose, activetab;
 
-extern t_tab* nb_tabs[TAB_NDX_MAX];
 extern t_type_elem pingelem[ELEM_MAX];
 extern t_type_elem graphelem[GRGR_MAX];
 extern t_elem_desc info_desc, stat_desc, grlg_desc, grex_desc;
@@ -503,13 +505,6 @@ gboolean is_plelem_enabled(int type);
 char* rtver(int ndx);
 const char *timestampit(void);
 GtkListBoxRow* line_row_new(GtkWidget *child, gboolean visible);
-void tab_setup(t_tab *tab);
-void tab_color(t_tab *tab);
-void tab_reload_theme(void);
-void tab_dependent(GtkWidget *tab);
-#ifdef WITH_PLOT
-gboolean is_tab_that(unsigned ndx);
-#endif
 
 void host_free(t_host *host);
 int host_cmp(const void *a, const void *b);
@@ -522,8 +517,6 @@ extern void log_add(const char *fmt, ...);
 
 #define UPDATE_LABEL(label, str) { const char *txt = gtk_label_get_text(GTK_LABEL(label)); \
   if (STR_NEQ(txt, str)) gtk_label_set_text(GTK_LABEL(label), str); }
-
-#define TW_TW(tw, widget, css_perm, css_dyn) { (tw).w = widget; (tw).css = css_perm; (tw).col = css_dyn; }
 
 #define IS_INFO_NDX(ndx) ((ELEM_HOST <= ndx) && (ndx <= ELEM_RT))
 #define IS_STAT_NDX(ndx) ((ELEM_LOSS <= ndx) && (ndx <= ELEM_JTTR))

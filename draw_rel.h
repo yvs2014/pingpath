@@ -1,5 +1,5 @@
-#ifndef GRAPH_REL_H
-#define GRAPH_REL_H
+#ifndef DRAW_REL_H
+#define DRAW_REL_H
 
 #include "tabs/graph.h"
 

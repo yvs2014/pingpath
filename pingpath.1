@@ -6,10 +6,10 @@
 .Nd ping wrapper for network diagnostic
 .Sh SYNOPSIS
 .Nm
-.Op Fl cfgGhiILnpqrRsStTv46
+.Op Fl AcfgGhiILnpqrRsStTvV46
 .Sy [ TARGET ]
 .Nm pingpath3
-.Op Fl cCfgGhiILnpPqrRsStTv46
+.Op Fl AcfgGhiILnpPqrRsStTvVX46
 .Sy [ TARGET ]
 .Sh DESCRIPTION
 Network diagnostic tool based on parsing system
@@ -40,7 +40,6 @@ What it displays:
 .Bl -tag -width Ds
 .It Fl f, Fl -file Ar FILENAME
 Read options from ini file.
-.br
 .It Fl c, Fl -cycles Ar NUMBER
 Run
 .Ar number
@@ -155,9 +154,7 @@ Graph theme
 .It Cm 3rd
 Graphs with legend
 .It Cm 4th
-3D-plot theme (note:
-.Sy pp3
-only)
+3D-plot theme (\fBpp3\fR only)
 .El
 Default
 .Ar 5
@@ -214,9 +211,7 @@ Default
 .El
 .Bl -tag -width Ds
 .It Fl P, Fl -plot Ar KEYS
-Which parts of 3D-plot to display (note:
-.Sy pp3
-only)
+Which parts of 3D-plot to display (\fBpp3\fR only)
 .Bl -tag -offset Ds -compact
 .It Cm b
 Backside with grid
@@ -224,15 +219,15 @@ Backside with grid
 Axes with marks
 .It Cm g
 Grid on surface
+.It Cm r
+Rotator
 .El
 Default
 .Ar all
 .El
 .Bl -tag -width Ds
 .It Fl X, Fl -extra-params Ar PAIRS
-3D-plot extra parameters tagged with characters (note:
-.Sy pp3
-only)
+3D-plot extra parameters tagged with characters (\fBpp3\fR only)
 .Bl -tag -offset Ds -compact
 .It Cm r
 Red surface gradient
@@ -251,7 +246,8 @@ Note: \fBrgb\fR colors are in range from 0 to 255
 .in +.6i
 \fBo\fRrientation is set with yaw:pitch:roll:step, where
 .br
-.in +.6i
+.in
+.in +.9i
 orientation angles are from -180 to 180
 .br
 rotation step is in range from 1 to 180
@@ -276,6 +272,20 @@ Default
 .Bl -tag -width Ds
 .It Fl R, Fl -run
 Autostart from CLI (if ping target is set)
+.It Fl A, Fl -active-tab
+Active tab at start
+.Bl -tag -offset Ds -compact
+.It Cm 1
+Ping
+.It Cm 2
+Graph
+.It Cm 3
+Plot (\fBpp3\fR only)
+.El
+Default
+.Ar 1
+.El
+.Bl -tag -width Ds
 .It Fl v, Fl -verbose Ar LEVEL
 Print debug messages to stdout according to bits of
 .Ar level :
@@ -297,6 +307,8 @@ Default
 .Ar none
 .El
 .Bl -tag -width Ds
+.It Fl V, Fl -version
+Print app and runtime lib versions
 .It Fl 4, Fl -ipv4
 IPv4 only
 .It Fl 6, Fl -ipv6

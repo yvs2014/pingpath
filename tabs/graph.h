@@ -1,7 +1,7 @@
 #ifndef TABS_GRAPH_H
 #define TABS_GRAPH_H
 
-#include "common.h"
+#include "aux.h"
 
 t_tab* graphtab_init(GtkWidget *win);
 void graphtab_free(void);
