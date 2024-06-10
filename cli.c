@@ -30,6 +30,7 @@
 #define CNF_STR_PLOAD  "payload"
 #define CNF_STR_INFO   "info"
 #define CNF_STR_STAT   "stat"
+#define CNF_STR_TABS   "tabs"
 #define CNF_STR_ATAB   "active-tab"
 #define CNF_STR_THEME  "theme"
 #define CNF_STR_GRAPH  "graph"
@@ -43,13 +44,17 @@
 #define CNF_SECTION_AUX  "aux"
 
 enum { CNF_OPT_IPV, CNF_OPT_NODNS, CNF_OPT_CYCLES, CNF_OPT_IVAL, CNF_OPT_TTL, CNF_OPT_QOS, CNF_OPT_SIZE,
-  CNF_OPT_PLOAD, CNF_OPT_INFO, CNF_OPT_STAT, CNF_OPT_ATAB, CNF_OPT_THEME, CNF_OPT_GRAPH, CNF_OPT_EXTRA, CNF_OPT_LGND,
+  CNF_OPT_PLOAD, CNF_OPT_INFO, CNF_OPT_STAT, CNF_OPT_TABS, CNF_OPT_ATAB, CNF_OPT_THEME, CNF_OPT_GRAPH, CNF_OPT_EXTRA, CNF_OPT_LGND,
 #ifdef WITH_PLOT
   CNF_OPT_PLEL, CNF_OPT_PLEX,
 #endif
   CNF_OPT_RECAP, CNF_OPT_MAX };
 
-enum { ONOFF_IPV4, ONOFF_IPV6, ONOFF_VERSION, ONOFF_MAX };
+enum { ONOFF_IPV4, ONOFF_IPV6, ONOFF_VERSION, ONOFF_1D,
+#ifdef WITH_PLOT
+  ONOFF_2D,
+#endif
+  ONOFF_MAX };
 
 typedef struct t_config_option {
   const char *opt;
@@ -72,6 +77,14 @@ static void cli_pr_elems(t_type_elem *elems, int max) {
 #define CLI_REORDER_PRINT_ELEMS(elems, max) { if (verbose & 32) cli_pr_elems(elems, max); }
 #else
 #define CLI_REORDER_PRINT_ELEMS(...) {}
+#endif
+
+#define TAB1D "With ping tab only"
+#ifdef WITH_PLOT
+#define TAB2D "Without plot tab"
+#define TABON(mesg) { opts->plot = false; g_message(mesg); }
+#else
+#define TABON(mesg) { g_message(mesg); }
 #endif
 
 //
@@ -105,7 +118,7 @@ static gboolean cli_opt_s(const char *name, const char *value, t_opts *opts, GEr
 }
 
 static gboolean cli_opt_g(const char *name, const char *value, t_opts *opts, GError **error) {
-  return opts ? cli_int_opt(name, value, error, OPT_GRAPH_HDR, 0, GRAPH_TYPE_MAX - 1, &opts->graph) : false;
+  return opts ? cli_int_opt(name, value, error, OPT_GRAPH_HDR, 1, GRAPH_TYPE_MAX - 1, &opts->graph) : false;
 }
 
 static gboolean cli_opt_t(const char *name, const char *value, t_opts *opts, GError **error) {
@@ -391,6 +404,7 @@ static gboolean cli_opt_f(const char *name, const char *value, t_opts *opts, GEr
       {}
     }},
     { .name = CNF_SECTION_AUX, .options = {
+      { .opt = CNF_STR_TABS,   .type = CNF_OPT_TABS },
       { .opt = CNF_STR_ATAB,   .type = CNF_OPT_ATAB,   .data = cli_opt_A },
       { .opt = CNF_STR_THEME,  .type = CNF_OPT_THEME,  .data = cli_opt_T },
       { .opt = CNF_STR_GRAPH,  .type = CNF_OPT_GRAPH,  .data = cli_opt_g },
@@ -426,6 +440,18 @@ static gboolean cli_opt_f(const char *name, const char *value, t_opts *opts, GEr
         CONF_DEBUG("validate %s:%s=%s", section, optname, optval);
       }
       switch (option->type) {
+        case CNF_OPT_TABS: {
+          int val = g_key_file_get_integer(file, section, optname, &opterr);
+          if (!opterr) {
+            if (val == 1) {
+              if (opts) { opts->graph = 0; TABON(TAB1D); }
+#ifdef WITH_PLOT
+            } else if (val == 2) {
+              if (opts) TABON(TAB2D);
+#endif
+            } else { g_warning("%s:%s: %d is not admissible", section, optname, val); CLI_SET_ERR; return false; }
+          }
+        } break;
         case CNF_OPT_IPV: {
           int val = g_key_file_get_integer(file, section, optname, &opterr);
           if (!opterr) {
@@ -491,10 +517,21 @@ static gboolean cli_opt_f(const char *name, const char *value, t_opts *opts, GEr
 
 gboolean autostart;
 
+static inline gboolean cli_tab_opt(gboolean off[2], t_opts *opts) {
+  gboolean re = (off[0] + off[1]) < 2;
+  if (re) {
+    if (opts && off[0]) { opts->graph = 0; TABON(TAB1D); }
+#ifdef WITH_PLOT
+    if (opts && off[1]) TABON(TAB2D);
+#endif
+  } else g_message("options %s are mutually exclusive", "-1/-2");
+  return re;
+}
+
 gboolean cli_init(int *pargc, char ***pargv) {
   if (!pargc || !pargv) return false;
   char** target = NULL;
-  int num = -1; gboolean onoff[ONOFF_MAX] = {false};
+  int num = -1; gboolean onoff[ONOFF_MAX + 1] = {false};
   const GOptionEntry options[] = {
     CLI_OPT_CALL('f', "file",         cli_opt_f, "Read options from file", "<filename>"),
     CLI_OPT_NONE('n', CNF_STR_NODNS,  &num, "Numeric output (i.e. disable " OPT_DNS_HDR " resolv)"),
@@ -519,6 +556,10 @@ gboolean cli_init(int *pargc, char ***pargv) {
     CLI_OPT_CALL('A', CNF_STR_ATAB,   cli_opt_A, OPT_ATAB_HDR, "<number>"),
     CLI_OPT_INTC('v', "verbose",      &verbose, "Messaging to stdout", "<level>"),
     CLI_OPT_NONE('V', "version",      &onoff[ONOFF_VERSION], "Runtime versions"),
+    CLI_OPT_NONE('1', "pingtab-only", &onoff[ONOFF_1D], TAB1D),
+#ifdef WITH_PLOT
+    CLI_OPT_NONE('2', "without-plot", &onoff[ONOFF_2D], TAB2D),
+#endif
     CLI_OPT_NONE('4', "ipv4",         &onoff[ONOFF_IPV4], OPT_IPV4_HDR " only"),
     CLI_OPT_NONE('6', "ipv6",         &onoff[ONOFF_IPV6], OPT_IPV6_HDR " only"),
     { .long_name = G_OPTION_REMAINING, .arg = G_OPTION_ARG_STRING_ARRAY, .arg_data = &target, .arg_description = "TARGET" },
@@ -544,6 +585,7 @@ gboolean cli_init(int *pargc, char ***pargv) {
       g_print("\n"); g_option_context_free(oc); exit(EXIT_SUCCESS);
     }
   }
+  if (!cli_tab_opt(&onoff[ONOFF_1D], &opts)) return false;
   if (onoff[ONOFF_IPV4] && onoff[ONOFF_IPV6]) CLI_FAIL("options %s are mutually exclusive", "-4/-6");
   if (onoff[ONOFF_IPV4] && (opts.ipv != 4)) { opts.ipv = 4; g_message(OPT_IPV4_HDR " only " TOGGLE_ON_HDR); }
   if (onoff[ONOFF_IPV6] && (opts.ipv != 6)) { opts.ipv = 6; g_message(OPT_IPV6_HDR " only " TOGGLE_ON_HDR); }

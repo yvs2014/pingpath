@@ -19,6 +19,9 @@
 # stat = lsmbwaj
 
 [aux]
+## NOTE: 1 - without graph-n-plot, 2 - without plot (pp3 only)
+# tabs =
+
 ## NOTE: 1 - ping, 2 - graph, 3 - plot (pp3 only)
 # active-tab = 1
 

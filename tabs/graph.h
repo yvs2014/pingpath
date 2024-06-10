@@ -5,7 +5,6 @@
 
 t_tab* graphtab_init(GtkWidget *win);
 void graphtab_free(void);
-void graphtab_restart(void);
 void graphtab_update(void);
 void graphtab_refresh(void);
 

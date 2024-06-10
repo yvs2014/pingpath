@@ -10,7 +10,7 @@
 #define MIN_GTK_RUNTIME(major, minor, micro) (!gtk_check_version(major, minor, micro))
 
 #define APPNAME "pingpath"
-#define VERSION "0.3.8"
+#define VERSION "0.3.9"
 
 #define X_RES 1024
 #define Y_RES 720
@@ -242,7 +242,6 @@
 #define OPT_PL_DARK_HEADER "Plot theme"
 #endif
 #define OPT_GRAPH_HDR    "Graph type"
-#define OPT_GR_NONE_HDR  "None"
 #define OPT_GR_DOT_HDR   "Dots"
 #define OPT_GR_LINE_HDR  "Lines"
 #define OPT_GR_CURVE_HDR "Splines"

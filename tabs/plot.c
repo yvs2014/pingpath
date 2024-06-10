@@ -527,7 +527,7 @@ static void plot_rtt_marks(t_mark_text mark[], int n) {
 }
 
 static void plot_tim_marks(t_mark_text mark[], int n) {
-  int dt = PLOT_TIME_RANGE * 2 / PLANE_YN;
+  int dt = PLOT_TIME_RANGE * 2 / PLANE_YN; if (opts.timeout > 0) dt *= opts.timeout;
   if (!draw_plot_at || (pinger_state.run && !pinger_state.pause)) draw_plot_at = time(NULL) % 3600;
   for (int i = 0, t = draw_plot_at - PLOT_TIME_RANGE; i < n; i++, t += dt) {
     LIMVAL(t, 3600); mark[i].len = snprintf(mark[i].text, sizeof(mark[i]), PP_TIME_FMT, t / 60, t % 60);
@@ -786,6 +786,7 @@ static inline void plottab_on_trans_opts(void) {
 static void plottab_on_opts(unsigned flags) {
   if (flags & PL_PARAM_COLOR) plottab_on_color_opts();
   if (flags & PL_PARAM_TRANS) plottab_on_trans_opts();
+  if (flags & PL_PARAM_AT) { draw_plot_at = 0; plot_aux_reset(&plot_dyna_res.vo[VO_SURF]); }
 }
 
 static inline void plottab_redraw(void) {
@@ -816,12 +817,6 @@ t_tab* plottab_init(GtkWidget* win) {
 }
 
 inline void plottab_free(void) { plot_res_free(&plot_dyna_res); plot_res_free(&plot_base_res); plot_aux_free(); }
-
-void plottab_restart(void) {
-  draw_plot_at = 0;
-  plot_aux_reset(&plot_dyna_res.vo[VO_SURF]);
-  plottab_refresh(PL_PARAM_ALL);
-}
 
 void plottab_update(void) {
   plot_aux_update(&plot_dyna_res.vo[VO_SURF]);

@@ -527,7 +527,7 @@ void pinger_start(void) {
   gboolean active = pinger_update_status();
   if (!active) return;
   pinger_clear_data(true);
-  if (!opts.recap) { DRAW_RESTART_REL; pinger_vis_rows(0); }
+  if (!opts.recap) { DRAW_REFRESH_REL; pinger_vis_rows(0); }
   notifier_set_visible(NT_GRAPH_NDX, false);
   // schedule expiration check out
   if (exp_timer) { g_source_remove(exp_timer); exp_timer = 0; }

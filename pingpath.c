@@ -120,7 +120,7 @@ int main(int argc, char **argv) {
   setlocale(LC_ALL, "");  // parser: early l10n for CLI options
   putenv("LANG=C.UTF-8"); // parser: disable ping's i18n output
 #if GTK_CHECK_VERSION(4, 14, 0)
-  putenv("GSK_RENDERER=gl"); // avoid issues with ngl-n-vulkan on 4.14
+  if (!getenv("GSK_RENDERER")) putenv("GSK_RENDERER=gl"); // to avoid ngl-n-vulkan issues with 4.14
 #endif
   g_return_val_if_fail(parser_init(), EX_SOFTWARE);
   { gboolean valid_cli_options = cli_init(&argc, &argv);

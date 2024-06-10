@@ -1,3 +1,6 @@
+## 0.3.9
+- options for 1D/2D/3D prog versions
+
 ## 0.3.8
 - safer css customization
 - try to use 'gl' renderer with gtk-4.14

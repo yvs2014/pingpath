@@ -386,14 +386,13 @@ void graphtab_free(void) {
   pango_cairo_font_map_set_default(NULL); // a bit less
 }
 
-inline void graphtab_restart(void) { draw_graph_at = 0; }
-
 void graphtab_update(void) {
   if (opts.legend) notifier_legend_update();
   if (GTK_IS_WIDGET(graph_graph)) gtk_widget_queue_draw(graph_graph);
 }
 
 void graphtab_refresh(void) {
+  draw_graph_at = 0;
   if (GTK_IS_WIDGET(graph_grid))  gtk_widget_queue_draw(graph_grid);
   if (GTK_IS_WIDGET(graph_marks)) gtk_widget_queue_draw(graph_marks);
   if (GTK_IS_WIDGET(graph_graph)) gtk_widget_queue_draw(graph_graph);

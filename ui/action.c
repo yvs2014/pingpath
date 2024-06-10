@@ -15,10 +15,6 @@
 #endif
 #endif
 
-#define SPANSZ(h, sz, txt) "<span " LINE_HEIGHT(h) " size='" sz "'>" txt "</span>\n"
-#define SPANHDR(txt)  SPANSZ("1.5", "large",  txt)
-#define SPANOPT(l, r) SPANSZ("1.5", "medium", "<b>\t" l "\t</b>" r)
-#define SPANSUB(txt)  SPANSZ("1",   "medium", "\t\t<tt>" txt "</tt>")
 #define MA_LOG(ndx, lab) LOG("Action %s", lab(ndx))
 #define MI_LOG(ndx, lab) notifier_inform("Action %s", lab(ndx))
 
@@ -44,49 +40,6 @@ static const char* kb_ctrl_down[]  = {"<Ctrl>Down",      NULL};
 static const char* kb_ctrl_pgup[]  = {"<Ctrl>Page_Up",   NULL};
 static const char* kb_ctrl_pgdn[]  = {"<Ctrl>Page_Down", NULL};
 #endif
-
-static const char *help_message =
-  SPANHDR("Actions")
-  SPANOPT(ACT_START_HDR    "/" ACT_STOP_HDR "\t", "target pings")
-  SPANOPT(ACT_PAUSE_HDR    "/" ACT_RESUME_HDR,    "displaying data")
-  SPANOPT(ACT_RESET_HDR    "\t\t", "ping statistics")
-  SPANOPT(ACT_QUIT_HDR     "\t\t\t", "stop and quit")
-  "\n"
-  SPANHDR("Main Options")
-  SPANOPT(OPT_CYCLES_HDR   "\t", "Number of ping cycles [" G_STRINGIFY(DEF_CYCLES) "]")
-  SPANOPT(OPT_IVAL_HDR     "\t", "Gap in seconds between pings [" G_STRINGIFY(DEF_TOUT) "]")
-  SPANOPT(OPT_DNS_HDR      "\t", "IP address resolving, on | off")
-  SPANOPT(OPT_INFO_HEADER  "\t", "Hop elements to display:")
-    SPANSUB(ELEM_HOST_HDR  " " ELEM_AS_HDR " " ELEM_CC_HDR " " ELEM_DESC_HDR " " ELEM_RT_HDR)
-  SPANOPT(OPT_STAT_HDR,    "Stat elements to display:")
-    SPANSUB(ELEM_LOSS_HDR  " " ELEM_SENT_HDR " " ELEM_RECV_HDR " " ELEM_LAST_HDR " " ELEM_BEST_HDR
-      " " ELEM_WRST_HDR " " ELEM_AVRG_HDR " " ELEM_JTTR_HDR)
-  SPANOPT(OPT_TTL_HDR      "\t\t", "working TTL range [0-" G_STRINGIFY(MAXTTL) "]")
-  SPANOPT(OPT_QOS_HDR      "\t", "QoS/ToS bits of IP header [" G_STRINGIFY(DEF_QOS) "]")
-  SPANOPT(OPT_PLOAD_HDR    "\t", "Up to 16 bytes in hex format [" DEF_PPAD "]")
-  SPANOPT(OPT_PSIZE_HDR    "\t\t", "ICMP data size [" G_STRINGIFY(DEF_PSIZE) "]")
-  SPANOPT(OPT_IPV_HDR,     "either " OPT_IPVA_HDR ", or " OPT_IPV4_HDR ", or " OPT_IPV6_HDR)
-  SPANOPT(OPT_LOGMAX_HDR,  "Max rows in log tab [" G_STRINGIFY(DEF_LOGMAX) "]")
-  "\n"
-  SPANHDR("Auxiliary")
-  SPANOPT(OPT_MN_DARK_HEADER, "dark | light")
-  SPANOPT(OPT_GR_DARK_HEADER, "light | dark")
-#ifdef WITH_PLOT
-  SPANOPT(OPT_PL_DARK_HEADER, "light | dark")
-#endif
-  SPANOPT(OPT_GRAPH_HDR,   "either " OPT_GR_NONE_HDR ", or " OPT_GR_DOT_HDR ", or " OPT_GR_LINE_HDR ", or " OPT_GR_CURVE_HDR)
-  SPANOPT(OPT_GRLG_HDR,    GRLG_AVJT_HDR  " " GRLG_CCAS_HDR " " GRLG_LGHN_HDR)
-  SPANOPT(OPT_GREX_HDR,    GREX_MEAN_HDR  " " GREX_JRNG_HDR " " GREX_AREA_HDR)
-#ifdef WITH_PLOT
-  SPANOPT(OPT_PLOT_HDR,    PLEL_BACK_HDR  " " PLEL_AXIS_HDR " " PLEL_GRID_HDR " " PLEL_RTRR_HDR)
-  SPANOPT(OPT_GRAD_HDR,    "to color 3D-surface:")
-    SPANSUB("Start-end pairs of RGB colors")
-  SPANOPT(OPT_ROT_HDR,     "3D-plot orientation")
-#endif
-  "\n"
-  SPANHDR("CLI")
-  SPANSZ("1.5", "medium", "\tfor command-line options see <b>pingpath(1)</b> manual page")
-;
 
 #ifdef WITH_PLOT
 #define KBROTITEM(auxndx, kbndx, tag, sign) { .aux = &ent_spn[ENT_SPN_ROTOR].list[0].aux[auxndx], \
@@ -219,6 +172,75 @@ static gboolean show_help_dialog(GtkWidget *win) {
   return true;
 }
 
+static inline char* get_help_message(void) {
+#define SPANSZ(h, sz, txt) "<span " LINE_HEIGHT(h) " size='" sz "'>" txt "</span>\n"
+#define SPANHDR(txt)  SPANSZ("1.5", "large",  txt)
+#define SPANOPT(l, r) SPANSZ("1.5", "medium", "<b>\t" l "\t</b>" r)
+#define SPANSUB(txt)  SPANSZ("1",   "medium", "\t\t<tt>" txt "</tt>")
+  char *prolog =
+    SPANHDR("Actions")
+    SPANOPT(ACT_START_HDR    "/" ACT_STOP_HDR "\t", "target pings")
+    SPANOPT(ACT_PAUSE_HDR    "/" ACT_RESUME_HDR,    "displaying data")
+    SPANOPT(ACT_RESET_HDR    "\t\t", "ping statistics")
+    SPANOPT(ACT_QUIT_HDR     "\t\t\t", "stop and quit")
+    "\n"
+    SPANHDR("Main Options")
+    SPANOPT(OPT_CYCLES_HDR   "\t", "Number of ping cycles [" G_STRINGIFY(DEF_CYCLES) "]")
+    SPANOPT(OPT_IVAL_HDR     "\t", "Gap in seconds between pings [" G_STRINGIFY(DEF_TOUT) "]")
+    SPANOPT(OPT_DNS_HDR      "\t", "IP address resolving, on | off")
+    SPANOPT(OPT_INFO_HEADER  "\t", "Hop elements to display:")
+      SPANSUB(ELEM_HOST_HDR  " " ELEM_AS_HDR " " ELEM_CC_HDR " " ELEM_DESC_HDR " " ELEM_RT_HDR)
+    SPANOPT(OPT_STAT_HDR,    "Stat elements to display:")
+      SPANSUB(ELEM_LOSS_HDR  " " ELEM_SENT_HDR " " ELEM_RECV_HDR " " ELEM_LAST_HDR " " ELEM_BEST_HDR
+        " " ELEM_WRST_HDR " " ELEM_AVRG_HDR " " ELEM_JTTR_HDR)
+    SPANOPT(OPT_TTL_HDR      "\t\t", "working TTL range [0-" G_STRINGIFY(MAXTTL) "]")
+    SPANOPT(OPT_QOS_HDR      "\t", "QoS/ToS bits of IP header [" G_STRINGIFY(DEF_QOS) "]")
+    SPANOPT(OPT_PLOAD_HDR    "\t", "Up to 16 bytes in hex format [" DEF_PPAD "]")
+    SPANOPT(OPT_PSIZE_HDR    "\t\t", "ICMP data size [" G_STRINGIFY(DEF_PSIZE) "]")
+    SPANOPT(OPT_IPV_HDR,     "either " OPT_IPVA_HDR ", or " OPT_IPV4_HDR ", or " OPT_IPV6_HDR)
+    "\n"
+    SPANHDR("Auxiliary")
+    SPANOPT(OPT_MN_DARK_HEADER, "dark | light");
+  char *epilog =
+    SPANOPT(OPT_LOGMAX_HDR,  "Max rows in log tab [" G_STRINGIFY(DEF_LOGMAX) "]")
+    "\n"
+    SPANHDR("CLI")
+    SPANSZ("1.5", "medium", "\tfor command-line options see <b>pingpath(1)</b> manual page");
+  char *prolog_graph =
+    SPANOPT(OPT_GR_DARK_HEADER, "light | dark");
+  char *epilog_graph =
+    SPANOPT(OPT_GRAPH_HDR,   "either " OPT_GR_DOT_HDR ", or " OPT_GR_LINE_HDR ", or " OPT_GR_CURVE_HDR)
+    SPANOPT(OPT_GRLG_HDR,    GRLG_AVJT_HDR  " " GRLG_CCAS_HDR " " GRLG_LGHN_HDR)
+    SPANOPT(OPT_GREX_HDR,    GREX_MEAN_HDR  " " GREX_JRNG_HDR " " GREX_AREA_HDR);
+#ifdef WITH_PLOT
+  char *prolog_plot =
+    SPANOPT(OPT_PL_DARK_HEADER, "light | dark");
+  char *epilog_plot =
+    SPANOPT(OPT_PLOT_HDR,    PLEL_BACK_HDR  " " PLEL_AXIS_HDR " " PLEL_GRID_HDR " " PLEL_RTRR_HDR)
+    SPANOPT(OPT_GRAD_HDR,    "to color 3D-surface:")
+      SPANSUB("Start-end pairs of RGB colors")
+    SPANOPT(OPT_ROT_HDR,     "3D-plot orientation");
+#endif
+#undef SPANSZ
+#undef SPANHDR
+#undef SPANOPT
+#undef SPANSUB
+  char* list[8] = {NULL}; int i = 0;
+#define HELP_MESG(cond, mesg) { if (cond && (i < G_N_ELEMENTS(list))) list[i++] = mesg; }
+  HELP_MESG(true,       prolog);
+  HELP_MESG(opts.graph, prolog_graph);
+#ifdef WITH_PLOT
+  HELP_MESG(opts.plot,  prolog_plot)
+#endif
+  HELP_MESG(opts.graph, epilog_graph);
+#ifdef WITH_PLOT
+  HELP_MESG(opts.plot,  epilog_plot)
+#endif
+  HELP_MESG(true,       epilog);
+  return g_strjoinv(NULL, list);
+#undef HELP_MESG
+}
+
 static void on_help(GSimpleAction *action, GVariant *var, GtkWindow *win) {
   static t_help_dialog_in help_dialog;
   if (!GTK_IS_WINDOW(win)) return;
@@ -269,7 +291,8 @@ static void on_help(GSimpleAction *action, GVariant *var, GtkWindow *win) {
   }
   //
   if (!GTK_IS_LABEL(help_dialog.body)) {
-    help_dialog.body = gtk_label_new(help_message);
+    char *mesg = get_help_message();
+    help_dialog.body = gtk_label_new(mesg); g_free(mesg);
     g_return_if_fail(GTK_IS_LABEL(help_dialog.body));
     gtk_label_set_use_markup(GTK_LABEL(help_dialog.body), true);
     gtk_label_set_selectable(GTK_LABEL(help_dialog.body), false);

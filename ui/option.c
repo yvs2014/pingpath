@@ -194,7 +194,6 @@ static t_ent_rad ent_rad[] = {
   [ENT_RAD_GRAPH] = { .pval = &opts.graph, .cb = graph_type_cb,
     .c = {.en = {.type = ENT_RAD_GRAPH, .name = OPT_GRAPH_HDR }, .atrun = true },
     .map = {
-      {.ndx = ENT_RAD_GRAPH, .val = GRAPH_TYPE_NONE,  .str = OPT_GR_NONE_HDR},
       {.ndx = ENT_RAD_GRAPH, .val = GRAPH_TYPE_DOT,   .str = OPT_GR_DOT_HDR},
       {.ndx = ENT_RAD_GRAPH, .val = GRAPH_TYPE_LINE,  .str = OPT_GR_LINE_HDR},
       {.ndx = ENT_RAD_GRAPH, .val = GRAPH_TYPE_CURVE, .str = OPT_GR_CURVE_HDR},
@@ -239,16 +238,14 @@ static void set_ed_texthint(t_ent_str *en) {
 static void toggled_dns(void) { stat_reset_cache(); notifier_legend_update(); pinger_update_tabs(NULL); }
 
 static void toggle_colors(void) {
-  tab_dependent(NULL);
-  STYLE_SET;
-  tab_reload_theme();
-  if (OPTS_DRAW_REL) DRAW_REFRESH_REL;
+  tab_dependent(NULL); STYLE_SET;
+  tab_reload_theme();  DRAW_REFRESH_REL;
 }
 
-static void toggle_legend(void) { if (opts.graph) notifier_set_visible(NT_GRAPH_NDX, opts.legend); }
+static void toggle_legend(void) { if (opts.graph) notifier_set_visible(NT_GRAPH_NDX, opts.legend); graphtab_refresh(); }
 #ifdef WITH_PLOT
-static void toggle_pl_elems(void) { plottab_refresh(PL_PARAM_NONE); }
-static void toggle_pl_rotor(void) { notifier_set_visible(NT_PLOT_NDX, is_plelem_enabled(PLEL_RTRR)); }
+static void toggle_pl_elems(void) { plottab_refresh(PL_PARAM_AT); }
+static void toggle_pl_rotor(void) { notifier_set_visible(NT_PLOT_NDX, is_plelem_enabled(PLEL_RTRR)); toggle_pl_elems(); }
 #endif
 
 static void toggle_cb(GtkCheckButton *check, t_ent_bool *en) {
@@ -289,12 +286,12 @@ static void toggle_cb(GtkCheckButton *check, t_ent_bool *en) {
     case ENT_BOOL_AVJT:
     case ENT_BOOL_CCAS:
     case ENT_BOOL_LGHN:
-      if (check_bool_val(check, en, NULL)) notifier_legend_vis_rows(-1);
+      if (check_bool_val(check, en, NULL)) { notifier_legend_vis_rows(-1); graphtab_refresh(); }
       break;
     case ENT_BOOL_MEAN:
     case ENT_BOOL_JRNG:
     case ENT_BOOL_AREA:
-      check_bool_val(check, en, graphtab_update);
+      if (check_bool_val(check, en, NULL)) { if (opts.legend) notifier_legend_update(); graphtab_refresh(); }
       break;
 #ifdef WITH_PLOT
     case ENT_BOOL_PLBK:
@@ -355,6 +352,7 @@ static void input_cb(GtkWidget *input, t_ent_str *en) {
           OPT_NOTIFY("%s: %d", en->en.name, n);
         }
       } else set_ed_texthint(en);
+      if (en->en.type == ENT_STR_IVAL) DRAW_REFRESH_REL; // rescale time-axis
     } break;
     case ENT_STR_PLOAD: {
       char *pad = parser_str(got, en->en.name, OPT_TYPE_PAD);
@@ -450,8 +448,8 @@ static void rotation_cb(GtkSpinButton *spin, t_ent_spn_aux *aux) {
 #endif
 
 static void graph_type_cb(void) {
-  if (opts.graph == GRAPH_TYPE_NONE) graphtab_restart();
   if (!pinger_state.pause) graphtab_update();
+  graphtab_refresh();
 }
 
 static GtkWidget* label_box(const char *name) {
@@ -644,11 +642,6 @@ static GtkWidget* add_opt_radio(GtkWidget* list, t_ent_rad *en) {
   return box;
 }
 
-#define EN_PR_FMT(ndx, fmt, arg) { g_snprintf(ent_str[ndx].hint, sizeof(ent_str[ndx].hint), fmt, arg); \
-  if (!add_opt_enter(list, &ent_str[ndx])) okay = false; }
-#define EN_PR_STR(ndx) EN_PR_FMT(ndx, "%s", ent_str[ndx].sdef)
-#define EN_PR_INT(ndx) EN_PR_FMT(ndx, "%d", ent_str[ndx].idef)
-
 static void gtk_compat_list_box_remove_all(GtkListBox *box) {
   g_return_if_fail(GTK_IS_LIST_BOX(box));
 #if GTK_CHECK_VERSION(4, 12, 0)
@@ -685,6 +678,11 @@ static gboolean create_optmenu(GtkWidget *bar, const char **icons, const char *t
   return okay;
 }
 
+#define EN_PR_FMT(ndx, fmt, arg) { g_snprintf(ent_str[ndx].hint, sizeof(ent_str[ndx].hint), fmt, arg); \
+  if (!add_opt_enter(list, &ent_str[ndx])) okay = false; }
+#define EN_PR_STR(ndx) EN_PR_FMT(ndx, "%s", ent_str[ndx].sdef)
+#define EN_PR_INT(ndx) EN_PR_FMT(ndx, "%d", ent_str[ndx].idef)
+
 static gboolean create_main_optmenu(GtkWidget *list) {
   static GtkWidget *main_optmenu_list;
   if (list) main_optmenu_list = list; else list = main_optmenu_list;
@@ -701,7 +699,6 @@ static gboolean create_main_optmenu(GtkWidget *list) {
   EN_PR_STR(ENT_STR_PLOAD);
   EN_PR_INT(ENT_STR_PSIZE);
   if (!add_opt_radio(list, &ent_rad[ENT_RAD_IPV]))    okay = false;
-  EN_PR_INT(ENT_STR_LOGMAX);
   return okay;
 }
 
@@ -711,20 +708,26 @@ static gboolean create_ext_optmenu(GtkWidget *list) {
   g_return_val_if_fail(GTK_IS_LIST_BOX(list), false);
   gboolean okay = true;
   gtk_compat_list_box_remove_all(GTK_LIST_BOX(list));
-  if (!add_opt_check(list,  &ent_bool[ENT_BOOL_MN_DARK])) okay = false;
-  if (!add_opt_check(list,  &ent_bool[ENT_BOOL_GR_DARK])) okay = false;
+  if (!add_opt_check(list,      &ent_bool[ENT_BOOL_MN_DARK])) okay = false;
+  if (opts.graph) {
+    if (!add_opt_check(list,    &ent_bool[ENT_BOOL_GR_DARK])) okay = false;
 #ifdef WITH_PLOT
-  if (!add_opt_check(list,  &ent_bool[ENT_BOOL_PL_DARK])) okay = false;
+    if (opts.plot)
+      if (!add_opt_check(list,  &ent_bool[ENT_BOOL_PL_DARK])) okay = false;
 #endif
-  if (!add_opt_radio(list,  &ent_rad[ENT_RAD_GRAPH]))     okay = false;
-  if (!add_opt_check(list,  &ent_bool[ENT_BOOL_LGND]))    okay = false;
-  if (!add_opt_expand(list, &ent_exp[ENT_EXP_LGFL]))      okay = false;
-  if (!add_opt_expand(list, &ent_exp[ENT_EXP_GREX]))      okay = false;
+    if (!add_opt_radio(list,    &ent_rad[ENT_RAD_GRAPH]))     okay = false;
+    if (!add_opt_check(list,    &ent_bool[ENT_BOOL_LGND]))    okay = false;
+    if (!add_opt_expand(list,   &ent_exp[ENT_EXP_LGFL]))      okay = false;
+    if (!add_opt_expand(list,   &ent_exp[ENT_EXP_GREX]))      okay = false;
 #ifdef WITH_PLOT
-  if (!add_opt_expand(list, &ent_exp[ENT_EXP_PLEL]))      okay = false;
-  if (!add_opt_range(list,  &ent_spn[ENT_SPN_COLOR]))     okay = false;
-  if (!add_opt_range(list,  &ent_spn[ENT_SPN_ROTOR]))     okay = false;
+    if (opts.plot) {
+      if (!add_opt_expand(list, &ent_exp[ENT_EXP_PLEL]))      okay = false;
+      if (!add_opt_range(list,  &ent_spn[ENT_SPN_COLOR]))     okay = false;
+      if (!add_opt_range(list,  &ent_spn[ENT_SPN_ROTOR]))     okay = false;
+    }
 #endif
+  }
+  EN_PR_INT(ENT_STR_LOGMAX);
   return okay;
 }
 

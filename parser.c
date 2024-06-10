@@ -275,8 +275,8 @@ gboolean parser_mmint(const char *str, const char *option, t_minmax mm, int *re)
   if (str) {
     char *val = parser_valid_int(option, str);
     if (val) {
-      errno = 0; int n = strtol(val, NULL, 0); okay = !errno; errno = 0; g_free(val);
-      if (okay && MM_OKAY(mm, n)) { okay = true; if (re) *re = n; }
+      errno = 0; int n = strtol(val, NULL, 0); okay = !errno && MM_OKAY(mm, n); errno = 0; g_free(val);
+      if (okay) { if (re) *re = n; }
       else PARSER_MESG("%s: out of range[%d,%d]", option, mm.min, mm.max)
   }}
   return okay;
