@@ -522,10 +522,7 @@ static GtkWidget* add_expand_common(GtkWidget* list, t_ent_exp_common *en) {
     en->arrow = gtk_toggle_button_new();
     g_return_val_if_fail(GTK_IS_TOGGLE_BUTTON(en->arrow), box);
     gtk_box_append(GTK_BOX(title), en->arrow);
-    if (style_loaded) {
-      gtk_widget_add_css_class(en->arrow, CSS_EXP);
-      gtk_widget_add_css_class(en->arrow, CSS_NOFRAME);
-    }
+    if (style_loaded) gtk_widget_add_css_class(en->arrow, CSS_NOFRAME);
     gtk_widget_set_halign(en->arrow, GTK_ALIGN_END);
     g_object_set(G_OBJECT(en->arrow), ICON_PROP, GO_DOWN_ICON, NULL);
     g_signal_connect(en->arrow, EV_TOGGLE, G_CALLBACK(arrow_cb), en);

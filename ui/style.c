@@ -36,10 +36,14 @@ static const t_style_colors style_color = {
   .gry = { "#e0e0e0", "#414141"},
 };
 
+// bottom-outline:
+//entry:focus-within {outline: 0 solid transparent; border-radius:0; box-shadow:0 1px 0;}
+
 static const char *css_common = "\n\
 notebook > header > tabs {padding-left:0; padding-right:0;}\n\
 notebook > header > tabs > tab {margin-left:0; margin-right:0;}\n\
-popover {background:transparent;}\n\
+entry {background:transparent; border:none;}\n\
+button.toggle {background:transparent;}\n\
 vertical {padding:" PAD16 ";}\n\
 .flat {padding:" PAD4 ";}\n\
 ." CSS_PAD " {padding:" PAD ";}\n\
@@ -75,12 +79,6 @@ static char* style_extra_css(const char *common, unsigned darkbits) {
   char* items[] = {
     g_strdup_printf("%s\n", common),
     g_strdup_printf("." CSS_BGROUND " {background:%s;}\n", style_color.def[n0]),
-    g_strdup_printf("popover > arrow, popover > contents {background:%s; box-shadow:none;}\n", col),
-    g_strdup_printf("entry, entry.flat {background:%s; text-decoration:underline; border:none;}\n", col),
-    g_strdup_printf("headerbar {background:%s;}\n", col),
-    g_strdup_printf("headerbar:backdrop {background:%s;}\n", col),
-    g_strdup_printf("notebook > header > tabs > tab {background-color:%s;}\n", col),
-    g_strdup_printf("." CSS_EXP " {background:%s;}\n", col),
     g_strdup_printf("." CSS_DEF_BG " {background:%s; color:%s;}\n", col, col),
     g_strdup_printf("." CSS_INV_BG " {background:%s; color:%s;}\n", style_color.app[!n0], style_color.app[!n0]),
     g_strdup_printf("." CSS_GRAPH_BG   " {background:%s;}\n", style_color.def[n1]),
@@ -101,10 +99,11 @@ static char* style_extra_css(const char *common, unsigned darkbits) {
 #endif
 };
 
-static const gboolean is_theme_dark(const char *theme) {
-  gboolean re = g_str_has_suffix(theme, SFFX_DIV1 DARK_SFFX);
-  if (!re) re = g_str_has_suffix(theme, SFFX_DIV2 DARK_SFFX);
-  return re;
+static inline const gboolean is_theme_dark(const char *theme) {
+  char *lc = g_utf8_strdown(theme, -1);
+  gboolean re = g_str_has_suffix(lc ? lc : theme, SFFX_DIV1 DARK_SFFX);
+  if (!re) re = g_str_has_suffix(lc ? lc : theme, SFFX_DIV2 DARK_SFFX);
+  g_free(lc); return re;
 }
 
 static char* style_basetheme(const char *theme) {
@@ -128,7 +127,7 @@ static char* style_prefer(gboolean dark) {
   if (!theme) { WARN_("No theme"); return NULL; }
   char *prefer = style_basetheme(theme); g_free(theme);
   ub_theme = prefer ? (strcasestr(prefer, "Yaru") != NULL) : false; // aux info for icons
-  LOG("%stheme='%s' prefer-dark=%d", ub_theme ? "Ubuntu " : "", prefer, dark);
+  LOG("theme='%s' prefer-dark=%d", prefer, dark);
   return prefer;
 }
 
@@ -136,8 +135,7 @@ static GtkCssProvider *prov_theme, *prov_extra;
 
 static void style_load_theme(GdkDisplay *display, const char *theme, const char *variant) {
   if (!display || !theme) return;
-  GtkCssProvider *prov = gtk_css_provider_new();
-  g_return_if_fail(GTK_IS_CSS_PROVIDER(prov));
+  GtkCssProvider *prov = gtk_css_provider_new(); g_return_if_fail(GTK_IS_CSS_PROVIDER(prov));
   gtk_css_provider_load_named(prov, theme, variant);
   if (prov_theme) gtk_style_context_remove_provider_for_display(display, GTK_STYLE_PROVIDER(prov_theme));
   prov_theme = prov;

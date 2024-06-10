@@ -63,5 +63,5 @@ SCREENSHOTS
 ![pp-screenshot08](https://raw.githubusercontent.com/yvs2014/pingpath/main/img/pp-screenshot08.png)
 
 ## ordinary 3D plot
-![pp-screenshot30](https://raw.githubusercontent.com/yvs2014/pingpath/main/img/pp-screenshot30.png)
+![pp-screenshot31](https://raw.githubusercontent.com/yvs2014/pingpath/main/img/pp-screenshot31.png)
 

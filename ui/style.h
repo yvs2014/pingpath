@@ -14,7 +14,6 @@
 #define CSS_PLOT_BG     "bgplot"
 #define CSS_ROTOR_COL   "rtrcol"
 #endif
-#define CSS_EXP         "expander"
 #define CSS_PAD         "pad"
 #define CSS_PAD6        "pad6"
 #define CSS_NOPAD       "nopad"

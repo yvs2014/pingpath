@@ -1,3 +1,7 @@
+## 0.3.8
+- safer css customization
+- try to use 'gl' renderer with gtk-4.14
+
 ## 0.3.7
 - add rotator
 - update manual and .conf example
