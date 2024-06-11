@@ -1,3 +1,6 @@
+## 0.3.10
+- switch the default build to 3D version
+
 ## 0.3.9
 - options for 1D/2D/3D prog versions
 

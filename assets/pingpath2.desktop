@@ -1,7 +1,7 @@
 [Desktop Entry]
-Name=pingpath3
-Comment=Graphical ping wrapper with 3D plotting
-Exec=pingpath3
+Name=pingpath2
+Comment=Graphical ping wrapper (2D version)
+Exec=pingpath2
 Icon=pingpath
 Terminal=false
 Type=Application

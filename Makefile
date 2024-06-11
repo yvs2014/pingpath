@@ -1,6 +1,6 @@
 
 NAME     = pingpath
-NAME3    = $(NAME)3
+NAME2    = $(NAME)2
 GROUP    = net.tools
 ASSETS   = assets
 ICONNAME = $(ASSETS)/icons/$(NAME)
@@ -18,17 +18,17 @@ SMPLDIR   ?= $(SHRDIR)/doc/$(NAME)/examples
 DESC  = $(NAME).desktop
 DESC_SRC  = $(ASSETS)/$(DESC)
 DESC_DST  = $(GROUP).$(DESC)
-DESC3 = $(NAME3).desktop
-DESC3_SRC = $(ASSETS)/$(DESC3)
-DESC3_DST = $(GROUP).$(DESC3)
+DESC2 = $(NAME2).desktop
+DESC2_SRC = $(ASSETS)/$(DESC2)
+DESC2_DST = $(GROUP).$(DESC2)
 
 OBJDIR  = _build
-OBJDIR3 = $(OBJDIR)3
+OBJDIR2 = $(OBJDIR)2
 
 PKGS = gtk4
 
 CC ?= gcc
-CFLAGS = -Wall
+CFLAGS += -Wall
 CFLAGS += -I.
 LIBS = -lm
 
@@ -46,11 +46,11 @@ CFLAGS += -DWITH_PLOT
 PKGS += gl
 PKGS += cglm
 PKGS += epoxy
-APP = $(NAME3)
-BUILDDIR = $(OBJDIR3)
-else
 APP = $(NAME)
 BUILDDIR = $(OBJDIR)
+else
+APP = $(NAME2)
+BUILDDIR = $(OBJDIR2)
 endif
 
 CFLAGS += $(shell $(PKGCONFIG) --cflags $(PKGS))
@@ -70,7 +70,8 @@ CFLAGS += -fanalyzer
 CFLAGS += -fsanitize=address
 endif
 
-PKGCONFIG = $(shell which pkg-config)
+# PKGCONFIG = $(shell which pkg-config)
+PKGCONFIG = pkg-config
 
 SRC = $(NAME).c common.c
 SRC += pinger.c parser.c stat.c series.c dns.c whois.c cli.c
@@ -84,10 +85,10 @@ endif
 OBJS = $(SRC:%.c=$(BUILDDIR)/%.o)
 
 all:
-	@echo 'make $(NAME)'
-	@make $(NAME)
-	@echo 'make $(NAME3) with 3D plot'
-	@make PLOT=1 $(NAME3)
+	@echo 'make $(NAME2) with 2D graphs'
+	@make $(NAME2)
+	@echo 'make $(NAME) with 2D graphs and 3D plots'
+	@make PLOT=1 $(NAME)
 
 $(OBJS): $(BUILDDIR)/%.o: %.c common.h
 	@mkdir -p $(@D)
@@ -99,22 +100,22 @@ $(APP): $(OBJS)
 	@$(CC) -o $@ $(OBJS) $(LDFLAGS) $(LIBS)
 
 clean:
-	rm -f -- $(NAME) $(NAME3)
-	rm -rf -- $(OBJDIR) $(OBJDIR3)
+	rm -f -- $(NAME) $(NAME2)
+	rm -rf -- $(OBJDIR) $(OBJDIR2)
 
-install: $(NAME) $(NAME3)
+install: $(NAME) $(NAME2)
 	@mkdir -p $(BASEDIR)/bin
 	install -m 755 $(NAME) $(BASEDIR)/bin
-	install -m 755 $(NAME3) $(BASEDIR)/bin
+	install -m 755 $(NAME2) $(BASEDIR)/bin
 	@mkdir -p $(MANDIR)
 	install -m 644 $(NAME).1 $(MANDIR)/
 	gzip -f $(MANDIR)/$(NAME).1
-	ln -srf $(MANDIR)/$(NAME).1.gz $(MANDIR)/$(NAME3).1.gz
+	ln -srf $(MANDIR)/$(NAME).1.gz $(MANDIR)/$(NAME2).1.gz
 	@mkdir -p $(SMPLDIR)
 	install -T -m 644 $(CONF_SRC) $(SMPLDIR)/$(CONF_DST)
 	@mkdir -p $(DSCDIR)
 	install -T -m 644 $(DESC_SRC) $(DSCDIR)/$(DESC_DST)
-	install -T -m 644 $(DESC3_SRC) $(DSCDIR)/$(DESC3_DST)
+	install -T -m 644 $(DESC2_SRC) $(DSCDIR)/$(DESC2_DST)
 	@mkdir -p $(SVGICODIR)
 	install -m 644 $(ICONNAME).svg $(SVGICODIR)
 

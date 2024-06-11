@@ -10,7 +10,7 @@ Release:    1
 Summary:    'ping' wrapper to display path
 License:    GPL-2.0-or-later
 
-Requires: iputils, gtk4, json-glib, libglvnd-opengl, libepoxy, cglm
+Requires: iputils, gtk4, json-glib, libglvnd-opengl, libepoxy, libcglm0
 BuildRequires: (gcc or clang), make, pkgconf, gtk4-devel, json-glib-devel, libglvnd-devel, libepoxy-devel, cglm-devel
 
 %description
@@ -25,7 +25,7 @@ git clone --depth=1 https://github.com/yvs2014/pingpath
 
 %build
 cd %{srcdir}
-PREFIX=/usr DESTDIR=%{buildroot} make
+CFLAGS="${CFLAGS} -fPIE" LDFLAGS="${LDFLAGS} -pie" PREFIX=/usr DESTDIR=%{buildroot} make
 
 %install
 cd %{srcdir}
@@ -33,11 +33,13 @@ PREFIX=/usr DESTDIR=%{buildroot} make install
 
 %files
 /usr/bin/pingpath
-/usr/bin/pingpath3
+/usr/bin/pingpath2
 /usr/share/applications/net.tools.pingpath.desktop
+/usr/share/applications/net.tools.pingpath2.desktop
 /usr/share/icons/hicolor/scalable/apps/pingpath.svg
 /usr/share/doc/pingpath/examples/pingpath.conf
 /usr/share/man/man1/pingpath.1.gz
+/usr/share/man/man1/pingpath2.1.gz
 
 %changelog
 # skip this for now

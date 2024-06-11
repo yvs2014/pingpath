@@ -10,6 +10,6 @@ Homepage: https://github.com/yvs2014/pingpath
 Package: pingpath
 Depends: ${shlibs:Depends}, iputils-ping, libgtk-4-1 | libgtk-4-0, libjson-glib-1.0-0, libgl1, libepoxy0, libcglm0
 Architecture: any
-Description: iputils 'ping' wrapper to display path
+Description: 'ping' wrapper to display path
   Network diagnostic tool based on parsing ping output with some functionality of traceroute.
   Written using GTK framework.

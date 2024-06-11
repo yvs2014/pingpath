@@ -1,6 +1,6 @@
 [Desktop Entry]
 Name=pingpath
-Comment=Graphical ping wrapper
+Comment=Graphical ping wrapper (3D version)
 Exec=pingpath
 Icon=pingpath
 Terminal=false
