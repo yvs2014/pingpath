@@ -10,7 +10,7 @@
 #define MIN_GTK_RUNTIME(major, minor, micro) (!gtk_check_version(major, minor, micro))
 
 #define APPNAME "pingpath"
-#define VERSION "0.3.10"
+#define VERSION "0.3.11"
 
 #define X_RES 1024
 #define Y_RES 720
@@ -252,7 +252,8 @@
 #define OPT_PLOT_HDR     "Plot elements"
 #define OPT_PLEX_HDR     "Plot parameters"
 #define OPT_GRAD_HDR     "Plot gradient"
-#define OPT_ROT_HDR      "Plot rotation"
+#define OPT_GLOB_HDR     "Global space"
+#define OPT_ROTOR_HDR    "Plot rotation"
 #endif
 
 #define OPT_ATAB_HDR     "Active tab at start"
@@ -362,7 +363,7 @@ enum { ENT_BOOL_DNS, ENT_BOOL_HOST, ENT_BOOL_AS, ENT_BOOL_CC, ENT_BOOL_DESC, ENT
 #endif
   ENT_BOOL_AVJT, ENT_BOOL_CCAS, ENT_BOOL_LGHN, ENT_BOOL_MEAN, ENT_BOOL_JRNG, ENT_BOOL_AREA,
 #ifdef WITH_PLOT
-  ENT_BOOL_PLBK, ENT_BOOL_PLAX, ENT_BOOL_PLGR, ENT_BOOL_PLRR,
+  ENT_BOOL_PLBK, ENT_BOOL_PLAX, ENT_BOOL_PLGR, ENT_BOOL_PLRR, ENT_BOOL_GLOB,
 #endif
 };
 
@@ -394,14 +395,6 @@ typedef struct minmax {
   int min, max;
 } t_minmax;
 #define MM_OKAY(mm, val) (((mm).min <= val) && (val <= (mm).max))
-
-#ifdef WITH_PLOT
-typedef struct iv3s { int a, b, c; } iv3s_t;
-// not defined in cglm < 0.9
-typedef int ivec2_t[2];
-typedef int ivec3_t[3];
-typedef int ivec4_t[4];
-#endif
 
 typedef struct host {
   char *addr, *name;

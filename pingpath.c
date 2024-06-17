@@ -119,9 +119,9 @@ inline gboolean is_tab_that(unsigned ndx) { return (ndx < G_N_ELEMENTS(tabrefs))
 int main(int argc, char **argv) {
   setlocale(LC_ALL, "");  // parser: early l10n for CLI options
   putenv("LANG=C.UTF-8"); // parser: disable ping's i18n output
-#if GTK_CHECK_VERSION(4, 14, 0)
-  if (!getenv("GSK_RENDERER")) putenv("GSK_RENDERER=gl"); // to avoid ngl-n-vulkan issues with 4.14
-#endif
+  if (!getenv("GSK_RENDERER")) { // to avoid ngl-n-vulkan issues in GTK 4.14/4.15
+    int major = gtk_get_major_version(), minor = gtk_get_minor_version();
+    if ((major == 4) && ((minor == 14) || (minor == 15))) putenv("GSK_RENDERER=gl"); }
   g_return_val_if_fail(parser_init(), EX_SOFTWARE);
   { gboolean valid_cli_options = cli_init(&argc, &argv);
     g_return_val_if_fail(valid_cli_options, EX_USAGE); }

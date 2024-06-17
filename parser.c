@@ -368,16 +368,16 @@ gboolean parser_range(char *range, char delim, const char *option, t_minmax *re)
 }
 
 #ifdef WITH_PLOT
-gboolean parser_ivec4(char *range, char delim, const char *option, ivec4_t re) {
-  if (!range) return false;
+gboolean parser_ivec(char *range, char delim, const char *option, int *dest, int n) {
+  if (!range || (n <= 0)) return false;
   const char delims[] = { delim, 0 };
-  char **abcs = g_strsplit(range, delims, 4);
-  ivec4_t val = { INT_MIN, INT_MIN, INT_MIN, INT_MIN };
+  char **abcs = g_strsplit(range, delims, n);
+  int val[n]; for (int i = 0; i < n; i++) val[i] = INT_MIN;
   gboolean okay = true;
   if (abcs) for (int i = 0; abcs[i] && (i < G_N_ELEMENTS(val)); i++)
     okay &= parser_valint(abcs[i], &val[i], option);
   g_strfreev(abcs);
-  if (okay) { re[0] = val[0]; re[1] = val[1]; re[2] = val[2]; re[3] = val[3]; }
+  if (okay) for (int i = 0; i < n; i++) dest[i] = val[i];
   return okay;
 }
 #endif

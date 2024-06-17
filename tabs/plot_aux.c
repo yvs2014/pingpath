@@ -1,5 +1,6 @@
 
 #include <string.h>
+#include <cglm/cglm.h>
 
 #include "plot_aux.h"
 #include "stat.h"

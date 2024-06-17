@@ -70,7 +70,7 @@ enum { SHIFT_TITLE, SHIFT_MARKS, SHIFT_MAX };    // shifts
 enum { AXIS_RTT, AXIS_TIM, AXIS_TTL, AXIS_MAX }; // axes
 
 // lor,fon,bot: left-o-right, far-o-near, bottom-o-top
-typedef struct plot_trans { mat4 data, text, lor, fon, bot; } t_plot_trans;
+typedef struct plot_trans { mat4 data, lor, fon, bot; } t_plot_trans;
 
 typedef struct plot_prog {
   GLuint exec, vs, fs;
@@ -108,12 +108,16 @@ typedef struct plot_plane_at { gboolean           bot, lor, fon; } t_plot_plane_
 typedef struct plot_axes_set { t_plot_axis_params rtt, tim, ttl; } t_plot_axes_set;
 
 typedef struct plparams {
-  ivec3_t cube;
+  int cube[3];
   t_plot_plane_at at; // planes' position
   t_plot_axes_set axes;
 } t_plparam;
 
 typedef struct v3s { float a, b, c; } t_v3s;
+
+mat4 rmat = GLM_MAT4_IDENTITY_INIT; // rotation_matrix
+
+//
 
 static const float scale = 1;
 
@@ -171,6 +175,7 @@ static t_tab plottab = { .self = &plottab, .name = "plot-tab",
 static GtkWidget *plot_base_area, *plot_dyn_area;
 static t_plot_res plot_base_res = { .base = true }, plot_dyna_res;
 static t_plot_trans plot_trans;
+static mat4 scaled = GLM_MAT4_IDENTITY_INIT;
 
 static const vec4 grid_color = { 0.75, 0.75, 0.75, 1 };
 static const t_th_color text_val = { .ondark = 1, .onlight = 0 };
@@ -218,7 +223,7 @@ static const vec2 plot_mrk_pad = { 2, 3};
 
 static const float hfontf = 6 * (FONT_HEIGHT_PERCENT / 100.) / (2 * PLOT_FONT_SIZE);
 static vec2 char0sz, char0nm;
-static ivec2_t area_size;
+static int area_size[2];
 
 //
 
@@ -234,7 +239,7 @@ static void plot_init_char_tables(void) {
   t_plot_char c; memset(&c, 0, sizeof(c));
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
   for (unsigned char i = MIN_ASCII_CCHAR; i < LIM_ASCII_CCHAR; i++) {
-    ivec2_t sz;
+    int sz[2];
     if (!(c.tid = plot_pango_text(i, sz))) { plot_chars_ready = false; break; }
     c.size[0] = sz[0]; c.size[1] = sz[1]; char_table[i] = c;
   }
@@ -403,25 +408,25 @@ static gboolean plot_res_init(t_plot_res *res, GError **err) {
   PLOT_EXT_ATTR(res->plot);
   if (res->base) {
     { // flat: bottom-o-top
-      ivec2_t dim = { PLANE_XN, PLANE_YN };
-      PLOT_FLAT_VERT(res->vo[PO_BOT],  PLO_GRID);
+      int dim[2] = { PLANE_XN, PLANE_YN };
+      PLOT_FLAT_VERT(res->vo[PO_BOT], PLO_GRID);
       PLOT_AXIS_VERT(res->vo[A1_TIM], PLO_AXIS_XL, TICK);
       PLOT_AXIS_VERT(res->vo[A2_TIM], PLO_AXIS_XR, TICK);
       PLOT_AXIS_VERT(res->vo[A1_TTL], PLO_AXIS_YR, TICK);
       PLOT_AXIS_VERT(res->vo[A2_TTL], PLO_AXIS_YL, TICK);
     }
     { // flat: left-o-right
-      ivec2_t dim = { PLANE_XN, PLANE_ZN };
+      int dim[2] = { PLANE_XN, PLANE_ZN };
       PLOT_FLAT_VERT(res->vo[PO_LOR], PLO_GRID);
       PLOT_AXIS_VERT(res->vo[A1_RTT], PLO_AXIS_XL, TICK);
       PLOT_AXIS_VERT(res->vo[A2_RTT], PLO_AXIS_XR, TICK);
     }
     { // flat: far-o-near
-      ivec2_t dim = { PLANE_ZN, PLANE_YN };
+      int dim[2] = { PLANE_ZN, PLANE_YN };
       PLOT_FLAT_VERT(res->vo[PO_FON], PLO_GRID);
     }
   } else { // surface
-    ivec2_t dim = { SURF_XN * 2, SURF_YN * 2 };
+    int dim[2] = { SURF_XN * 2, SURF_YN * 2 };
     PLOT_FLAT_VERT(res->vo[VO_SURF], PLO_SURF);
     res->vo[VO_SURF].dbo.ext = plot_aux_surf_init(dim[0], dim[1], PLO_SURF); // triangles
   }
@@ -503,7 +508,7 @@ static void plot_draw_text(t_plot_res *res, const char *text, int len,
   if (!(len > 0) || !res || !text) return;
   GLuint vao = res->vo[VO_TEXT].vao, vbo = res->vo[VO_TEXT].vbo.id, typ = res->vo[VO_TEXT].vbo.typ;
   if (!vao || !vbo || !typ) return;
-  glUniformMatrix4fv(res->text.vtr, 1, GL_FALSE, (float*)plot_trans.text);
+  glUniformMatrix4fv(res->text.vtr, 1, GL_FALSE, (float*)scaled);
   if (color) glUniform4fv(res->text.colo1, 1, color);
   glActiveTexture(GL_TEXTURE0);
   glBindVertexArray(vao);
@@ -720,11 +725,10 @@ static void plot_rotate_copy(mat4 projview, mat4 model, int angle, vec3 axis, ve
   glm_mul(projview, m, dest);
 }
 
-static inline void plot_trans_planes(mat4 model, mat4 projview, ivec3_t cube, t_plot_plane_at at) {
-  ivec3_t rot = {cube[0], cube[1], cube[2]};
-  plot_rotate_copy(projview, model, rot[0], GLM_YUP, at.lor ? NULL : &GLM_ZUP, plot_trans.lor);
-  plot_rotate_copy(projview, model, rot[1], GLM_XUP, at.fon ? NULL : &GLM_ZUP, plot_trans.fon);
-  plot_rotate_copy(projview, model, rot[2], GLM_YUP, at.bot ? NULL : &GLM_ZUP, plot_trans.bot);
+static inline void plot_trans_planes(mat4 projview, int cube[3], t_plot_plane_at at) {
+  plot_rotate_copy(projview, rmat, cube[0], GLM_YUP, at.lor ? NULL : &GLM_ZUP, plot_trans.lor);
+  plot_rotate_copy(projview, rmat, cube[1], GLM_XUP, at.fon ? NULL : &GLM_ZUP, plot_trans.fon);
+  plot_rotate_copy(projview, rmat, cube[2], GLM_YUP, at.bot ? NULL : &GLM_ZUP, plot_trans.bot);
 }
 
 static inline void plottab_on_color_opts(void) {
@@ -735,12 +739,6 @@ static inline void plottab_on_color_opts(void) {
 #undef COL4_CMPNSET
 }
 
-static inline void plot_main_rotation(mat4 R, iv3s_t o) {
-  if (o.c) glm_rotate(R, glm_rad(o.c), GLM_XUP); // roll
-  if (o.b) glm_rotate(R, glm_rad(o.b), GLM_YUP); // pitch
-  if (o.a) glm_rotate(R, glm_rad(o.a), GLM_ZUP); // yaw
-}
-
 static float in_view_dir_value(mat4 R, vec3 axis) {
   vec3 ijk; glm_vec3_rotate_m4(R, axis, ijk);
   vec3 prj; glm_vec3_proj(ijk, GLM_YUP, prj);
@@ -749,7 +747,7 @@ static float in_view_dir_value(mat4 R, vec3 axis) {
 
 static inline gboolean in_view_direction(mat4 R, vec3 axis) { return in_view_dir_value(R, axis) <= GLM_FLT_EPSILON; }
 
-static inline t_plot_plane_at plot_planes_at(mat4 base, ivec3_t rot) {
+static inline t_plot_plane_at plot_planes_at(mat4 base) {
   t_plot_plane_at at;
   mat4 R; glm_mat4_copy(base, R);
   at.lor =  in_view_direction(R, GLM_XUP);
@@ -771,39 +769,56 @@ static inline void plot_axis_at2ndx(t_plot_plane_at at, t_plot_axes_set *ax) {
   ax->ttl.ndx = at.lor           ? A1_TTL : A2_TTL;
 }
 
-static inline void plottab_on_trans_opts(void) {
-  mat4 R = GLM_MAT4_IDENTITY_INIT; glm_scale(R, SCALE3);
-  glm_mat4_copy(R, plot_trans.text);     // text plane
-  plot_main_rotation(R, opts.orient);
-  t_plot_plane_at at = plot_planes_at(R, plparam.cube); plparam.at = at;
+static void pl_qrotor(mat4 mat, int q[4]) {
+  vec4 quat; glm_quat(quat, glm_rad(q[3]), q[0], q[2], q[1]);
+  glm_quat_rotate(mat, quat, mat);
+}
+
+static void pl_on_rotation(int delta[4]) {
+  mat4 curr; glm_mat4_copy(scaled, curr); pl_qrotor(curr, delta);
+  if (opts.rglob) glm_mat4_mul(curr, rmat, rmat);
+  else            glm_mat4_mul(rmat, curr, rmat);
+}
+
+static void pl_post_rotation(void) {
+  t_plot_plane_at at = plot_planes_at(rmat); plparam.at = at;
   mat4 projview; plot_projview(projview);
-  glm_mul(projview, R, plot_trans.data); // data plane
-  plot_trans_planes(R, projview, plparam.cube, at);
+  glm_mul(projview, rmat, plot_trans.data); // data plane
+  plot_trans_planes(projview, plparam.cube, at);
   plot_trans_axes(at);
   plot_axis_at2ndx(at, &plparam.axes);
 }
 
-static void plottab_on_opts(unsigned flags) {
-  if (flags & PL_PARAM_COLOR) plottab_on_color_opts();
-  if (flags & PL_PARAM_TRANS) plottab_on_trans_opts();
-  if (flags & PL_PARAM_AT) { draw_plot_at = 0; plot_aux_reset(&plot_dyna_res.vo[VO_SURF]); }
+static inline void pl_init_orientation(void) {
+  for (int i = 0; i < 3; i++) if (opts.orient[i]) {
+    int q[4] = {0, 0, 0, opts.orient[i]}; q[i] = 1;
+    pl_on_rotation(q);
+  }
+  pl_post_rotation();
 }
 
-static inline void plottab_redraw(void) {
-  if (GTK_IS_WIDGET(plot_base_area)) gtk_gl_area_queue_render(GTK_GL_AREA(plot_base_area));
-  if (GTK_IS_WIDGET(plot_dyn_area))  gtk_gl_area_queue_render(GTK_GL_AREA(plot_dyn_area));
+static void plottab_on_opts(unsigned flags) {
+  if (flags & PL_PARAM_COLOR) plottab_on_color_opts();
+  if (flags & PL_PARAM_AT) { draw_plot_at = 0; plot_aux_reset(&plot_dyna_res.vo[VO_SURF]); }
 }
 
 
 // pub
 //
 
+void plottab_redraw(void) {
+  if (GTK_IS_WIDGET(plot_base_area)) gtk_gl_area_queue_render(GTK_GL_AREA(plot_base_area));
+  if (GTK_IS_WIDGET(plot_dyn_area))  gtk_gl_area_queue_render(GTK_GL_AREA(plot_dyn_area));
+}
+
 t_tab* plottab_init(GtkWidget* win) {
 #define PL_INIT_LAYER(widget, descr) { widget = plot_init_glarea(descr); \
     g_return_val_if_fail(widget, NULL); layers = g_slist_append(layers, widget); }
   { int units = 1; glGetIntegerv(GL_MAX_VERTEX_TEXTURE_IMAGE_UNITS, &units);
     if (!units) { WARN_("No support for texture lookups in the vertex shader"); return NULL; }}
-  { plottab_on_opts(PL_PARAM_ALL);
+  { glm_scale(scaled, SCALE3);
+    pl_init_orientation();
+    plottab_on_opts(PL_PARAM_ALL);
     plot_glsl_reset(&plot_base_res, true);
     plot_glsl_reset(&plot_dyna_res, true); }
   { GSList *layers = NULL;
@@ -816,12 +831,14 @@ t_tab* plottab_init(GtkWidget* win) {
 #undef PL_INIT_LAYER
 }
 
-inline void plottab_free(void) { plot_res_free(&plot_dyna_res); plot_res_free(&plot_base_res); plot_aux_free(); }
+void plottab_free(void) { plot_res_free(&plot_dyna_res); plot_res_free(&plot_base_res); plot_aux_free(); }
 
 void plottab_update(void) {
   plot_aux_update(&plot_dyna_res.vo[VO_SURF]);
   if (GTK_IS_WIDGET(plot_dyn_area)) gtk_gl_area_queue_render(GTK_GL_AREA(plot_dyn_area));
 }
 
-inline void plottab_refresh(gboolean flags)  { if (flags) plottab_on_opts(flags); plottab_redraw(); }
+void plottab_refresh(gboolean flags)  { if (flags) plottab_on_opts(flags); plottab_redraw(); }
+
+inline void plottab_on_trans_opts(int q[4]) { pl_on_rotation(q); pl_post_rotation(); }
 

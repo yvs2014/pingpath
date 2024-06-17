@@ -2,7 +2,6 @@
 #define TABS_PLOT_AUX_H
 
 #include <epoxy/gl.h>
-#include <cglm/cglm.h>
 #include "common.h"
 
 #define MIN_GL_VER 30

@@ -25,10 +25,11 @@
 #define DEF_BCOL_FROM 77
 #define DEF_BCOL_TO   230
 
-#define DEF_YAW     -20
-#define DEF_PITCH     0
-#define DEF_ROLL      0
+#define GL_ANGX       0
+#define GL_ANGY     -20
+#define GL_ANGZ       0
 #define DEF_ANGSTEP   5
+#define DEF_RGLOBAL   true
 #endif
 
 typedef struct opts {
@@ -43,7 +44,8 @@ typedef struct opts {
 #ifdef WITH_PLOT
   gboolean plot, darkplot;
   t_minmax rcol, gcol, bcol; // color range
-  iv3s_t orient;             // orientation angles
+  gboolean rglob;            // rotation space: global (xyz) or local (attitude)
+  int orient[3];             // plot orientation
   int angstep;               // rotation step
 #endif
 } t_opts;

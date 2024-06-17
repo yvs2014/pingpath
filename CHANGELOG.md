@@ -1,3 +1,7 @@
+## 0.3.11
+- switch from gimbal rotation to quaternion
+- add space rotation switch (set default to global)
+
 ## 0.3.10
 - switch the default build to 3D version
 

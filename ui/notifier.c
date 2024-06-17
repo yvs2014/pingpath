@@ -27,10 +27,9 @@ typedef struct notifier {
   const int type;
   const gboolean autohide, dyncss;
   t_ntcss css;
+  int x, y;
 #ifdef WITH_DND
-  int x, y, dx, dy;
-#else
-  const int x, y;
+  int dx, dy;
 #endif
   gboolean onright;
   t_nt_leg *leg;

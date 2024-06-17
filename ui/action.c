@@ -42,17 +42,22 @@ static const char* kb_ctrl_pgdn[]  = {"<Ctrl>Page_Down", NULL};
 #endif
 
 #ifdef WITH_PLOT
-#define KBROTITEM(auxndx, kbndx, tag, sign) { .aux = &ent_spn[ENT_SPN_ROTOR].list[0].aux[auxndx], \
-  .ndx = kbndx, .pval = &opts.orient.tag, .inc = sign, .scale = &opts.angstep }
+#define KBROTCSAUX(spn_ndx, cs_ndx, tndx, ang_sign, ax_rev) { .aux = &ent_spn[spn_ndx].list[0].aux[cs_ndx], \
+  .pval = &opts.orient[tndx], .sign = ang_sign, .rev = ax_rev }
+#define KBROTAUX(lndx, gndx, labn, lsign, gsign) { \
+  .global = KBROTCSAUX(ENT_SPN_GLOBAL, gndx, gndx, gsign, false), \
+  .local  = KBROTCSAUX(ENT_SPN_LOCAL,  lndx, gndx, lsign, lsign != gsign), \
+  .label = labn, .step = &opts.angstep }
 t_kb_rotaux kb_rotaux[ACCL_SA_MAX] = {
-  [ACCL_SA_LEFT]  = KBROTITEM(0, ACCL_SA_LEFT,  a, -1),
-  [ACCL_SA_RIGHT] = KBROTITEM(0, ACCL_SA_RIGHT, a,  1),
-  [ACCL_SA_UP]    = KBROTITEM(1, ACCL_SA_UP,    c, -1),
-  [ACCL_SA_DOWN]  = KBROTITEM(1, ACCL_SA_DOWN,  c,  1),
-  [ACCL_SA_PGUP]  = KBROTITEM(2, ACCL_SA_PGUP,  b,  1),
-  [ACCL_SA_PGDN]  = KBROTITEM(2, ACCL_SA_PGDN,  b, -1),
+  [ACCL_SA_LEFT]  = KBROTAUX(0, 1, ACCL_SA_LEFT,   1, -1),
+  [ACCL_SA_RIGHT] = KBROTAUX(0, 1, ACCL_SA_RIGHT, -1,  1),
+  [ACCL_SA_UP]    = KBROTAUX(2, 0, ACCL_SA_UP,    -1, -1),
+  [ACCL_SA_DOWN]  = KBROTAUX(2, 0, ACCL_SA_DOWN,   1,  1),
+  [ACCL_SA_PGUP]  = KBROTAUX(1, 2, ACCL_SA_PGUP,   1,  1),
+  [ACCL_SA_PGDN]  = KBROTAUX(1, 2, ACCL_SA_PGDN,  -1, -1),
 };
-#undef KBROTITEM
+#undef KBROTCSAUX
+#undef KBROTAUX
 #endif
 
 static t_sa_desc menu_sa_desc[MENU_SA_MAX] = {
@@ -219,7 +224,7 @@ static inline char* get_help_message(void) {
     SPANOPT(OPT_PLOT_HDR,    PLEL_BACK_HDR  " " PLEL_AXIS_HDR " " PLEL_GRID_HDR " " PLEL_RTRR_HDR)
     SPANOPT(OPT_GRAD_HDR,    "to color 3D-surface:")
       SPANSUB("Start-end pairs of RGB colors")
-    SPANOPT(OPT_ROT_HDR,     "3D-plot orientation");
+    SPANOPT(OPT_ROTOR_HDR,   "space, orientation, and step");
 #endif
 #undef SPANSZ
 #undef SPANHDR
@@ -315,17 +320,18 @@ static void on_legend(GSimpleAction *action, GVariant *var, void *unused) {
 #ifdef WITH_PLOT
 void on_rotation(GSimpleAction *action, GVariant *var, t_kb_rotaux *data) {
   if (!data || !is_tab_that(TAB_PLOT_NDX)) return;
-  int *p = data->pval, inc = data->inc; if (!p || !inc) return;
-  int want = *p + inc * (data->scale ? *data->scale : 1);
-  if (want < MIN_VIEW_ANGLE) want = MIN_VIEW_ANGLE;
-  if (want > MAX_VIEW_ANGLE) want = MAX_VIEW_ANGLE;
-  if (*p == want) return;
-  *p = want;
-  MA_LOG(data->ndx, accl_sa_label);
-  const t_ent_spn_aux *aux = data->aux;
-  option_up_menu_ext();
-  if (aux) notifier_inform("%s: %s %d", aux->prfx, aux->sfx, *p);
-  plottab_refresh(PL_PARAM_TRANS);
+  t_kb_rot_lg lg = opts.rglob ? data->global : data->local;
+  if (!lg.aux || !lg.pval) return;
+  int step = lg.sign * (data->step ? *data->step : 1);
+  int want = *lg.pval + step;
+  t_minmax *mm = lg.aux->mm ? lg.aux->mm : &opt_mm_rot;
+  if (want < mm->min) want += lg.aux->wrap;
+  if (want > mm->max) want -= lg.aux->wrap;
+  if (*lg.pval == want) return;
+  MA_LOG(data->label, accl_sa_label);
+  notifier_inform("%s: %d", lg.aux->sfx, want);
+  *lg.pval = want; option_up_menu_ext();
+  set_rotor_n_redraw(step, lg.rev, lg.aux->pn);
 }
 #endif
 

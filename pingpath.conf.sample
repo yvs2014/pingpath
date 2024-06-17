@@ -43,10 +43,11 @@
 
 ## NOTE: syntax: tag=values
 ##      `rgb' color gradients (start:end) within range 0 through 255
-##      `o'   orientation and rotation (yaw:pitch:roll:step)
-##          orientation angles are within range -180 through 180
+##      `o'   rotation parameters (space:xaxis:yaxis:zaxis::step)
+##          global space is set with 1, local is 0
+##          orientation angles are from -180 to 180
 ##          rotation step is in range from 1 to 180
-# plot-params = r=77:77,g=230:77,b=77:230,o=-20:0:0:5
+# plot-params = r=77:77,g=230:77,b=77:230,o=1:0:-20:0:5
 
 ## NOTE: not-interactive mode: t - text, c - csv, j - json, J - pretty json
 # recap =

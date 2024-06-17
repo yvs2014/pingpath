@@ -15,7 +15,7 @@ enum { MINIMAX_SPIN, ROTOR_COLUMN };
 
 enum { ENT_SPN_TTL,
 #ifdef WITH_PLOT
-  ENT_SPN_COLOR, ENT_SPN_ROTOR,
+  ENT_SPN_COLOR, ENT_SPN_GLOBAL, ENT_SPN_LOCAL,
 #endif
 };
 
@@ -60,12 +60,14 @@ typedef struct ent_exp {
 
 typedef struct ent_spn_aux {
   GCallback cb;
-  int *pval; // indexed: 0 .. lim-1
-  int def;   // not-indexed default: 1 .. lim
+  int *pval;   // indexed: 0 .. lim-1
+  int pn, wrap; gboolean rev; // pval ndx, wrap, reverse axis
+  int def;     // not-indexed default: 1 .. lim
+  int *step;
+  int sn;      // ref to parent's ndx
   t_minmax *mm;
   const char *prfx, *sfx;
   GtkSpinButton *spin;
-  int *step;
 } t_ent_spn_aux;
 
 typedef struct ent_spn_elem {
@@ -95,6 +97,7 @@ extern t_minmax opt_mm_ttl;
 extern t_minmax opt_mm_col;
 extern t_minmax opt_mm_rot;
 extern t_minmax opt_mm_ang;
+void set_rotor_n_redraw(int step, gboolean rev, int n);
 #endif
 
 #endif

@@ -2,9 +2,6 @@
 #define PARSER_H
 
 #include "common.h"
-#ifdef WITH_PLOT
-#include <cglm/cglm.h>
-#endif
 
 #define COMMA ','
 #define COLON ':'
@@ -25,7 +22,7 @@ void parser_whois(char *buff, int sz, char* elem[]);
 gboolean parser_mmint(const char *str, const char *option, t_minmax mm, int *re);
 gboolean parser_range(char *range, char delim, const char *option, t_minmax *re);
 #ifdef WITH_PLOT
-gboolean parser_ivec4(char *range, char delim, const char *option, ivec4_t re);
+gboolean parser_ivec(char *range, char delim, const char *option, int *dest, int n);
 #endif
 
 #endif

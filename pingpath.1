@@ -234,15 +234,17 @@ Blue surface gradient
 Orientation and rotation
 .El
 Default
-.Ar r=77:77,g=230:77,b=77:230,o=-20:0:0:5
+.Ar r=77:77,g=230:77,b=77:230,o=1:0:-20:0:5
 .br
 Note: \fBrgb\fR colors are in range from 0 to 255
 .br
 .in +.6i
-\fBo\fRrientation is set with yaw:pitch:roll:step, where
+r\fBo\fRtation parameters are set with space:xaxis:yaxis:zaxis:step, where
 .br
 .in
 .in +.9i
+global space is set with 1, local is 0
+.br
 orientation angles are from -180 to 180
 .br
 rotation step is in range from 1 to 180
@@ -329,17 +331,17 @@ Display help
 .It Cm Ctrl+X
 Exit
 .It Cm Ctrl+Left
-Yaw Left
+Axis-Y minus, Yaw Left
 .It Cm Ctrl+Right
-Yaw Right
+Axis-Y plus,  Yaw Right
 .It Cm Ctrl+Up
-Roll Clockwise (Up)
+Axis-X minus, Roll Clockwise (Up)
 .It Cm Ctrl+Down
-Roll Contra (Down)
+Axis-X plus,  Roll Contra (Down)
 .It Cm Ctrl+PgUp
-Pitch Up (Clockwise)
+Axis-Z minus, Pitch Up (Clockwise)
 .It Cm Ctrl+PgDn
-Pitch Down (Contra)
+Axis-Z plus,  Pitch Down (Contra)
 .El
 .Sh DRAG-N-DROP
  Items that can be reordered ot relocated:

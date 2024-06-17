@@ -165,43 +165,56 @@ static gboolean set_xparam_tag(int inp, int *outp, t_minmax mm) {
 static const char opt_X_tags[] = { R_TAG, G_TAG, B_TAG, O_TAG };
 
 static gboolean cli_opt_X_pair(const char *value, char tag, const char *name, t_opts *opts) {
+#define SET_IVEC(a5, glob, v3, angle) { \
+  a5[0] = &(glob); a5[1] = &(v3[0]); a5[2] = &(v3[1]); a5[3] = &(v3[2]); a5[4] = &(angle); }
+#define SET_XPAR(src, dst, mm) { if (okay) okay &= set_xparam_tag(src, dst, mm); }
   gboolean okay = false;
   if (value && opts) {
     char *cp = g_strdup(value);
     if (cp) {
-      int ndx = -1, typ = -1; t_minmax *grad = NULL; iv3s_t *orient = NULL;
+      int ndx = -1, typ = -1, *pval[5]; t_minmax *grad = NULL;
       switch (tag) {
-        case R_TAG: typ = ENT_SPN_COLOR; ndx = 0; grad = &opts->rcol; break;
-        case G_TAG: typ = ENT_SPN_COLOR; ndx = 1; grad = &opts->gcol; break;
-        case B_TAG: typ = ENT_SPN_COLOR; ndx = 2; grad = &opts->bcol; break;
-        case O_TAG: typ = ENT_SPN_ROTOR; ndx = 0; orient = &opts->orient; break;
+        case R_TAG: typ = ENT_SPN_COLOR;  ndx = 0; grad = &opts->rcol; break;
+        case G_TAG: typ = ENT_SPN_COLOR;  ndx = 1; grad = &opts->gcol; break;
+        case B_TAG: typ = ENT_SPN_COLOR;  ndx = 2; grad = &opts->bcol; break;
+        case O_TAG: typ = ENT_SPN_GLOBAL; ndx = 0; SET_IVEC(pval, opts->rglob, opts->orient, opts->angstep); break;
       }
       if ((ndx >= 0) && (typ >= 0)) {
         t_ent_ndx *enc = &ent_spn[typ].c.en;
         t_ent_spn_elem *elem = &ent_spn[typ].list[ndx];
         if (grad) {
-          int *pfrom = elem->aux[0].pval, *pto = elem->aux[1].pval;
           t_minmax inp; okay = parser_range(cp, COLON, elem->title, &inp);
-          if (okay) okay &= set_xparam_tag(inp.min, pfrom, opt_mm_col);
-          if (okay) okay &= set_xparam_tag(inp.max, pto,   opt_mm_col);
-          if (okay) g_message("%s: from %d (0x%02x) to %d (0x%02x)", elem->title, grad->min, grad->min, grad->max, grad->max);
-          else g_message("%s: no match with [%d,%d]", enc->name, opt_mm_col.min, opt_mm_col.max);
-        } else if (orient) {
-          int* ps[] = { elem->aux[0].pval, elem->aux[1].pval, elem->aux[2].pval, elem->aux[3].pval };
-          ivec4_t i4; okay = parser_ivec4(cp, COLON, elem->title, i4);
-          t_minmax *mm = &opt_mm_rot;
-          if (okay) okay &= set_xparam_tag(i4[0], ps[0], *mm);
-          if (okay) okay &= set_xparam_tag(i4[1], ps[1], *mm);
-          if (okay) okay &= set_xparam_tag(i4[2], ps[2], *mm);
-          if (okay) { mm = &opt_mm_ang; if (okay) okay &= set_xparam_tag(i4[3], ps[3], *mm); }
-          if (okay) g_message("%s: %d,%d,%d step=%d", elem->title, orient->a, orient->b, orient->c, opts->angstep);
-          else g_message("%s: no match with [%d,%d]", enc->name, mm->min, mm->max);
+          if (okay) {
+            int *pfrom = elem->aux[0].pval, *pto = elem->aux[1].pval;
+            SET_XPAR(inp.min, pfrom, opt_mm_col);
+            SET_XPAR(inp.max, pto,   opt_mm_col);
+            if (okay) g_message("%s: from %d (0x%02x) to %d (0x%02x)", elem->title, grad->min, grad->min, grad->max, grad->max);
+            else g_message("%s: no match with [%d,%d]", enc->name, opt_mm_col.min, opt_mm_col.max);
+          } else g_message("%s: cannot parse: %s", enc->name, cp);
+        } else if (pval[0]) {
+          opts->rglob = typ == ENT_SPN_GLOBAL;
+          int arr[5]; okay = parser_ivec(cp, COLON, elem->title, arr, G_N_ELEMENTS(arr));
+          if (okay) {
+            t_minmax mm = {.min = 0, .max = 1};
+            SET_XPAR(arr[0], pval[0], mm);
+            if (okay) { mm = opt_mm_rot;
+              SET_XPAR(arr[1], pval[1], mm);
+              SET_XPAR(arr[2], pval[2], mm);
+              SET_XPAR(arr[3], pval[3], mm); }
+            if (okay) { mm = opt_mm_ang;
+              SET_XPAR(arr[4], pval[4], mm); }
+            if (okay) g_message("%s: %s space, orientation %d %d %d, step %d", elem->title,
+              *pval[0] ? "global" : "local", *pval[1], *pval[2], *pval[3], *pval[4]);
+            else g_message("%s: no match with [%d,%d]", enc->name, mm.min, mm.max);
+          } else g_message("%s: cannot parse: %s", enc->name, cp);
         }
       } else g_message("%s: wrong tag: '%c'", name, tag);
       g_free(cp);
     } else FAILX(name, "g_sdtrdup()");
   }
   return okay;
+#undef SET_IVEC
+#undef SET_XPAR
 }
 
 #define X_MAXTAGS 4 // r,g,b,o
@@ -544,17 +557,21 @@ gboolean cli_init(int *pargc, char ***pargv) {
     CLI_OPT_CALL('I', CNF_STR_INFO,   cli_opt_I, OPT_INFO_HEADER " to display", "[" INFO_PATT "]"),
     CLI_OPT_CALL('S', CNF_STR_STAT,   cli_opt_S, OPT_STAT_HDR " to display", "[" STAT_PATT "]"),
     CLI_OPT_CALL('T', CNF_STR_THEME,  cli_opt_T, "Toggle dark/light themes", "<bits>"),
-    CLI_OPT_CALL('g', CNF_STR_GRAPH,  cli_opt_g, OPT_GRAPH_HDR " to draw", "<type>"),
-    CLI_OPT_CALL('G', CNF_STR_EXTRA,  cli_opt_G, OPT_GREX_HDR, "<elems>"),
-    CLI_OPT_CALL('L', CNF_STR_LGND,   cli_opt_L, OPT_GRLG_HDR, "<fields>"),
+    CLI_OPT_CALL('g', CNF_STR_GRAPH,  cli_opt_g, OPT_GRAPH_HDR " to draw", "[123]"),
+    CLI_OPT_CALL('G', CNF_STR_EXTRA,  cli_opt_G, OPT_GREX_HDR, "[" GREX_PATT "]"),
+    CLI_OPT_CALL('L', CNF_STR_LGND,   cli_opt_L, OPT_GRLG_HDR, "[" GRLG_PATT "]"),
 #ifdef WITH_PLOT
-    CLI_OPT_CALL('P', CNF_STR_PLEL,   cli_opt_P, OPT_PLOT_HDR, "<elems>"),
+    CLI_OPT_CALL('P', CNF_STR_PLEL,   cli_opt_P, OPT_PLOT_HDR, "[" PLEL_PATT "]"),
     CLI_OPT_CALL('X', CNF_STR_PLEX,   cli_opt_X, OPT_PLEX_HDR, "<tag:values>"),
 #endif
     CLI_OPT_CALL('r', CNF_STR_RECAP,  cli_opt_r, OPT_RECAP_HDR " at exit (" RECAP_TYPE_MESG ")", "[" RECAP_PATT "]"),
     CLI_OPT_NONE('R', "run",          &autostart, "Autostart from CLI (if target is set)"),
-    CLI_OPT_CALL('A', CNF_STR_ATAB,   cli_opt_A, OPT_ATAB_HDR, "<number>"),
-    CLI_OPT_INTC('v', "verbose",      &verbose, "Messaging to stdout", "<level>"),
+    CLI_OPT_CALL('A', CNF_STR_ATAB,   cli_opt_A, OPT_ATAB_HDR, "[12"
+#ifdef WITH_PLOT
+      "3"
+#endif
+    "]"),
+    CLI_OPT_INTC('v', "verbose",      &verbose, "Debug messages to stdout", "<6bit-level>"),
     CLI_OPT_NONE('V', "version",      &onoff[ONOFF_VERSION], "Runtime versions"),
     CLI_OPT_NONE('1', "pingtab-only", &onoff[ONOFF_1D], TAB1D),
 #ifdef WITH_PLOT
