@@ -89,7 +89,7 @@ static void gr_draw_dot_loop(int i, cairo_t *cr, double x) {
 }
 
 static void gr_draw_dot_scope_loop(int i, cairo_t *cr, double x) {
-  double dy = stat_dbl_elem(i, ELEM_JTTR); if (dy <= 0) return;
+  double dy = stat_dbl_elem(i, PE_JTTR); if (dy <= 0) return;
   dy = yscaled(dy); if (dy <= JRNG_MIN) return;
   for (GSList *item = SERIES(i); item; item = item->next, x -= dx_step) {
     if (x < grm.x0) break;
@@ -287,12 +287,12 @@ static void gr_draw_mean(cairo_t *cr, gboolean mean, gboolean area) {
   for (int i = opts.min; i < lim; i++) {
     int n = i % n_colors;
     SKIP_EXCLUDED;
-    double y = stat_dbl_elem(i, ELEM_AVRG); if (y <= 0) continue;
+    double y = stat_dbl_elem(i, PE_AVRG); if (y <= 0) continue;
     y = rtt2y(y);
     double x0 = (SERIES_LEN(i) > 0) ? grm.x1 - dx_step * (SERIES_LEN(i) - 1) : grm.x0;
     if (x0 < grm.x0) x0 = grm.x0;
     if (area) {
-      double dy = stat_dbl_elem(i, ELEM_JTTR);
+      double dy = stat_dbl_elem(i, PE_JTTR);
       if (dy > 0) {
         dy = yscaled(dy);
         if (dy > JRNG_MIN) {
@@ -342,9 +342,9 @@ static void gr_draw_graph(GtkDrawingArea *area, cairo_t* cr, int w, int h, void 
       pango_cairo_show_layout(cr, graph_pango);
     }
   }
-  { gboolean mean = is_grelem_enabled(GREX_MEAN), area = is_grelem_enabled(GREX_AREA);
+  { gboolean mean = is_grelem_enabled(GX_MEAN), area = is_grelem_enabled(GX_AREA);
     if (mean || area) gr_draw_mean(cr, mean, area);
-    if (is_grelem_enabled(GREX_JRNG)) gr_draw_smth(cr, THIN_SIZE, LINE_ALPHA, gr_draw_dot_scope_loop);
+    if (is_grelem_enabled(GX_JRNG)) gr_draw_smth(cr, THIN_SIZE, LINE_ALPHA, gr_draw_dot_scope_loop);
   }
   switch (opts.graph) {
     case GRAPH_TYPE_DOT:
@@ -371,7 +371,7 @@ t_tab* graphtab_init(GtkWidget* win) {
     GR_INIT_LAYER(graph_grid,  gr_draw_grid);
     GR_INIT_LAYER(graph_marks, gr_draw_marks);
     GR_INIT_LAYER(graph_graph, gr_draw_graph);
-    if (!drawtab_init(&graphtab, CSS_GRAPH_BG, layers, NT_GRAPH_NDX)) return NULL;
+    if (!drawtab_init(&graphtab, CSS_GRAPH_BG, layers, NT_LEGEND_NDX)) return NULL;
     g_slist_free(layers); }
   { gr_set_font(); series_reg_on_scale(graph_marks); }
   return &graphtab;

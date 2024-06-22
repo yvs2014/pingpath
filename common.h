@@ -10,7 +10,7 @@
 #define MIN_GTK_RUNTIME(major, minor, micro) (!gtk_check_version(major, minor, micro))
 
 #define APPNAME "pingpath"
-#define VERSION "0.3.11"
+#define VERSION "0.3.12"
 
 #define X_RES 1024
 #define Y_RES 720
@@ -219,8 +219,7 @@
 #define OPT_IVAL_HDR     "Interval"
 #define OPT_IVAL_HEADER  OPT_IVAL_HDR ", sec"
 #define OPT_DNS_HDR      "DNS"
-#define OPT_INFO_HDR     "Hop"
-#define OPT_INFO_HEADER  "Hop Info"
+#define OPT_INFO_HDR     "Hop Info"
 #define OPT_STAT_HDR     "Statistics"
 #define OPT_TTL_HDR      "TTL"
 #define OPT_QOS_HDR      "QoS"
@@ -310,7 +309,7 @@
 #define PLEL_BACK_HDR    "Backside"
 #define PLEL_AXIS_HDR    "Axis"
 #define PLEL_GRID_HDR    "Grid"
-#define PLEL_RTRR_HDR    "Rotator"
+#define PLEL_ROTR_HDR    "Rotator"
 #endif
 
 #define TOGGLE_ON_HDR  "on"
@@ -367,16 +366,16 @@ enum { ENT_BOOL_DNS, ENT_BOOL_HOST, ENT_BOOL_AS, ENT_BOOL_CC, ENT_BOOL_DESC, ENT
 #endif
 };
 
-enum { ELEM_NO, ELEM_HOST, ELEM_AS, ELEM_CC, ELEM_DESC, ELEM_RT, ELEM_FILL,
-  ELEM_LOSS, ELEM_SENT, ELEM_RECV, ELEM_LAST, ELEM_BEST, ELEM_WRST, ELEM_AVRG, ELEM_JTTR, ELEM_MAX,
-  EX_ELEM_ADDR, EX_ELEM_HOST, EX_ELEM_MAX };
+enum { PE_NO, PE_HOST, PE_AS, PE_CC, PE_DESC, PE_RT, PE_FILL, // PingElement
+  PE_LOSS, PE_SENT, PE_RECV, PE_LAST, PE_BEST, PE_WRST, PE_AVRG, PE_JTTR, PE_MAX,
+  PX_ADDR, PX_HOST, PX_MAX };
 
-enum { GRLG_NO, GRLG_DASH, GRLG_AVJT, GRLG_CCAS, GRLG_LGHN, GREX_MEAN, GREX_JRNG, GREX_AREA, GRGR_MAX };
-#define GRLG_MIN GRLG_AVJT
-#define GRLG_MAX (GRLG_LGHN + 1)
+enum { GE_NO, GE_DASH, GE_AVJT, GE_CCAS, GE_LGHN, GX_MEAN, GX_JRNG, GX_AREA, GX_MAX };
+#define GE_MIN GE_AVJT
+#define GE_MAX (GE_LGHN + 1)
 
 #ifdef WITH_PLOT
-enum { PLEL_BACK, PLEL_AXIS, PLEL_GRID, PLEL_RTRR, PLEL_MAX };
+enum { D3_BACK, D3_AXIS, D3_GRID, D3_ROTR, D3_MAX };
 #endif
 
 enum { INFO_CHAR, STAT_CHAR, GRLG_CHAR, GREX_CHAR,
@@ -467,11 +466,11 @@ extern const char *log_empty;
 extern gboolean cli;
 extern int verbose, activetab;
 
-extern t_type_elem pingelem[ELEM_MAX];
-extern t_type_elem graphelem[GRGR_MAX];
+extern t_type_elem pingelem[PE_MAX];
+extern t_type_elem graphelem[GX_MAX];
 extern t_elem_desc info_desc, stat_desc, grlg_desc, grex_desc;
 #ifdef WITH_PLOT
-extern t_type_elem plotelem[PLEL_MAX];
+extern t_type_elem plotelem[D3_MAX];
 extern t_elem_desc plot_desc;
 #endif
 
@@ -510,9 +509,9 @@ extern void log_add(const char *fmt, ...);
 #define UPDATE_LABEL(label, str) { const char *txt = gtk_label_get_text(GTK_LABEL(label)); \
   if (STR_NEQ(txt, str)) gtk_label_set_text(GTK_LABEL(label), str); }
 
-#define IS_INFO_NDX(ndx) ((ELEM_HOST <= ndx) && (ndx <= ELEM_RT))
-#define IS_STAT_NDX(ndx) ((ELEM_LOSS <= ndx) && (ndx <= ELEM_JTTR))
-#define IS_GRLG_NDX(ndx) ((GRLG_AVJT <= ndx) && (ndx <= GRLG_LGHN))
+#define IS_INFO_NDX(ndx) ((PE_HOST <= ndx) && (ndx <= PE_RT))
+#define IS_STAT_NDX(ndx) ((PE_LOSS <= ndx) && (ndx <= PE_JTTR))
+#define IS_GRLG_NDX(ndx) ((GE_AVJT <= ndx) && (ndx <= GE_LGHN))
 #define IS_GREX_NDX(ndx) ((GREX_MEAN <= ndx) && (ndx <= GREX_AREA))
 
 #endif

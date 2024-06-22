@@ -606,7 +606,7 @@ static void glsl_draw_text(t_plot_res *res) {
   glUseProgram(res->text.exec);
   float rgb = opts.darkplot ? text_val.ondark : text_val.onlight;
   vec4 color = {rgb, rgb, rgb, text_alpha};
-  gboolean name_only = !is_plelem_enabled(PLEL_AXIS);
+  gboolean name_only = !is_plelem_enabled(D3_AXIS);
   if (res->base) {
     glsl_draw_axis(res, color, name_only, &plparam.axes.rtt);
     glsl_draw_axis(res, color, name_only, &plparam.axes.ttl);
@@ -625,19 +625,19 @@ static void glsl_draw_plot(t_plot_res *res) {
   res->vo[ndx].dbo.dbotype, res->plot.vtr, glcolo1, res->plot.colo1, glcolo2, res->plot.colo2, plot_trans.matrix, gltype); }
   glUseProgram(res->plot.exec);
   if (res->base) {
-    if (is_plelem_enabled(PLEL_BACK)) {
+    if (is_plelem_enabled(D3_BACK)) {
       PO_DRAWELEM(PO_BOT, bot); // flat: bottom-o-top
       PO_DRAWELEM(PO_LOR, lor); // flat: left-o-right
       PO_DRAWELEM(PO_FON, fon); // flat: far-o-near
     }
-    if (is_plelem_enabled(PLEL_AXIS)) {
+    if (is_plelem_enabled(D3_AXIS)) {
       PO_DRAWELEM(PO_RTT, lor); // axis: rtt
       PO_DRAWELEM(PO_TIM, bot); // axis: time
       PO_DRAWELEM(PO_TTL, bot); // axis: ttl
     }
   } else if (pinger_state.gotdata) {
     PLOT_DRAWELEMS(VO_SURF,  ext, surf_colo1, surf_colo2, data, GL_TRIANGLES); // surface
-    if (is_plelem_enabled(PLEL_GRID))
+    if (is_plelem_enabled(D3_GRID))
       PLOT_DRAWELEMS(VO_SURF, main, grid_color, grid_color, data,   GL_LINES); // gridlines
   }
   glFlush();
@@ -824,7 +824,7 @@ t_tab* plottab_init(GtkWidget* win) {
   { GSList *layers = NULL;
     PL_INIT_LAYER(plot_base_area, &plot_base_res);
     PL_INIT_LAYER(plot_dyn_area,  &plot_dyna_res);
-    if (!drawtab_init(&plottab, CSS_PLOT_BG, layers, NT_PLOT_NDX)) return NULL;
+    if (!drawtab_init(&plottab, CSS_PLOT_BG, layers, NT_ROTOR_NDX)) return NULL;
     g_slist_free(layers); }
   { series_reg_on_scale(plot_base_area); series_min(PLOT_TIME_RANGE); }
   return &plottab;

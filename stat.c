@@ -16,7 +16,7 @@ enum { NONE = 0, RX = 1, TX = 2, RXTX = 3 };
 int tgtat = MAXTTL;
 int visibles = -1;
 
-#define IS_WHOIS_NDX(ndx) ((ELEM_AS <= ndx) && (ndx <= ELEM_RT))
+#define IS_WHOIS_NDX(ndx) ((PE_AS <= ndx) && (ndx <= PE_RT))
 
 static t_hop hops[MAXTTL];
 
@@ -256,14 +256,14 @@ static const char *stat_hop(int type, t_hop *hop) {
   static char buff_avrg[NUM_BUFF_SZ];
   static char buff_jttr[NUM_BUFF_SZ];
   switch (type) {
-    case ELEM_LOSS: return fill_stat_dbl(hop->loss, buff_loss, sizeof(buff_loss), "%", 0);
-    case ELEM_SENT: return fill_stat_int(hop->sent, buff_sent, sizeof(buff_sent));
-    case ELEM_RECV: return fill_stat_int(hop->recv, buff_recv, sizeof(buff_recv));
-    case ELEM_LAST: return fill_stat_rtt(hop->last, buff_last, sizeof(buff_last));
-    case ELEM_BEST: return fill_stat_rtt(hop->best, buff_best, sizeof(buff_best));
-    case ELEM_WRST: return fill_stat_rtt(hop->wrst, buff_wrst, sizeof(buff_wrst));
-    case ELEM_AVRG: return fill_stat_dbl(hop->avrg, buff_avrg, sizeof(buff_avrg), NULL, 1000);
-    case ELEM_JTTR: return fill_stat_dbl(hop->jttr, buff_jttr, sizeof(buff_jttr), NULL, 1000);
+    case PE_LOSS: return fill_stat_dbl(hop->loss, buff_loss, sizeof(buff_loss), "%", 0);
+    case PE_SENT: return fill_stat_int(hop->sent, buff_sent, sizeof(buff_sent));
+    case PE_RECV: return fill_stat_int(hop->recv, buff_recv, sizeof(buff_recv));
+    case PE_LAST: return fill_stat_rtt(hop->last, buff_last, sizeof(buff_last));
+    case PE_BEST: return fill_stat_rtt(hop->best, buff_best, sizeof(buff_best));
+    case PE_WRST: return fill_stat_rtt(hop->wrst, buff_wrst, sizeof(buff_wrst));
+    case PE_AVRG: return fill_stat_dbl(hop->avrg, buff_avrg, sizeof(buff_avrg), NULL, 1000);
+    case PE_JTTR: return fill_stat_dbl(hop->jttr, buff_jttr, sizeof(buff_jttr), NULL, 1000);
   }
   return NULL;
 }
@@ -373,19 +373,19 @@ void stat_last_tx(int at) { // update last 'tx' unless done before
 
 const char *stat_str_elem(int at, int type) {
   switch (type) {
-    case ELEM_HOST: return info_host(at);
-    case ELEM_AS:   return info_whois(at, WHOIS_AS_NDX);
-    case ELEM_CC:   return info_whois(at, WHOIS_CC_NDX);
-    case ELEM_DESC: return info_whois(at, WHOIS_DESC_NDX);
-    case ELEM_RT:   return info_whois(at, WHOIS_RT_NDX);
-    case ELEM_LOSS:
-    case ELEM_SENT:
-    case ELEM_RECV:
-    case ELEM_LAST:
-    case ELEM_BEST:
-    case ELEM_WRST:
-    case ELEM_AVRG:
-    case ELEM_JTTR:
+    case PE_HOST: return info_host(at);
+    case PE_AS:   return info_whois(at, WHOIS_AS_NDX);
+    case PE_CC:   return info_whois(at, WHOIS_CC_NDX);
+    case PE_DESC: return info_whois(at, WHOIS_DESC_NDX);
+    case PE_RT:   return info_whois(at, WHOIS_RT_NDX);
+    case PE_LOSS:
+    case PE_SENT:
+    case PE_RECV:
+    case PE_LAST:
+    case PE_BEST:
+    case PE_WRST:
+    case PE_AVRG:
+    case PE_JTTR:
       return stat_hop(type, &hops[at]);
   }
   return NULL;
@@ -393,11 +393,11 @@ const char *stat_str_elem(int at, int type) {
 
 static const char *stat_strnl_elem(int at, int type) {
   switch (type) {
-    case ELEM_HOST: return info_host_nl(at);
-    case ELEM_AS:   return info_whois_nl(at, WHOIS_AS_NDX);
-    case ELEM_CC:   return info_whois_nl(at, WHOIS_CC_NDX);
-    case ELEM_DESC: return info_whois_nl(at, WHOIS_DESC_NDX);
-    case ELEM_RT:   return info_whois_nl(at, WHOIS_RT_NDX);
+    case PE_HOST: return info_host_nl(at);
+    case PE_AS:   return info_whois_nl(at, WHOIS_AS_NDX);
+    case PE_CC:   return info_whois_nl(at, WHOIS_CC_NDX);
+    case PE_DESC: return info_whois_nl(at, WHOIS_DESC_NDX);
+    case PE_RT:   return info_whois_nl(at, WHOIS_RT_NDX);
   }
   return NULL;
 }
@@ -407,13 +407,13 @@ int stat_str_arr(int at, int type, const char* arr[MAXADDR]) {
   if (arr)  {
     memset(arr, 0, MAXADDR * sizeof(char*));
     switch (type) {
-      case ELEM_HOST: n = info_host_arr(at, arr); break;
-      case ELEM_AS:   n = info_whois_arr(at, WHOIS_AS_NDX, arr); break;
-      case ELEM_CC:   n = info_whois_arr(at, WHOIS_CC_NDX, arr); break;
-      case ELEM_DESC: n = info_whois_arr(at, WHOIS_DESC_NDX, arr); break;
-      case ELEM_RT:   n = info_whois_arr(at, WHOIS_RT_NDX, arr); break;
-      case EX_ELEM_ADDR: n = info_addrhost(at, arr, true); break;
-      case EX_ELEM_HOST: n = info_addrhost(at, arr, false); break;
+      case PE_HOST: n = info_host_arr(at, arr);                  break;
+      case PE_AS:   n = info_whois_arr(at, WHOIS_AS_NDX, arr);   break;
+      case PE_CC:   n = info_whois_arr(at, WHOIS_CC_NDX, arr);   break;
+      case PE_DESC: n = info_whois_arr(at, WHOIS_DESC_NDX, arr); break;
+      case PE_RT:   n = info_whois_arr(at, WHOIS_RT_NDX, arr);   break;
+      case PX_ADDR: n = info_addrhost(at, arr, true);            break;
+      case PX_HOST: n = info_addrhost(at, arr, false);           break;
     }
   }
   return n;
@@ -422,14 +422,14 @@ int stat_str_arr(int at, int type, const char* arr[MAXADDR]) {
 double stat_dbl_elem(int at, int type) {
   double re = -1;
   switch (type) {
-    case ELEM_LOSS: re = hops[at].loss; break;
-    case ELEM_SENT: re = hops[at].sent; break;
-    case ELEM_RECV: re = hops[at].recv; break;
-    case ELEM_LAST: re = hops[at].last; break;
-    case ELEM_BEST: re = hops[at].best; break;
-    case ELEM_WRST: re = hops[at].wrst; break;
-    case ELEM_AVRG: re = hops[at].avrg; break;
-    case ELEM_JTTR: re = hops[at].jttr; break;
+    case PE_LOSS: re = hops[at].loss; break;
+    case PE_SENT: re = hops[at].sent; break;
+    case PE_RECV: re = hops[at].recv; break;
+    case PE_LAST: re = hops[at].last; break;
+    case PE_BEST: re = hops[at].best; break;
+    case PE_WRST: re = hops[at].wrst; break;
+    case PE_AVRG: re = hops[at].avrg; break;
+    case PE_JTTR: re = hops[at].jttr; break;
   }
   return re;
 }
@@ -437,11 +437,11 @@ double stat_dbl_elem(int at, int type) {
 int stat_int_elem(int at, int type) {
   int re = -1;
   switch (type) {
-    case ELEM_SENT: re = hops[at].sent; break;
-    case ELEM_RECV: re = hops[at].recv; break;
-    case ELEM_LAST: re = hops[at].last; break;
-    case ELEM_BEST: re = hops[at].best; break;
-    case ELEM_WRST: re = hops[at].wrst; break;
+    case PE_SENT: re = hops[at].sent; break;
+    case PE_RECV: re = hops[at].recv; break;
+    case PE_LAST: re = hops[at].last; break;
+    case PE_BEST: re = hops[at].best; break;
+    case PE_WRST: re = hops[at].wrst; break;
   }
   return re;
 }
@@ -462,11 +462,11 @@ void stat_rseq(int at, t_rseq *data) { // assert('at' within range)
 
 void stat_legend(int at, t_legend *data) {
   if (!data) return;
-  data->name = stat_strnl_elem(at, ELEM_HOST);
-  data->as = stat_strnl_elem(at, ELEM_AS);
-  data->cc = stat_strnl_elem(at, ELEM_CC);
-  data->av = stat_str_elem(at, ELEM_AVRG);
-  data->jt = stat_str_elem(at, ELEM_JTTR);
+  data->name = stat_strnl_elem(at, PE_HOST);
+  data->as = stat_strnl_elem(at, PE_AS);
+  data->cc = stat_strnl_elem(at, PE_CC);
+  data->av = stat_str_elem(at, PE_AVRG);
+  data->jt = stat_str_elem(at, PE_JTTR);
 }
 
 void stat_whois_enabler(void) {

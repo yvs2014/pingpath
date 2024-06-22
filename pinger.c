@@ -97,13 +97,13 @@ static void pinger_print_text(gboolean csv) {
     if (csv) g_print("%s", OPT_TTL_HDR); else HOP_INDENT;
     int lim = (tgtat > visibles) ? (visibles + 1) : tgtat;
     //
-    int maxes[ELEM_MAX]; memset(maxes, 0, sizeof(maxes));
-    for (int j = 0; j < ELEM_MAX; j++) PN_PRMAX(pingelem[j].name);
-    for (int i = opts.min; i < lim; i++) for (int j = 0; j < ELEM_MAX; j++) PN_PRMAX(stat_str_elem(i, pingelem[j].type));
+    int maxes[PE_MAX]; memset(maxes, 0, sizeof(maxes));
+    for (int j = 0; j < PE_MAX; j++) PN_PRMAX(pingelem[j].name);
+    for (int i = opts.min; i < lim; i++) for (int j = 0; j < PE_MAX; j++) PN_PRMAX(stat_str_elem(i, pingelem[j].type));
     //
-    for (int j = ELEM_NO + 1; j < ELEM_MAX; j++) { // header
+    for (int j = PE_NO + 1; j < PE_MAX; j++) { // header
       int type = pingelem[j].type;
-      if (pingelem[j].enable && (type != ELEM_FILL)) PRINT_TEXT_ELEM(pingelem[j].name, maxes[j]);
+      if (pingelem[j].enable && (type != PE_FILL)) PRINT_TEXT_ELEM(pingelem[j].name, maxes[j]);
     }
     g_print("\n");
     PRINT_CSV_DIV;
@@ -113,31 +113,31 @@ static void pinger_print_text(gboolean csv) {
       for (int j = 0; j < G_N_ELEMENTS(pingelem); j++) if (pingelem[j].enable) {
         int type = pingelem[j].type;
         switch (type) {
-          case ELEM_NO:
+          case PE_NO:
             csv ? g_print("%d", i + 1) : g_print("%2d.", i + 1); break;
-          case ELEM_HOST:
-          case ELEM_AS:
-          case ELEM_CC:
-          case ELEM_DESC:
-          case ELEM_RT: {
+          case PE_HOST:
+          case PE_AS:
+          case PE_CC:
+          case PE_DESC:
+          case PE_RT: {
             int n = stat_str_arr(i, type, elems[j]); if (lines < n) lines = n;
             PRINT_TEXT_ELEM(elems[j][0] ? elems[j][0] : "", maxes[j]);
           } break;
-          case ELEM_LOSS:
-          case ELEM_SENT:
-          case ELEM_RECV:
-          case ELEM_LAST:
-          case ELEM_BEST:
-          case ELEM_WRST:
-          case ELEM_AVRG:
-          case ELEM_JTTR:
+          case PE_LOSS:
+          case PE_SENT:
+          case PE_RECV:
+          case PE_LAST:
+          case PE_BEST:
+          case PE_WRST:
+          case PE_AVRG:
+          case PE_JTTR:
             PRINT_TEXT_ELEM(stat_str_elem(i, type), maxes[j]); break;
         }
       }
       g_print("\n");
       for (int k = 1; k < lines; k++) { // multihop
         if (!csv) HOP_INDENT;
-        for (int j = ELEM_HOST; j <= ELEM_RT; j++)
+        for (int j = PE_HOST; j <= PE_RT; j++)
           if (pingelem[j].enable) PRINT_TEXT_ELEM(elems[j][k] ? elems[j][k] : "", maxes[j]);
         g_print("\n");
       }
@@ -192,9 +192,9 @@ static gboolean pinger_json_hop_info(JsonObject *obj, int i, gboolean pretty) {
   JsonArray *arr = json_array_new();
   if (!arr) { FAILX("hop array", "json_array_new()"); return false; }
   pinger_json_prop_arr(obj, OPT_INFO_HDR, arr, pretty);
-  const char* elems[EX_ELEM_MAX][MAXADDR]; memset(elems, 0, sizeof(elems));
+  const char* elems[PX_MAX][MAXADDR]; memset(elems, 0, sizeof(elems));
   int lines = 0;
-  for (int ndx = ELEM_HOST; ndx <= ELEM_RT; ndx++)
+  for (int ndx = PE_HOST; ndx <= PE_RT; ndx++)
     if (pingelem[ndx].enable) { // collect multihop info
       int n = stat_str_arr(i, pingelem[ndx].type, elems[ndx]);
       if (n > lines) lines = n;
@@ -203,11 +203,11 @@ static gboolean pinger_json_hop_info(JsonObject *obj, int i, gboolean pretty) {
     JsonObject *info = json_object_new();
     if (!info) { FAILX("hop info", "json_object_new()"); return false; }
     json_array_add_object_element(arr, info);
-    for (int ndx = ELEM_HOST; ndx <= ELEM_RT; ndx++) if (pingelem[ndx].enable) {
+    for (int ndx = PE_HOST; ndx <= PE_RT; ndx++) if (pingelem[ndx].enable) {
       int type = pingelem[ndx].type;
       switch (type) {
-        case ELEM_HOST: {
-          const char *addr = elems[EX_ELEM_ADDR][j], *name = elems[EX_ELEM_HOST][j];
+        case PE_HOST: {
+          const char *addr = elems[PX_ADDR][j], *name = elems[PX_HOST][j];
           if (pretty) {
             char *host = (name) ? g_strdup_printf("%s (%s)", name, addr) : g_strdup(addr);
             if (host) { pinger_json_prop_str(info, pingelem[ndx].name, host, pretty); g_free(host); }
@@ -217,10 +217,10 @@ static gboolean pinger_json_hop_info(JsonObject *obj, int i, gboolean pretty) {
             pinger_json_prop_str(info, "name", name, pretty);
           }
         } break;
-        case ELEM_AS:
-        case ELEM_CC:
-        case ELEM_DESC:
-        case ELEM_RT:
+        case PE_AS:
+        case PE_CC:
+        case PE_DESC:
+        case PE_RT:
           pinger_json_prop_str(info, pingelem[ndx].name, elems[ndx][j], pretty); break;
       }
     }
@@ -229,27 +229,27 @@ static gboolean pinger_json_hop_info(JsonObject *obj, int i, gboolean pretty) {
 }
 
 static void pinger_json_stat_info(JsonObject *obj, int i, gboolean pretty) {
-  for (int ndx = ELEM_LOSS; ndx < ELEM_MAX; ndx++) if (pingelem[ndx].enable) {
+  for (int ndx = PE_LOSS; ndx < PE_MAX; ndx++) if (pingelem[ndx].enable) {
     char *name = pretty ? g_strdup(pingelem[ndx].name) : g_utf8_strdown(pingelem[ndx].name, -1);
     int type = pingelem[ndx].type;
     switch (type) {
-      case ELEM_LOSS:
+      case PE_LOSS:
         if (pretty) json_object_set_string_member(obj, name, stat_str_elem(i, type));
         else pinger_json_add_dbl(obj, i, type, name);
         break;
-      case ELEM_SENT:
-      case ELEM_RECV:
+      case PE_SENT:
+      case PE_RECV:
         if (pretty) json_object_set_string_member(obj, name, stat_str_elem(i, type));
         else pinger_json_add_int(obj, i, type, name);
         break;
-      case ELEM_LAST:
-      case ELEM_BEST:
-      case ELEM_WRST:
+      case PE_LAST:
+      case PE_BEST:
+      case PE_WRST:
         if (pretty) pinger_json_msec(obj, name, i, type);
         else pinger_json_add_int(obj, i, type, name);
         break;
-      case ELEM_AVRG:
-      case ELEM_JTTR:
+      case PE_AVRG:
+      case PE_JTTR:
         if (pretty) pinger_json_msec(obj, name, i, type);
         else pinger_json_add_dbl(obj, i, type, name);
         break;
@@ -266,7 +266,7 @@ static gboolean pinger_json_mainbody(JsonObject *obj, gboolean pretty) {
   if (pretty) json_object_set_string_member(obj, "Timing", "Milliseconds");
   else json_object_set_string_member(obj, "timing", "microseconds");
   gboolean hop_info = false; // marker of hop part of info
-  for (int ndx = ELEM_HOST; ndx <= ELEM_RT; ndx++) if (pingelem[ndx].enable) { hop_info = true; break; }
+  for (int ndx = PE_HOST; ndx <= PE_RT; ndx++) if (pingelem[ndx].enable) { hop_info = true; break; }
   int lim = (tgtat > visibles) ? (visibles + 1) : tgtat;
   for (int i = opts.min; i < lim; i++) { // data per hop
     JsonObject *line = json_object_new();
@@ -529,7 +529,7 @@ void pinger_start(void) {
   if (!active) return;
   pinger_clear_data(true);
   if (!opts.recap) { DRAW_REFRESH_REL; pinger_vis_rows(0); }
-  notifier_set_visible(NT_GRAPH_NDX, false);
+  notifier_set_visible(NT_LEGEND_NDX, false);
   // schedule expiration check out
   if (exp_timer) { g_source_remove(exp_timer); exp_timer = 0; }
   unsigned exp_in = round(opts.cycles * (opts.timeout * 1.024)) + opts.timeout * 2; // ~24msec of possible ping time resolution

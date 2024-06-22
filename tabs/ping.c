@@ -23,10 +23,10 @@ typedef struct pt_dnd {
 
 typedef struct listline {
   GtkListBoxRow *row;
-  GtkWidget *box;            // row child
-  GtkWidget* labs[ELEM_MAX]; // cache of box labels
+  GtkWidget *box;          // row child
+  GtkWidget* labs[PE_MAX]; // cache of box labels
 #ifdef WITH_DND
-  t_pt_dnd dnd[ELEM_MAX];
+  t_pt_dnd dnd[PE_MAX];
 #endif
 } t_listline;
 
@@ -52,25 +52,25 @@ static void pt_align_elem_label(GtkWidget* label, GtkAlign align, gboolean expan
 
 static void pt_set_elem_align(int type, GtkWidget *label) {
   switch (type) {
-    case ELEM_HOST:
-    case ELEM_AS:
-    case ELEM_CC:
-    case ELEM_DESC:
-    case ELEM_RT:
+    case PE_HOST:
+    case PE_AS:
+    case PE_CC:
+    case PE_DESC:
+    case PE_RT:
       pt_align_elem_label(label, GTK_ALIGN_START, false);
       break;
-    case ELEM_FILL:
+    case PE_FILL:
       pt_align_elem_label(label, GTK_ALIGN_START, true);
       break;
-    case ELEM_LOSS:
-    case ELEM_SENT:
-    case ELEM_RECV:
-    case ELEM_LAST:
-    case ELEM_BEST:
-    case ELEM_WRST:
-    case ELEM_AVRG:
-    case ELEM_JTTR:
-    case ELEM_NO:
+    case PE_LOSS:
+    case PE_SENT:
+    case PE_RECV:
+    case PE_LAST:
+    case PE_BEST:
+    case PE_WRST:
+    case PE_AVRG:
+    case PE_JTTR:
+    case PE_NO:
       pt_align_elem_label(label, GTK_ALIGN_END, false);
       break;
   }
@@ -109,7 +109,7 @@ static gboolean pt_reorder_elems(int prev, int next, const t_elem_desc *desc) {
 static GtkWidget* pt_box_nth_label(GtkWidget *box, int n) {
   if (GTK_IS_BOX(box)) {
     GtkWidget *w = gtk_widget_get_first_child(box);
-    for (int i = 0; w && (i < ELEM_MAX); i++) {
+    for (int i = 0; w && (i < PE_MAX); i++) {
       if (i == n) return w;
       w = gtk_widget_get_next_sibling(w);
     }
@@ -120,7 +120,7 @@ static GtkWidget* pt_box_nth_label(GtkWidget *box, int n) {
 static int pt_box_wndx(GtkWidget *box, GtkWidget *widget) {
   if (GTK_IS_BOX(box) && GTK_IS_WIDGET(widget)) {
     GtkWidget *w = gtk_widget_get_first_child(box);
-    for (int i = 0; w && (i < ELEM_MAX); i++) {
+    for (int i = 0; w && (i < PE_MAX); i++) {
       if (w == widget) return i;
       w = gtk_widget_get_next_sibling(w);
     }
@@ -130,7 +130,7 @@ static int pt_box_wndx(GtkWidget *box, GtkWidget *widget) {
 
 static void pt_recache_labels(GtkWidget *box, GtkWidget **cells) {
   GtkWidget *w = gtk_widget_get_first_child(box);
-  for (int i = 0; w && (i < ELEM_MAX); i++) { cells[i] = w; w = gtk_widget_get_next_sibling(w); }
+  for (int i = 0; w && (i < PE_MAX); i++) { cells[i] = w; w = gtk_widget_get_next_sibling(w); }
 }
 
 static gboolean pt_reorder_cells(t_listline *lines, int len, int sn, int dn, gboolean before) {
@@ -171,7 +171,7 @@ static GdkDragAction pt_hdr_on_move(GtkDropTarget *dst, gdouble x, gdouble y, t_
   if (!GTK_IS_DROP_TARGET(dst) || !ddnd) return 0;
   const GValue *val = gtk_drop_target_get_value(dst);
   t_pt_dnd *sdnd = (val && G_VALUE_HOLDS_POINTER(val)) ? g_value_get_pointer(val) : NULL;
-  return ((sdnd != ddnd) && sdnd && (sdnd->desc == ddnd->desc)) ? GDK_ACTION_COPY : 0;
+  return (sdnd && (sdnd != ddnd) && (sdnd->desc == ddnd->desc)) ? GDK_ACTION_COPY : 0;
 }
 
 static gboolean pt_hdr_on_drop(GtkDropTarget *dst, const GValue *val, gdouble x, gdouble y, t_pt_dnd *ddnd) {
@@ -182,7 +182,7 @@ static gboolean pt_hdr_on_drop(GtkDropTarget *dst, const GValue *val, gdouble x,
   if (!GTK_IS_WIDGET(sdnd->w) || !GTK_IS_WIDGET(ddnd->w) || (sdnd->w == ddnd->w)) return false;
   if (sdnd->desc != ddnd->desc) { DNDORD("DND-drop: %s", "different groups"); return false; }
   gboolean before = gtk_widget_contains(ddnd->w, x * 2, y);
-  PT_REORDER_PRINT_ELEMS("array: <<<", ddnd->desc->elems, ELEM_MAX);
+  PT_REORDER_PRINT_ELEMS("array: <<<", ddnd->desc->elems, PE_MAX);
   PT_REORDER_PRINT_ELEMS("group: <<<", &(ddnd->desc->elems[ddnd->desc->mm.min]), ddnd->desc->mm.max - ddnd->desc->mm.min + 1);
   if (pt_reorder_elems(sn, before ? dn : dn + 1, ddnd->desc)) { // reorder inplace asserting no further errors
     if (!pt_reorder_cells(ddnd->hdr, HDRLINES, sn, dn, before))
@@ -196,21 +196,21 @@ static gboolean pt_hdr_on_drop(GtkDropTarget *dst, const GValue *val, gdouble x,
     }
   }
   PT_REORDER_PRINT_ELEMS("group: >>>", &(ddnd->desc->elems[ddnd->desc->mm.min]), ddnd->desc->mm.max - ddnd->desc->mm.min + 1);
-  PT_REORDER_PRINT_ELEMS("array: >>>", ddnd->desc->elems, ELEM_MAX);
+  PT_REORDER_PRINT_ELEMS("array: >>>", ddnd->desc->elems, PE_MAX);
   option_up_menu_main();
   return true;
 }
 #endif
 
-static gboolean is_statinfo_ndx(int ndx) {
-  int type = pingelem[ndx].type; return ((type != ELEM_NO) && (type != ELEM_FILL));
+static inline gboolean is_statinfo_ndx(int ndx) {
+  int type = pingelem[ndx].type; return ((type != PE_NO) && (type != PE_FILL));
 }
 
 static gboolean pt_init_line_elems(t_type_elem *elem, t_listline *line,
-    t_listline *bodylines, GtkSizeGroup* group[ELEM_MAX]) {
+    t_listline *bodylines, GtkSizeGroup* group[PE_MAX]) {
   if (!line) return false;
   gboolean vis_n_dnd = (bodylines != NULL);
-  for (int i = 0; i < ELEM_MAX; i++) {
+  for (int i = 0; i < PE_MAX; i++) {
     GtkWidget *label = line->labs[i] = gtk_label_new(elem[i].name);
     g_return_val_if_fail(label, false);
     if (group[i]) gtk_size_group_add_widget(group[i], label);
@@ -243,7 +243,7 @@ static gboolean pt_init_line_elems(t_type_elem *elem, t_listline *line,
 }
 
 static GtkWidget* pt_make_dynlist(t_listline *lines, int len, t_type_elem *elems,
-    t_listline* bodylines, GtkSizeGroup* group[ELEM_MAX]) {
+    t_listline* bodylines, GtkSizeGroup* group[PE_MAX]) {
   static char stat_no_at_buff[MAXTTL][ELEM_BUFF_SIZE];
   GtkWidget *list = gtk_list_box_new();
   g_return_val_if_fail(list, NULL);
@@ -262,7 +262,7 @@ static GtkWidget* pt_make_dynlist(t_listline *lines, int len, t_type_elem *elems
       if (!pt_init_line_elems(elems, &lines[i], bodylines, group)) return NULL;
     } else {     // line with number
       char *s = stat_no_at_buff[i]; g_snprintf(s, ELEM_BUFF_SIZE, "%d.", i + 1);
-      bodyelem[ELEM_NO].name = s;
+      bodyelem[PE_NO].name = s;
       if (!pt_init_line_elems(bodyelem, &lines[i], NULL, group)) return NULL;
     }
     gtk_list_box_append(GTK_LIST_BOX(list), GTK_WIDGET(row));
@@ -273,7 +273,7 @@ static GtkWidget* pt_make_dynlist(t_listline *lines, int len, t_type_elem *elems
 }
 
 static void pt_set_vis_cells(GtkWidget **labs) {
-  if (labs) for (int i = 0; i < ELEM_MAX; i++) if (GTK_IS_WIDGET(labs[i]))
+  if (labs) for (int i = 0; i < PE_MAX; i++) if (GTK_IS_WIDGET(labs[i]))
     gtk_widget_set_visible(labs[i], pingelem[i].enable);
 }
 
@@ -291,7 +291,7 @@ static GtkWidget* pt_make_info(void) {
 }
 
 static GtkWidget* pt_make_dyn(void) {
-  GtkSizeGroup* group[ELEM_MAX];
+  GtkSizeGroup* group[PE_MAX];
   for (int i = 0; i < G_N_ELEMENTS(group); i++) {
     group[i] = gtk_size_group_new(GTK_SIZE_GROUP_HORIZONTAL); g_return_val_if_fail(group[i], NULL); }
   TW_CSS_COL(pingtab.hdr, pt_make_dynlist(listbox.hdrlines, HDRLINES, pingelem, listbox.bodylines, group),
@@ -307,46 +307,42 @@ static GtkWidget* pt_make_dyn(void) {
 //
 
 void pingtab_clear(void) {
-  for (int i = 0; i < MAXTTL; i++) {
-    t_listline *line = &listbox.bodylines[i];
+  t_listline *line = listbox.bodylines;
+  for (int i = 0; line && (i < MAXTTL); i++, line++) {
     if (!GTK_IS_WIDGET(line->row) || !GTK_IS_BOX(line->box)) continue;
     gtk_widget_set_visible(GTK_WIDGET(line->row), false);
     gtk_widget_set_visible(line->box, false);
-    for (int j = 0; j < ELEM_MAX; j++) {
-      GtkWidget *lab = line->labs[j];
-      if (GTK_IS_LABEL(lab)) {
-        gtk_widget_set_visible(lab, false);
-        if (is_statinfo_ndx(j)) gtk_label_set_text(GTK_LABEL(lab), NULL);
-      }
-    }
-  }
+    GtkWidget **lab = line->labs;
+    for (int j = 0; *lab && (j < PE_MAX); j++, lab++) {
+      if (GTK_IS_LABEL(*lab)) {
+        gtk_widget_set_visible(*lab, false);
+        if (is_statinfo_ndx(j)) gtk_label_set_text(GTK_LABEL(*lab), NULL); }}}
   gtk_widget_set_visible(GTK_WIDGET(listbox.info.row), false);
   gtk_widget_set_visible(listbox.info.box, false);
   gtk_label_set_label(GTK_LABEL(listbox.info.box), NULL);
 }
 
 void pingtab_update(void) {
-  if (!pinger_state.pause) for (int i = 0; i < tgtat; i++) {
-    t_listline *line = &listbox.bodylines[i];
-    for (int j = 0; j < ELEM_MAX; j++) {
-      GtkWidget *lab = line->labs[j];
-      if (GTK_IS_LABEL(lab) && is_statinfo_ndx(j) && pingelem[j].enable) {
-        const char *text = stat_str_elem(i, pingelem[j].type);
-        UPDATE_LABEL(lab, text);
-      }
-    }
-  }
+  if (!pinger_state.pause) {
+    t_listline *line = listbox.bodylines;
+    for (int i = 0; line && (i < tgtat) && (i < MAXTTL); i++, line++) {
+      GtkWidget **lab = line->labs;
+      for (int j = 0; *lab && (j < PE_MAX); j++, lab++) {
+        if (GTK_IS_LABEL(*lab) && is_statinfo_ndx(j) && pingelem[j].enable) {
+          const char *text = stat_str_elem(i, pingelem[j].type);
+          UPDATE_LABEL(*lab, text); }}}}
 }
 
 void pingtab_vis_rows(int upto) {
   LOG("set upto %d visible rows", upto);
-  for (int i = 0; i < MAXTTL; i++) {
+  t_listline *line = listbox.bodylines;
+  for (int i = 0; line && (i < MAXTTL); i++, line++) {
     gboolean vis = (i >= opts.min) && (i < upto);
-    t_listline *line = &listbox.bodylines[i];
     if (GTK_IS_WIDGET(line->row)) gtk_widget_set_visible(GTK_WIDGET(line->row), vis);
     if (GTK_IS_WIDGET(line->box)) gtk_widget_set_visible(line->box, vis);
-    for (int j = 0; j < ELEM_MAX; j++) if (GTK_IS_LABEL(line->labs[j]))
-      gtk_widget_set_visible(line->labs[j], vis && pingelem[j].enable);
+    GtkWidget **lab = line->labs;
+    for (int j = 0; *lab && (j < PE_MAX); j++, lab++) if (GTK_IS_LABEL(*lab))
+      gtk_widget_set_visible(*lab, vis && pingelem[j].enable);
   }
 }
 

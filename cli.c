@@ -310,16 +310,16 @@ static gboolean cli_opt_elem(const char *name, const char *value, GError **error
       }
     } break;
     case OPT_TYPE_INFO:
-      str = cli_char_opts(ENT_EXP_INFO, value, cat, &info_desc, ELEM_MAX, OPT_INFO_HEADER); break;
+      str = cli_char_opts(ENT_EXP_INFO, value, cat, &info_desc, PE_MAX, OPT_INFO_HDR); break;
     case OPT_TYPE_STAT:
-      str = cli_char_opts(ENT_EXP_STAT, value, cat, &stat_desc, ELEM_MAX, OPT_STAT_HDR);    break;
+      str = cli_char_opts(ENT_EXP_STAT, value, cat, &stat_desc, PE_MAX, OPT_STAT_HDR); break;
     case OPT_TYPE_GRLG:
-      str = cli_char_opts(ENT_EXP_LGFL, value, cat, &grlg_desc, GRGR_MAX, OPT_GRLG_HDR);    break;
+      str = cli_char_opts(ENT_EXP_LGFL, value, cat, &grlg_desc, GX_MAX, OPT_GRLG_HDR); break;
     case OPT_TYPE_GREX:
-      str = cli_char_opts(ENT_EXP_GREX, value, cat, &grex_desc, GRGR_MAX, OPT_GREX_HDR);    break;
+      str = cli_char_opts(ENT_EXP_GREX, value, cat, &grex_desc, GX_MAX, OPT_GREX_HDR); break;
 #ifdef WITH_PLOT
     case OPT_TYPE_PLEL:
-      str = cli_char_opts(ENT_EXP_PLEL, value, cat, &plot_desc, PLEL_MAX, OPT_PLOT_HDR);    break;
+      str = cli_char_opts(ENT_EXP_PLEL, value, cat, &plot_desc, D3_MAX, OPT_PLOT_HDR); break;
 #endif
     case OPT_TYPE_RECAP: {
       str = parser_str(value, OPT_RECAP_HDR, OPT_TYPE_RECAP);
@@ -554,7 +554,7 @@ gboolean cli_init(int *pargc, char ***pargv) {
     CLI_OPT_CALL('q', CNF_STR_QOS,    cli_opt_q, OPT_QOS_HDR "/ToS byte", "<bits>"),
     CLI_OPT_CALL('s', CNF_STR_SIZE,   cli_opt_s, OPT_PLOAD_HDR " size", "<in-bytes>"),
     CLI_OPT_CALL('p', CNF_STR_PLOAD,  cli_opt_p, OPT_PLOAD_HDR " in hex notation", "<upto-16-bytes>"),
-    CLI_OPT_CALL('I', CNF_STR_INFO,   cli_opt_I, OPT_INFO_HEADER " to display", "[" INFO_PATT "]"),
+    CLI_OPT_CALL('I', CNF_STR_INFO,   cli_opt_I, OPT_INFO_HDR " to display", "[" INFO_PATT "]"),
     CLI_OPT_CALL('S', CNF_STR_STAT,   cli_opt_S, OPT_STAT_HDR " to display", "[" STAT_PATT "]"),
     CLI_OPT_CALL('T', CNF_STR_THEME,  cli_opt_T, "Toggle dark/light themes", "<bits>"),
     CLI_OPT_CALL('g', CNF_STR_GRAPH,  cli_opt_g, OPT_GRAPH_HDR " to draw", "[123]"),

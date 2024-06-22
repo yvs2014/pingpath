@@ -3,11 +3,11 @@
 
 #include "common.h"
 
-enum { NT_MAIN_NDX, NT_GRAPH_NDX,
+enum { NT_MAIN_NDX, NT_LEGEND_NDX,
 #ifdef WITH_PLOT
-  NT_PLOT_NDX,
+  NT_ROTOR_NDX,
 #endif
-  NT_NDX_MAX };
+};
 
 GtkWidget* notifier_init(int ndx, GtkWidget *base);
 void notifier_inform(const char *fmt, ...);

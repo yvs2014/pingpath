@@ -29,31 +29,31 @@ enum { ENT_SPN_ROT0, ENT_SPN_ROT1, ENT_SPN_ROT2, ENT_SPN_ANGS, ENT_SPN_ROT_MAX }
 t_ent_bool ent_bool[] = {
   [ENT_BOOL_DNS]  = { .en = { .type = ENT_BOOL_DNS,  .name = OPT_DNS_HDR }, .pval = &opts.dns },
   [ENT_BOOL_HOST] = { .en = { .type = ENT_BOOL_HOST, .name = ELEM_HOST_HDR },
-    .valfn = pingelem_enabler, .valtype = ELEM_HOST, .prefix = OPT_INFO_HEADER },
+    .valfn = pingelem_enabler, .valtype = PE_HOST, .prefix = OPT_INFO_HDR },
   [ENT_BOOL_AS]   = { .en = { .type = ENT_BOOL_AS,   .name = ELEM_AS_HDR },
-    .valfn = pingelem_enabler, .valtype = ELEM_AS,   .prefix = OPT_INFO_HEADER },
+    .valfn = pingelem_enabler, .valtype = PE_AS,   .prefix = OPT_INFO_HDR },
   [ENT_BOOL_CC]   = { .en = { .type = ENT_BOOL_CC,   .name = ELEM_CC_HDR },
-    .valfn = pingelem_enabler, .valtype = ELEM_CC,   .prefix = OPT_INFO_HEADER },
+    .valfn = pingelem_enabler, .valtype = PE_CC,   .prefix = OPT_INFO_HDR },
   [ENT_BOOL_DESC] = { .en = { .type = ENT_BOOL_DESC, .name = ELEM_DESC_HDR },
-    .valfn = pingelem_enabler, .valtype = ELEM_DESC, .prefix = OPT_INFO_HEADER },
+    .valfn = pingelem_enabler, .valtype = PE_DESC, .prefix = OPT_INFO_HDR },
   [ENT_BOOL_RT]   = { .en = { .type = ENT_BOOL_RT,   .name = ELEM_RT_HDR },
-    .valfn = pingelem_enabler, .valtype = ELEM_RT,   .prefix = OPT_INFO_HEADER },
-  [ENT_BOOL_LOSS] = { .en = { .type = ENT_BOOL_LOSS, .name = ELEM_LOSS_HEADER},
-    .valfn = pingelem_enabler, .valtype = ELEM_LOSS, .prefix = OPT_STAT_HDR },
+    .valfn = pingelem_enabler, .valtype = PE_RT,   .prefix = OPT_INFO_HDR },
+  [ENT_BOOL_LOSS] = { .en = { .type = ENT_BOOL_LOSS, .name = ELEM_LOSS_HDR},
+    .valfn = pingelem_enabler, .valtype = PE_LOSS, .prefix = OPT_STAT_HDR },
   [ENT_BOOL_SENT] = { .en = { .type = ENT_BOOL_SENT, .name = ELEM_SENT_HDR },
-    .valfn = pingelem_enabler, .valtype = ELEM_SENT, .prefix = OPT_STAT_HDR },
+    .valfn = pingelem_enabler, .valtype = PE_SENT, .prefix = OPT_STAT_HDR },
   [ENT_BOOL_RECV] = { .en = { .type = ENT_BOOL_RECV, .name = ELEM_RECV_HDR },
-    .valfn = pingelem_enabler, .valtype = ELEM_RECV, .prefix = OPT_STAT_HDR },
+    .valfn = pingelem_enabler, .valtype = PE_RECV, .prefix = OPT_STAT_HDR },
   [ENT_BOOL_LAST] = { .en = { .type = ENT_BOOL_LAST, .name = ELEM_LAST_HDR },
-    .valfn = pingelem_enabler, .valtype = ELEM_LAST, .prefix = OPT_STAT_HDR },
+    .valfn = pingelem_enabler, .valtype = PE_LAST, .prefix = OPT_STAT_HDR },
   [ENT_BOOL_BEST] = { .en = { .type = ENT_BOOL_BEST, .name = ELEM_BEST_HDR },
-    .valfn = pingelem_enabler, .valtype = ELEM_BEST, .prefix = OPT_STAT_HDR },
+    .valfn = pingelem_enabler, .valtype = PE_BEST, .prefix = OPT_STAT_HDR },
   [ENT_BOOL_WRST] = { .en = { .type = ENT_BOOL_WRST, .name = ELEM_WRST_HEADER },
-    .valfn = pingelem_enabler, .valtype = ELEM_WRST, .prefix = OPT_STAT_HDR },
+    .valfn = pingelem_enabler, .valtype = PE_WRST, .prefix = OPT_STAT_HDR },
   [ENT_BOOL_AVRG] = { .en = { .type = ENT_BOOL_AVRG, .name = ELEM_AVRG_HEADER },
-    .valfn = pingelem_enabler, .valtype = ELEM_AVRG, .prefix = OPT_STAT_HDR },
+    .valfn = pingelem_enabler, .valtype = PE_AVRG, .prefix = OPT_STAT_HDR },
   [ENT_BOOL_JTTR] = { .en = { .type = ENT_BOOL_JTTR, .name = ELEM_JTTR_HEADER },
-    .valfn = pingelem_enabler, .valtype = ELEM_JTTR, .prefix = OPT_STAT_HDR },
+    .valfn = pingelem_enabler, .valtype = PE_JTTR, .prefix = OPT_STAT_HDR },
   [ENT_BOOL_MN_DARK] = { .en = { .type = ENT_BOOL_MN_DARK, .name = OPT_MN_DARK_HDR }, .pval = &opts.darktheme },
   [ENT_BOOL_GR_DARK] = { .en = { .type = ENT_BOOL_GR_DARK, .name = OPT_GR_DARK_HDR }, .pval = &opts.darkgraph },
 #ifdef WITH_PLOT
@@ -61,26 +61,26 @@ t_ent_bool ent_bool[] = {
 #endif
   [ENT_BOOL_LGND] = { .en = { .type = ENT_BOOL_LGND, .name = OPT_LGND_HDR }, .pval = &opts.legend },
   [ENT_BOOL_AVJT] = { .en = { .type = ENT_BOOL_AVJT, .name = GRLG_AVJT_HEADER },
-    .valfn = graphelem_enabler, .valtype = GRLG_AVJT, .prefix = OPT_GRLG_HDR },
+    .valfn = graphelem_enabler, .valtype = GE_AVJT, .prefix = OPT_GRLG_HDR },
   [ENT_BOOL_CCAS] = { .en = { .type = ENT_BOOL_CCAS, .name = GRLG_CCAS_HEADER },
-    .valfn = graphelem_enabler, .valtype = GRLG_CCAS, .prefix = OPT_GRLG_HDR },
+    .valfn = graphelem_enabler, .valtype = GE_CCAS, .prefix = OPT_GRLG_HDR },
   [ENT_BOOL_LGHN] = { .en = { .type = ENT_BOOL_LGHN, .name = GRLG_LGHN_HDR },
-    .valfn = graphelem_enabler, .valtype = GRLG_LGHN, .prefix = OPT_GRLG_HDR },
+    .valfn = graphelem_enabler, .valtype = GE_LGHN, .prefix = OPT_GRLG_HDR },
   [ENT_BOOL_MEAN] = { .en = { .type = ENT_BOOL_MEAN, .name = GREX_MEAN_HEADER },
-    .valfn = graphelem_enabler, .valtype = GREX_MEAN, .prefix = OPT_GREX_HDR },
+    .valfn = graphelem_enabler, .valtype = GX_MEAN, .prefix = OPT_GREX_HDR },
   [ENT_BOOL_JRNG] = { .en = { .type = ENT_BOOL_JRNG, .name = GREX_JRNG_HEADER },
-    .valfn = graphelem_enabler, .valtype = GREX_JRNG, .prefix = OPT_GREX_HDR },
+    .valfn = graphelem_enabler, .valtype = GX_JRNG, .prefix = OPT_GREX_HDR },
   [ENT_BOOL_AREA] = { .en = { .type = ENT_BOOL_AREA, .name = GREX_AREA_HEADER },
-    .valfn = graphelem_enabler, .valtype = GREX_AREA, .prefix = OPT_GREX_HDR },
+    .valfn = graphelem_enabler, .valtype = GX_AREA, .prefix = OPT_GREX_HDR },
 #ifdef WITH_PLOT
   [ENT_BOOL_PLBK] = { .en = { .type = ENT_BOOL_PLBK, .name = PLEL_BACK_HDR },
-    .valfn = plotelem_enabler, .valtype = PLEL_BACK, .prefix = OPT_PLOT_HDR },
+    .valfn = plotelem_enabler, .valtype = D3_BACK, .prefix = OPT_PLOT_HDR },
   [ENT_BOOL_PLAX] = { .en = { .type = ENT_BOOL_PLAX, .name = PLEL_AXIS_HDR },
-    .valfn = plotelem_enabler, .valtype = PLEL_AXIS, .prefix = OPT_PLOT_HDR },
+    .valfn = plotelem_enabler, .valtype = D3_AXIS, .prefix = OPT_PLOT_HDR },
   [ENT_BOOL_PLGR] = { .en = { .type = ENT_BOOL_PLGR, .name = PLEL_GRID_HDR },
-    .valfn = plotelem_enabler, .valtype = PLEL_GRID, .prefix = OPT_PLOT_HDR },
-  [ENT_BOOL_PLRR] = { .en = { .type = ENT_BOOL_PLRR, .name = PLEL_RTRR_HDR },
-    .valfn = plotelem_enabler, .valtype = PLEL_RTRR, .prefix = OPT_PLOT_HDR },
+    .valfn = plotelem_enabler, .valtype = D3_GRID, .prefix = OPT_PLOT_HDR },
+  [ENT_BOOL_PLRR] = { .en = { .type = ENT_BOOL_PLRR, .name = PLEL_ROTR_HDR },
+    .valfn = plotelem_enabler, .valtype = D3_ROTR, .prefix = OPT_PLOT_HDR },
   [ENT_BOOL_GLOB] = { .en = { .type = ENT_BOOL_GLOB, .name = OPT_GLOB_HDR }, .pval = &opts.rglob },
 #endif
 };
@@ -107,12 +107,12 @@ t_ent_str ent_str[] = {
 };
 
 static t_ent_exp ent_exp[] = {
-  [ENT_EXP_INFO] = { .c = {.en = {.type = ENT_EXP_INFO, .name = OPT_INFO_HEADER }}, .desc = &info_desc },
-  [ENT_EXP_STAT] = { .c = {.en = {.type = ENT_EXP_STAT, .name = OPT_STAT_HDR }},    .desc = &stat_desc },
-  [ENT_EXP_LGFL] = { .c = {.en = {.type = ENT_EXP_LGFL, .name = OPT_GRLG_HDR }},    .desc = &grlg_desc },
-  [ENT_EXP_GREX] = { .c = {.en = {.type = ENT_EXP_GREX, .name = OPT_GREX_HDR }},    .desc = &grex_desc },
+  [ENT_EXP_INFO] = { .c = {.en = {.type = ENT_EXP_INFO, .name = OPT_INFO_HDR }}, .desc = &info_desc },
+  [ENT_EXP_STAT] = { .c = {.en = {.type = ENT_EXP_STAT, .name = OPT_STAT_HDR }}, .desc = &stat_desc },
+  [ENT_EXP_LGFL] = { .c = {.en = {.type = ENT_EXP_LGFL, .name = OPT_GRLG_HDR }}, .desc = &grlg_desc },
+  [ENT_EXP_GREX] = { .c = {.en = {.type = ENT_EXP_GREX, .name = OPT_GREX_HDR }}, .desc = &grex_desc },
 #ifdef WITH_PLOT
-  [ENT_EXP_PLEL] = { .c = {.en = {.type = ENT_EXP_PLEL, .name = OPT_PLOT_HDR }},    .desc = &plot_desc },
+  [ENT_EXP_PLEL] = { .c = {.en = {.type = ENT_EXP_PLEL, .name = OPT_PLOT_HDR }}, .desc = &plot_desc },
 #endif
 };
 
@@ -258,10 +258,10 @@ static void toggle_colors(void) {
   tab_reload_theme();  DRAW_REFRESH_REL;
 }
 
-static void toggle_legend(void) { if (opts.graph) notifier_set_visible(NT_GRAPH_NDX, opts.legend); graphtab_refresh(); }
+static void toggle_legend(void) { if (opts.graph) notifier_set_visible(NT_LEGEND_NDX, opts.legend); graphtab_refresh(); }
 #ifdef WITH_PLOT
 static void toggle_pl_elems(void) { plottab_refresh(PL_PARAM_AT); }
-static void toggle_pl_rotor(void) { notifier_set_visible(NT_PLOT_NDX, is_plelem_enabled(PLEL_RTRR)); toggle_pl_elems(); }
+static void toggle_pl_rotor(void) { notifier_set_visible(NT_ROTOR_NDX, is_plelem_enabled(D3_ROTR)); toggle_pl_elems(); }
 #endif
 
 static void toggle_cb(GtkCheckButton *check, t_ent_bool *en) {

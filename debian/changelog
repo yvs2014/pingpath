@@ -1,3 +1,9 @@
+pingpath (0.3.12) mantic noble; urgency=low
+
+  * a bit of enum renaming and little optimization
+
+ -- yvs <VSYakovetsky@gmail.com>  Sat, 22 Jun 2024 10:18:28 +0300
+
 pingpath (0.3.11) mantic noble; urgency=low
 
   * switch from gimbal rotation to quaternion

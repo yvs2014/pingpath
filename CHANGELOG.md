@@ -1,3 +1,6 @@
+## 0.3.12
+- a bit of enum renaming and little optimization
+
 ## 0.3.11
 - switch from gimbal rotation to quaternion
 - add space rotation switch (set default to global)
