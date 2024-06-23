@@ -1,3 +1,11 @@
+pingpath (0.3.13) mantic noble; urgency=low
+
+  * add plot scale with field-of-view
+
+  * add 1x2 1x3 collages from screenshots
+
+ -- yvs <VSYakovetsky@gmail.com>  Sun, 23 Jun 2024 23:43:53 +0300
+
 pingpath (0.3.12) mantic noble; urgency=low
 
   * a bit of enum renaming and little optimization

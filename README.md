@@ -1,3 +1,10 @@
+In one shot
+
+![pp-feat-1x2](https://raw.githubusercontent.com/yvs2014/pingpath/main/img/pp-feat-1x2.png)
+
+<details>
+<summary>A bit more</summary>
+
 PingPath
 --------
 
@@ -65,3 +72,4 @@ SCREENSHOTS
 ## ordinary 3D plot
 ![pp-screenshot31](https://raw.githubusercontent.com/yvs2014/pingpath/main/img/pp-screenshot31.png)
 
+</details>

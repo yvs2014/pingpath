@@ -25,11 +25,13 @@
 #define DEF_BCOL_FROM 77
 #define DEF_BCOL_TO   230
 
+#define DEF_RGLOBAL   true
 #define GL_ANGX       0
 #define GL_ANGY     -20
 #define GL_ANGZ       0
 #define DEF_ANGSTEP   5
-#define DEF_RGLOBAL   true
+
+#define DEF_FOV      45
 #endif
 
 typedef struct opts {
@@ -47,6 +49,7 @@ typedef struct opts {
   gboolean rglob;            // rotation space: global (xyz) or local (attitude)
   int orient[3];             // plot orientation
   int angstep;               // rotation step
+  int fov;                   // field of view
 #endif
 } t_opts;
 

@@ -46,11 +46,10 @@
 #define PLOT_FRAG_BACK_F  "0.9"
 
 #define TICK 0.035
-#define PERSPECTIVE_ANGLE 45
 #define PERSPECTIVE_NEAR  0.01
 #define PERSPECTIVE_FAR   100.
 #define LOOKAT_EYE    (vec3){0, -4.8, 0}
-#define LOOKAT_CENTER (vec3){0, -1,   0}
+#define LOOKAT_CENTER (vec3){0,  0,   0}
 #define LOOKAT_UP     (vec3){0,  0,   1}
 #define SCALE3        (vec3){scale, scale, scale}
 
@@ -758,7 +757,7 @@ static inline t_plot_plane_at plot_planes_at(mat4 base) {
 
 static inline void plot_projview(mat4 m) {
   mat4 proj, view;
-  glm_perspective(glm_rad(PERSPECTIVE_ANGLE), (float)X_RES / Y_RES, PERSPECTIVE_NEAR, PERSPECTIVE_FAR, proj);
+  glm_perspective(glm_rad(opts.fov), (float)X_RES / Y_RES, PERSPECTIVE_NEAR, PERSPECTIVE_FAR, proj);
   glm_lookat(LOOKAT_EYE, LOOKAT_CENTER, LOOKAT_UP, view);
   glm_mul(proj, view, m);
 }
@@ -800,6 +799,7 @@ static inline void pl_init_orientation(void) {
 static void plottab_on_opts(unsigned flags) {
   if (flags & PL_PARAM_COLOR) plottab_on_color_opts();
   if (flags & PL_PARAM_AT) { draw_plot_at = 0; plot_aux_reset(&plot_dyna_res.vo[VO_SURF]); }
+  if (flags & PL_PARAM_FOV) pl_post_rotation();
 }
 
 
@@ -838,7 +838,7 @@ void plottab_update(void) {
   if (GTK_IS_WIDGET(plot_dyn_area)) gtk_gl_area_queue_render(GTK_GL_AREA(plot_dyn_area));
 }
 
-void plottab_refresh(gboolean flags)  { if (flags) plottab_on_opts(flags); plottab_redraw(); }
+void plottab_refresh(gboolean flags) { if (flags) plottab_on_opts(flags); plottab_redraw(); }
 
 inline void plottab_on_trans_opts(int q[4]) { pl_on_rotation(q); pl_post_rotation(); }
 

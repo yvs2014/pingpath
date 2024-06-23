@@ -224,7 +224,8 @@ static inline char* get_help_message(void) {
     SPANOPT(OPT_PLOT_HDR,   PLEL_BACK_HDR  " " PLEL_AXIS_HDR " " PLEL_GRID_HDR " " PLEL_ROTR_HDR)
     SPANOPT(OPT_GRAD_HDR,   "to color 3D-surface:")
       SPANSUB("Start-end pairs of RGB colors")
-    SPANOPT(OPT_ROTOR_HDR,  "space, orientation, and step");
+    SPANOPT(OPT_ROTOR_HDR,  "Space, Orientation, and Step")
+    SPANOPT(OPT_SCALE_HDR,  OPT_FOV_HDR);
 #endif
 #undef SPANSZ
 #undef SPANHDR
@@ -391,10 +392,7 @@ static void action_update_internal(GMenu *menu) {
     g_menu_remove_all(menu);
     for (int i = 0; i < G_N_ELEMENTS(menu_sa_desc); i++) {
       GMenuItem *item = g_menu_item_new(menu_sa_label(i), menu_sa_desc[i].name);
-      if (item) { g_menu_append_item(menu, item); g_object_unref(item); }
-      else FAIL("g_menu_item_new()");
-    }
-  }
+      if (item) { g_menu_append_item(menu, item); g_object_unref(item); }}}
   gboolean run = pinger_state.run, pause = pinger_state.pause;
   SET_SA(menu_sa_desc, MENU_SA_START, opts.target != NULL);
   SET_SA(menu_sa_desc, MENU_SA_PAUSE, pause || (!pause && run));

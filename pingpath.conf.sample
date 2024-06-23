@@ -47,7 +47,8 @@
 ##          global space is set with 1, local is 0
 ##          orientation angles are from -180 to 180
 ##          rotation step is in range from 1 to 180
-# plot-params = r=77:77,g=230:77,b=77:230,o=1:0:-20:0:5
+##      `f' scale with field-of-view angle
+# plot-params = r=77:77,g=230:77,b=77:230,o=1:0:-20:0:5,f=45
 
 ## NOTE: not-interactive mode: t - text, c - csv, j - json, J - pretty json
 # recap =

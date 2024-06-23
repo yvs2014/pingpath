@@ -113,9 +113,7 @@ static char* style_basetheme(const char *theme) {
     if (is_dark) {
       char *sfx = g_strrstr(re, SFFX_DIV1 DARK_SFFX);
       if (!sfx) sfx = g_strrstr(re, SFFX_DIV2 DARK_SFFX);
-      if (sfx) *sfx = 0;
-    }
-  } else FAIL("g_strdup()");
+      if (sfx) *sfx = 0; }}
   return re;
 }
 

@@ -10,7 +10,7 @@
 #define MIN_GTK_RUNTIME(major, minor, micro) (!gtk_check_version(major, minor, micro))
 
 #define APPNAME "pingpath"
-#define VERSION "0.3.12"
+#define VERSION "0.3.13"
 
 #define X_RES 1024
 #define Y_RES 720
@@ -253,6 +253,8 @@
 #define OPT_GRAD_HDR     "Plot gradient"
 #define OPT_GLOB_HDR     "Global space"
 #define OPT_ROTOR_HDR    "Plot rotation"
+#define OPT_SCALE_HDR    "Plot scale"
+#define OPT_FOV_HDR      "Field of view"
 #endif
 
 #define OPT_ATAB_HDR     "Active tab at start"

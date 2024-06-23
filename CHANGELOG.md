@@ -1,3 +1,7 @@
+## 0.3.13
+- add plot scale with field-of-view
+- add 1x2 1x3 collages from screenshots
+
 ## 0.3.12
 - a bit of enum renaming and little optimization
 

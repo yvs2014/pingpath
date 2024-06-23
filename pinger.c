@@ -55,6 +55,7 @@ t_opts opts = { .target = NULL, .dns = DEF_DNS, .whois = DEF_WHOIS, .cycles = DE
   .rglob   = DEF_RGLOBAL,
   .orient  = {GL_ANGX, GL_ANGY, GL_ANGZ},
   .angstep = DEF_ANGSTEP,
+  .fov  = DEF_FOV,
 #endif
 };
 

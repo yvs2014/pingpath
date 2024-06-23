@@ -96,7 +96,7 @@ static gboolean pt_reorder_elems(int prev, int next, const t_elem_desc *desc) {
   //
   t_type_elem *elems = &(desc->elems[desc->mm.min]);
   t_type_elem *el = g_memdup2(elems, len * sizeof(t_type_elem));
-  if (!el) { FAIL("g_memdup2()"); return false; }
+  if (!el) return false;
   int i = 0;
   for (int j = 0; j < next1; j++) if (j != prev1) el[i++] = elems[j];
   el[i++] = elems[prev1];

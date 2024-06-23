@@ -145,13 +145,14 @@ static gboolean cli_opt_t(const char *name, const char *value, t_opts *opts, GEr
     if (okay) g_message("%s: %d <=> %d", enc->name, min + 1, lim);
     else g_message("%s: no match with [%d,%d]", enc->name, opt_mm_ttl.min, opt_mm_ttl.max);
     g_free(cp);
-  } else FAILX(name, "g_sdtrdup()");
+  }
   if (!okay) CLI_SET_ERR;
   return okay;
 }
 
 #ifdef WITH_PLOT
 
+#define SET_XPAR(src, dst, mm) { if (okay) okay &= set_xparam_tag(src, dst, mm); }
 static gboolean set_xparam_tag(int inp, int *outp, t_minmax mm) {
   gboolean okay = true;
   if (inp != INT_MIN) { okay = MM_OKAY(mm, inp); if (okay && outp) *outp = inp; }
@@ -162,62 +163,79 @@ static gboolean set_xparam_tag(int inp, int *outp, t_minmax mm) {
 #define G_TAG 'g'
 #define B_TAG 'b'
 #define O_TAG 'o'
-static const char opt_X_tags[] = { R_TAG, G_TAG, B_TAG, O_TAG };
+#define F_TAG 'f'
+static const char opt_X_tags[] = { R_TAG, G_TAG, B_TAG, O_TAG, F_TAG };
+
+static gboolean cli_opt_X_rgb(char *cp, int typ, int ndx, t_minmax *mm) {
+  gboolean okay = false;
+  if (cp && mm) {
+    const char *name = ent_spn[typ].c.en.name;
+    t_ent_spn_elem *elem = &ent_spn[typ].list[ndx];
+    t_minmax inp; okay = parser_range(cp, COLON, elem->title, &inp);
+    if (okay) {
+      int *pfrom = elem->aux[0].pval, *pto = elem->aux[1].pval;
+      SET_XPAR(inp.min, pfrom, opt_mm_col);
+      SET_XPAR(inp.max, pto,   opt_mm_col);
+      if (okay) g_message("%s: from %d (0x%02x) to %d (0x%02x)", elem->title, mm->min, mm->min, mm->max, mm->max);
+      else g_message("%s: no match with [%d,%d]", name, opt_mm_col.min, opt_mm_col.max);
+    } else g_message("%s: cannot parse: %s", name, cp);
+  }
+  return okay;
+}
+
+static gboolean cli_opt_X_o(char *cp, int typ, int ndx, int *pval[]) {
+  gboolean okay = false;
+  if (cp && pval) {
+    const char *name = ent_spn[typ].c.en.name;
+    const char *title = ent_spn[typ].list[ndx].title;
+    int arr[5]; okay = parser_ivec(cp, COLON, title, arr, G_N_ELEMENTS(arr));
+    if (okay) {
+      t_minmax mm = {.min = 0, .max = 1};
+      SET_XPAR(arr[0], pval[0], mm);
+      if (okay) { mm = opt_mm_rot;
+        SET_XPAR(arr[1], pval[1], mm);
+        SET_XPAR(arr[2], pval[2], mm);
+        SET_XPAR(arr[3], pval[3], mm); }
+      if (okay) { mm = opt_mm_ang;
+        SET_XPAR(arr[4], pval[4], mm); }
+      if (okay) g_message("%s: %s space, orientation %d %d %d, step %d", title,
+        *pval[0] ? "global" : "local", *pval[1], *pval[2], *pval[3], *pval[4]);
+      else g_message("%s: no match with [%d,%d]", name, mm.min, mm.max);
+    } else g_message("%s: cannot parse: %s", name, cp);
+  }
+  return okay;
+}
+
+static gboolean cli_opt_X_f(char *cp, int typ, int ndx) {
+  gboolean okay = false;
+  t_ent_spn_aux *aux = ent_spn[typ].list[ndx].aux;
+  if (cp && aux && aux->mm && aux->pval) {
+    okay = parser_mmint(cp, aux->sfx, *aux->mm, aux->pval);
+    if (okay) g_message("%s (%s): %d°", aux->prfx, aux->sfx, *aux->pval);
+    else g_message("%s: no match with [%d,%d]", ent_spn[typ].c.en.name, aux->mm->min, aux->mm->max);
+  }
+  return okay;
+}
 
 static gboolean cli_opt_X_pair(const char *value, char tag, const char *name, t_opts *opts) {
-#define SET_IVEC(a5, glob, v3, angle) { \
-  a5[0] = &(glob); a5[1] = &(v3[0]); a5[2] = &(v3[1]); a5[3] = &(v3[2]); a5[4] = &(angle); }
-#define SET_XPAR(src, dst, mm) { if (okay) okay &= set_xparam_tag(src, dst, mm); }
   gboolean okay = false;
   if (value && opts) {
     char *cp = g_strdup(value);
-    if (cp) {
-      int ndx = -1, typ = -1, *pval[5]; t_minmax *grad = NULL;
-      switch (tag) {
-        case R_TAG: typ = ENT_SPN_COLOR;  ndx = 0; grad = &opts->rcol; break;
-        case G_TAG: typ = ENT_SPN_COLOR;  ndx = 1; grad = &opts->gcol; break;
-        case B_TAG: typ = ENT_SPN_COLOR;  ndx = 2; grad = &opts->bcol; break;
-        case O_TAG: typ = ENT_SPN_GLOBAL; ndx = 0; SET_IVEC(pval, opts->rglob, opts->orient, opts->angstep); break;
-      }
-      if ((ndx >= 0) && (typ >= 0)) {
-        t_ent_ndx *enc = &ent_spn[typ].c.en;
-        t_ent_spn_elem *elem = &ent_spn[typ].list[ndx];
-        if (grad) {
-          t_minmax inp; okay = parser_range(cp, COLON, elem->title, &inp);
-          if (okay) {
-            int *pfrom = elem->aux[0].pval, *pto = elem->aux[1].pval;
-            SET_XPAR(inp.min, pfrom, opt_mm_col);
-            SET_XPAR(inp.max, pto,   opt_mm_col);
-            if (okay) g_message("%s: from %d (0x%02x) to %d (0x%02x)", elem->title, grad->min, grad->min, grad->max, grad->max);
-            else g_message("%s: no match with [%d,%d]", enc->name, opt_mm_col.min, opt_mm_col.max);
-          } else g_message("%s: cannot parse: %s", enc->name, cp);
-        } else if (pval[0]) {
-          opts->rglob = typ == ENT_SPN_GLOBAL;
-          int arr[5]; okay = parser_ivec(cp, COLON, elem->title, arr, G_N_ELEMENTS(arr));
-          if (okay) {
-            t_minmax mm = {.min = 0, .max = 1};
-            SET_XPAR(arr[0], pval[0], mm);
-            if (okay) { mm = opt_mm_rot;
-              SET_XPAR(arr[1], pval[1], mm);
-              SET_XPAR(arr[2], pval[2], mm);
-              SET_XPAR(arr[3], pval[3], mm); }
-            if (okay) { mm = opt_mm_ang;
-              SET_XPAR(arr[4], pval[4], mm); }
-            if (okay) g_message("%s: %s space, orientation %d %d %d, step %d", elem->title,
-              *pval[0] ? "global" : "local", *pval[1], *pval[2], *pval[3], *pval[4]);
-            else g_message("%s: no match with [%d,%d]", enc->name, mm.min, mm.max);
-          } else g_message("%s: cannot parse: %s", enc->name, cp);
-        }
-      } else g_message("%s: wrong tag: '%c'", name, tag);
-      g_free(cp);
-    } else FAILX(name, "g_sdtrdup()");
+    if (cp) switch (tag) {
+      case R_TAG: okay = cli_opt_X_rgb(cp, ENT_SPN_COLOR, 0, &opts->rcol); break;
+      case G_TAG: okay = cli_opt_X_rgb(cp, ENT_SPN_COLOR, 1, &opts->gcol); break;
+      case B_TAG: okay = cli_opt_X_rgb(cp, ENT_SPN_COLOR, 2, &opts->bcol); break;
+      case O_TAG: {
+        int* pval[5] = { &opts->rglob, &opts->orient[0], &opts->orient[1], &opts->orient[2], &opts->angstep };
+        okay = cli_opt_X_o(cp, ENT_SPN_GLOBAL, 0, pval);
+      } break;
+      case F_TAG: okay = cli_opt_X_f(cp, ENT_SPN_FOV, 0); break;
+      default: g_message("%s: wrong tag: '%c'", name, tag);
+    }
+    g_free(cp);
   }
   return okay;
-#undef SET_IVEC
-#undef SET_XPAR
 }
-
-#define X_MAXTAGS 4 // r,g,b,o
 
 static gboolean cli_opt_X(const char *name, const char *value, t_opts *opts, GError **error) {
   gboolean okay = false;
@@ -232,12 +250,18 @@ static gboolean cli_opt_X(const char *name, const char *value, t_opts *opts, GEr
       } else g_message("%s: wrong pair: %s", name, *s);
       g_strfreev(pair);
       if (!okay) break;
-    } else FAILX(name, "g_strsplit()");
+    }
     g_strfreev(pairs);
     if (!okay) CLI_SET_ERR;
   }
   return okay;
 }
+#undef SET_XPAR
+#undef R_TAG
+#undef G_TAG
+#undef B_TAG
+#undef O_TAG
+#undef F_TAG
 #endif
 
 static char* cli_opt_charelem(char *str, const char *patt, int ch) {
@@ -584,10 +608,10 @@ gboolean cli_init(int *pargc, char ***pargv) {
   };
   // options
   GOptionGroup *og = g_option_group_new(APPNAME, APPNAME, "options", &opts, NULL);
-  if (!og) { FAIL("g_option_group_new()"); return false; }
+  if (!og) return false;
   g_option_group_add_entries(og, options);
   GOptionContext *oc = g_option_context_new(NULL);
-  if (!oc) { FAIL("g_option_context_new()"); return false; }
+  if (!oc) return false;
   g_option_context_set_main_group(oc, og);
   { GError *error = NULL;
     cli = true; gboolean okay = g_option_context_parse(oc, pargc, pargv, &error); cli = false;

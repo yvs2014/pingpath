@@ -143,6 +143,9 @@ t_minmax opt_mm_col = {MIN_COL_VAL, MAX_COL_VAL};
 static void rotation_cb(GtkSpinButton*, t_ent_spn_aux*);
 t_minmax opt_mm_rot = {MIN_VIEW_ANGLE, MAX_VIEW_ANGLE};
 t_minmax opt_mm_ang = {1, MAX_VIEW_ANGLE};
+//
+static void scalefov_cb(GtkSpinButton*, t_ent_spn_aux*);
+t_minmax opt_mm_fov = {DEF_FOV * 2 / 3, DEF_FOV * 2};
 #endif
 
 t_ent_spn ent_spn[] = {
@@ -194,6 +197,12 @@ t_ent_spn ent_spn[] = {
         [ENT_SPN_ANGS] = { .cb = G_CALLBACK(rotation_cb), .pval = &opts.angstep, .def = DEF_ANGSTEP,
           .sn = ENT_SPN_LOCAL, .mm = &opt_mm_ang, .sfx = ROT_STEP },
   }}}},
+  [ENT_SPN_FOV] = { .c = {.en = {.type = ENT_SPN_FOV, .name = OPT_SCALE_HDR }, .atrun = true},
+    .list = {
+      { .title = OPT_FOV_HDR, .kind = SCALE_SPIN, .aux = {
+        { .cb = G_CALLBACK(scalefov_cb), .pval = &opts.fov, .def = DEF_FOV,
+          .mm = &opt_mm_fov, .prfx = OPT_SCALE_HDR, .sfx = OPT_FOV_HDR }}},
+  }},
 #endif
 };
 
@@ -470,6 +479,17 @@ static void rotation_cb(GtkSpinButton *spin, t_ent_spn_aux *aux) {
     } else { *pval = want; set_rotor_n_redraw(step, aux->rev, aux->pn); }
   }
 }
+
+static void scalefov_cb(GtkSpinButton *spin, t_ent_spn_aux *aux) {
+  if (!GTK_IS_SPIN_BUTTON(spin) || !aux) return;
+  int *pval = aux->pval; if (!pval) return;
+  int got = gtk_spin_button_get_value_as_int(spin);
+  t_minmax *mm = aux->mm ? aux->mm : &opt_mm_fov;
+  if ((*pval == got) || (got < mm->min) || (got > mm->max)) return;
+  *pval = got;
+  OPT_NOTIFY("%s (%s): %d°", aux->prfx, aux->sfx, got);
+  plottab_refresh(PL_PARAM_FOV);
+}
 #endif
 
 static void graph_type_cb(void) {
@@ -622,10 +642,10 @@ static GtkWidget* add_opt_range(GtkWidget* listbox, t_ent_spn *en) {
     for (int n = 0; (n < G_N_ELEMENTS(en->list)) && elem && elem->title; n++, elem++) {
       GtkWidget *subbox = NULL;
       switch (elem->kind) {
-        case MINIMAX_SPIN: subbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, MARGIN); break;
 #ifdef WITH_PLOT
         case ROTOR_COLUMN: subbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, MARGIN);   break;
 #endif
+        default: subbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, MARGIN); break;
       }
       if (!GTK_IS_BOX(subbox)) continue;
       gtk_list_box_append(GTK_LIST_BOX(en->c.sub), subbox);
@@ -651,6 +671,10 @@ static GtkWidget* add_opt_range(GtkWidget* listbox, t_ent_spn *en) {
                 GTK_IS_WIDGET(c); c = gtk_widget_get_next_sibling(c))
                   if (GTK_IS_TEXT(c)) gtk_widget_set_visible(c, false);
           } break;
+        case SCALE_SPIN:
+          grey_into_box(subbox, gtk_label_new(elem->aux->sfx), true, true);
+          add_minmax(subbox, elem, 0, NULL, false);
+          break;
 #endif
       }
     }
@@ -761,6 +785,7 @@ static gboolean create_ext_optmenu(GtkWidget *list) {
       if (!add_opt_range(list,  &ent_spn[ENT_SPN_COLOR]))     okay = false;
       int rotent = opts.rglob ? ENT_SPN_GLOBAL : ENT_SPN_LOCAL;
       if (!add_opt_range(list,  &ent_spn[rotent]))            okay = false;
+      if (!add_opt_range(list,  &ent_spn[ENT_SPN_FOV]))       okay = false;
     }
 #endif
   }

@@ -265,7 +265,7 @@ static void on_whois_connect(GObject* source, GAsyncResult *result, t_wq_elem *e
         g_output_stream_write_all_async(elem->output, request, strnlen(request, MAXHOSTNAME),
           G_PRIORITY_DEFAULT, NULL, (GAsyncReadyCallback)on_whois_write_all, request);
         return;
-      } else FAILX(elem->data.addr, "g_strdup_printf()");
+      }
     } else FAILX(elem->input ? "output" : "input", "get stream");
   } else ERRLOG("whois connection failed");
   whois_query_close(elem);
