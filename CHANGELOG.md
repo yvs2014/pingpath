@@ -1,3 +1,7 @@
+## 0.3.14
+- a bit better option warnings
+- git sparse img/ dir
+
 ## 0.3.13
 - add plot scale with field-of-view
 - add 1x2 1x3 collages from screenshots

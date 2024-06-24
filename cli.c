@@ -143,7 +143,7 @@ static gboolean cli_opt_t(const char *name, const char *value, t_opts *opts, GEr
       }
     }
     if (okay) g_message("%s: %d <=> %d", enc->name, min + 1, lim);
-    else g_message("%s: no match with [%d,%d]", enc->name, opt_mm_ttl.min, opt_mm_ttl.max);
+    else g_warning("%s: no match with [%d,%d]", enc->name, opt_mm_ttl.min, opt_mm_ttl.max);
     g_free(cp);
   }
   if (!okay) CLI_SET_ERR;
@@ -164,7 +164,6 @@ static gboolean set_xparam_tag(int inp, int *outp, t_minmax mm) {
 #define B_TAG 'b'
 #define O_TAG 'o'
 #define F_TAG 'f'
-static const char opt_X_tags[] = { R_TAG, G_TAG, B_TAG, O_TAG, F_TAG };
 
 static gboolean cli_opt_X_rgb(char *cp, int typ, int ndx, t_minmax *mm) {
   gboolean okay = false;
@@ -177,8 +176,8 @@ static gboolean cli_opt_X_rgb(char *cp, int typ, int ndx, t_minmax *mm) {
       SET_XPAR(inp.min, pfrom, opt_mm_col);
       SET_XPAR(inp.max, pto,   opt_mm_col);
       if (okay) g_message("%s: from %d (0x%02x) to %d (0x%02x)", elem->title, mm->min, mm->min, mm->max, mm->max);
-      else g_message("%s: no match with [%d,%d]", name, opt_mm_col.min, opt_mm_col.max);
-    } else g_message("%s: cannot parse: %s", name, cp);
+      else g_warning("%s: no match with [%d,%d]", name, opt_mm_col.min, opt_mm_col.max);
+    } else g_warning("%s: cannot parse: %s", name, cp);
   }
   return okay;
 }
@@ -200,8 +199,8 @@ static gboolean cli_opt_X_o(char *cp, int typ, int ndx, int *pval[]) {
         SET_XPAR(arr[4], pval[4], mm); }
       if (okay) g_message("%s: %s space, orientation %d %d %d, step %d", title,
         *pval[0] ? "global" : "local", *pval[1], *pval[2], *pval[3], *pval[4]);
-      else g_message("%s: no match with [%d,%d]", name, mm.min, mm.max);
-    } else g_message("%s: cannot parse: %s", name, cp);
+      else g_warning("%s: no match with [%d,%d]", name, mm.min, mm.max);
+    } else g_warning("%s: cannot parse: %s", name, cp);
   }
   return okay;
 }
@@ -212,27 +211,38 @@ static gboolean cli_opt_X_f(char *cp, int typ, int ndx) {
   if (cp && aux && aux->mm && aux->pval) {
     okay = parser_mmint(cp, aux->sfx, *aux->mm, aux->pval);
     if (okay) g_message("%s (%s): %d°", aux->prfx, aux->sfx, *aux->pval);
-    else g_message("%s: no match with [%d,%d]", ent_spn[typ].c.en.name, aux->mm->min, aux->mm->max);
+    else g_warning("%s: no match with [%d,%d]", ent_spn[typ].c.en.name, aux->mm->min, aux->mm->max);
   }
   return okay;
 }
 
+static gboolean xnth_nodup(unsigned *mask, unsigned nth) {
+  gboolean re = true;
+  if (mask && nth) {
+    unsigned flag = 1 << nth;
+    if (*mask & flag) { re = false; *mask |= 1; } else *mask |= flag;
+  }
+  return re;
+}
+
 static gboolean cli_opt_X_pair(const char *value, char tag, const char *name, t_opts *opts) {
+  static unsigned xpairbits;
   gboolean okay = false;
   if (value && opts) {
     char *cp = g_strdup(value);
     if (cp) switch (tag) {
-      case R_TAG: okay = cli_opt_X_rgb(cp, ENT_SPN_COLOR, 0, &opts->rcol); break;
-      case G_TAG: okay = cli_opt_X_rgb(cp, ENT_SPN_COLOR, 1, &opts->gcol); break;
-      case B_TAG: okay = cli_opt_X_rgb(cp, ENT_SPN_COLOR, 2, &opts->bcol); break;
-      case O_TAG: {
+      case R_TAG: if (xnth_nodup(&xpairbits, 1)) okay = cli_opt_X_rgb(cp, ENT_SPN_COLOR, 0, &opts->rcol); break;
+      case G_TAG: if (xnth_nodup(&xpairbits, 2)) okay = cli_opt_X_rgb(cp, ENT_SPN_COLOR, 1, &opts->gcol); break;
+      case B_TAG: if (xnth_nodup(&xpairbits, 3)) okay = cli_opt_X_rgb(cp, ENT_SPN_COLOR, 2, &opts->bcol); break;
+      case O_TAG: if (xnth_nodup(&xpairbits, 4)) {
         int* pval[5] = { &opts->rglob, &opts->orient[0], &opts->orient[1], &opts->orient[2], &opts->angstep };
         okay = cli_opt_X_o(cp, ENT_SPN_GLOBAL, 0, pval);
       } break;
-      case F_TAG: okay = cli_opt_X_f(cp, ENT_SPN_FOV, 0); break;
-      default: g_message("%s: wrong tag: '%c'", name, tag);
+      case F_TAG: if (xnth_nodup(&xpairbits, 5)) okay = cli_opt_X_f(cp, ENT_SPN_FOV, 0); break;
+      default: g_warning("%s: wrong tag: '%c'", name, tag);
     }
     g_free(cp);
+    if (xpairbits & 1) { g_warning("%s: tag duplicate: '%c'", name, tag); xpairbits &= ~1; }
   }
   return okay;
 }
@@ -240,14 +250,14 @@ static gboolean cli_opt_X_pair(const char *value, char tag, const char *name, t_
 static gboolean cli_opt_X(const char *name, const char *value, t_opts *opts, GError **error) {
   gboolean okay = false;
   if (value && opts) { // tag=subvalues
-    char **pairs = g_strsplit(value, ",", G_N_ELEMENTS(opt_X_tags));
+    char **pairs = g_strsplit(value, ",", 6);
     if (pairs) for (char **s = pairs; *s; s++) {
       okay = false;
       char **pair = g_strsplit(*s, "=", 2); // tag=pair
       if ((pair[0] && pair[0][0]) && (pair[1] && pair[1][0])) {
-        if (pair[0][1]) g_message("%s: no char tag: %s", name, pair[0]);
+        if (pair[0][1]) g_warning("%s: no char tag: %s", name, pair[0]);
         else okay = cli_opt_X_pair(pair[1], pair[0][0], name, opts);
-      } else g_message("%s: wrong pair: %s", name, *s);
+      } else g_warning("%s: wrong pair: %s", name, *s);
       g_strfreev(pair);
       if (!okay) break;
     }
@@ -280,8 +290,8 @@ static char* reorder_patt(const char *str, const char *patt) {
     char *o = order;
     for (const char *p = patt, *pstr = str; *p; p++, o++)
       if (strchr(str, *p)) { *o = *pstr; pstr++; };
-  } else WARN_("g_strdup()");
-  DNDORD("REORDER: %s + %s => %s", patt, str, order);
+    DNDORD("REORDER: %s + %s => %s", patt, str, order);
+  }
   return order;
 }
 
@@ -616,7 +626,7 @@ gboolean cli_init(int *pargc, char ***pargv) {
   { GError *error = NULL;
     cli = true; gboolean okay = g_option_context_parse(oc, pargc, pargv, &error); cli = false;
     if (!okay) {
-      g_message("%s", error ? error->message : unkn_error); g_error_free(error);
+      g_warning("%s", error ? error->message : unkn_error); g_error_free(error);
       g_option_context_free(oc); return false; }
     if (onoff[ONOFF_VERSION]) { g_print("%s", appver); char *ver;
       if ((ver = rtver(GTK_STRV)))   { g_print(" +gtk-%s", ver);   g_free(ver); }

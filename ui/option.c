@@ -670,7 +670,8 @@ static GtkWidget* add_opt_range(GtkWidget* listbox, t_ent_spn *en) {
               for (GtkWidget *c = gtk_widget_get_first_child(GTK_WIDGET(elem->aux[i].spin));
                 GTK_IS_WIDGET(c); c = gtk_widget_get_next_sibling(c))
                   if (GTK_IS_TEXT(c)) gtk_widget_set_visible(c, false);
-          } break;
+          }
+          break;
         case SCALE_SPIN:
           grey_into_box(subbox, gtk_label_new(elem->aux->sfx), true, true);
           add_minmax(subbox, elem, 0, NULL, false);
