@@ -15,6 +15,7 @@ gboolean notifier_get_visible(int ndx);
 void notifier_set_visible(int ndx, gboolean visible);
 void notifier_legend_vis_rows(int upto);
 void notifier_legend_update(void);
+void notifier_legend_refresh(void);
 
 extern unsigned lgnd_excl_mask;
 extern gboolean nt_dark;

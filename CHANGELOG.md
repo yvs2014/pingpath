@@ -1,3 +1,7 @@
+## 0.3.15
+- plot: additional keyboard shortcuts
+- graph: force legend redraw with theme changing
+
 ## 0.3.14
 - a bit better option warnings
 - git sparse img/ dir

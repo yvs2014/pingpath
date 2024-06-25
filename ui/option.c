@@ -265,6 +265,7 @@ static void toggled_dns(void) { stat_reset_cache(); notifier_legend_update(); pi
 static void toggle_colors(void) {
   tab_dependent(NULL); STYLE_SET;
   tab_reload_theme();  DRAW_REFRESH_REL;
+  notifier_legend_refresh();
 }
 
 static void toggle_legend(void) { if (opts.graph) notifier_set_visible(NT_LEGEND_NDX, opts.legend); graphtab_refresh(); }

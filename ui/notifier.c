@@ -39,6 +39,11 @@ typedef struct notifier {
 typedef struct rotor_arrow { const char *alt; const char *ico[MAX_ICONS]; } t_rotor_arrow;
 #endif
 
+unsigned lgnd_excl_mask; // enough for MAXTTL(30) bitmask
+gboolean nt_dark;
+
+//
+
 static t_nt_leg nt_leg[MAXTTL];
 
 static t_notifier notifier[] = {
@@ -54,6 +59,12 @@ static t_notifier notifier[] = {
 #define NT_VALID_NDX(ndx) ((ndx >= 0) && (ndx < G_N_ELEMENTS(notifier)))
 
 //
+
+static void nt_reload_css(GtkWidget *w, const char *css) {
+  if (w) {
+    if (gtk_widget_has_css_class(w, css)) gtk_widget_remove_css_class(w, css);
+    gtk_widget_add_css_class(w, css); }
+}
 
 static gboolean nt_set_visible(t_notifier *nt, gboolean visible) {
   if (!atquit && nt && (nt->visible != visible)) {
@@ -103,7 +114,7 @@ static void nt_add_lgelem(GtkWidget *widget, GtkWidget *box, int align, gboolean
     gtk_widget_set_halign(widget, align);
     if (GTK_IS_LABEL(widget)) gtk_label_set_xalign(GTK_LABEL(widget), align == GTK_ALIGN_END);
   }
-  if (style_loaded) gtk_widget_add_css_class(widget, CSS_LEGEND_TEXT);
+  if (style_loaded) nt_reload_css(widget, CSS_LEGEND_TEXT);
 }
 
 static void nt_reveal_sets(GtkWidget *reveal, int align, int transition) {
@@ -186,8 +197,8 @@ static inline void nt_make_leg_row(GtkListBox *box, GtkSizeGroup* group[], int i
   gtk_list_box_append(box, GTK_WIDGET(leg->row));
   gtk_list_box_row_set_selectable(leg->row, LGND_ROW_DEF_STATE);
   if (style_loaded) {
-    gtk_widget_add_css_class(GTK_WIDGET(leg->row), CSS_LEGEND_TEXT);
-    if (css) gtk_widget_add_css_class(GTK_WIDGET(leg->row), css);
+    nt_reload_css(GTK_WIDGET(leg->row), CSS_LEGEND_TEXT);
+    if (css) nt_reload_css(GTK_WIDGET(leg->row), css);
   }
   LEG_LABEL(leg->elem[GE_NO], nb_lgnd_nth_state(i, LGND_ROW_DEF_STATE), GTK_ALIGN_END, true);
   if (GTK_IS_WIDGET(leg->elem[GE_NO])) LEG_GROUP(GE_NO, true);
@@ -229,7 +240,7 @@ static void nt_init_dnd_over(GtkWidget *inbox, GtkWidget *over, t_notifier *nt) 
 static void nt_init_legend(GtkWidget *inbox, GtkWidget *over, t_notifier *nt) {
   if (!GTK_IS_LIST_BOX(inbox) || !nt) return;
   g_signal_connect(inbox, EV_ROW_ACTIVE, G_CALLBACK(nt_lgnd_row_cb), NULL);
-  if (style_loaded) gtk_widget_add_css_class(inbox, CSS_GRAPH_BG);
+  if (style_loaded) nt_reload_css(inbox, CSS_GRAPH_BG);
   GtkSizeGroup* group[GE_MAX];
   for (int i = 0; i < G_N_ELEMENTS(group); i++)
     group[i] = gtk_size_group_new(GTK_SIZE_GROUP_HORIZONTAL);
@@ -250,7 +261,7 @@ static void nt_init_legend(GtkWidget *inbox, GtkWidget *over, t_notifier *nt) {
 }
 
 #ifdef WITH_PLOT
-static void nt_rotor_cb(GtkButton *unused, t_kb_rotaux *kb) { if (kb) on_rotation(NULL, NULL, kb); }
+static void nt_rotor_cb(GtkButton *unused, t_kb_plot_aux *kb) { if (kb) on_rotation(NULL, NULL, kb); }
 
 static void nt_init_rotor(GtkWidget *inbox, GtkWidget *over, t_notifier *nt) {
   if (!GTK_IS_BOX(inbox)) return;
@@ -264,10 +275,10 @@ static void nt_init_rotor(GtkWidget *inbox, GtkWidget *over, t_notifier *nt) {
     {&rc10, &rc11, &rc12},
     {NULL,  &rc21, NULL },
   };
-  t_kb_rotaux* kb_cntrl[3][3] = {
-    {&kb_rotaux[ACCL_SA_PGDN], &kb_rotaux[ACCL_SA_UP],   &kb_rotaux[ACCL_SA_PGUP] },
-    {&kb_rotaux[ACCL_SA_LEFT], &kb_rotaux[ACCL_SA_PGUP], &kb_rotaux[ACCL_SA_RIGHT]},
-    {&kb_rotaux[ACCL_SA_PGDN], &kb_rotaux[ACCL_SA_DOWN], &kb_rotaux[ACCL_SA_PGUP] },
+  t_kb_plot_aux* kb_cntrl[3][3] = {
+    {&kb_plot_aux[ACCL_SA_PGDN], &kb_plot_aux[ACCL_SA_UP],   &kb_plot_aux[ACCL_SA_PGUP] },
+    {&kb_plot_aux[ACCL_SA_LEFT], &kb_plot_aux[ACCL_SA_PGUP], &kb_plot_aux[ACCL_SA_RIGHT]},
+    {&kb_plot_aux[ACCL_SA_PGDN], &kb_plot_aux[ACCL_SA_DOWN], &kb_plot_aux[ACCL_SA_PGUP] },
   };
   GtkSizeGroup* group[G_N_ELEMENTS(rotor_cntrl[0])];
   for (int i = 0; i < G_N_ELEMENTS(group); i++)
@@ -414,6 +425,14 @@ void notifier_legend_update(void) {
   }
 }
 
-unsigned lgnd_excl_mask; // enough for MAXTTL(30) bitmask
-gboolean nt_dark;
+inline void notifier_legend_refresh(void) {
+  if (style_loaded) { // css dependent redrawing
+    t_notifier *nt = &notifier[NT_LEGEND_NDX];
+    if (nt->box) {
+      if (nt->css.def) nt_reload_css(nt->box, nt->css.def);
+      if (nt->css.col) nt_reload_css(nt->box, nt->css.col);
+    }
+    if (nt->inbox) nt_reload_css(nt->inbox, CSS_GRAPH_BG);
+  }
+}
 

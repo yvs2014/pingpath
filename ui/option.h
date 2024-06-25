@@ -101,6 +101,7 @@ extern t_minmax opt_mm_ttl;
 extern t_minmax opt_mm_col;
 extern t_minmax opt_mm_rot;
 extern t_minmax opt_mm_ang;
+extern t_minmax opt_mm_fov;
 void set_rotor_n_redraw(int step, gboolean rev, int n);
 #endif
 

@@ -1,7 +1,7 @@
 
 name: pingpath
 base: core22
-version: 0.3.14
+version: 0.3.15
 summary: ping wrapper for network diagnostic
 description: |
   Network diagnostic tool based on parsing iputils 'ping' output with functionality of 'traceroute'.

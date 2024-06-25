@@ -1,3 +1,11 @@
+pingpath (0.3.15) mantic noble; urgency=low
+
+  * plot: additional keyboard shortcuts
+
+  * graph: force legend redraw with theme changing
+
+ -- yvs <VSYakovetsky@gmail.com>  Tue, 25 Jun 2024 20:38:58 +0300
+
 pingpath (0.3.14) mantic noble; urgency=low
 
   * a bit better option warnings
