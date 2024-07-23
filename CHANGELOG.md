@@ -1,3 +1,6 @@
+## 0.3.16
+- packaging: snap-core24, obs-rpm
+
 ## 0.3.15
 - plot: additional keyboard shortcuts
 - graph: force legend redraw with theme changing

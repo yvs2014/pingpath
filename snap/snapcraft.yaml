@@ -1,19 +1,16 @@
 
 name: pingpath
-base: core22
-version: 0.3.15
+base: core24
+version: 0.3.16
 summary: ping wrapper for network diagnostic
 description: |
   Network diagnostic tool based on parsing iputils 'ping' output with functionality of 'traceroute'.
   Inspired by ncurses look of 'mtr' and written in 'GTK4'.
 
-architectures:
-  - build-on: [amd64]
-  - build-on: [arm64]
-  - build-on: [armhf]
-#  - build-on: [ppc64el]
-#  - build-on: [s390x]
-#  - build-on: [riscv64]
+platforms:
+  amd64:
+  arm64:
+  armhf:
 grade: stable
 confinement: strict
 
@@ -36,11 +33,8 @@ apps:
 parts:
   pingpath:
     plugin: make
-#    source-type: local
 #    source: .
-    source-type: git
-    source: https://github.com/yvs2014/pingpath
-    source-depth: 1
+    source: https://github.com/yvs2014/pingpath.git
     build-packages:
       - build-essential
       - pkgconf
@@ -49,6 +43,9 @@ parts:
       - libcglm-dev
     build-environment:
       - PREFIX: /usr
+    override-build: |
+      craftctl default
+      install -m 644 assets/icons/pingpath.svg snap/gui/
     stage-packages:
       - iputils-ping
       - libgl1
@@ -59,4 +56,5 @@ parts:
       - usr/bin/pingpath2
       - usr/share/man/man1/pingpath.1.gz
       - usr/share/doc/pingpath/examples/pingpath.conf
+      - usr/share/icons/hicolor/scalable/apps/pingpath.svg
 

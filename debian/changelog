@@ -1,3 +1,9 @@
+pingpath (0.3.16) mantic noble; urgency=low
+
+  * packaging: snap-core24, obs-rpm
+
+ -- yvs <VSYakovetsky@gmail.com>  Tue, 23 Jul 2024 05:14:37 +0300
+
 pingpath (0.3.15) mantic noble; urgency=low
 
   * plot: additional keyboard shortcuts
