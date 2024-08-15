@@ -1,7 +1,7 @@
 
 name: pingpath
 base: core24
-version: 0.3.16
+version: 0.3.17
 summary: ping wrapper for network diagnostic
 description: |
   Network diagnostic tool based on parsing iputils 'ping' output with functionality of 'traceroute'.
@@ -43,14 +43,8 @@ parts:
       - libcglm-dev
     build-environment:
       - PREFIX: /usr
-    override-build: |
-      craftctl default
-      install -m 644 assets/icons/pingpath.svg snap/gui/
     stage-packages:
       - iputils-ping
-      - libgl1
-      - libepoxy0
-      - libcglm0
     prime:
       - usr/bin/pingpath
       - usr/bin/pingpath2

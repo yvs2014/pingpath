@@ -1,3 +1,9 @@
+pingpath (0.3.17) mantic noble; urgency=low
+
+  * packaging stuff
+
+ -- yvs <VSYakovetsky@gmail.com>  Thu, 15 Aug 2024 12:52:05 +0300
+
 pingpath (0.3.16) mantic noble; urgency=low
 
   * packaging: snap-core24, obs-rpm

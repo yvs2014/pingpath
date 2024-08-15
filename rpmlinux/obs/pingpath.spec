@@ -1,22 +1,21 @@
 
-# obs compat
+# OBS compat
 
 Name:       pingpath
-Version:    0.3
+Version:    inherited
 Release:    1
 Summary:    'ping' wrapper to display path
 License:    GPL-2.0-or-later
+Group:      Productivity/Networking/Other
 URL:        https://github.com/yvs2014/%{name}
 Source0:    %{name}-%{version}.tar.gz
 
-# Requires: iputils, (gtk4 or libgtk-4-1), json-glib, (libglvnd-opengl or libglvnd), (libepoxy or libepoxy0), libcglm0
-Requires: iputils, json-glib, libcglm0
-Requires: (gtk4 or libgtk-4-1)
-Requires: (libglvnd-opengl or libglvnd)
-Requires: (libepoxy or libepoxy0)
-# BuildRequires: git-core, make, pkgconf, (gcc or clang), gtk4-devel, json-glib-devel, libglvnd-devel, libepoxy-devel, cglm-devel
-BuildRequires: gzip, make, pkgconf, gtk4-devel, json-glib-devel, libglvnd-devel, libepoxy-devel, cglm-devel
+Requires: iputils
+BuildRequires: make, pkgconf, gtk4-devel, json-glib-devel, libglvnd-devel, libepoxy-devel, cglm-devel
 BuildRequires: (gcc or clang)
+%if 0%{?fedora}
+BuildRequires: glibc-langpack-en
+%endif
 
 %description
 Network diagnostic tool based on parsing ping output with some functionality of traceroute.
@@ -35,7 +34,7 @@ Written using GTK4 framework.
 
 %build
 cd %{srcdir}
-CFLAGS="${CFLAGS} -fPIE" LDFLAGS="${LDFLAGS} -pie" PREFIX=/usr DESTDIR=%{buildroot} make
+CFLAGS="${CFLAGS} -fPIE" LDFLAGS="${LDFLAGS} -pie" PREFIX=%{prefix} make
 
 %install
 cd %{srcdir}
@@ -55,4 +54,4 @@ PREFIX=%{prefix} DESTDIR=%{buildroot} make install
 %{mandir}/%{name}2.1.gz
 
 %changelog
-# skip this for now
+# autofill

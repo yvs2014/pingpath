@@ -1,5 +1,5 @@
 
-# SPEC for rpmbuild
+# rpmbuild -ba pingpath.spec
 
 %define gtag d3da356
 %define subversion %(echo "$(git rev-list --count %{gtag}...HEAD)_$(git rev-parse --short HEAD)")
@@ -9,13 +9,16 @@ Version:    0.3.%{subversion}
 Release:    1
 Summary:    'ping' wrapper to display path
 License:    GPL-2.0-or-later
+Group:      Productivity/Networking/Other
+URL:        https://github.com/yvs2014/%{name}
 
-Requires: iputils, (gtk4 or libgtk-4-1), json-glib, (libglvnd-opengl or libglvnd), (libepoxy or libepoxy0), libcglm0
-BuildRequires: (gcc or clang), make, pkgconf, gtk4-devel, json-glib-devel, libglvnd-devel, libepoxy-devel, cglm-devel
+Requires: iputils
+BuildRequires: make, pkgconf, gtk4-devel, json-glib-devel, libglvnd-devel, libepoxy-devel, cglm-devel
+BuildRequires: (gcc or clang)
 
 %description
 Network diagnostic tool based on parsing ping output with some functionality of traceroute.
-Written using GTK framework.
+Written using GTK4 framework.
 
 %define srcdir %{name}
 %define prefix /usr
@@ -31,13 +34,16 @@ git clone --depth=1 https://github.com/yvs2014/%{name}
 
 %build
 cd %{srcdir}
-CFLAGS="${CFLAGS} -fPIE" LDFLAGS="${LDFLAGS} -pie" PREFIX=%{prefix} DESTDIR=%{buildroot} make
+CFLAGS="${CFLAGS} -fPIE" LDFLAGS="${LDFLAGS} -pie" PREFIX="%{prefix}" make
 
 %install
 cd %{srcdir}
 PREFIX=%{prefix} DESTDIR=%{buildroot} make install
 
 %files
+%defattr(-,root,root,-)
+%dir %{docdir}
+%dir %{docdir}/examples
 %{bindir}/%{name}
 %{bindir}/%{name}2
 %{dskdir}/net.tools.%{name}.desktop
@@ -48,5 +54,4 @@ PREFIX=%{prefix} DESTDIR=%{buildroot} make install
 %{mandir}/%{name}2.1.gz
 
 %changelog
-# skip this for now
 

@@ -32,9 +32,11 @@ DETAILS
 -------
 ... *see pingpath.1 page*
 
-DEB
+PACKAGES
 -----------
-Autobuilt at [Launchpad](https://launchpad.net/~lrou2014/+archive/ubuntu/pingpath)
+[Launchpad deb](https://launchpad.net/~lrou2014/+archive/ubuntu/pingpath)  
+[OBS rpm-n-deb](https://build.opensuse.org/package/show/home:yvs/pingpath)  
+[Snapcfaft snap](https://snapcraft.io/pingpath)  
 
 ------------------------------------------------------------------------
 SCREENSHOTS

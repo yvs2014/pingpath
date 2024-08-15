@@ -1,3 +1,6 @@
+## 0.3.17
+- packaging stuff
+
 ## 0.3.16
 - packaging: snap-core24, obs-rpm
 

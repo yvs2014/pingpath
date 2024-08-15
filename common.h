@@ -10,7 +10,7 @@
 #define MIN_GTK_RUNTIME(major, minor, micro) (!gtk_check_version(major, minor, micro))
 
 #define APPNAME "pingpath"
-#define VERSION "0.3.16"
+#define VERSION "0.3.17"
 
 #define X_RES 1024
 #define Y_RES 720

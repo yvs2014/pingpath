@@ -104,18 +104,14 @@ clean:
 	rm -rf -- $(OBJDIR) $(OBJDIR2)
 
 install: $(NAME) $(NAME2)
-	@mkdir -p $(BASEDIR)/bin
-	install -m 755 $(NAME) $(BASEDIR)/bin
-	install -m 755 $(NAME2) $(BASEDIR)/bin
-	@mkdir -p $(MANDIR)
+	install -m 755 -d $(BASEDIR)/bin $(MANDIR) $(SMPLDIR) $(DSCDIR) $(SVGICODIR)
+	install -m 755 -s $(NAME) $(BASEDIR)/bin/
+	install -m 755 -s $(NAME2) $(BASEDIR)/bin/
 	install -m 644 $(NAME).1 $(MANDIR)/
 	gzip -f $(MANDIR)/$(NAME).1
 	ln -srf $(MANDIR)/$(NAME).1.gz $(MANDIR)/$(NAME2).1.gz
-	@mkdir -p $(SMPLDIR)
-	install -T -m 644 $(CONF_SRC) $(SMPLDIR)/$(CONF_DST)
-	@mkdir -p $(DSCDIR)
-	install -T -m 644 $(DESC_SRC) $(DSCDIR)/$(DESC_DST)
-	install -T -m 644 $(DESC2_SRC) $(DSCDIR)/$(DESC2_DST)
-	@mkdir -p $(SVGICODIR)
-	install -m 644 $(ICONNAME).svg $(SVGICODIR)
+	install -m 644 -T $(CONF_SRC) $(SMPLDIR)/$(CONF_DST)
+	install -m 644 -T $(DESC_SRC) $(DSCDIR)/$(DESC_DST)
+	install -m 644 -T $(DESC2_SRC) $(DSCDIR)/$(DESC2_DST)
+	install -m 644 $(ICONNAME).svg $(SVGICODIR)/
 

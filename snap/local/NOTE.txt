@@ -1,6 +1,2 @@
-1) If minimal ping's slot (network-observe) is not autoconnected (permission denied),
-it can be allowed and connected with the following command:
+To allow pings in snap sandbox with network-observe slot:
   snap connect pingpath:network-observe :network-observe
-
-2) a workaround to get rid of "/usr/share/libdrm/amdgpu.ids: No such file or directory" message:
-  snap disconnect pingpath:opengl
