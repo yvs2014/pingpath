@@ -1,3 +1,9 @@
+pingpath (0.3.18) mantic noble; urgency=low
+
+  * free selection at exit
+
+ -- yvs <VSYakovetsky@gmail.com>  Sun, 18 Aug 2024 21:31:01 +0300
+
 pingpath (0.3.17) mantic noble; urgency=low
 
   * packaging stuff

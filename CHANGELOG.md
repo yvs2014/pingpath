@@ -1,3 +1,6 @@
+## 0.3.18
+- free selection at exit
+
 ## 0.3.17
 - packaging stuff
 

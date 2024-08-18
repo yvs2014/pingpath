@@ -119,9 +119,8 @@ static int char_ndxs[][MAXCHARS_IN_PATTERN][2] = { // max pattern is 8 chars
 };
 
 int char2ndx(int cat, gboolean ent, char c) {
-  static int cat_no = G_N_ELEMENTS(char_ndxs);
-  int n = -1;
-  if ((cat >= 0) && (cat < cat_no)) switch (cat) {
+  int n = -1, len = G_N_ELEMENTS(char_ndxs);
+  if ((cat >= 0) && (cat < len)) switch (cat) {
     case INFO_CHAR:
     case STAT_CHAR:
     case GRLG_CHAR:
@@ -129,8 +128,7 @@ int char2ndx(int cat, gboolean ent, char c) {
 #ifdef WITH_PLOT
     case PLEL_CHAR:
 #endif
-    { char *p = strchr(char_pattern[cat], c);
-      if (p) {
+    { char *p = strchr(char_pattern[cat], c); if (p) {
         int pos = p - char_pattern[cat];
         if (pos < MAXCHARS_IN_PATTERN) n = char_ndxs[cat][pos][ent ? 0 : 1];
       }

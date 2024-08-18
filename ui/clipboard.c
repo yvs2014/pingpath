@@ -54,8 +54,7 @@ static void cb_on_press(GtkGestureClick *g, int n, double x, double y, GtkWidget
 static gboolean any_list_sel(t_tab *tab) {
   if (tab) {
     GtkWidget* list[] = {tab->hdr.w, tab->dyn.w, tab->info.w};
-    static int n_alsel = G_N_ELEMENTS(list);
-    for (int i = 0; i < n_alsel; i++) if (GTK_IS_LIST_BOX(list[i])) {
+    for (int i = 0, len = G_N_ELEMENTS(list); i < len; i++) if (GTK_IS_LIST_BOX(list[i])) {
       GList *l = gtk_list_box_get_selected_rows(GTK_LIST_BOX(list[i]));
       if (l) { g_list_free(l); return true; }
     }
@@ -221,7 +220,6 @@ void cb_on_copy_l2(GSimpleAction *action, GVariant *var, void *data) {
   if (GDK_IS_CLIPBOARD(cb)) {
     VERBOSE("clipoard action %s", ACT_COPY_HDR);
     char* arr[4] = { NULL };
-    static int n_cbl2_arr = G_N_ELEMENTS(arr);
     int maxes[PE_MAX]; memset(maxes, 0, sizeof(maxes));
     cb_collect_maxes(tab->hdr.w, maxes);
     cb_collect_maxes(tab->dyn.w, maxes);
@@ -231,8 +229,20 @@ void cb_on_copy_l2(GSimpleAction *action, GVariant *var, void *data) {
     arr[n] = cb_get_text(tab->info.w, cb, DATA_AT_LEVEL1, NULL);  if (arr[n]) n++;
     if (!n) return;
     char *text = g_strjoinv("\n", arr);
-    for (int i = 0; i < n_cbl2_arr; i++) g_free(arr[i]);
+    for (int i = 0, len = G_N_ELEMENTS(arr); i < len; i++) g_free(arr[i]);
     if (text) { gdk_clipboard_set_text(cb, text); g_free(text); }
+  }
+}
+
+static void cb_selfn_all(GtkWidget* list[], int len, void (*fn)(GtkListBox*)) {
+  for (int i = 0; i < len; i++) if (GTK_IS_LIST_BOX(list[i])) fn(GTK_LIST_BOX(list[i]));
+}
+
+void cb_tab_unsel(t_tab *tab) {
+  if (tab && tab->sel) {
+    tab->sel = false;
+    GtkWidget* list[] = {tab->hdr.w, tab->dyn.w, tab->info.w};
+    cb_selfn_all(list, G_N_ELEMENTS(list), gtk_list_box_unselect_all);
   }
 }
 
@@ -241,14 +251,8 @@ void cb_on_sall(GSimpleAction *action, GVariant *var, void *data) {
   if (!tab || !GTK_IS_LIST_BOX(tab->dyn.w)) return;
   VERBOSE("%s action %s", tab->name, cb_menu_label(tab->sel));
   GtkWidget* list[] = {tab->hdr.w, tab->dyn.w, tab->info.w};
-  static int n_cbsa_arr = G_N_ELEMENTS(list);
   tab->sel = any_list_sel(tab);
-  if (tab->sel) {
-    for (int i = 0; i < n_cbsa_arr; i++)
-      if (GTK_IS_LIST_BOX(list[i])) gtk_list_box_unselect_all(GTK_LIST_BOX(list[i]));
-  } else {
-    for (int i = 0; i < n_cbsa_arr; i++)
-      if (GTK_IS_LIST_BOX(list[i])) gtk_list_box_select_all(GTK_LIST_BOX(list[i]));
-  }
+  cb_selfn_all(list, G_N_ELEMENTS(list),
+    tab->sel ? gtk_list_box_unselect_all : gtk_list_box_select_all);
 }
 

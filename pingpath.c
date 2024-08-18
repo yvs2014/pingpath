@@ -11,6 +11,7 @@
 #include "ui/style.h"
 #include "ui/appbar.h"
 #include "ui/notifier.h"
+#include "ui/clipboard.h"
 #include "tabs/ping.h"
 #include "tabs/log.h"
 #include "draw_rel.h"
@@ -23,7 +24,12 @@
 static int exit_code = EXIT_SUCCESS;
 static GtkWidget *currtabref, *tabrefs[TAB_NDX_MAX];
 
-static void on_win_destroy(GtkWidget *widget, void *unused) { atquit = true; }
+static gboolean on_win_close(GtkWindow *window, void *unused) {
+  cb_tab_unsel(nb_tabs[TAB_PING_NDX]);
+  cb_tab_unsel(nb_tabs[TAB_LOG_NDX]);
+  atquit = true;
+  return false;
+}
 
 static void on_tab_switch(GtkNotebook *nb, GtkWidget *tab, unsigned ndx, void *unused) {
   tab_dependent(tab);
@@ -82,7 +88,7 @@ static void app_cb(GtkApplication* app, void *unused) {
   tab_dependent(curr ? curr : nb_tabs[activetab]->tab.w);
   gtk_window_set_child(GTK_WINDOW(win), over);
   //
-  g_signal_connect(win, EV_DESTROY, G_CALLBACK(on_win_destroy), NULL);
+  g_signal_connect(win, EV_CLOSEQ, G_CALLBACK(on_win_close), NULL);
   gtk_window_present(GTK_WINDOW(win));
   { char *ver; // log runtime versions
     LOG("%c%s: " VERSION, g_ascii_toupper(APPNAME[0]), &(APPNAME[1]));
