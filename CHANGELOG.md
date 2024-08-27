@@ -1,3 +1,6 @@
+## 0.3.19
+- snap related: add git versioning and reduce dist size
+
 ## 0.3.18
 - free selection at exit
 

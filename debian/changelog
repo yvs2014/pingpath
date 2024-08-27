@@ -1,3 +1,9 @@
+pingpath (0.3.19) mantic noble; urgency=low
+
+  * snap related: add git versioning and reduce dist size
+
+ -- yvs <VSYakovetsky@gmail.com>  Tue, 27 Aug 2024 23:01:57 +0300
+
 pingpath (0.3.18) mantic noble; urgency=low
 
   * free selection at exit

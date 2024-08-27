@@ -1,7 +1,9 @@
 
 name: pingpath
 base: core24
-version: 0.3.18
+version: 0.3
+adopt-info: pingpath
+icon: assets/icons/pingpath.svg
 summary: ping wrapper for network diagnostic
 description: |
   Network diagnostic tool based on parsing iputils 'ping' output with functionality of 'traceroute'.
@@ -18,6 +20,7 @@ apps:
   pingpath:  # with 3D plots and 2D graphs
     extensions: [gnome]
     command: usr/bin/pingpath
+    desktop: usr/share/applications/net.tools.pingpath.desktop
     plugs:
       - network
       - network-observe # for system 'ping' tool
@@ -25,6 +28,7 @@ apps:
   pingpath2: # with 2D graphs
     extensions: [gnome]
     command: usr/bin/pingpath2
+    desktop: usr/share/applications/net.tools.pingpath2.desktop
     plugs:
       - network
       - network-observe # for system 'ping' tool
@@ -35,7 +39,15 @@ parts:
     plugin: make
 #    source: .
     source: https://github.com/yvs2014/pingpath.git
+    override-pull: |
+      craftctl default
+      craftctl set version="$(craftctl get version).$(git rev-list --count d3da356..HEAD)"
+      _ICODIR="/usr/share/icons/hicolor/scalable/apps"
+      _SEDEXP="s|Icon=pingpath|Icon=$_ICODIR/pingpath.svg|"
+      sed -i "$_SEDEXP" assets/pingpath.desktop
+      sed -i "$_SEDEXP" assets/pingpath2.desktop
     build-packages:
+      - git
       - build-essential
       - pkgconf
       - libgl-dev
@@ -43,12 +55,12 @@ parts:
       - libcglm-dev
     build-environment:
       - PREFIX: /usr
-    stage-packages:
-      - iputils-ping
     prime:
       - usr/bin/pingpath
       - usr/bin/pingpath2
       - usr/share/man/man1/pingpath.1.gz
       - usr/share/doc/pingpath/examples/pingpath.conf
+      - usr/share/applications/net.tools.pingpath.desktop
+      - usr/share/applications/net.tools.pingpath2.desktop
       - usr/share/icons/hicolor/scalable/apps/pingpath.svg
 
