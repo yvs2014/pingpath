@@ -2,7 +2,7 @@
 # rpmbuild -ba pingpath.spec
 
 %define gtag d3da356
-%define subversion %(echo "$(git rev-list --count %{gtag}...HEAD)_$(git rev-parse --short HEAD)")
+%define subversion %(echo "$(git rev-list --count %{gtag}..HEAD)_$(git rev-parse --short HEAD)")
 
 Name:       pingpath
 Version:    0.3.%{subversion}

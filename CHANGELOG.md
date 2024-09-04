@@ -1,3 +1,6 @@
+## 0.3.20
+- ipv6: add ':' to allowed characters
+
 ## 0.3.19
 - snap related: add git versioning and reduce dist size
 

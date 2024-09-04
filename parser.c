@@ -246,8 +246,8 @@ static char* parser_valid_int(const char *option, const char *str) {
 //
 gboolean parser_init(void) {
   multiline_regex = compile_regex("\\n", G_REGEX_MULTILINE);
-  hostname_char0_regex = compile_regex("^[" DIGIT_OR_LETTER "]", 0);
-  hostname_chars_regex = compile_regex("^[" DIGIT_OR_LETTER ".-]+$", 0);
+  hostname_char0_regex = compile_regex("^[" DIGIT_OR_LETTER ":]", 0);
+  hostname_chars_regex = compile_regex("^[" DIGIT_OR_LETTER ":.-]+$", 0);
   gboolean re = multiline_regex && hostname_char0_regex && hostname_chars_regex;
   for (int i = 0; i < G_N_ELEMENTS(regexes); i++) {
     regexes[i].rx.regex = compile_regex(regexes[i].rx.pattern, 0);

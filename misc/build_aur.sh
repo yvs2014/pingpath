@@ -7,6 +7,6 @@ export PKGDEST="$(pwd)/$AUR"
 mkdir -p "$AUR"
 cd archlinux
 makepkg -cf || :
-cd ..
+cd -
 ls -l "$AUR"
 

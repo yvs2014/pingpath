@@ -1,10 +1,10 @@
 # Maintainer: yvs <VSYakovetsky@gmail.com>
 
-_bver="0.3"
-_gtag="d3da356"
+_ver="0.3"
+_tag="d3da356"
 
 pkgname=pingpath
-pkgver="$_bver"
+pkgver="$_ver"
 pkgrel=1
 pkgdesc="ping wrapper to display path"
 arch=('x86_64' 'aarch64')
@@ -29,7 +29,7 @@ package() {
 
 pkgver() {
   cd "$pkgname"
-  printf "%s.r%s.%s" "$_bver" "$(git rev-list --count ${_gtag}..HEAD)" "$(git rev-parse --short HEAD)"
+  printf "%s.r%s.%s" "$_ver" "$(git rev-list --count ${_tag}..HEAD)" "$(git rev-parse --short HEAD)"
 }
 
 sha256sums=('SKIP')

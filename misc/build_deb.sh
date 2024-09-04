@@ -16,7 +16,7 @@ chk_cmd dh debhelper
 chk_cmd pkg-config "pkgconf (or pkg-config on some derives)"
 
 set -e
-command -v git >/dev/null && rev="$(git rev-list --count $GTAG...HEAD)" || rev=
+command -v git >/dev/null && rev="$(git rev-list --count $GTAG..HEAD)" || rev=
 [ -n "$rev" ] && vers="$BASEVER.$rev" || vers="$BASEVER"
 arch="$(dpkg-architecture -qDEB_BUILD_ARCH)"
 nra="$DDIR/${APPNAME}_${vers}_$arch"

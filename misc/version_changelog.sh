@@ -26,7 +26,7 @@ for m in "$@"; do
 done
 
 
-vers="$(git rev-list --count $TAG...HEAD)"
+vers="$(git rev-list --count $TAG..HEAD)"
 next=$(($vers + 1))
 vn="$VERPRFX.$next"
 [ -n "$BACKUP" ] && cp "$FILE" "/tmp/$(basename $FILE).bk"
