@@ -36,7 +36,10 @@ apps:
 
 parts:
   pingpath:
-    plugin: make
+    plugin: cmake
+    cmake-parameters:
+      - -DCMAKE_BUILD_TYPE=Release
+      - -DCMAKE_INSTALL_PREFIX=/usr
 #    source: .
     source: https://github.com/yvs2014/pingpath.git
     override-pull: |
@@ -53,8 +56,6 @@ parts:
       - libgl-dev
       - libepoxy-dev
       - libcglm-dev
-    build-environment:
-      - PREFIX: /usr
     prime:
       - usr/bin/pingpath
       - usr/bin/pingpath2

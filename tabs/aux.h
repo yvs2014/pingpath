@@ -4,8 +4,8 @@
 #include "common.h"
 
 typedef struct tab_widget { GtkWidget *w; const char *css, *col; } t_tab_widget;
-#define TW_CSS_COL(tabw, maker, cssclass, color) { tabw.css = cssclass; tabw.col = color; \
-  tabw.w = maker; g_return_val_if_fail(tabw.w, false); }
+#define TAB_ELEM_WITH(tabw, maker, cssclass, color, retval) { tabw.css = cssclass; tabw.col = color; \
+  tabw.w = maker; g_return_val_if_fail(tabw.w, retval); }
 
 typedef struct t_sa_desc {
   GSimpleAction* sa;

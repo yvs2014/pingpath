@@ -3,14 +3,9 @@
 *.a
 /.cache/
 /_build/
-/_build1/
 /_build2/
-/_build3/
-
 /pingpath
-/pingpath1
 /pingpath2
-/pingpath3
 
 .*.swp
 *~
@@ -19,6 +14,8 @@ compile_commands.json
 /.flatpak-builder/
 /debs/
 **/.debhelper
+**/*.debhelper.log
+/obj-*-linux-gnu/
 /aur/
 archlinux/pingpath/
 /rpms/

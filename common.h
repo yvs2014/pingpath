@@ -10,7 +10,7 @@
 #define MIN_GTK_RUNTIME(major, minor, micro) (!gtk_check_version(major, minor, micro))
 
 #define APPNAME "pingpath"
-#define VERSION "0.3.20"
+#define VERSION "0.3.21"
 
 #define X_RES 1024
 #define Y_RES 720
@@ -292,7 +292,7 @@
 #define ELEM_AVRG_TIP  "Average delay in milliseconds"
 #define ELEM_JTTR_HDR  "Jttr"
 #define ELEM_JTTR_HEADER "Jitter"
-#define ELEM_JTTR_TIP  "Ping jitter (variation in delay)"
+#define ELEM_JTTR_TIP  "Jitter (variation in delay)"
 
 #define GRLG_DASH_HDR    "Color"
 #define GRLG_DASH_HEADER "Color dash"

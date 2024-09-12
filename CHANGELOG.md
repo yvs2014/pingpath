@@ -1,3 +1,6 @@
+## 0.3.21
+- migrate from make to cmake
+
 ## 0.3.20
 - ipv6: add ':' to allowed characters
 

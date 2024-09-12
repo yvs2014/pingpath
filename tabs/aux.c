@@ -3,6 +3,8 @@
 #include "ui/style.h"
 #include "ui/notifier.h"
 
+#define TAB_ELEM_INIT(tabw, maker, cssclass, color) TAB_ELEM_WITH(tabw, maker, cssclass, color, false)
+
 static void tab_aux_reload_css(t_tab_widget *wd, const char *color) {
   if (wd->col)  gtk_widget_remove_css_class(wd->w, wd->col);
   wd->col = color; gtk_widget_add_css_class(wd->w, wd->col);
@@ -14,8 +16,8 @@ t_tab* nb_tabs[TAB_NDX_MAX]; // notebook tabs are reorderable
 
 gboolean basetab_init(t_tab *tab, GtkWidget* (*make_dyn)(void), GtkWidget* (*make_extra)(void)) {
   if (!tab || !make_dyn) return false;
-  TW_CSS_COL(tab->lab, gtk_box_new(GTK_ORIENTATION_VERTICAL, 2),      CSS_PAD, NULL);
-  TW_CSS_COL(tab->tab, gtk_box_new(GTK_ORIENTATION_VERTICAL, MARGIN), CSS_PAD, CSS_BGROUND);
+  TAB_ELEM_INIT(tab->lab, gtk_box_new(GTK_ORIENTATION_VERTICAL, 2),      CSS_PAD, NULL);
+  TAB_ELEM_INIT(tab->tab, gtk_box_new(GTK_ORIENTATION_VERTICAL, MARGIN), CSS_PAD, CSS_BGROUND);
   tab->dyn.w = make_dyn(); g_return_val_if_fail(tab->dyn.w, false);
   tab->dyn.col = CSS_BGROUND;
   GtkWidget *box = gtk_box_new(GTK_ORIENTATION_VERTICAL, MARGIN); g_return_val_if_fail(box, false);
@@ -30,8 +32,8 @@ gboolean basetab_init(t_tab *tab, GtkWidget* (*make_dyn)(void), GtkWidget* (*mak
 
 gboolean drawtab_init(t_tab *tab, const char *bg, GSList *layers, int ndx) {
   if (!tab || !layers) return false;
-  TW_CSS_COL(tab->lab, gtk_box_new(GTK_ORIENTATION_VERTICAL, 2), CSS_PAD, NULL);
-  TW_CSS_COL(tab->dyn, gtk_box_new(GTK_ORIENTATION_VERTICAL, 0), NULL,    bg);
+  TAB_ELEM_INIT(tab->lab, gtk_box_new(GTK_ORIENTATION_VERTICAL, 2), CSS_PAD, NULL);
+  TAB_ELEM_INIT(tab->dyn, gtk_box_new(GTK_ORIENTATION_VERTICAL, 0), NULL,    bg);
   // add overlay
   GtkWidget *over = gtk_overlay_new(); g_return_val_if_fail(over, false);
   for (GSList *l = layers; l; l = l ->next)
@@ -80,4 +82,6 @@ void tab_color(t_tab *tab) {
 void tab_reload_theme(void) {
   for (int i = 0; i < G_N_ELEMENTS(nb_tabs); i++) if (nb_tabs[i]) tab_color(nb_tabs[i]);
 }
+
+#undef TAB_ELEM_INIT
 

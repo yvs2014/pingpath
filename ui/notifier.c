@@ -30,6 +30,8 @@ typedef struct notifier {
   int x, y;
 #ifdef WITH_DND
   int dx, dy;
+#endif
+#ifdef WITH_PLOT
   gboolean onright;
 #endif
   void* const content; int content_n;
@@ -100,7 +102,9 @@ static gboolean nt_ext_pos_cb(GtkOverlay *unused, GtkWidget *widget, GdkRectangl
     int w = 0;
     gtk_widget_measure(widget, GTK_ORIENTATION_HORIZONTAL, -1, NULL, &w,   NULL, NULL);
     gtk_widget_measure(widget, GTK_ORIENTATION_VERTICAL,   -1, NULL, NULL, NULL, NULL);
+#ifdef WITH_PLOT
     if (nt->onright/*once*/ && w) { nt->x = r->width - w - nt->x; nt->onright = false; }
+#endif
     r->x = nt->x; r->y = nt->y;
   }
   return re;

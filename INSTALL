@@ -1,0 +1,17 @@
+
+Basic Installation
+------------------
+
+preferred: cmake
+
+1) make
+make
+#sudo make install
+
+2) cmake
+mkdir _build
+cd _build
+cmake ..
+cmake --build .
+#sudo cmake --install . --strip
+

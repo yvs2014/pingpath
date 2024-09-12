@@ -11,7 +11,7 @@ URL:        https://github.com/yvs2014/%{name}
 Source0:    %{name}-%{version}.tar.gz
 
 Requires: iputils
-BuildRequires: make, pkgconf, gtk4-devel, json-glib-devel, libglvnd-devel, libepoxy-devel, cglm-devel
+BuildRequires: cmake, pkgconf, gtk4-devel, json-glib-devel, libglvnd-devel, libepoxy-devel, cglm-devel
 BuildRequires: (gcc or clang)
 %if 0%{?fedora}
 BuildRequires: glibc-langpack-en
@@ -33,12 +33,11 @@ Written using GTK4 framework.
 %setup -q
 
 %build
-cd %{srcdir}
-CFLAGS="${CFLAGS} -fPIE" LDFLAGS="${LDFLAGS} -pie" PREFIX=%{prefix} make
+%cmake
+%cmake_build
 
 %install
-cd %{srcdir}
-PREFIX=%{prefix} DESTDIR=%{buildroot} make install
+%cmake_install
 
 %files
 %defattr(-,root,root,-)
@@ -51,7 +50,6 @@ PREFIX=%{prefix} DESTDIR=%{buildroot} make install
 %{datdir}/icons/hicolor/scalable/apps/%{name}.svg
 %{docdir}/examples/%{name}.conf
 %{mandir}/%{name}.1.gz
-%{mandir}/%{name}2.1.gz
 
 %changelog
 # autofill

@@ -1,3 +1,9 @@
+pingpath (0.3.21) mantic noble; urgency=low
+
+  * migrate from make to cmake
+
+ -- yvs <VSYakovetsky@gmail.com>  Fri, 13 Sep 2024 00:13:47 +0300
+
 pingpath (0.3.20) mantic noble; urgency=low
 
   * ipv6: add ':' to allowed characters

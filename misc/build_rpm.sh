@@ -1,12 +1,12 @@
 :
 
 set -e
-RPM=rpms
-mkdir -p "$RPM"
-RPMDEST="$(pwd)/$RPM"
 
-cd rpmlinux
-rpmbuild -ba --define "_rpmdir $RPMDEST" pingpath.spec || :
+SRCDIR="$(cd $(dirname $0)/..; pwd)"
+RPMDIR="$SRCDIR/rpms"
+
+cd "$SRCDIR/rpmlinux"
+rpmbuild -ba --define "_sourcedir $SRCDIR" --define "_rpmdir $RPMDIR" pingpath.spec || :
 cd ..
 
 #ls -lR "$RPM"
