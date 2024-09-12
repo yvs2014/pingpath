@@ -26,8 +26,8 @@ Written using GTK4 framework.
 %define bindir %{prefix}/bin
 %define datdir %{prefix}/share
 %define dskdir %{datdir}/applications
-%define docdir %{datdir}/doc/%{name}
-%define mandir %{datdir}/man/man1
+%define docdir %{_docdir}/%{name}
+%define mandir %{_mandir}/man1
 
 %prep
 %setup -q

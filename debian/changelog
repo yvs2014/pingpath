@@ -1,3 +1,9 @@
+pingpath (0.3.22) mantic noble; urgency=low
+
+  * OBS: docdir fix
+
+ -- yvs <VSYakovetsky@gmail.com>  Fri, 13 Sep 2024 00:54:55 +0300
+
 pingpath (0.3.21) mantic noble; urgency=low
 
   * migrate from make to cmake

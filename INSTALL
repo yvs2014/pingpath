@@ -9,9 +9,7 @@ make
 #sudo make install
 
 2) cmake
-mkdir _build
-cd _build
-cmake ..
-cmake --build .
-#sudo cmake --install . --strip
+cmake -B _build -S $(pwd)
+cmake --build _build
+#sudo cmake --install _build --strip
 

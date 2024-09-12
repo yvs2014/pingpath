@@ -1,3 +1,6 @@
+## 0.3.22
+- OBS: docdir fix
+
 ## 0.3.21
 - migrate from make to cmake
 
