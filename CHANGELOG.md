@@ -1,3 +1,6 @@
+## 0.3.23
+- tuning up cmake builds
+
 ## 0.3.22
 - OBS: docdir fix
 

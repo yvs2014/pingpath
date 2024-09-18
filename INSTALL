@@ -1,8 +1,8 @@
 
-Basic Installation
+Basic Build
 ------------------
 
-preferred: cmake
+It can be built with make or cmake (preferred)
 
 1) make
 make
@@ -12,4 +12,13 @@ make
 cmake -B _build -S $(pwd)
 cmake --build _build
 #sudo cmake --install _build --strip
+
+Package Templates
+------------------
+
+Templates are located in
+debian/
+rpmlinux/
+archlinux/
+snap/
 

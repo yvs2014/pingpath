@@ -26,11 +26,15 @@ Written using GTK4 framework.
 %define bindir %{prefix}/bin
 %define datdir %{prefix}/share
 %define dskdir %{datdir}/applications
-%define docdir %{_docdir}/%{name}
 %define mandir %{_mandir}/man1
+%if 0%{?suse_version} == 1500 && 0%{?sle_version} < 150600
+%define docdir %{datdir}/doc/%{name}
+%else
+%define docdir %{_docdir}/%{name}
+%endif
 
 %prep
-%setup -q
+%autosetup
 
 %build
 %cmake
@@ -49,7 +53,7 @@ Written using GTK4 framework.
 %{dskdir}/net.tools.%{name}2.desktop
 %{datdir}/icons/hicolor/scalable/apps/%{name}.svg
 %{docdir}/examples/%{name}.conf
-%{mandir}/%{name}.1.gz
+%{mandir}/%{name}.1*
 
 %changelog
 # autofill

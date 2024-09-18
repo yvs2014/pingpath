@@ -108,8 +108,6 @@ install: $(NAME) $(NAME2)
 	install -m 755 -s $(NAME) $(BASEDIR)/bin/
 	install -m 755 -s $(NAME2) $(BASEDIR)/bin/
 	install -m 644 $(NAME).1 $(MANDIR)/
-	gzip -f $(MANDIR)/$(NAME).1
-	ln -srf $(MANDIR)/$(NAME).1.gz $(MANDIR)/$(NAME2).1.gz
 	install -m 644 -T $(CONF_SRC) $(SMPLDIR)/$(CONF_DST)
 	install -m 644 -T $(DESC_SRC) $(DSCDIR)/$(DESC_DST)
 	install -m 644 -T $(DESC2_SRC) $(DSCDIR)/$(DESC2_DST)

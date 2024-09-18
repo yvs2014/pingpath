@@ -59,7 +59,7 @@ parts:
     prime:
       - usr/bin/pingpath
       - usr/bin/pingpath2
-      - usr/share/man/man1/pingpath.1.gz
+      - usr/share/man/man1/pingpath.1*
       - usr/share/doc/pingpath/examples/pingpath.conf
       - usr/share/applications/net.tools.pingpath.desktop
       - usr/share/applications/net.tools.pingpath2.desktop

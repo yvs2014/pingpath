@@ -2,10 +2,10 @@
 # rpmbuild -ba pingpath.spec
 
 %define gtag d3da356
-%define subversion .%(echo "$(git rev-list --count %{gtag}..HEAD)_$(git rev-parse --short HEAD)")
+%define gver .%(echo "$(git rev-list --count %{gtag}..HEAD)_$(git rev-parse --short HEAD)")
 
 Name:       pingpath
-Version:    0.3%{subversion}
+Version:    0.3%{gver}
 Release:    1
 Summary:    'ping' wrapper to display path
 License:    GPL-2.0-or-later
@@ -25,19 +25,21 @@ Written using GTK4 framework.
 %define bindir %{prefix}/bin
 %define datdir %{prefix}/share
 %define dskdir %{datdir}/applications
-%define docdir %{datdir}/doc/%{name}
-%define mandir %{datdir}/man/man1
+%define docdir %{_docdir}/%{name}
+%define mandir %{_mandir}/man1
 
 %prep
 rm -rf %{srcdir}
-git clone --depth=1 https://github.com/yvs2014/%{name}
-#cp -ar %{_sourcedir}/* %{_topdir}/BUILD/ # local build
+git clone https://github.com/yvs2014/%{name}
+#cp -ar %{_sourcedir}/* %{_topdir}/BUILD/ # local test
 
 %build
+cd %{srcdir}
 %cmake
 %cmake_build
 
 %install
+cd %{srcdir}
 %cmake_install
 
 %files
@@ -50,8 +52,8 @@ git clone --depth=1 https://github.com/yvs2014/%{name}
 %{dskdir}/net.tools.%{name}2.desktop
 %{datdir}/icons/hicolor/scalable/apps/%{name}.svg
 %{docdir}/examples/%{name}.conf
-%{mandir}/%{name}.1.gz
+%{mandir}/%{name}.1*
 
 %changelog
-%autochangelog
+# autofill
 

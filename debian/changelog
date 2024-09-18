@@ -1,3 +1,9 @@
+pingpath (0.3.23) mantic noble; urgency=low
+
+  * tuning up cmake builds
+
+ -- yvs <VSYakovetsky@gmail.com>  Thu, 19 Sep 2024 02:08:46 +0300
+
 pingpath (0.3.22) mantic noble; urgency=low
 
   * OBS: docdir fix
