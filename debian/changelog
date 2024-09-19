@@ -1,3 +1,11 @@
+pingpath (0.3.24) mantic noble; urgency=low
+
+  * add cmake PLOT option
+
+  * simplify CMakeLists.txt a bit
+
+ -- yvs <VSYakovetsky@gmail.com>  Thu, 19 Sep 2024 18:41:44 +0300
+
 pingpath (0.3.23) mantic noble; urgency=low
 
   * tuning up cmake builds

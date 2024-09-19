@@ -1,3 +1,7 @@
+## 0.3.24
+- add cmake PLOT option
+- simplify CMakeLists.txt a bit
+
 ## 0.3.23
 - tuning up cmake builds
 

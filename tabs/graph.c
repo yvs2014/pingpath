@@ -1,4 +1,6 @@
 
+#include <math.h>
+
 #include "graph.h"
 #include "series.h"
 #include "pinger.h"

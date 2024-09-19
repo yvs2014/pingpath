@@ -1,8 +1,9 @@
 
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.12)
 project(pingpath C)
 
 find_package(PkgConfig REQUIRED)
+include(CheckLibraryExists)
 include(GNUInstallDirs)
 
 #set(CMAKE_C_STANDARD 23) # for compat tests
@@ -12,61 +13,74 @@ set(MAN_PAGE "${PROJECT_NAME}.1")
 set(MAN_PATH "${CMAKE_BINARY_DIR}/man1")
 set(MANUAL "${MAN_PATH}/${MAN_PAGE}")
 
-SET(EXECS "${PROJECT_NAME}2" "${PROJECT_NAME}")
-SET(SRC_C "${PROJECT_NAME}.c" common.c
+set(SRCS "${PROJECT_NAME}.c" common.c
   pinger.c parser.c stat.c series.c dns.c whois.c cli.c
-  ui/style.c ui/appbar.c ui/action.c ui/option.c
-  ui/clipboard.c ui/notifier.c
+  ui/style.c ui/appbar.c ui/action.c ui/option.c ui/clipboard.c ui/notifier.c
   tabs/aux.c tabs/ping.c tabs/graph.c tabs/log.c)
-SET(SRC3D_C tabs/plot.c tabs/plot_aux.c tabs/plot_pango.c)
 
-# mandatory: GTK4
+# mandatory
+add_compile_options("-Wall")
+check_library_exists(c sqrt "${CMAKE_LIBRARY_PATH}" HAVE_SQRT_IN_C)
+if(NOT HAVE_SQRT_IN_C)
+  check_library_exists(m sqrt "${CMAKE_LIBRARY_PATH}" HAVE_SQRT_IN_M)
+  if(NOT HAVE_SQRT_IN_M)
+    message(FATAL_ERROR "No suitable math found")
+  endif()
+  link_libraries("-lm")
+endif()
 pkg_check_modules(GTK4 REQUIRED IMPORTED_TARGET gtk4)
+link_libraries(PkgConfig::GTK4)
 
 # optional: DND (default ON)
 option(DND "DND support" ON)
+if(DND)
+  add_compile_options("-DWITH_DND")
+endif()
 
 # optional: JSON (default ON)
 option(JSON "JSON support in recap mode (summary at exit)" ON)
 if(JSON)
+  add_compile_options("-DWITH_JSON")
   pkg_check_modules(JSON REQUIRED IMPORTED_TARGET json-glib-1.0)
+  link_libraries(PkgConfig::JSON)
 endif()
 
-# build binaries
-foreach(PP_NAME ${EXECS})
-  set(PP_SRC ${SRC_C})
-  if(PP_NAME STREQUAL "${PROJECT_NAME}")
-    list(APPEND PP_SRC ${SRC3D_C})
-  endif()
-  add_executable("${PP_NAME}" ${PP_SRC})
+add_executable("${PROJECT_NAME}2" ${SRCS})
+install(TARGETS "${PROJECT_NAME}2" DESTINATION "${CMAKE_INSTALL_BINDIR}")
+install(FILES "assets/${PROJECT_NAME}.desktop" RENAME "net.tools.${PROJECT_NAME}2.desktop" DESTINATION "${CMAKE_INSTALL_DATADIR}/applications")
 
-  target_compile_options("${PP_NAME}" PRIVATE -Wall)
-  if(PP_NAME STREQUAL "${PROJECT_NAME}")
-    pkg_check_modules(GL REQUIRED IMPORTED_TARGET gl)
-    target_link_libraries("${PP_NAME}" PRIVATE PkgConfig::GL)
-    pkg_check_modules(CGLM REQUIRED IMPORTED_TARGET cglm)
-    target_link_libraries("${PP_NAME}" PRIVATE PkgConfig::CGLM)
-    pkg_check_modules(EPOXY REQUIRED IMPORTED_TARGET epoxy)
-    target_link_libraries("${PP_NAME}" PRIVATE PkgConfig::EPOXY)
-    target_compile_options("${PP_NAME}" PRIVATE -DWITH_PLOT)
-  endif()
-  target_link_libraries("${PP_NAME}" PRIVATE -lm)
-  target_link_libraries("${PP_NAME}" PRIVATE PkgConfig::GTK4)
-  if(JSON)
-    target_compile_options("${PP_NAME}" PRIVATE -DWITH_JSON)
-    target_link_libraries("${PP_NAME}" PRIVATE PkgConfig::JSON)
-  endif()
-  if(DND)
-    target_compile_options("${PP_NAME}" PRIVATE -DWITH_DND)
-  endif()
-  install(TARGETS "${PP_NAME}" DESTINATION "${CMAKE_INSTALL_BINDIR}")
-  install(FILES "assets/${PP_NAME}.desktop" RENAME "net.tools.${PP_NAME}.desktop" DESTINATION "${CMAKE_INSTALL_DATADIR}/applications")
-endforeach(PP_NAME ${EXECS})
+# optional: PLOT (default ON)
+option(PLOT "PLOT With 3D plots" ON)
+if(PLOT)
+  set(PP_SRC ${SRCS})
+  set(SRC3D tabs/plot.c tabs/plot_aux.c tabs/plot_pango.c)
+  list(APPEND PP_SRC ${SRC3D})
+  add_executable("${PROJECT_NAME}" ${PP_SRC})
+  pkg_check_modules(GL REQUIRED IMPORTED_TARGET gl)
+  target_link_libraries("${PROJECT_NAME}" PRIVATE PkgConfig::GL)
+  pkg_check_modules(CGLM REQUIRED IMPORTED_TARGET cglm)
+  target_link_libraries("${PROJECT_NAME}" PRIVATE PkgConfig::CGLM)
+  pkg_check_modules(EPOXY REQUIRED IMPORTED_TARGET epoxy)
+  target_link_libraries("${PROJECT_NAME}" PRIVATE PkgConfig::EPOXY)
+  target_compile_options("${PROJECT_NAME}" PRIVATE -DWITH_PLOT)
+  install(TARGETS "${PROJECT_NAME}" DESTINATION "${CMAKE_INSTALL_BINDIR}")
+  install(FILES "assets/${PROJECT_NAME}.desktop" RENAME "net.tools.${PROJECT_NAME}.desktop" DESTINATION "${CMAKE_INSTALL_DATADIR}/applications")
+endif()
+
+install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/assets/icons/${PROJECT_NAME}.svg" DESTINATION "${CMAKE_INSTALL_DATADIR}/icons/hicolor/scalable/apps")
+install(FILES "${PROJECT_NAME}.conf.sample" RENAME "${PROJECT_NAME}.conf" DESTINATION "${CMAKE_INSTALL_DOCDIR}/examples")
 
 file(MAKE_DIRECTORY "${MAN_PATH}")
 configure_file("${MAN_PAGE}" "${MANUAL}" COPYONLY)
-install(DIRECTORY "${MAN_PATH}" TYPE MAN)
+if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.14.0")
+  install(DIRECTORY "${MAN_PATH}" TYPE MAN)
+else()
+  install(DIRECTORY "${MAN_PATH}" DESTINATION ${CMAKE_INSTALL_MANDIR})
+endif()
 
-install(FILES "${PROJECT_NAME}.conf.sample" RENAME "${PROJECT_NAME}.conf" DESTINATION "${CMAKE_INSTALL_DOCDIR}/examples")
-install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/assets/icons/${PROJECT_NAME}.svg" DESTINATION "${CMAKE_INSTALL_DATADIR}/icons/hicolor/scalable/apps")
+message("")
+message(STATUS "DND  ${DND}\t: DND support")
+message(STATUS "JSON ${JSON}\t: JSON support")
+message(STATUS "PLOT ${PLOT}\t: 3D plots")
+message("")
 
