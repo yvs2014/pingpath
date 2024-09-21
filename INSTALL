@@ -2,7 +2,7 @@
 Basic Build
 ------------------
 
-It can be built with make or cmake (preferred)
+It can be built with make or cmake (preferable)
 
 1) make
 make

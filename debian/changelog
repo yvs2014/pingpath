@@ -1,3 +1,9 @@
+pingpath (0.3.25) mantic noble; urgency=low
+
+  * plot: release gl_area before exit (4.16 workaround)
+
+ -- yvs <VSYakovetsky@gmail.com>  Sat, 21 Sep 2024 16:39:23 +0300
+
 pingpath (0.3.24) mantic noble; urgency=low
 
   * add cmake PLOT option

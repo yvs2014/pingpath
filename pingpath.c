@@ -23,10 +23,20 @@
 
 static int exit_code = EXIT_SUCCESS;
 static GtkWidget *currtabref, *tabrefs[TAB_NDX_MAX];
+#ifdef WITH_PLOT
+static GtkNotebook *nb_ref;
+#endif
 
 static gboolean on_win_close(GtkWindow *window, void *unused) {
   cb_tab_unsel(nb_tabs[TAB_PING_NDX]);
   cb_tab_unsel(nb_tabs[TAB_LOG_NDX]);
+#ifdef WITH_PLOT
+  if (GTK_IS_NOTEBOOK(nb_ref)) { // 4.16 workaround releasing gl_area
+    int nth = gtk_notebook_get_current_page(nb_ref);
+    if (gtk_notebook_get_nth_page(nb_ref, nth) == tabrefs[TAB_PLOT_NDX])
+      gtk_notebook_remove_page(nb_ref, nth);
+  }
+#endif
   atquit = true;
   return false;
 }
@@ -58,6 +68,9 @@ static void app_cb(GtkApplication* app, void *unused) {
   if (!appbar_init(app, win)) APPQUIT("%s", "appbar");
   GtkWidget *nb = gtk_notebook_new();
   if (!GTK_IS_NOTEBOOK(nb)) APPQUIT("%s", "notebook");
+#ifdef WITH_PLOT
+  nb_ref = GTK_NOTEBOOK(nb);
+#endif
   if (style_loaded) gtk_widget_add_css_class(nb, CSS_BGROUND);
   gtk_notebook_set_tab_pos(GTK_NOTEBOOK(nb), GTK_POS_BOTTOM);
   nb_tabs[TAB_PING_NDX] = pingtab_init(win);
@@ -127,7 +140,9 @@ int main(int argc, char **argv) {
   putenv("LANG=C.UTF-8"); // parser: disable ping's i18n output
   if (!getenv("GSK_RENDERER")) { // to avoid ngl-n-vulkan issues in GTK 4.14/4.15
     int major = gtk_get_major_version(), minor = gtk_get_minor_version();
-    if ((major == 4) && ((minor == 14) || (minor == 15))) putenv("GSK_RENDERER=gl"); }
+    if ((major == 4) && (
+      (minor == 14) || (minor == 15) || (minor == 16)
+    )) putenv("GSK_RENDERER=gl"); }
   g_return_val_if_fail(parser_init(), EX_SOFTWARE);
   { gboolean valid_cli_options = cli_init(&argc, &argv);
     g_return_val_if_fail(valid_cli_options, EX_USAGE); }

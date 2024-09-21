@@ -1,3 +1,6 @@
+## 0.3.25
+- plot: release gl_area before exit (4.16 workaround)
+
 ## 0.3.24
 - add cmake PLOT option
 - simplify CMakeLists.txt a bit
