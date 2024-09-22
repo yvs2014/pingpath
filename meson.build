@@ -6,9 +6,8 @@ project('pingpath', 'c',
   ],
   meson_version : '>= 0.53',
   license: 'GPL-2.0-or-later',
-  version: '.'.join(['0', '3', run_command(
-    'sh', '-c', 'git rev-list --count d3da356..HEAD || :', check: true)
-    .stdout().strip()
+  version: '.'.join(['0', '3', find_program('git', required : false).found() ?
+    run_command('git', 'rev-list', '--count', 'd3da356..HEAD', check: false).stdout().strip() : ''
   ]).strip('.'),
 )
 
@@ -59,14 +58,14 @@ if json
 endif
 
 datadir = get_option('datadir')
-deskdir = datadir + '/applications'
+deskdir = datadir / 'applications'
 rdns = 'net.tools.'
-asst = 'assets/'
+asst = 'assets'
 dotdsk = '.desktop'
 name2 = name + '2'
 desk2 = name2 + dotdsk
 executable(name2, srcs, dependencies: deps, c_args: cpps, install: true)
-install_data(asst + desk2, rename: rdns + desk2, install_dir: deskdir)
+install_data(asst / desk2, rename: rdns + desk2, install_dir: deskdir)
 
 # optional: PLOT (default ON)
 if plot
@@ -79,13 +78,12 @@ if plot
   deps += dependency('epoxy', required: true)
   executable(name, srcs, dependencies: deps, c_args: cpps, install: true)
   desk = name + dotdsk
-  install_data(asst + desk, rename: rdns + desk, install_dir: deskdir)
+  install_data(asst / desk, rename: rdns + desk, install_dir: deskdir)
 endif
 
-conf = name + '.conf'
-sample = '/doc/' + name + '/examples'
-icodir = '/icons/hicolor/scalable/apps'
 install_man(name + '.1')
-install_data(asst + '/icons/' + name + '.svg', install_dir: datadir + icodir)
-install_data(conf + '.sample', rename: conf,   install_dir: datadir + sample)
+install_data(asst / 'icons' / name + '.svg', install_dir: datadir / 'icons/hicolor/scalable/apps')
+conf = name + '.conf'
+docdir = get_option('docdir') != '' ? get_option('docdir') : datadir / 'doc'
+install_data(conf + '.sample', rename: conf, install_dir: docdir / name / 'examples')
 

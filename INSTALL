@@ -13,7 +13,7 @@ cmake -B _build -S $(pwd)
 cmake --build _build
 #sudo cmake --install _build
 
-2) meson
+3) meson
 meson setup _build
 meson compile -C _build
 #sudo meson install -C _build

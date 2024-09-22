@@ -1,3 +1,6 @@
+## 0.3.27
+- tuning up meson builds
+
 ## 0.3.26
 - migrate from cmake to meson
 

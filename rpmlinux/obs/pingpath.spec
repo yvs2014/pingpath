@@ -27,17 +27,15 @@ Written using GTK4 framework.
 %define datdir %{prefix}/share
 %define dskdir %{datdir}/applications
 %define mandir %{_mandir}/man1
-%if 0%{?suse_version} == 1500 && 0%{?sle_version} < 150600
-%define docdir %{datdir}/doc/%{name}
-%else
-%define docdir %{_docdir}/%{name}
-%endif
+%define docnam %{_docdir}/%{name}
+%define smpdir %{docnam}/examples
+%define rdns net.tools.%{name}
 
 %prep
 %autosetup
 
 %build
-%meson
+%meson -Ddocdir=%{_docdir}
 %meson_build
 
 %install
@@ -45,14 +43,14 @@ Written using GTK4 framework.
 
 %files
 %defattr(-,root,root,-)
-%dir %{docdir}
-%dir %{docdir}/examples
+%dir %{docnam}
+%dir %{smpdir}
 %{bindir}/%{name}
+%{dskdir}/%{rdns}.desktop
 %{bindir}/%{name}2
-%{dskdir}/net.tools.%{name}.desktop
-%{dskdir}/net.tools.%{name}2.desktop
+%{dskdir}/%{rdns}2.desktop
 %{datdir}/icons/hicolor/scalable/apps/%{name}.svg
-%{docdir}/examples/%{name}.conf
+%{smpdir}/%{name}.conf
 %{mandir}/%{name}.1*
 
 %changelog

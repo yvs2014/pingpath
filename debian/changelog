@@ -1,3 +1,9 @@
+pingpath (0.3.27) mantic noble; urgency=low
+
+  * tuning up meson builds
+
+ -- yvs <VSYakovetsky@gmail.com>  Sun, 22 Sep 2024 23:48:11 +0300
+
 pingpath (0.3.26) mantic noble; urgency=low
 
   * migrate from cmake to meson
