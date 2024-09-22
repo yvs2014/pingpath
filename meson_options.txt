@@ -1,0 +1,3 @@
+option('DND',  type: 'boolean', value: true, description: 'Dran-n-Drop')
+option('JSON', type: 'boolean', value: true, description: 'Json for recap mode')
+option('PLOT', type: 'boolean', value: true, description: '3D plots')

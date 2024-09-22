@@ -13,7 +13,7 @@ Group:      Productivity/Networking/Other
 URL:        https://github.com/yvs2014/%{name}
 
 Requires: iputils
-BuildRequires: cmake, pkgconf, gtk4-devel, json-glib-devel, libglvnd-devel, libepoxy-devel, cglm-devel
+BuildRequires: meson, git, pkgconf, gtk4-devel, json-glib-devel, libglvnd-devel, libepoxy-devel, cglm-devel
 BuildRequires: (gcc or clang)
 
 %description
@@ -32,15 +32,16 @@ Written using GTK4 framework.
 rm -rf %{srcdir}
 git clone https://github.com/yvs2014/%{name}
 #cp -ar %{_sourcedir}/* %{_topdir}/BUILD/ # local test
+#cp %{_sourcedir}/meson* %{_topdir}/BUILD/%{name}/ # local test
 
 %build
 cd %{srcdir}
-%cmake
-%cmake_build
+%meson
+%meson_build
 
 %install
 cd %{srcdir}
-%cmake_install
+%meson_install
 
 %files
 %defattr(-,root,root,-)

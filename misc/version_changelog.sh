@@ -49,7 +49,7 @@ rm -f "$_tf"
 echo "Keep in mind:"
 echo "	git diff"
 echo "	git status"
-echo '	cmake -B _build -S $(pwd) && cmake --build _build && rm -rf _build'
+echo '	meson setup _build && meson compile -C _build && rm -rf _build'
 echo "	git add ."
 echo "	git commit $git_comments"
 echo "	git push"

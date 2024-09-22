@@ -45,9 +45,10 @@ if(JSON)
   link_libraries(PkgConfig::JSON)
 endif()
 
-add_executable("${PROJECT_NAME}2" ${SRCS})
-install(TARGETS "${PROJECT_NAME}2" DESTINATION "${CMAKE_INSTALL_BINDIR}")
-install(FILES "assets/${PROJECT_NAME}.desktop" RENAME "net.tools.${PROJECT_NAME}2.desktop" DESTINATION "${CMAKE_INSTALL_DATADIR}/applications")
+set(NAME2 "${PROJECT_NAME}2")
+add_executable("${NAME2}" ${SRCS})
+install(TARGETS "${NAME2}" DESTINATION "${CMAKE_INSTALL_BINDIR}")
+install(FILES "assets/${NAME2}.desktop" RENAME "net.tools.${PROJECT_NAME}2.desktop" DESTINATION "${CMAKE_INSTALL_DATADIR}/applications")
 
 # optional: PLOT (default ON)
 option(PLOT "PLOT With 3D plots" ON)

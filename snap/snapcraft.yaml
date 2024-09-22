@@ -36,10 +36,11 @@ apps:
 
 parts:
   pingpath:
-    plugin: cmake
-    cmake-parameters:
-      - -DCMAKE_BUILD_TYPE=Release
-      - -DCMAKE_INSTALL_PREFIX=/usr
+    plugin: meson
+    meson-parameters:
+      - --buildtype=release
+      - --prefix=/usr
+      - --strip
 #    source: .
     source: https://github.com/yvs2014/pingpath.git
     override-pull: |

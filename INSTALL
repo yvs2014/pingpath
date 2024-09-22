@@ -2,7 +2,7 @@
 Basic Build
 ------------------
 
-It can be built with make or cmake (preferable)
+It can be built with pure make (last resort), cmake, or meson (preferable)
 
 1) make
 make
@@ -11,7 +11,13 @@ make
 2) cmake
 cmake -B _build -S $(pwd)
 cmake --build _build
-#sudo cmake --install _build --strip
+#sudo cmake --install _build
+
+2) meson
+meson setup _build
+meson compile -C _build
+#sudo meson install -C _build
+
 
 Package Templates
 ------------------

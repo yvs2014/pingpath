@@ -1,3 +1,6 @@
+## 0.3.26
+- migrate from cmake to meson
+
 ## 0.3.25
 - plot: release gl_area before exit (4.16 workaround)
 

@@ -23,7 +23,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt update
-          sudo apt install -y dpkg-dev debhelper cmake pkg-config libgtk-4-dev libjson-glib-dev libgl-dev libepoxy-dev libcglm-dev
+          sudo apt install -y dpkg-dev debhelper meson git pkg-config libgtk-4-dev libjson-glib-dev libgl-dev libepoxy-dev libcglm-dev
       - name: Create .deb package
         run: |
           misc/build_deb.sh
