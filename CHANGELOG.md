@@ -1,3 +1,7 @@
+## 0.3.28
+- gtk4.16: follow default gsk_renderer
+- combine graceful exit workarounds
+
 ## 0.3.27
 - tuning up meson builds
 

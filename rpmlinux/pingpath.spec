@@ -22,11 +22,9 @@ Written using GTK4 framework.
 
 %define srcdir %{name}
 %define prefix /usr
-%define bindir %{prefix}/bin
 %define datdir %{prefix}/share
 %define dskdir %{datdir}/applications
 %define docdir %{_docdir}/%{name}
-%define mandir %{_mandir}/man1
 
 %prep
 rm -rf %{srcdir}
@@ -47,13 +45,13 @@ cd %{srcdir}
 %defattr(-,root,root,-)
 %dir %{docdir}
 %dir %{docdir}/examples
-%{bindir}/%{name}
-%{bindir}/%{name}2
+%{_bindir}/%{name}
+%{_bindir}/%{name}2
 %{dskdir}/net.tools.%{name}.desktop
 %{dskdir}/net.tools.%{name}2.desktop
 %{datdir}/icons/hicolor/scalable/apps/%{name}.svg
 %{docdir}/examples/%{name}.conf
-%{mandir}/%{name}.1*
+%{_mandir}/man1/%{name}.1*
 
 %changelog
 # autofill

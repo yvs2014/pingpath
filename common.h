@@ -1,7 +1,9 @@
 #ifndef COMMON_H
 #define COMMON_H
 
+#ifndef _GNU_SOURCE
 #define _GNU_SOURCE
+#endif
 #include <gtk/gtk.h>
 
 #if GTK_MAJOR_VERSION < 4
@@ -10,7 +12,7 @@
 #define MIN_GTK_RUNTIME(major, minor, micro) (!gtk_check_version(major, minor, micro))
 
 #define APPNAME "pingpath"
-#define VERSION "0.3.27"
+#define VERSION "0.3.28"
 
 #define X_RES 1024
 #define Y_RES 720

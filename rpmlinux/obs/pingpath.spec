@@ -21,12 +21,9 @@ BuildRequires: glibc-langpack-en
 Network diagnostic tool based on parsing ping output with some functionality of traceroute.
 Written using GTK4 framework.
 
-%define srcdir %{_sourcedir}/%{name}-%{version}
 %define prefix /usr
-%define bindir %{prefix}/bin
 %define datdir %{prefix}/share
 %define dskdir %{datdir}/applications
-%define mandir %{_mandir}/man1
 %define docnam %{_docdir}/%{name}
 %define smpdir %{docnam}/examples
 %define rdns net.tools.%{name}
@@ -45,13 +42,13 @@ Written using GTK4 framework.
 %defattr(-,root,root,-)
 %dir %{docnam}
 %dir %{smpdir}
-%{bindir}/%{name}
+%{_bindir}/%{name}
 %{dskdir}/%{rdns}.desktop
-%{bindir}/%{name}2
+%{_bindir}/%{name}2
 %{dskdir}/%{rdns}2.desktop
 %{datdir}/icons/hicolor/scalable/apps/%{name}.svg
 %{smpdir}/%{name}.conf
-%{mandir}/%{name}.1*
+%{_mandir}/man1/%{name}.1*
 
 %changelog
 # autofill

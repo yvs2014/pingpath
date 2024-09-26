@@ -4,9 +4,9 @@ project('pingpath', 'c',
     'warning_level=1', # -Wall
 #    'c_std=c23',      # compat test
   ],
-  meson_version : '>= 0.53',
+  meson_version: '>= 0.53',
   license: 'GPL-2.0-or-later',
-  version: '.'.join(['0', '3', find_program('git', required : false).found() ?
+  version: '.'.join(['0', '3', find_program('git', required: false).found() ?
     run_command('git', 'rev-list', '--count', 'd3da356..HEAD', check: false).stdout().strip() : ''
   ]).strip('.'),
 )
@@ -15,30 +15,30 @@ name = meson.project_name()
 dnd  = get_option('DND')
 json = get_option('JSON')
 plot = get_option('PLOT')
-summary({'DND' : dnd, 'JSON': json, 'PLOT': plot}, bool_yn: true)
+summary({'DND': dnd, 'JSON': json, 'PLOT': plot}, bool_yn: true)
 
 # sources
 srcs  = [name + '.c']
-srcs += ['common.c' ]
-srcs += ['pinger.c' ]
-srcs += ['parser.c' ]
-srcs += ['stat.c'   ]
-srcs += ['series.c' ]
-srcs += ['dns.c'    ]
-srcs += ['whois.c'  ]
-srcs += ['cli.c'    ]
+srcs += 'common.c'
+srcs += 'pinger.c'
+srcs += 'parser.c'
+srcs += 'stat.c'
+srcs += 'series.c'
+srcs += 'dns.c'
+srcs += 'whois.c'
+srcs += 'cli.c'
 ui = 'ui'
-srcs += [ui/ 'style.c'    ]
-srcs += [ui/ 'appbar.c'   ]
-srcs += [ui/ 'action.c'   ]
-srcs += [ui/ 'option.c'   ]
-srcs += [ui/ 'clipboard.c']
-srcs += [ui/ 'notifier.c' ]
+srcs += ui/ 'style.c'
+srcs += ui/ 'appbar.c'
+srcs += ui/ 'action.c'
+srcs += ui/ 'option.c'
+srcs += ui/ 'clipboard.c'
+srcs += ui/ 'notifier.c'
 tb = 'tabs'
-srcs += [tb/ 'aux.c'      ]
-srcs += [tb/ 'ping.c'     ]
-srcs += [tb/ 'graph.c'    ]
-srcs += [tb/ 'log.c'      ]
+srcs += tb/ 'aux.c'
+srcs += tb/ 'ping.c'
+srcs += tb/ 'graph.c'
+srcs += tb/ 'log.c'
 
 # dependencies
 cc    = meson.get_compiler('c')
@@ -48,12 +48,12 @@ cpps  = []
 
 # optional: DND (default ON)
 if dnd
-  cpps += ['-DWITH_DND=1']
+  cpps += '-DWITH_DND=1'
 endif
 
 # optional: JSON (default ON)
 if json
-  cpps += ['-DWITH_JSON=1']
+  cpps += '-DWITH_JSON=1'
   deps += dependency('json-glib-1.0', required: true)
 endif
 
@@ -69,10 +69,10 @@ install_data(asst / desk2, rename: rdns + desk2, install_dir: deskdir)
 
 # optional: PLOT (default ON)
 if plot
-  srcs += [tb/ 'plot.c'      ]
-  srcs += [tb/ 'plot_aux.c'  ]
-  srcs += [tb/ 'plot_pango.c']
-  cpps += ['-DWITH_PLOT=1']
+  srcs += tb/ 'plot.c'
+  srcs += tb/ 'plot_aux.c'
+  srcs += tb/ 'plot_pango.c'
+  cpps += '-DWITH_PLOT=1'
   deps += dependency('gl',    required: true)
   deps += dependency('cglm',  required: true)
   deps += dependency('epoxy', required: true)

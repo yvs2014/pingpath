@@ -28,14 +28,13 @@ static GtkNotebook *nb_ref;
 #endif
 
 static gboolean on_win_close(GtkWindow *window, void *unused) {
+  // workarounds to exit gracefully
   cb_tab_unsel(nb_tabs[TAB_PING_NDX]);
   cb_tab_unsel(nb_tabs[TAB_LOG_NDX]);
 #ifdef WITH_PLOT
-  if (GTK_IS_NOTEBOOK(nb_ref)) { // 4.16 workaround releasing gl_area
-    int nth = gtk_notebook_get_current_page(nb_ref);
-    if (gtk_notebook_get_nth_page(nb_ref, nth) == tabrefs[TAB_PLOT_NDX])
-      gtk_notebook_remove_page(nb_ref, nth);
-  }
+  if (GTK_IS_NOTEBOOK(nb_ref))
+    for (int i = gtk_notebook_get_n_pages(nb_ref) - 1; i >= 0; i--)
+      gtk_notebook_remove_page(nb_ref, i);
 #endif
   atquit = true;
   return false;
@@ -141,7 +140,7 @@ int main(int argc, char **argv) {
   if (!getenv("GSK_RENDERER")) { // to avoid ngl-n-vulkan issues in GTK 4.14/4.15
     int major = gtk_get_major_version(), minor = gtk_get_minor_version();
     if ((major == 4) && (
-      (minor == 14) || (minor == 15) || (minor == 16)
+      (minor == 14) || (minor == 15)
     )) putenv("GSK_RENDERER=gl"); }
   g_return_val_if_fail(parser_init(), EX_SOFTWARE);
   { gboolean valid_cli_options = cli_init(&argc, &argv);
