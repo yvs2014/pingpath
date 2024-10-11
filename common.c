@@ -316,12 +316,11 @@ GSList* list_add_nodup(GSList **list, void *data, GCompareFunc cmp, int max) {
 }
 
 GSList* list_add_ref(GSList **list, t_hop *hop, int ndx) {
+  if (!list) return NULL;
   t_ref *ref = ref_new(hop, ndx);
   if (!ref) return NULL;
-  if (list) {
-    GSList *elem = g_slist_find_custom(*list, ref, (GCompareFunc)ref_cmp);
-    if (elem) { g_free(ref); return elem; }
-  }
+  { GSList *elem = g_slist_find_custom(*list, ref, (GCompareFunc)ref_cmp);
+    if (elem) { g_free(ref); return elem; } }
   *list = g_slist_prepend(*list, ref);
   if (g_slist_length(*list) > REF_MAX)
     *list = g_slist_delete_link(*list, g_slist_last(*list));

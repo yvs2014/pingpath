@@ -1,3 +1,9 @@
+pingpath (0.3.29) mantic noble; urgency=low
+
+  * follow most static code analysis hints
+
+ -- yvs <VSYakovetsky@gmail.com>  Sat, 12 Oct 2024 01:42:27 +0300
+
 pingpath (0.3.28) mantic noble; urgency=low
 
   * gtk4.16: follow default gsk_renderer

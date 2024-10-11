@@ -22,11 +22,11 @@ typedef struct nt_leg {
 typedef struct ntcss { const char *def, *col; } t_ntcss;
 
 typedef struct notifier {
+  GtkWidget *box, *inbox, *reveal; t_ntcss css;
+  void* const content; int content_n;
   const int type;
-  GtkWidget *box, *inbox, *reveal;
   const gboolean autohide, dyncss;
   gboolean visible;
-  t_ntcss css;
   int x, y;
 #ifdef WITH_DND
   int dx, dy;
@@ -34,7 +34,6 @@ typedef struct notifier {
 #ifdef WITH_PLOT
   gboolean onright;
 #endif
-  void* const content; int content_n;
 } t_notifier;
 
 #ifdef WITH_PLOT

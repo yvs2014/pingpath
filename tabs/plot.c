@@ -499,14 +499,14 @@ static float plot_mark_shift(float chsz, float cw, int len, float pad, float cs)
   return cw * pad * cs - (1 - cs) * (chsz * len) / 2;
 }
 
-static void plot_draw_text(t_plot_res *res, const char *text, int len,
+static bool plot_draw_text(t_plot_res *res, const char *text, int len,
     const vec4 color, const vec2 crd, const vec2 shift, const vec2 pad, vec4 *rect) {
 #define CENTER_TEXT(ptr, a, b, c, d) { float dx = c / 2, dy = d / 2; \
   (ptr)[0] = a - dx; (ptr)[1] = b - dy; (ptr)[2] = a + dx; (ptr)[3] = b + dy; }
 #define MARKMAXLEN 64
-  if (!(len > 0) || !res || !text) return;
+  if (!(len > 0) || !res || !text) return false;
   GLuint vao = res->vo[VO_TEXT].vao, vbo = res->vo[VO_TEXT].vbo.id, typ = res->vo[VO_TEXT].vbo.typ;
-  if (!vao || !vbo || !typ) return;
+  if (!vao || !vbo || !typ) return false;
   glUniformMatrix4fv(res->text.vtr, 1, GL_FALSE, (float*)scaled);
   if (color) glUniform4fv(res->text.colo1, 1, color);
   glActiveTexture(GL_TEXTURE0);
@@ -520,6 +520,7 @@ static void plot_draw_text(t_plot_res *res, const char *text, int len,
     unsigned tid = char_table[(unsigned char)*p].tid;
     if (tid) plot_pango_drawtex(tid, vbo, typ, x, y, cw, ch);
   }
+  return true;
 #undef CENTER_TEXT
 #undef MARKMAXLEN
 }
@@ -580,7 +581,7 @@ static void glsl_draw_axis(t_plot_res *res, vec4 color, gboolean name_only, t_pl
     color, axis->at,     axis->shift, axis->pad,    rect)
   if (name_only) { PLOT_DRAW_TITLE(NULL); return; }
   vec4 trec; gboolean cached = axis->overlap.cached;
-  PLOT_DRAW_TITLE(cached ? NULL : &trec);
+  if (!PLOT_DRAW_TITLE(cached ? NULL : &trec)) return;
   int n = axis->crd_len;
   t_mark_text mark[n]; axis->fill(mark, n);
   gboolean* over = axis->overlap.over;
@@ -590,7 +591,7 @@ static void glsl_draw_axis(t_plot_res *res, vec4 color, gboolean name_only, t_pl
   } else { // cache overlapping
     int rno = axis->rno; gboolean first = true; vec4 prev = {0};
     for (int i = n - 1; i >= 0; i--) {
-      vec4 curr; PLOT_DRAW_MARK(&curr);
+      vec4 curr; if (!PLOT_DRAW_MARK(&curr)) continue;
       over[i] = plot_cache_overlapping(rno, curr, prev, trec, first);
       if (first && !over[i]) first = false;
     }

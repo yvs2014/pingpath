@@ -32,9 +32,10 @@ typedef struct ent_ndx {
 
 typedef struct ent_str {
   t_ent_ndx en;
-  int  *pint, idef; // int fields
-  char *pstr; int slen; const char *sdef; // str fields
   GtkWidget *box, *input;
+  char *pstr; // str fields
+  int  *pint; // int fields
+  const char *sdef; int slen, idef; // pstr,pint attrs
   const int len, width;
   const t_minmax range;
   char hint[ENT_BUFF_SIZE];

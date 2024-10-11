@@ -29,8 +29,6 @@ Written using GTK4 framework.
 %prep
 rm -rf %{srcdir}
 git clone https://github.com/yvs2014/%{name}
-#cp -ar %{_sourcedir}/* %{_topdir}/BUILD/ # local test
-#cp %{_sourcedir}/meson* %{_topdir}/BUILD/%{name}/ # local test
 
 %build
 cd %{srcdir}

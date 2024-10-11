@@ -1,3 +1,6 @@
+## 0.3.29
+- follow most static code analysis hints
+
 ## 0.3.28
 - gtk4.16: follow default gsk_renderer
 - combine graceful exit workarounds

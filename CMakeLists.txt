@@ -7,6 +7,7 @@ include(CheckLibraryExists)
 include(GNUInstallDirs)
 
 #set(CMAKE_C_STANDARD 23) # for compat tests
+#set(CMAKE_EXPORT_COMPILE_COMMANS ON) # compile_commands.json
 include_directories(${CMAKE_SOURCE_DIR})
 
 set(MAN_PAGE "${PROJECT_NAME}.1")

@@ -41,7 +41,6 @@ parts:
       - --buildtype=release
       - --prefix=/usr
       - --strip
-#    source: .
     source: https://github.com/yvs2014/pingpath.git
     override-pull: |
       craftctl default

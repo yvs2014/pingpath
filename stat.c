@@ -140,7 +140,7 @@ static const char *info_host(int at) {
       if (host[i].addr) l += g_snprintf(s + l, BUFF_SIZE - l, "\n%s", addrname(i, host));
       else break;
     }
-    if (hop->info && (l < BUFF_SIZE)) l += g_snprintf(s + l, BUFF_SIZE - l, "\n%s", hop->info);
+    if (hop->info && (l < BUFF_SIZE)) g_snprintf(s + l, BUFF_SIZE - l, "\n%s", hop->info);
     hop->cached = true;
     LOG("hostinfo cache[%d] updated with %s", at, (s && s[0]) ? s : log_empty);
     return s;
