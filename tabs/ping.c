@@ -84,9 +84,9 @@ static void pt_pr_elem_ndxs(const char *pre, const t_type_elem *elems, int len) 
   for (int i = 0; i < len; i++) g_string_append_printf(s, " %d", elems[i].type);
   g_message("REORDER %s%s", pre, s->str); g_string_free(s, true);
 }
-#define PT_REORDER_PRINT_ELEMS(pre, elems, len) { if (verbose & 32) pt_pr_elem_ndxs(pre, elems, len); }
+#define PT_PRINT_ELEMS(pre, elems, len) do { if (verbose & 32) pt_pr_elem_ndxs(pre, elems, len); } while (0)
 #else
-#define PT_REORDER_PRINT_ELEMS(...) {}
+#define PT_PRINT_ELEMS(...) NOOP
 #endif
 
 static gboolean pt_reorder_elems(int prev, int next, const t_elem_desc *desc) {
@@ -94,14 +94,14 @@ static gboolean pt_reorder_elems(int prev, int next, const t_elem_desc *desc) {
   int prev1 = prev - desc->mm.min, next1 = next - desc->mm.min, len = desc->mm.max - desc->mm.min + 1;
   if ((len <= 0) || (prev1 < 0) || (prev1 >= len) || (next1 < 0) || (next1 > len)) return false;
   //
-  t_type_elem *elems = &(desc->elems[desc->mm.min]);
+  t_type_elem *elems = &desc->elems[desc->mm.min];
   t_type_elem *el = g_memdup2(elems, len * sizeof(t_type_elem));
   if (!el) return false;
   int i = 0;
   for (int j = 0; j < next1; j++) if (j != prev1) el[i++] = elems[j];
   el[i++] = elems[prev1];
   for (int j = next1; j < len; j++) if (j != prev1) el[i++] = elems[j];
-  memcpy(elems, el, len * sizeof(t_type_elem));
+  memcpy(elems, el, len * sizeof(t_type_elem)); // BUFFNOLINT
   g_free(el);
   return true;
 }
@@ -140,7 +140,7 @@ static gboolean pt_reorder_cells(t_listline *lines, int len, int sn, int dn, gbo
     GtkWidget *slab = pt_box_nth_label(box, sn), *dlab = pt_box_nth_label(box, dn);
     if (GTK_IS_BOX(box) && GTK_IS_WIDGET(slab) && GTK_IS_WIDGET(dlab)) {
       gtk_box_reorder_child_after(GTK_BOX(box), slab, before ? gtk_widget_get_prev_sibling(dlab) : dlab);
-      memset(lines[i].labs, 0, sizeof(lines[i].labs));
+      memset(lines[i].labs, 0, sizeof(lines[i].labs)); // BUFFNOLINT
       pt_recache_labels(box, lines[i].labs);
       continue;
     } else WARN("missed widgets at line=%d [src=%d,dst=%d]", i, sn, dn);
@@ -168,10 +168,11 @@ static void pt_hdr_dnd_icon(GtkDragSource *src, GdkDrag *drag, t_pt_dnd *dnd) {
 }
 
 static GdkDragAction pt_hdr_on_move(GtkDropTarget *dst, gdouble x, gdouble y, t_pt_dnd *ddnd) {
-  if (!GTK_IS_DROP_TARGET(dst) || !ddnd) return 0;
+  if (!GTK_IS_DROP_TARGET(dst) || !ddnd)
+    return 0; // ENUMNOLINT
   const GValue *val = gtk_drop_target_get_value(dst);
   t_pt_dnd *sdnd = (val && G_VALUE_HOLDS_POINTER(val)) ? g_value_get_pointer(val) : NULL;
-  return (sdnd && (sdnd != ddnd) && (sdnd->desc == ddnd->desc)) ? GDK_ACTION_COPY : 0;
+  return (sdnd && (sdnd != ddnd) && (sdnd->desc == ddnd->desc)) ? GDK_ACTION_COPY : 0; // ENUMNOLINT
 }
 
 static gboolean pt_hdr_on_drop(GtkDropTarget *dst, const GValue *val, gdouble x, gdouble y, t_pt_dnd *ddnd) {
@@ -182,8 +183,8 @@ static gboolean pt_hdr_on_drop(GtkDropTarget *dst, const GValue *val, gdouble x,
   if (!GTK_IS_WIDGET(sdnd->w) || !GTK_IS_WIDGET(ddnd->w) || (sdnd->w == ddnd->w)) return false;
   if (sdnd->desc != ddnd->desc) { DNDORD("DND-drop: %s", "different groups"); return false; }
   gboolean before = gtk_widget_contains(ddnd->w, x * 2, y);
-  PT_REORDER_PRINT_ELEMS("array: <<<", ddnd->desc->elems, PE_MAX);
-  PT_REORDER_PRINT_ELEMS("group: <<<", &(ddnd->desc->elems[ddnd->desc->mm.min]), ddnd->desc->mm.max - ddnd->desc->mm.min + 1);
+  PT_PRINT_ELEMS("array: <<<", ddnd->desc->elems, PE_MAX);
+  PT_PRINT_ELEMS("group: <<<", &ddnd->desc->elems[ddnd->desc->mm.min], ddnd->desc->mm.max - ddnd->desc->mm.min + 1);
   if (pt_reorder_elems(sn, before ? dn : dn + 1, ddnd->desc)) { // reorder inplace asserting no further errors
     if (!pt_reorder_cells(ddnd->hdr, HDRLINES, sn, dn, before))
       g_critical("REORDER header: partial reordering");
@@ -195,8 +196,8 @@ static gboolean pt_hdr_on_drop(GtkDropTarget *dst, const GValue *val, gdouble x,
       DNDORD("DND-drop: put %s", msg->str); LOG("dnd reorder: %s", msg->str); g_string_free(msg, true);
     }
   }
-  PT_REORDER_PRINT_ELEMS("group: >>>", &(ddnd->desc->elems[ddnd->desc->mm.min]), ddnd->desc->mm.max - ddnd->desc->mm.min + 1);
-  PT_REORDER_PRINT_ELEMS("array: >>>", ddnd->desc->elems, PE_MAX);
+  PT_PRINT_ELEMS("group: >>>", &ddnd->desc->elems[ddnd->desc->mm.min], ddnd->desc->mm.max - ddnd->desc->mm.min + 1);
+  PT_PRINT_ELEMS("array: >>>", ddnd->desc->elems, PE_MAX);
   option_up_menu_main();
   return true;
 }
@@ -250,7 +251,8 @@ static GtkWidget* pt_make_dynlist(t_listline *lines, int len, t_type_elem *elems
   gtk_list_box_set_show_separators(GTK_LIST_BOX(list), true);
   gtk_widget_set_halign(list, GTK_ALIGN_FILL);
   gtk_widget_set_hexpand(list, false);
-  t_type_elem bodyelem[G_N_ELEMENTS(pingelem)]; memcpy(bodyelem, pingelem, sizeof(bodyelem));
+  t_type_elem bodyelem[G_N_ELEMENTS(pingelem)];
+  memcpy(bodyelem, pingelem, sizeof(bodyelem)); // BUFFNOLINT
   for (int i = 0; i < len; i++) {
     GtkWidget *box = lines[i].box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, MARGIN);
     g_return_val_if_fail(box, NULL);

@@ -83,7 +83,7 @@ static void nt_inform(t_notifier *nt, char *mesg) {
   if (!GTK_IS_WIDGET(nt->inbox) || !GTK_IS_REVEALER(nt->reveal)) return;
   if (nt->autohide && nt->visible) nt_hide(nt);
   if (GTK_IS_LABEL(nt->inbox)) {
-    LOG_(mesg);
+    LOG("%s", mesg);
     gtk_label_set_text(GTK_LABEL(nt->inbox), mesg);
   }
   if (nt->dyncss && (nt_dark != nt_curr_dark)) {

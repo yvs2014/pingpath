@@ -36,7 +36,7 @@ void stat_save_timeout(int at, t_ping_timeout *data);
 void stat_save_info(int at, t_ping_info *data);
 void stat_last_tx(int at);
 const char *stat_str_elem(int at, int type);
-int stat_str_arr(int at, int type, const char* arr[MAXADDR]);
+int stat_ping_column(int at, int type, t_ping_column *column);
 double stat_dbl_elem(int at, int type);
 int stat_int_elem(int at, int type);
 void stat_rseq(int at, t_rseq *data);

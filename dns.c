@@ -11,14 +11,14 @@ static GSList *dns_query;
 static GSList *dns_cache;
 
 #ifdef DNS_DEBUGGING
-#define DNS_DEBUG(fmt, ...) { if (verbose & 4) g_message("DNS: " fmt, __VA_ARGS__); }
+#define DNS_DEBUG(fmt, ...) do { if (verbose & 4) g_message("DNS: " fmt, __VA_ARGS__); } while (0)
 #else
-#define DNS_DEBUG(...) {}
+#define DNS_DEBUG(...) NOOP
 #endif
 
 #if DNS_DEBUGGING && DNS_DEBUGGING > 1
-#define PR_DNS_Q { LOG("DNS: %s: q=%p", __func__, dns_query); _pr_dns_qlist(dns_query); }
-#define PR_DNS_C { LOG("DNS: %s: c=%p", __func__, dns_cache); _pr_dns_clist(dns_cache); }
+#define PR_DNS_Q do { LOG("DNS: %s: q=%p", __func__, dns_query); _pr_dns_qlist(dns_query); } while (0)
+#define PR_DNS_C do { LOG("DNS: %s: c=%p", __func__, dns_cache); _pr_dns_clist(dns_cache); } while (0)
 static void _pr_dns_qlist(GSList *qlist) {
   int i = 0;
   for (GSList *p = qlist; p; p = p->next, i++) {
@@ -35,8 +35,8 @@ static void _pr_dns_clist(GSList *clist) {
   }
 }
 #else
-#define PR_DNS_Q {}
-#define PR_DNS_C {}
+#define PR_DNS_Q NOOP
+#define PR_DNS_C NOOP
 #endif
 
 static void dns_query_free(t_dns_elem *elem) {

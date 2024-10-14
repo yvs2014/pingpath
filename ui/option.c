@@ -621,9 +621,10 @@ static gboolean add_minmax(GtkWidget *box, t_ent_spn_elem *en, int ndx, int *ste
         gtk_spin_button_set_wrap(GTK_SPIN_BUTTON(spin), wrap);
         gtk_spin_button_set_numeric(GTK_SPIN_BUTTON(spin), true);
         en->aux[ndx].spin = GTK_SPIN_BUTTON(spin);
-        if (en->aux[ndx].cb) g_signal_connect(spin, EV_VAL_CHANGE, en->aux[ndx].cb, en->bond ? (void*)en : &en->aux[ndx]);
+        if (en->aux[ndx].cb)
+          g_signal_connect(spin, EV_VAL_CHANGE, en->aux[ndx].cb, en->bond ? (void*)en : &en->aux[ndx]);
         re = true;
-     } else WARN_("gtk_spin_button_new_with_range()");
+     } else WARN("gtk_spin_button_new_with_range()");
   }}
   return re;
 }

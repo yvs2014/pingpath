@@ -185,7 +185,7 @@ static gboolean help_dialog_cb(GtkEventControllerKey *c, unsigned val, unsigned 
 
 static gboolean show_help_dialog(GtkWidget *win) {
   if (!GTK_IS_WIDGET(win)) return false;
-  MA_LOG(MENU_SA_HELP, menu_sa_label)
+  MA_LOG(MENU_SA_HELP, menu_sa_label);
   gtk_widget_set_visible(win, true);
   return true;
 }
@@ -244,7 +244,7 @@ static inline char* get_help_message(void) {
 #undef SPANHDR
 #undef SPANOPT
 #undef SPANSUB
-  char* list[8] = {NULL}; int i = 0;
+  char* list[8] = {0}; int i = 0;
 #define HELP_MESG(cond, mesg) { if (cond && (i < G_N_ELEMENTS(list))) list[i++] = mesg; }
   HELP_MESG(true,       prolog);
   HELP_MESG(opts.graph, prolog_graph);

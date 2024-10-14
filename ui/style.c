@@ -18,7 +18,7 @@
 #define BG_CONTRAST_LIGHT "#f5f5f5"
 
 #define STYLE_GET_DISPLAY(re) GdkDisplay *display = gdk_display_get_default(); \
-  if (!display) { WARN_("no default display"); return re; }
+  if (!display) { WARN("no default display"); return re; }
 
 typedef struct style_colors {
   const char *def[2], *app[2], *alt[2], *gry[2];
@@ -119,10 +119,10 @@ static char* style_basetheme(const char *theme) {
 
 static char* style_prefer(gboolean dark) {
   GtkSettings *set = gtk_settings_get_default();
-  if (!set) { WARN_("no default settings"); return NULL; }
+  if (!set) { WARN("no default settings"); return NULL; }
   g_object_set(G_OBJECT(set), PROP_PREFER, dark, NULL);
   char *theme = NULL; g_object_get(set, PROP_THEME, &theme, NULL);
-  if (!theme) { WARN_("No theme"); return NULL; }
+  if (!theme) { WARN("no theme"); return NULL; }
   char *prefer = style_basetheme(theme); g_free(theme);
   ub_theme = prefer ? (strcasestr(prefer, "Yaru") != NULL) : false; // aux info for icons
   LOG("theme='%s' prefer-dark=%d", prefer, dark);
@@ -150,7 +150,7 @@ static void style_load_extra(GdkDisplay *display, gboolean dark, gboolean darkgr
     | (darkplot << 2)
 #endif
   );
-  if (!data) { WARN_("no CSS data"); g_object_unref(prov); return; }
+  if (!data) { WARN("no CSS data"); g_object_unref(prov); return; }
   style_css_load(prov, data); g_free(data);
   if (prov_extra) gtk_style_context_remove_provider_for_display(display, GTK_STYLE_PROVIDER(prov_extra));
   prov_extra = prov;

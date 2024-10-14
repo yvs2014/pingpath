@@ -235,7 +235,7 @@ static void plot_init_char_tables(void) {
   static gboolean plot_chars_ready;
   if (!plot_pango_init() || plot_chars_ready) return;;
   plot_chars_ready = true;
-  t_plot_char c; memset(&c, 0, sizeof(c));
+  t_plot_char c = {0};
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
   for (unsigned char i = MIN_ASCII_CCHAR; i < LIM_ASCII_CCHAR; i++) {
     int sz[2];
@@ -397,7 +397,7 @@ static gboolean plot_res_init(t_plot_res *res, GError **err) {
     GLuint *pvao = &(res->vo[i].vao);
     glGenVertexArrays(1, pvao);
     if (*pvao) continue;
-    WARN_("glGenVertexArrays()");
+    WARN("glGenVertexArrays()");
     plot_del_prog_glsl(&res->plot);
     plot_del_prog_glsl(&res->text);
     plot_del_res_vao(res);
@@ -466,7 +466,7 @@ static void area_init(GtkGLArea *area, t_plot_res *res) {
     if (gl_ver < MIN_GL_VER) {
       char *mesg = g_strdup_printf("GL: incompat version %d.%d (min %d.%d)",
         gl_ver / 10, gl_ver % 10, MIN_GL_VER / 10, MIN_GL_VER % 10);
-      WARN_(mesg); LOG("%s", mesg); g_free(mesg);
+      WARN("%s", mesg); LOG("%s", mesg); g_free(mesg);
     }
   }
   { GError *error = NULL; if (!plot_res_init(res, &error)) {
@@ -528,14 +528,15 @@ static bool plot_draw_text(t_plot_res *res, const char *text, int len,
 static void plot_rtt_marks(t_mark_text mark[], int n) {
   float val = series_datamax / PP_RTT_SCALE; float step = val / (n - 1); val = 0;
   for (int i = 0; i < n; i++, val += step)
-    mark[i].len = snprintf(mark[i].text, sizeof(mark[i]), PP_FMT10(val), val);
+    mark[i].len = snprintf(mark[i].text, sizeof(mark[i].text), PP_FMT10(val), val); // BUFFNOLINT
 }
 
 static void plot_tim_marks(t_mark_text mark[], int n) {
   int dt = PLOT_TIME_RANGE * 2 / PLANE_YN; if (opts.timeout > 0) dt *= opts.timeout;
   if (!draw_plot_at || (pinger_state.run && !pinger_state.pause)) draw_plot_at = time(NULL) % 3600;
   for (int i = 0, t = draw_plot_at - PLOT_TIME_RANGE; i < n; i++, t += dt) {
-    LIMVAL(t, 3600); mark[i].len = snprintf(mark[i].text, sizeof(mark[i]), PP_TIME_FMT, t / 60, t % 60);
+    LIMVAL(t, 3600);
+    mark[i].len = snprintf(mark[i].text, sizeof(mark[i].text), PP_TIME_FMT, t / 60, t % 60); // BUFFNOLINT
   }
 }
 
@@ -546,7 +547,7 @@ static void plot_ttl_marks(t_mark_text mark[], int n) {
     if ((i == (n - 1)) || ((int)val != printed)) printed = val;
     else { mark[i].len = 0; continue; }
     float r = fmodf(val, 1);
-    mark[i].len = snprintf(mark[i].text, sizeof(mark[i]), PLOT_TTL_FMT, val, r ? ((r < 0.5) ? "-" : "+") : "");
+    mark[i].len = snprintf(mark[i].text, sizeof(mark[i].text), PLOT_TTL_FMT, val, r ? ((r < 0.5) ? "-" : "+") : ""); // BUFFNOLINT
   }
 #undef PLOT_TTL_FMT
 }
@@ -706,7 +707,7 @@ static void plot_form_axis(mat4 src, t_plot_axis_params *param, gboolean ndx, gb
   glm_vec2_normalize(param->shift);
   glm_vec2_copy(p1, param->at);
   param->overlap.cached = false;
-  memset(param->overlap.over, 0, sizeof(param->overlap.over));
+  memset(param->overlap.over, 0, sizeof(param->overlap.over)); // BUFFNOLINT
 #undef MIDDLE_POINT
 }
 
@@ -816,7 +817,7 @@ t_tab* plottab_init(GtkWidget* win) {
 #define PL_INIT_LAYER(widget, descr) { widget = plot_init_glarea(descr); \
     g_return_val_if_fail(widget, NULL); layers = g_slist_append(layers, widget); }
   { int units = 1; glGetIntegerv(GL_MAX_VERTEX_TEXTURE_IMAGE_UNITS, &units);
-    if (!units) { WARN_("No support for texture lookups in the vertex shader"); return NULL; }}
+    if (!units) { WARN("No support for texture lookups in the vertex shader"); return NULL; }}
   { glm_scale(scaled, SCALE3);
     pl_init_orientation();
     plottab_on_opts(PL_PARAM_ALL);

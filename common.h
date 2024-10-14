@@ -12,7 +12,7 @@
 #define MIN_GTK_RUNTIME(major, minor, micro) (!gtk_check_version(major, minor, micro))
 
 #define APPNAME "pingpath"
-#define VERSION "0.3.29"
+#define VERSION "0.3.30"
 
 #define X_RES 1024
 #define Y_RES 720
@@ -155,29 +155,34 @@
 #define CONFIG_DEBUGGING 1
 #define DNDORD_DEBUGGING 1
 
-#define LOG(fmt, ...) { VERBOSE(fmt, __VA_ARGS__); log_add("[%s] " fmt, timestampit(), __VA_ARGS__); }
-#define LOG_(mesg) { VERBOSE("%s", mesg); log_add("[%s] %s", timestampit(), mesg); }
+#define NOOP ((void)0)
+
+#define LOG(fmt, ...) do { VERBOSE(fmt, __VA_ARGS__); \
+  log_add("[%s] " fmt, timestampit(), __VA_ARGS__); } while (0)
 
 #ifdef LOGGING
-#define VERBOSE(fmt, ...) { if (verbose & 1) g_message(fmt, __VA_ARGS__); }
+#define VERBOSE(fmt, ...) do { if (verbose & 1) g_message(fmt, __VA_ARGS__); } while (0)
 #else
-#define VERBOSE(fmt, ...) {}
+#define VERBOSE(fmt, ...) NOOP
 #endif
 
 #ifdef DEBUGGING
-#define DEBUG(fmt, ...) { if (verbose & 2) g_message(fmt, __VA_ARGS__); }
+#define DEBUG(fmt, ...) do { if (verbose & 2) g_message(fmt, __VA_ARGS__); } while (0)
 #else
-#define DEBUG(fmt, ...) {}
+#define DEBUG(fmt, ...) NOOP
 #endif
 
 #ifdef DNDORD_DEBUGGING
-#define DNDORD(fmt, ...) { if (verbose & 32) g_message(fmt, __VA_ARGS__); }
+#define DNDORD(fmt, ...) do { if (verbose & 32) g_message(fmt, __VA_ARGS__); } while (0)
 #else
-#define DNDORD(fmt, ...) {}
+#define DNDORD(fmt, ...) NOOP
 #endif
 
-#define WARN(fmt, ...) g_warning("%s: " fmt, __func__, __VA_ARGS__)
-#define WARN_(mesg) g_warning("%s: %s", __func__, mesg)
+#if (__GNUC__ >= 8) || (__clang_major__ >= 6) || (__STDC_VERSION__ >= 202311L)
+#define WARN(fmt, ...) g_warning("%s: " fmt, __func__ __VA_OPT__(,) __VA_ARGS__)
+#else
+#define WARN(fmt, ...) g_warning("%s: " fmt, __func__, ##__VA_ARGS__)
+#endif
 #define ERROR(what) { if (!error) { WARN("%s: %s", what, unkn_error); } \
   else { WARN("%s: rc=%d, %s", what, error->code, error->message); g_error_free(error); }}
 #define ERRLOG(what) { if (!error) { LOG("%s: %s", what, unkn_error); } \
@@ -480,6 +485,8 @@ extern t_type_elem plotelem[D3_MAX];
 extern t_elem_desc plot_desc;
 #endif
 
+typedef struct ping_column { const char* cell[MAXADDR]; } t_ping_column;
+
 extern const double colors[][3];
 extern const int n_colors;
 
@@ -519,5 +526,9 @@ extern void log_add(const char *fmt, ...);
 #define IS_STAT_NDX(ndx) ((PE_LOSS <= ndx) && (ndx <= PE_JTTR))
 #define IS_GRLG_NDX(ndx) ((GE_AVJT <= ndx) && (ndx <= GE_LGHN))
 #define IS_GREX_NDX(ndx) ((GREX_MEAN <= ndx) && (ndx <= GREX_AREA))
+
+// to use with clang static code analysis
+//   BUFFNOLINT: NOLINT(clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling)
+//   ENUMNOLINT: NOLINT(clang-analyzer-optin.core.EnumCastOutOfRange)
 
 #endif

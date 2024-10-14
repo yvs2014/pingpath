@@ -140,8 +140,7 @@ static gboolean valid_markhost(GMatchInfo* match, t_tseq* mark, t_host* host, co
 }
 
 static gboolean parse_success_match(int at, GMatchInfo* match, const char *line) {
-  t_ping_success res;
-  memset(&res, 0, sizeof(res));
+  t_ping_success res = {0};
   res.ttl = fetch_named_int(match, REN_TTL);
   if (res.ttl < 0) { DEBUG("wrong TTL in SUCCESS message: %s", line); return false; }
   res.time = fetch_named_rtt(match, REN_TIME);
@@ -154,8 +153,7 @@ static gboolean parse_success_match(int at, GMatchInfo* match, const char *line)
 }
 
 static gboolean parse_discard_match(int at, GMatchInfo* match, const char *line) {
-  t_ping_discard res;
-  memset(&res, 0, sizeof(res));
+  t_ping_discard res = {0};
   if (!valid_markhost(match, &res.mark, &res.host, "DISCARD", line)) return false;
   res.reason = fetch_named_str(match, REN_REASON);
   DEBUG("DISCARD[at=%d seq=%d]: host=%s,%s reason=\"%s\"", at, res.mark.seq, res.host.addr, res.host.name, res.reason);
@@ -164,8 +162,7 @@ static gboolean parse_discard_match(int at, GMatchInfo* match, const char *line)
 }
 
 static gboolean parse_timeout_match(int at, GMatchInfo* match, const char *line) {
-  t_ping_timeout res;
-  memset(&res, 0, sizeof(res));
+  t_ping_timeout res = {0};
   if (!valid_mark(match, &res.mark)) { DEBUG("wrong MARK in TIMEOUT message: %s", line); return false; }
   DEBUG("TIMEOUT[at=%d seq=%d]: seq=%d ts=%lld.%06d", at, res.mark.seq, res.mark.seq, res.mark.sec, res.mark.usec);
   stat_save_timeout(at, &res);
@@ -173,8 +170,7 @@ static gboolean parse_timeout_match(int at, GMatchInfo* match, const char *line)
 }
 
 static gboolean parse_info_match(int at, GMatchInfo* match, const char *line) {
-  t_ping_info res;
-  memset(&res, 0, sizeof(res));
+  t_ping_info res = {0};
   res.ttl = fetch_named_int(match, REN_TTL);
   if (res.ttl < 0) { DEBUG("wrong TTL in INFO message: %s", line); return false; }
   // after other mandatory fields to not free() if their fetch failed
@@ -291,9 +287,9 @@ char* parser_str(const char *str, const char *option, int cat) {
       if (val) {
         gboolean valid = g_regex_match(str_rx[cat].regex, val, 0, NULL);
         if (valid) return val;
-      } else WARN_("g_strdup()");
+      } else WARN("g_strdup()");
       PARSER_MESG("%s: no match %s regex", option, str_rx[cat].pattern);
-    } else WARN_("g_strndup()");
+    } else WARN("g_strndup()");
   } else WARN("wrong string category: %d", cat);
   return NULL;
 }
@@ -312,12 +308,12 @@ char* parser_valid_target(const char *target) {
   if (dst) { CLR_STR(dst); dst = g_strdup_printf("%s*", val); } \
   else dst = g_strndup(val, MAXHOSTNAME); }
 
-void parser_whois(char *buff, int sz, char* elem[]) {
+void parser_whois(char *buff, int sz, t_whois *welem) {
   // if there are multiple sources (despite -m query), take the last tag and mark it with '*'
   static const char skip_as_prfx[] = "AS";
   static int as_prfx_len = sizeof(skip_as_prfx) - 1;
-  if (!buff || !elem) return;
-  memset(elem, 0, sizeof(char*) * WHOIS_NDX_MAX);
+  if (!buff || !welem) return;
+  memset(welem, 0, sizeof(*welem)); // BUFFNOLINT
   char *p = buff, *s;
   while ((s = strsep(&p, WHOIS_NL))) {
     s = g_strstrip(s);
@@ -334,12 +330,12 @@ void parser_whois(char *buff, int sz, char* elem[]) {
       } else if (STR_EQ(s, WHOIS_DESC_TAG)) {
         ndx = WHOIS_DESC_NDX;
         char *cc = split_pair(&val, WHOIS_CCDEL, GREEDY);
-        if (cc) DUP_WITH_MARK(elem[WHOIS_CC_NDX], cc);
+        if (cc) DUP_WITH_MARK(welem->elem[WHOIS_CC_NDX], cc);
       }
-      if (ndx >= 0) DUP_WITH_MARK(elem[ndx], val);
+      if (ndx >= 0) DUP_WITH_MARK(welem->elem[ndx], val);
     }
   }
-  for (int i = 0; i < WHOIS_NDX_MAX; i++) if (!elem[i]) elem[i] = g_strdup(unkn_whois);
+  for (int i = 0; i < WHOIS_NDX_MAX; i++) if (!welem->elem[i]) welem->elem[i] = g_strdup(unkn_whois);
 }
 
 static gboolean parser_valint(const char* inp, int* outp, const char *option) {

@@ -1,3 +1,7 @@
+## 0.3.30
+- friendlier to clang SA
+- tidy up a bit
+
 ## 0.3.29
 - follow most static code analysis hints
 

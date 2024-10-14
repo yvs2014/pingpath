@@ -78,7 +78,7 @@ static char* c_strjoinv(const char delim, const char **array) {
 }
 
 static char* cb_collect_level1(GList *list) {
-  const char *lines[DEF_LOGMAX + 1] = {NULL};
+  const char *lines[DEF_LOGMAX + 1] = {0};
   int i = 0;
   for (GList *p = list; p && (i < DEF_LOGMAX); p = p->next) {
     GtkListBoxRow *row = p->data;
@@ -128,7 +128,7 @@ static void cb_collect_maxes(GtkWidget *box, int *maxes) {
 }
 
 static char* cb_collect_level2(GList *list, int *maxes) {
-  char* elems[MAXT2][PE_MAX + 1] = {{NULL}}; // *2: supposedly it's enough for multihop lines
+  char* elems[MAXT2][PE_MAX + 1] = {0}; // *2: supposedly it's enough for multihop lines
   int i = 0;
   for (GList *p = list; p && (i < MAXT2); p = p->next) {
     GtkListBoxRow *row = p->data; if (!GTK_IS_LIST_BOX_ROW(row)) continue;
@@ -155,7 +155,7 @@ static char* cb_collect_level2(GList *list, int *maxes) {
     i += di;
   }
   C_NULL2SP(elems, 3); // if there are multihop lines
-  char *lines[MAXT2 + 1] = {NULL};
+  char *lines[MAXT2 + 1] = {0};
   for (int i = 0; i < MAXT2; i++) // combine collected elems into lines
     if (elems[i][0]) lines[i] = g_strjoinv(" ", elems[i]);
   C_FREE_T2LIST(elems); // free elems
@@ -219,8 +219,8 @@ void cb_on_copy_l2(GSimpleAction *action, GVariant *var, void *data) {
   GdkClipboard *cb = gtk_widget_get_clipboard(GTK_WIDGET(tab->tab.w));
   if (GDK_IS_CLIPBOARD(cb)) {
     VERBOSE("clipoard action %s", ACT_COPY_HDR);
-    char* arr[4] = { NULL };
-    int maxes[PE_MAX]; memset(maxes, 0, sizeof(maxes));
+    char* arr[4] = {0};
+    int maxes[PE_MAX] = {0};
     cb_collect_maxes(tab->hdr.w, maxes);
     cb_collect_maxes(tab->dyn.w, maxes);
     int n = 0;

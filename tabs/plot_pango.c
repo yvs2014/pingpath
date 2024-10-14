@@ -56,7 +56,7 @@ gboolean plot_pango_init(void) {
     if (plot_font) {
       pango_font_description_set_family(plot_font, PP_FONT_FAMILY);
       pango_font_description_set_absolute_size(plot_font, PLOT_FONT_SIZE * PANGO_SCALE);
-    } else WARN_("Cannot allocate pango font");
+    } else WARN("Cannot allocate pango font");
   }
   return (plot_font != NULL);
 }
@@ -115,8 +115,8 @@ t_plot_vo plot_pango_vo_init(GLuint loc) {
 
 void plot_pango_drawtex(GLuint id, GLuint vbo, GLuint typ, float x0, float y0, float w, float h) {
   if (!id || !vbo || !typ) return;
-  const int points = 6;
-  vec4 vertex[points]; memset(vertex, 0, sizeof(vertex));
+#define TEXPOINTS 6
+  vec4 vertex[TEXPOINTS] = {0};
   float x1 = x0 + w, y1 = y0 + h;
   vec4_set(vertex[0], x0, y1, 0, 0);
   vec4_set(vertex[1], x0, y0, 0, 1);
@@ -128,7 +128,8 @@ void plot_pango_drawtex(GLuint id, GLuint vbo, GLuint typ, float x0, float y0, f
   glBindBuffer(typ, vbo);
   glBufferSubData(typ, 0, sizeof(vertex), vertex);
   glBindBuffer(typ, 0);
-  glDrawArrays(GL_TRIANGLES, 0, points);
+  glDrawArrays(GL_TRIANGLES, 0, TEXPOINTS);
   glBindTexture(GL_TEXTURE_2D, 0);
+#undef TEXPOINTS
 }
 

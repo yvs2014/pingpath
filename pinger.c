@@ -98,7 +98,7 @@ static void pinger_print_text(gboolean csv) {
     if (csv) g_print("%s", OPT_TTL_HDR); else HOP_INDENT;
     int lim = (tgtat > visibles) ? (visibles + 1) : tgtat;
     //
-    int maxes[PE_MAX]; memset(maxes, 0, sizeof(maxes));
+    int maxes[PE_MAX] = {0};
     for (int j = 0; j < PE_MAX; j++) PN_PRMAX(pingelem[j].name);
     for (int i = opts.min; i < lim; i++) for (int j = 0; j < PE_MAX; j++) PN_PRMAX(stat_str_elem(i, pingelem[j].type));
     //
@@ -109,7 +109,7 @@ static void pinger_print_text(gboolean csv) {
     g_print("\n");
     PRINT_CSV_DIV;
     for (int i = opts.min; i < lim; i++) { // data per hop
-      const char* elems[G_N_ELEMENTS(pingelem)][MAXADDR]; memset(elems, 0, sizeof(elems));
+      t_ping_column column[G_N_ELEMENTS(pingelem)] = {0};
       int lines = 0;
       for (int j = 0; j < G_N_ELEMENTS(pingelem); j++) if (pingelem[j].enable) {
         int type = pingelem[j].type;
@@ -121,8 +121,8 @@ static void pinger_print_text(gboolean csv) {
           case PE_CC:
           case PE_DESC:
           case PE_RT: {
-            int n = stat_str_arr(i, type, elems[j]); if (lines < n) lines = n;
-            PRINT_TEXT_ELEM(elems[j][0] ? elems[j][0] : "", maxes[j]);
+            int n = stat_ping_column(i, type, &column[j]); if (lines < n) lines = n;
+            PRINT_TEXT_ELEM(column[j].cell[0] ? column[j].cell[0] : "", maxes[j]);
           } break;
           case PE_LOSS:
           case PE_SENT:
@@ -139,7 +139,7 @@ static void pinger_print_text(gboolean csv) {
       for (int k = 1; k < lines; k++) { // multihop
         if (!csv) HOP_INDENT;
         for (int j = PE_HOST; j <= PE_RT; j++)
-          if (pingelem[j].enable) PRINT_TEXT_ELEM(elems[j][k] ? elems[j][k] : "", maxes[j]);
+          if (pingelem[j].enable) PRINT_TEXT_ELEM(column[j].cell[k] ? column[j].cell[k] : "", maxes[j]);
         g_print("\n");
       }
     }
@@ -193,11 +193,11 @@ static gboolean pinger_json_hop_info(JsonObject *obj, int i, gboolean pretty) {
   JsonArray *arr = json_array_new();
   if (!arr) { FAILX("hop array", "json_array_new()"); return false; }
   pinger_json_prop_arr(obj, OPT_INFO_HDR, arr, pretty);
-  const char* elems[PX_MAX][MAXADDR]; memset(elems, 0, sizeof(elems));
+  t_ping_column column[PX_MAX] = {0};
   int lines = 0;
   for (int ndx = PE_HOST; ndx <= PE_RT; ndx++)
     if (pingelem[ndx].enable) { // collect multihop info
-      int n = stat_str_arr(i, pingelem[ndx].type, elems[ndx]);
+      int n = stat_ping_column(i, pingelem[ndx].type, &column[ndx]);
       if (n > lines) lines = n;
     }
   for (int j = 0; j < lines; j++) { // add collected info
@@ -208,11 +208,11 @@ static gboolean pinger_json_hop_info(JsonObject *obj, int i, gboolean pretty) {
       int type = pingelem[ndx].type;
       switch (type) {
         case PE_HOST: {
-          const char *addr = elems[PX_ADDR][j], *name = elems[PX_HOST][j];
+          const char *addr = column[PX_ADDR].cell[j], *name = column[PX_HOST].cell[j];
           if (pretty) {
             char *host = (name) ? g_strdup_printf("%s (%s)", name, addr) : g_strdup(addr);
             if (host) { pinger_json_prop_str(info, pingelem[ndx].name, host, pretty); g_free(host); }
-            else pinger_json_prop_str(info, pingelem[ndx].name, elems[ndx][j], pretty);
+            else pinger_json_prop_str(info, pingelem[ndx].name, column[ndx].cell[j], pretty);
           } else {
             pinger_json_prop_str(info, "addr", addr, pretty);
             pinger_json_prop_str(info, "name", name, pretty);
@@ -222,7 +222,7 @@ static gboolean pinger_json_hop_info(JsonObject *obj, int i, gboolean pretty) {
         case PE_CC:
         case PE_DESC:
         case PE_RT:
-          pinger_json_prop_str(info, pingelem[ndx].name, elems[ndx][j], pretty); break;
+          pinger_json_prop_str(info, pingelem[ndx].name, column[ndx].cell[j], pretty); break;
       }
     }
   }
@@ -452,7 +452,7 @@ static gboolean create_ping(int at, t_proc *p) {
   if (!p->out) p->out = g_malloc0(BUFF_SIZE);
   if (!p->err) p->err = g_malloc0(BUFF_SIZE);
   if (!p->out || !p->err) { WARN("at=%d: g_malloc0() failed", at); return false; }
-  const char* argv[MAX_ARGC] = {NULL}; int argc = 0;
+  const char* argv[MAX_ARGC] = {0}; int argc = 0;
   argv[argc++] = PING;
   argv[argc++] = "-OD";
   if (!opts.dns) argv[argc++] = "-n";
@@ -471,7 +471,7 @@ static gboolean create_ping(int at, t_proc *p) {
   argv[argc++] = "--";
   argv[argc++] = opts.target;
   GError *error = NULL;
-  p->proc = g_subprocess_newv(argv, G_SUBPROCESS_FLAGS_STDOUT_PIPE | G_SUBPROCESS_FLAGS_STDERR_PIPE, &error);
+  p->proc = g_subprocess_newv(argv, G_SUBPROCESS_FLAGS_STDOUT_PIPE | G_SUBPROCESS_FLAGS_STDERR_PIPE, &error); // ENUMNOLINT
   if (!p->proc) {
     PINGER_MESG("%s", error ? error->message : unkn_error);
     if (error->code == 3) PINGER_MESG("%s", SANDBOX_MESG);
@@ -489,7 +489,7 @@ static gboolean create_ping(int at, t_proc *p) {
 #ifdef DEBUGGING
     if (verbose & 2) {
       char* deb_argv[MAX_ARGC];
-      memcpy(deb_argv, argv, sizeof(deb_argv));
+      memcpy(deb_argv, argv, sizeof(deb_argv)); // BUFFNOLINT
       char *deb_argv_s = g_strjoinv(", ", deb_argv);
       DEBUG("ping[ttl=%d]: argv[%s]", at + 1, deb_argv_s);
       g_free(deb_argv_s);
@@ -625,9 +625,11 @@ int pinger_recap_cb(GApplication *app) {
   static int recap_cnt;
   { recap_cnt++; // indicate 'in progress'
     int dec = recap_cnt / 10, rest = recap_cnt % 10;
-    if (rest) fprintf(stderr, "."); else fprintf(stderr, "%d", dec % 10); }
+    if (rest) fputc('.', stderr);
+    else fprintf(stderr, "%d", dec % 10); // BUFFNOLINT
+  }
   if (!pinger_is_active()) {
-    fprintf(stderr, "\n");
+    fputc('\n', stderr);
     pinger_recap();
     if (G_IS_APPLICATION(app)) g_application_release(app);
     return G_SOURCE_REMOVE;

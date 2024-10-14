@@ -14,9 +14,9 @@
   g_set_error(error, g_quark_from_static_string(""), -1, "Empty %s is not valid", name); }}
 
 #ifdef CONFIG_DEBUGGING
-#define CONF_DEBUG(fmt, ...) { if (verbose & 16) g_message("CONFIG: " fmt, __VA_ARGS__); }
+#define CONF_DEBUG(fmt, ...) do { if (verbose & 16) g_message("CONFIG: " fmt, __VA_ARGS__); } while (0)
 #else
-#define CONF_DEBUG(...) {}
+#define CONF_DEBUG(...) NOOP
 #endif
 
 #define CNF_SECTION_MAIN "ping"
@@ -74,9 +74,9 @@ static void cli_pr_elems(t_type_elem *elems, int max) {
     g_string_append_printf(s, " %c%d", elems[i].enable ? '+' : '-', elems[i].type);
   g_message("REORDER: elem:%s", s->str); g_string_free(s, true);
 }
-#define CLI_REORDER_PRINT_ELEMS(elems, max) { if (verbose & 32) cli_pr_elems(elems, max); }
+#define CLI_REORDER_PRINT_ELEMS(elems, max) do { if (verbose & 32) cli_pr_elems(elems, max); } while (0)
 #else
-#define CLI_REORDER_PRINT_ELEMS(...) {}
+#define CLI_REORDER_PRINT_ELEMS(...) NOOP
 #endif
 
 #define TAB1D "With ping tab only"
@@ -303,7 +303,7 @@ static void reorder_elems(const char *str, t_elem_desc *desc) {
   if (type2ndx && order && (len > 0) && (strnlen(order, len + 1) == len)) {
     t_type_elem *elems = &desc->elems[desc->mm.min], newelems[len];
     int n = 0, sz = len * sizeof(t_type_elem);
-    memmove(newelems, elems, sz);
+    memmove(newelems, elems, sz); // BUFFNOLINT
     for (const char *p = order; *p; p++, n++) {
       int c = *p;
       int ndx = char2ndx(desc->cat, true, c), type = char2ndx(desc->cat, false, c);
@@ -313,8 +313,8 @@ static void reorder_elems(const char *str, t_elem_desc *desc) {
         else newelems[n] = desc->elems[ndx];
       }
     }
-    memmove(elems, newelems, sz);
-  } else WARN_("number of indexes are different to reorder");
+    memmove(elems, newelems, sz); // BUFFNOLINT
+  } else WARN("Number of indexes are different");
   g_free(order);
 }
 
@@ -448,7 +448,7 @@ static gboolean cli_opt_f(const char *name, const char *value, t_opts *opts, GEr
       { .opt = CNF_STR_PLOAD,  .type = CNF_OPT_PLOAD,  .data = cli_opt_p },
       { .opt = CNF_STR_INFO,   .type = CNF_OPT_INFO,   .data = cli_opt_I },
       { .opt = CNF_STR_STAT,   .type = CNF_OPT_STAT,   .data = cli_opt_S },
-      {}
+      {} // trailing 0
     }},
     { .name = CNF_SECTION_AUX, .options = {
       { .opt = CNF_STR_TABS,   .type = CNF_OPT_TABS },
@@ -462,9 +462,9 @@ static gboolean cli_opt_f(const char *name, const char *value, t_opts *opts, GEr
       { .opt = CNF_STR_PLEX,   .type = CNF_OPT_PLEX,   .data = cli_opt_X },
 #endif
       { .opt = CNF_STR_RECAP,  .type = CNF_OPT_RECAP,  .data = cli_opt_r },
-      {}
+      {} // trailing 0
     }},
-    {}
+    {} // trailing 0
   };
   g_autoptr(GKeyFile) file = g_key_file_new();
   g_autoptr(GError) ferr = NULL;
@@ -614,7 +614,7 @@ gboolean cli_init(int *pargc, char ***pargv) {
     CLI_OPT_NONE('4', "ipv4",         &onoff[ONOFF_IPV4], OPT_IPV4_HDR " only"),
     CLI_OPT_NONE('6', "ipv6",         &onoff[ONOFF_IPV6], OPT_IPV6_HDR " only"),
     { .long_name = G_OPTION_REMAINING, .arg = G_OPTION_ARG_STRING_ARRAY, .arg_data = &target, .arg_description = "TARGET" },
-    {}
+    {} // trailing 0
   };
   // options
   GOptionGroup *og = g_option_group_new(APPNAME, APPNAME, "options", &opts, NULL);

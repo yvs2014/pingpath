@@ -203,8 +203,9 @@ t_plot_idc plot_aux_vert_init_plane(int x, int y, int plo,
     int xn1 = idc.x + 1, yn1 = idc.y + 1;
     gboolean surf = !PLO_IS_FLAT(idc.plo);
     idc.count = xn1 * yn1; if (surf) idc.count *= 2;
-    vec3 vertex[idc.count]; idc.hold = sizeof(vertex);
-    memset(vertex, 0, idc.hold);
+    vec3 vertex[idc.count];
+    memset(vertex, 0, sizeof(vertex)); // BUFFNOLINT
+    idc.hold = sizeof(vertex);
     plot_vert_array_init(vertex, &idc);
     glBindBuffer(idc.typ, idc.id);
     glBufferData(idc.typ, idc.hold, vertex, surf ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW);
@@ -225,8 +226,9 @@ t_plot_idc plot_aux_vert_init_axis(int x, int y, int plo, float width,
     gboolean is_l = PLO_IS_LAXIS(idc.plo);
     int n = is_y ? xn1 : yn1;
     idc.count = n * 2; // edge-n-tick
-    vec3 vertex[idc.count]; idc.hold = sizeof(vertex);
-    memset(vertex, 0, idc.hold);
+    vec3 vertex[idc.count];
+    memset(vertex, 0, sizeof(vertex)); // BUFFNOLINT
+    idc.hold = sizeof(vertex);
     plot_vert_axis_init(vertex, n, is_y, width, is_l);
     glBindBuffer(idc.typ, idc.id);
     glBufferData(idc.typ, idc.hold, vertex, GL_STATIC_DRAW);
@@ -269,7 +271,7 @@ void plot_aux_reset(t_plot_vo *vo) {
 
 void plot_aux_free(void) {
   if (surf_vertex) { g_free(surf_vertex); surf_vertex = NULL; }
-  memset(&surf_vertex_idc, 0, sizeof(surf_vertex_idc));
+  memset(&surf_vertex_idc, 0, sizeof(surf_vertex_idc)); // BUFFNOLINT
 }
 
 // gridlines
@@ -284,8 +286,9 @@ t_plot_idc plot_aux_grid_init(int x, int y, int plo) {
     else { cnt = xn1 * yn1; if (is_surf) { cnt *= 2; cnt -= xn1 + yn1; }}
     if (!cnt) cnt = 1;
     idc.count = cnt * 2;
-    GLushort data[idc.count]; idc.hold = sizeof(data);
-    memset(data, 0, idc.hold);
+    GLushort data[idc.count];
+    memset(data, 0, sizeof(data)); // BUFFNOLINT
+    idc.hold = sizeof(data);
     is_axis ? plot_fill_ndx_axis(data, cnt - 1) : plot_fill_ndx_grid(data, &idc);
     glBindBuffer(idc.typ, idc.id);
     glBufferData(idc.typ, idc.hold, data, is_surf ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW);
@@ -300,8 +303,9 @@ t_plot_idc plot_aux_surf_init(int x, int y, int plo) {
   glGenBuffers(1, &idc.id);
   if (idc.id) {
     idc.stride = sizeof(GLushort);
-    GLushort data[idc.x * idc.y * 6]; idc.hold = sizeof(data);
-    memset(data, 0, idc.hold);
+    GLushort data[idc.x * idc.y * 6];
+    memset(data, 0, sizeof(data)); // BUFFNOLINT
+    idc.hold = sizeof(data);
     plot_fill_ndx_surf(data, &idc);
     glBindBuffer(idc.typ, idc.id);
     glBufferData(idc.typ, idc.hold, data, GL_DYNAMIC_DRAW);

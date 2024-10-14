@@ -163,15 +163,17 @@ static const char *info_host_nl(int at) {
   return NULL;
 }
 
-static int info_host_arr(int at, const char* arr[MAXADDR]) {
+static int column_host(int at, t_ping_column *column) {
   t_host *host = hops[at].host; int n = 0;
-  for (; n < MAXADDR; n++) { if (host[n].addr) arr[n] = addrname(n, host); else break; }
+  if (column) for (; n < MAXADDR; n++) {
+    if (host[n].addr) column->cell[n] = addrname(n, host); else break; }
   return n;
 }
 
-static int info_addrhost(int at, const char* arr[MAXADDR], gboolean num) {
+static int column_addrhost(int at, t_ping_column* column, gboolean num) {
   t_host *host = hops[at].host; int n = 0;
-  for (; n < MAXADDR; n++) { if (host[n].addr) arr[n] = addr_or_name(n, host, num); else break; }
+  if (column) for (; n < MAXADDR; n++) {
+    if (host[n].addr) column->cell[n] = addr_or_name(n, host, num); else break; }
   return n;
 }
 
@@ -212,11 +214,11 @@ static const char *info_whois_nl(int at, int type) {
   return NULL;
 }
 
-static int info_whois_arr(int at, int type, const char* arr[MAXADDR]) {
+static int column_whois(int at, int type, t_ping_column *column) {
   t_whois *whois = hops[at].whois; int n = 0;
-  for (; n < MAXADDR; n++) {
+  if (column) for (; n < MAXADDR; n++) {
     char *s = whois[n].elem[type];
-    if (s) arr[n] = s; else break;
+    if (s) column->cell[n] = s; else break;
   }
   return n;
 }
@@ -285,7 +287,7 @@ void stat_init(gboolean clean) { // clean start or on reset
     visibles = -1;
     pinger_state.gotdata = false;
     pinger_state.reachable = false;
-    memset(hops, 0, sizeof(hops));
+    memset(hops, 0, sizeof(hops)); // BUFFNOLINT
   }
   for (int i = 0; i < MAXTTL; i++) {
     if (clean) hops[i].reach = true;
@@ -402,18 +404,18 @@ static const char *stat_strnl_elem(int at, int type) {
   return NULL;
 }
 
-int stat_str_arr(int at, int type, const char* arr[MAXADDR]) {
+int stat_ping_column(int at, int type, t_ping_column *column) {
   int n = 0;
-  if (arr)  {
-    memset(arr, 0, MAXADDR * sizeof(char*));
+  if (column)  {
+    memset(column, 0, sizeof(*column)); // BUFFNOLINT
     switch (type) {
-      case PE_HOST: n = info_host_arr(at, arr);                  break;
-      case PE_AS:   n = info_whois_arr(at, WHOIS_AS_NDX, arr);   break;
-      case PE_CC:   n = info_whois_arr(at, WHOIS_CC_NDX, arr);   break;
-      case PE_DESC: n = info_whois_arr(at, WHOIS_DESC_NDX, arr); break;
-      case PE_RT:   n = info_whois_arr(at, WHOIS_RT_NDX, arr);   break;
-      case PX_ADDR: n = info_addrhost(at, arr, true);            break;
-      case PX_HOST: n = info_addrhost(at, arr, false);           break;
+      case PE_HOST: n = column_host(at, column);                  break;
+      case PE_AS:   n = column_whois(at, WHOIS_AS_NDX, column);   break;
+      case PE_CC:   n = column_whois(at, WHOIS_CC_NDX, column);   break;
+      case PE_DESC: n = column_whois(at, WHOIS_DESC_NDX, column); break;
+      case PE_RT:   n = column_whois(at, WHOIS_RT_NDX, column);   break;
+      case PX_ADDR: n = column_addrhost(at, column, true);        break;
+      case PX_HOST: n = column_addrhost(at, column, false);       break;
     }
   }
   return n;
