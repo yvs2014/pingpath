@@ -1,5 +1,7 @@
 
 #include <cglm/cglm.h>
+
+#include "common.h"
 #include "plot_pango.h"
 
 static PangoFontDescription *plot_font;

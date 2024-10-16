@@ -1,4 +1,5 @@
 
+#include "common.h"
 #include "style.h"
 
 #define LEGEND_BORDER "#515151"
@@ -36,9 +37,6 @@ static const t_style_colors style_color = {
   .gry = { "#e0e0e0", "#414141"},
 };
 
-// bottom-outline:
-//entry:focus-within {outline: 0 solid transparent; border-radius:0; box-shadow:0 1px 0;}
-
 static const char *css_common = "\n\
 notebook > header > tabs {padding-left:0; padding-right:0;}\n\
 notebook > header > tabs > tab {margin-left:0; margin-right:0;}\n\
@@ -69,37 +67,32 @@ static void style_css_load(GtkCssProvider *prov, const char *str) {
 #endif
 }
 
-static char* style_extra_css(const char *common, unsigned darkbits) {
-  int n0 = (darkbits >> 0) & 0x1; // main
-  int n1 = (darkbits >> 1) & 0x1; // graph
+static char* style_extra_css(const char *common) {
+  int m = opts.darktheme ? 1 : 0; // main
+  int g = opts.darkgraph ? 1 : 0; // graph
 #ifdef WITH_PLOT
-  int n2 = (darkbits >> 2) & 0x1; // plot
+  int p = opts.darkplot  ? 1 : 0; // plot
 #endif
-  const char *col = style_color.app[n0];
+  const char *col = style_color.app[m];
   char* items[] = {
     g_strdup_printf("%s\n", common),
-    g_strdup_printf("." CSS_BGROUND " {background:%s;}\n", style_color.def[n0]),
+    g_strdup_printf("." CSS_BGROUND " {background:%s;}\n", style_color.def[m]),
     g_strdup_printf("." CSS_DEF_BG " {background:%s; color:%s;}\n", col, col),
-    g_strdup_printf("." CSS_INV_BG " {background:%s; color:%s;}\n", style_color.app[!n0], style_color.app[!n0]),
-    g_strdup_printf("." CSS_GRAPH_BG   " {background:%s;}\n", style_color.def[n1]),
-    g_strdup_printf("." CSS_LEGEND_COL " {background:%s; color:%s;}\n", style_color.alt[n1], style_color.alt[!n1]),
+    g_strdup_printf("." CSS_INV_BG " {background:%s; color:%s;}\n", style_color.app[!m], style_color.app[!m]),
+    g_strdup_printf("." CSS_GRAPH_BG   " {background:%s;}\n", style_color.def[g]),
+    g_strdup_printf("." CSS_LEGEND_COL " {background:%s; color:%s;}\n", style_color.alt[g], style_color.alt[!g]),
 #ifdef WITH_PLOT
-    g_strdup_printf("." CSS_PLOT_BG    " {background:%s; color:%s;}\n", style_color.def[n2], style_color.def[!n2]),
-    g_strdup_printf("." CSS_ROTOR_COL  " {color:%s;}\n", style_color.def[!n2]),
-    g_strdup_printf("." CSS_ROTOR_COL  ":hover {background:%s;}\n", style_color.gry[n2]),
+    g_strdup_printf("." CSS_PLOT_BG    " {background:%s; color:%s;}\n", style_color.def[p], style_color.def[!p]),
+    g_strdup_printf("." CSS_ROTOR_COL  " {color:%s;}\n", style_color.def[!p]),
+    g_strdup_printf("." CSS_ROTOR_COL  ":hover {background:%s;}\n", style_color.gry[p]),
 #endif
     NULL};
   char *re = g_strjoinv(NULL, items);
   for (char **p = items; *p; p++) g_free(*p);
   return re;
-#undef MN_NDX
-#undef GR_NDX
-#ifdef WITH_PLOT
-#undef PL_NDX
-#endif
 };
 
-static inline const gboolean is_theme_dark(const char *theme) {
+static const gboolean is_theme_dark(const char *theme) {
   char *lc = g_utf8_strdown(theme, -1);
   gboolean re = g_str_has_suffix(lc ? lc : theme, SFFX_DIV1 DARK_SFFX);
   if (!re) re = g_str_has_suffix(lc ? lc : theme, SFFX_DIV2 DARK_SFFX);
@@ -141,15 +134,11 @@ static void style_load_theme(GdkDisplay *display, const char *theme, const char 
     GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
 }
 
-static void style_load_extra(GdkDisplay *display, gboolean dark, gboolean darkgraph, gboolean darkplot) {
+static void style_load_extra(GdkDisplay *display) {
   style_loaded = false;
   GtkCssProvider *prov = gtk_css_provider_new();
   g_return_if_fail(GTK_IS_CSS_PROVIDER(prov));
-  char *data = style_extra_css(css_common, dark | (darkgraph << 1)
-#ifdef WITH_PLOT
-    | (darkplot << 2)
-#endif
-  );
+  char *data = style_extra_css(css_common);
   if (!data) { WARN("no CSS data"); g_object_unref(prov); return; }
   style_css_load(prov, data); g_free(data);
   if (prov_extra) gtk_style_context_remove_provider_for_display(display, GTK_STYLE_PROVIDER(prov_extra));
@@ -173,11 +162,11 @@ const char* is_sysicon(const char **icon) {
   return NULL;
 }
 
-void style_set(gboolean darkmain, gboolean darkgraph, gboolean darkplot) {
+void style_set(void) {
   STYLE_GET_DISPLAY();
-  char *prefer = style_prefer(darkmain);
-  if (prefer) { style_load_theme(display, prefer, darkmain ? "dark" : NULL); g_free(prefer); }
-  style_load_extra(display, darkmain, darkgraph, darkplot);
+  char *prefer = style_prefer(opts.darktheme);
+  if (prefer) { style_load_theme(display, prefer, opts.darktheme ? "dark" : NULL); g_free(prefer); }
+  style_load_extra(display);
 }
 
 void style_free(void) {

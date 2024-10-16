@@ -1,7 +1,7 @@
 #ifndef SERIES_H
 #define SERIES_H
 
-#include "common.h"
+#include <gtk/gtk.h>
 
 #define MIN_SERIES_RANGE 100 // in intervals
 #define GRAPH_DATA_GAP   1.1

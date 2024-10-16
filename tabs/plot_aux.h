@@ -1,8 +1,8 @@
 #ifndef TABS_PLOT_AUX_H
 #define TABS_PLOT_AUX_H
 
+#include <gtk/gtk.h>
 #include <epoxy/gl.h>
-#include "common.h"
 
 #define MIN_GL_VER 30
 

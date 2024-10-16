@@ -1,11 +1,15 @@
 
 #include "action.h"
 #include "appbar.h"
+#include "option.h"
 #include "notifier.h"
 #include "pinger.h"
-#include "draw_rel.h"
 #include "series.h"
 #include "ui/style.h"
+#include "tabs/aux.h"
+#ifdef WITH_PLOT
+#include "tabs/plot.h"
+#endif
 
 #if PANGO_VERSION_MAJOR == 1
 #if PANGO_VERSION_MINOR < 50
@@ -164,8 +168,10 @@ static void on_pauseresume(GSimpleAction *action, GVariant *var, void *unused) {
   pinger_state.pause = !pinger_state.pause;
   action_update();
   pinger_update_tabs(NULL);
-  DRAW_UPDATE_REL;
-  if (OPTS_DRAW_REL) { if (pinger_state.pause) series_lock(); else series_unlock(); }
+  if (need_drawing()) {
+    drawtab_update();
+    if (pinger_state.pause) series_lock(); else series_unlock();
+  }
 }
 
 static void on_reset(GSimpleAction *action, GVariant *var, void *unused) {
@@ -359,7 +365,9 @@ void on_scale(GSimpleAction *action, GVariant *var, t_kb_plot_aux *data) {
   if ((want < mm->min) || (want > mm->max)) return;
   *pval = want;
   notifier_inform("%s (%s): %d°", aux->prfx, aux->sfx, want);
+#ifdef WITH_PLOT
   plottab_refresh(PL_PARAM_FOV);
+#endif
 }
 
 #endif

@@ -1,11 +1,10 @@
 
 #include "whois.h"
 #include "parser.h"
-#include "stat.h"
 
-#define WHOIS_HOST          "riswhois.ripe.net"
-#define WHOIS_PORT          43
-#define WHOIS_REQUEST_FMT   "-m %s\n"
+#define WHOIS_HOST        "riswhois.ripe.net"
+#define WHOIS_PORT        43
+#define WHOIS_REQUEST_FMT "-m %s\n"
 
 typedef struct wc_elem { // whois cache element
   char *addr;

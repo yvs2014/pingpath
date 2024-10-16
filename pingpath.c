@@ -12,9 +12,12 @@
 #include "ui/appbar.h"
 #include "ui/notifier.h"
 #include "ui/clipboard.h"
+#include "tabs/graph.h"
+#ifdef WITH_PLOT
+#include "tabs/plot.h"
+#endif
 #include "tabs/ping.h"
 #include "tabs/log.h"
-#include "draw_rel.h"
 
 #define APPFLAGS G_APPLICATION_NON_UNIQUE
 
@@ -54,7 +57,7 @@ static void on_tab_switch(GtkNotebook *nb, GtkWidget *tab, unsigned ndx, void *u
 }
 
 static void app_cb(GtkApplication* app, void *unused) {
-  STYLE_SET;
+  style_set();
   GtkWidget *win = gtk_application_window_new(app);
   if (!GTK_IS_WINDOW(win)) APPQUIT("%s", "app window");
   gtk_window_set_default_size(GTK_WINDOW(win), X_RES, Y_RES);

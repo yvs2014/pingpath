@@ -2,12 +2,9 @@
 #include <stdlib.h>
 
 #include "cli.h"
-#include "stat.h"
 #include "pinger.h"
 #include "parser.h"
-#include "ui/action.h"
 #include "ui/option.h"
-#include "ui/notifier.h"
 
 #define CLI_SET_ERR { if (error) { (value && value[0]) ? \
   g_set_error(error, g_quark_from_static_string(""), -1, "Not valid %s: %s", name, value) : \

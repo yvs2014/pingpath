@@ -12,7 +12,7 @@
 #define MIN_GTK_RUNTIME(major, minor, micro) (!gtk_check_version(major, minor, micro))
 
 #define APPNAME "pingpath"
-#define VERSION "0.3.30"
+#define VERSION "0.3.31"
 
 #define X_RES 1024
 #define Y_RES 720
@@ -345,6 +345,37 @@
 #define SPN_GCOL_DELIM "green"
 #define SPN_BCOL_DELIM "blue"
 
+#define DEF_DNS    true
+#define DEF_WHOIS  true
+#define DEF_CYCLES 100
+#define DEF_TOUT   1
+#define DEF_QOS    0
+#define DEF_PPAD  "00"
+#define DEF_PSIZE  56
+
+#define DEF_LEGEND     true
+#define DEF_DARK_MAIN  true
+#define DEF_DARK_GRAPH false
+
+#ifdef WITH_PLOT
+#define DEF_DARK_PLOT false
+
+#define DEF_RCOL_FROM 77
+#define DEF_RCOL_TO   77
+#define DEF_GCOL_FROM 230
+#define DEF_GCOL_TO   77
+#define DEF_BCOL_FROM 77
+#define DEF_BCOL_TO   230
+
+#define DEF_RGLOBAL   true
+#define GL_ANGX       0
+#define GL_ANGY     -20
+#define GL_ANGZ       0
+#define DEF_ANGSTEP   5
+
+#define DEF_FOV      45
+#endif
+
 enum { GLIB_STRV, GTK_STRV, CAIRO_STRV, PANGO_STRV };
 
 enum { TAB_PING_NDX, TAB_GRAPH_NDX,
@@ -405,6 +436,26 @@ typedef struct minmax {
   int min, max;
 } t_minmax;
 #define MM_OKAY(mm, val) (((mm).min <= val) && (val <= (mm).max))
+
+typedef struct opts {
+  char *target;
+  gboolean dns, whois, legend, darktheme, darkgraph;
+  int cycles, timeout, qos, size, ipv, graph;
+  int min, lim;       // TTL range
+  char pad[PAD_SIZE]; // 16 x "00."
+  char recap;         // type of summary at exit
+  int tout_usec;      // internal: timeout in usecs
+  int logmax;         // internal: max lines in log tab
+#ifdef WITH_PLOT
+  gboolean plot, darkplot;
+  t_minmax rcol, gcol, bcol; // color range
+  gboolean rglob;            // rotation space: global (xyz) or local (attitude)
+  int orient[3];             // plot orientation
+  int angstep;               // rotation step
+  int fov;                   // field of view
+#endif
+} t_opts;
+extern t_opts opts;
 
 typedef struct host {
   char *addr, *name;

@@ -1,7 +1,7 @@
 #ifndef UI_STYLE_H
 #define UI_STYLE_H
 
-#include "common.h"
+#include <gtk/gtk.h>
 
 #define CSS_ID_DATETIME "datetime"
 #define CSS_BGROUND     "bground"
@@ -27,7 +27,7 @@
 #define CSS_LEGEND_TEXT "lgndtxt"
 #define CSS_ROTOR       "rotor"
 
-void style_set(gboolean darkmain, gboolean darkgraph, gboolean darkplot);
+void style_set(void);
 void style_free(void);
 const char* is_sysicon(const char **icon);
 extern int style_loaded;

@@ -3,7 +3,6 @@
 
 #include <epoxy/gl.h>
 
-#include "common.h"
 #include "plot_aux.h"
 
 #define PLOT_FONT_SIZE 24

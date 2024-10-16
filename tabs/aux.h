@@ -38,4 +38,9 @@ gboolean is_tab_that(unsigned ndx);
 
 extern t_tab* nb_tabs[TAB_NDX_MAX];
 
+void drawtab_free(void);
+void drawtab_update(void);
+void drawtab_refresh(void);
+gboolean need_drawing(void);
+
 #endif

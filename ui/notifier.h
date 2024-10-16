@@ -1,7 +1,7 @@
 #ifndef UI_NOTIFIER_H
 #define UI_NOTIFIER_H
 
-#include "common.h"
+#include <gtk/gtk.h>
 
 enum { NT_MAIN_NDX, NT_LEGEND_NDX,
 #ifdef WITH_PLOT

@@ -14,7 +14,6 @@
 #include "ui/appbar.h"
 #include "ui/notifier.h"
 #include "tabs/ping.h"
-#include "draw_rel.h"
 #include "series.h"
 
 #define PING "/bin/ping"
@@ -43,21 +42,6 @@ typedef struct proc {
   int ndx;         // index in internal list
   char *out, *err; // stdout, stderr buffers
 } t_proc;
-
-t_opts opts = { .target = NULL, .dns = DEF_DNS, .whois = DEF_WHOIS, .cycles = DEF_CYCLES, .qos = DEF_QOS, .size = DEF_PSIZE,
-  .min = MINTTL - 1, .lim = MAXTTL, .timeout = DEF_TOUT, .tout_usec = DEF_TOUT * G_USEC_PER_SEC, .logmax = DEF_LOGMAX,
-  .graph = GRAPH_TYPE_CURVE, .legend = DEF_LEGEND, .darktheme = DEF_DARK_MAIN, .darkgraph = DEF_DARK_GRAPH,
-#ifdef WITH_PLOT
-  .plot = true, .darkplot = DEF_DARK_PLOT,
-  .rcol = {DEF_RCOL_FROM, DEF_RCOL_TO},
-  .gcol = {DEF_GCOL_FROM, DEF_GCOL_TO},
-  .bcol = {DEF_BCOL_FROM, DEF_BCOL_TO},
-  .rglob   = DEF_RGLOBAL,
-  .orient  = {GL_ANGX, GL_ANGY, GL_ANGZ},
-  .angstep = DEF_ANGSTEP,
-  .fov  = DEF_FOV,
-#endif
-};
 
 t_pinger_state pinger_state;
 unsigned stat_timer, exp_timer;
@@ -363,7 +347,7 @@ static gboolean pinger_update_status(void) {
   return active;
 }
 
-#define NORECAP_DRAW_REL (!opts.recap && OPTS_DRAW_REL)
+#define NORECAP_DRAW_REL (need_drawing() && !opts.recap)
 
 static void process_stopped(GObject *process, GAsyncResult *result, t_proc *proc) {
   if (G_IS_SUBPROCESS(process)) {
@@ -395,7 +379,7 @@ static void process_stopped(GObject *process, GAsyncResult *result, t_proc *proc
     if (!pinger_state.gotdata && (!info_mesg || (info_mesg == notyet_mesg))) pinger_set_error(nodata_mesg);
     if (NORECAP_DRAW_REL) {
       series_update();
-      if (!pinger_state.pause) DRAW_UPDATE_REL;
+      if (!pinger_state.pause) drawtab_update();
     }
   }
 }
@@ -529,7 +513,7 @@ void pinger_start(void) {
   gboolean active = pinger_update_status();
   if (!active) return;
   pinger_clear_data(true);
-  if (!opts.recap) { DRAW_REFRESH_REL; pinger_vis_rows(0); }
+  if (!opts.recap) { drawtab_refresh(); pinger_vis_rows(0); }
   notifier_set_visible(NT_LEGEND_NDX, false);
   // schedule expiration check out
   if (exp_timer) { g_source_remove(exp_timer); exp_timer = 0; }
@@ -603,7 +587,7 @@ void pinger_cleanup(void) {
   dns_cache_free();
   whois_cache_free();
   pinger_error_free();
-  DRAW_FREE_REL;
+  drawtab_free();
   series_free(true);
   style_free();
 }
@@ -614,7 +598,7 @@ int pinger_update_tabs(int *pseq) {
   pinger_update();
   if (pinger_state.run && NORECAP_DRAW_REL) {
     if (pseq) series_update();
-    DRAW_UPDATE_REL;
+    drawtab_update();
   }
   return G_SOURCE_CONTINUE;
 }

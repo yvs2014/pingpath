@@ -1,3 +1,7 @@
+## 0.3.31
+- logtab: do not dispose lines manually
+- retoss headers in clang-tidy fiendlier way
+
 ## 0.3.30
 - friendlier to clang SA
 - tidy up a bit

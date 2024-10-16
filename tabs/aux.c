@@ -2,8 +2,10 @@
 #include "aux.h"
 #include "ui/style.h"
 #include "ui/notifier.h"
-
-#define TAB_ELEM_INIT(tabw, maker, cssclass, color) TAB_ELEM_WITH(tabw, maker, cssclass, color, false)
+#include "tabs/graph.h"
+#ifdef WITH_PLOT
+#include "tabs/plot.h"
+#endif
 
 static void tab_aux_reload_css(t_tab_widget *wd, const char *color) {
   if (wd->col)  gtk_widget_remove_css_class(wd->w, wd->col);
@@ -14,6 +16,7 @@ static void tab_aux_reload_css(t_tab_widget *wd, const char *color) {
 
 t_tab* nb_tabs[TAB_NDX_MAX]; // notebook tabs are reorderable
 
+#define TAB_ELEM_INIT(tabw, maker, cssclass, color) TAB_ELEM_WITH(tabw, maker, cssclass, color, false)
 gboolean basetab_init(t_tab *tab, GtkWidget* (*make_dyn)(void), GtkWidget* (*make_extra)(void)) {
   if (!tab || !make_dyn) return false;
   TAB_ELEM_INIT(tab->lab, gtk_box_new(GTK_ORIENTATION_VERTICAL, 2),      CSS_PAD, NULL);
@@ -49,6 +52,7 @@ gboolean drawtab_init(t_tab *tab, const char *bg, GSList *layers, int ndx) {
   gtk_box_append(GTK_BOX(tab->tab.w), notify ? notify : scroll);
   return true;
 }
+#undef TAB_ELEM_INIT
 
 void tab_setup(t_tab *tab) {
   if (!tab) return;
@@ -83,5 +87,32 @@ void tab_reload_theme(void) {
   for (int i = 0; i < G_N_ELEMENTS(nb_tabs); i++) if (nb_tabs[i]) tab_color(nb_tabs[i]);
 }
 
-#undef TAB_ELEM_INIT
+inline gboolean need_drawing(void) {
+  return opts.graph
+#ifdef WITH_PLOT
+      || opts.plot
+#endif
+  ;
+}
+
+inline void drawtab_free(void) {
+  graphtab_free();
+#ifdef WITH_PLOT
+  plottab_free();
+#endif
+}
+
+inline void drawtab_update(void)  {
+  if (opts.graph) graphtab_update();
+#ifdef WITH_PLOT
+  if (opts.plot) plottab_update();
+#endif
+}
+
+inline void drawtab_refresh(void) {
+  if (opts.graph) graphtab_refresh();
+#ifdef WITH_PLOT
+  if (opts.plot) plottab_refresh(PL_PARAM_ALL);
+#endif
+}
 

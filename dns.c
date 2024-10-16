@@ -1,6 +1,5 @@
 
 #include "dns.h"
-#include "stat.h"
 
 typedef struct dns_elem { // network stuff
   GSList *refs; // hops requested addr resolv

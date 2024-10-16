@@ -1,12 +1,16 @@
 
+#include "common.h"
 #include "option.h"
 #include "parser.h"
 #include "pinger.h"
 #include "stat.h"
 #include "style.h"
 #include "notifier.h"
+#include "tabs/graph.h"
+#ifdef WITH_PLOT
+#include "tabs/plot.h"
+#endif
 #include "tabs/ping.h"
-#include "draw_rel.h"
 
 typedef gboolean (*optmenu_add_items_fn)(GtkWidget *);
 
@@ -263,8 +267,8 @@ static void set_ed_texthint(t_ent_str *en) {
 static void toggled_dns(void) { stat_reset_cache(); notifier_legend_update(); pinger_update_tabs(NULL); }
 
 static void toggle_colors(void) {
-  tab_dependent(NULL); STYLE_SET;
-  tab_reload_theme();  DRAW_REFRESH_REL;
+  tab_dependent(NULL); style_set();
+  tab_reload_theme();  drawtab_refresh();
   notifier_legend_refresh();
 }
 
@@ -381,7 +385,7 @@ static void input_cb(GtkWidget *input, t_ent_str *en) {
           OPT_NOTIFY("%s: %d", en->en.name, n);
         }
       } else set_ed_texthint(en);
-      if (en->en.type == ENT_STR_IVAL) DRAW_REFRESH_REL; // rescale time-axis
+      if (en->en.type == ENT_STR_IVAL) drawtab_refresh(); // rescale time-axis
     } break;
     case ENT_STR_PLOAD: {
       char *pad = parser_str(got, en->en.name, OPT_TYPE_PAD);

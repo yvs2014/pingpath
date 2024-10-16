@@ -1,8 +1,11 @@
 #ifndef UI_ACTION_H
 #define UI_ACTION_H
 
-#include "common.h"
-#include "option.h"
+#include <gtk/gtk.h>
+
+#ifdef WITH_PLOT
+#include "ui/option.h"
+#endif
 
 gboolean action_init(GtkApplication *app, GtkWidget *win, GtkWidget* bar);
 void action_update(void);

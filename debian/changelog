@@ -1,3 +1,11 @@
+pingpath (0.3.31) mantic noble; urgency=low
+
+  * logtab: do not dispose lines manually
+
+  * retoss headers in clang-tidy fiendlier way
+
+ -- yvs <VSYakovetsky@gmail.com>  Thu, 17 Oct 2024 02:31:13 +0300
+
 pingpath (0.3.30) mantic noble; urgency=low
 
   * friendlier to clang SA

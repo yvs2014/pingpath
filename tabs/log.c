@@ -1,7 +1,6 @@
 
 #include "log.h"
 #include "pinger.h"
-#include "ui/style.h"
 #include "ui/clipboard.h"
 
 const char *log_empty  = "<empty>";
@@ -15,18 +14,17 @@ static t_tab logtab = { .self = &logtab, .name = "log-tab",
 
 static void logtab_add(const char *str) {
   if (atquit || !str || !GTK_IS_LIST_BOX(logtab.dyn.w)) return;
-  char *cp = strchr(str, '\n') ? g_strdup(str) : NULL;
-  GtkWidget *line = gtk_label_new(cp ? g_strdelimit(cp, "\n", ',') : str);
-  g_free(cp);
-  g_return_if_fail(line);
-  gtk_widget_set_halign(line, GTK_ALIGN_START);
-  gtk_list_box_append(GTK_LIST_BOX(logtab.dyn.w), line);
-  loglines++;
+  { char *cp = strchr(str, '\n') ? g_strdup(str) : NULL;
+    GtkWidget *line = gtk_label_new(cp ? g_strdelimit(cp, "\n", ',') : str);
+    g_free(cp); g_return_if_fail(line);
+    gtk_widget_set_halign(line, GTK_ALIGN_START);
+    gtk_list_box_append(GTK_LIST_BOX(logtab.dyn.w), line);
+    loglines++; }
   while (loglines > opts.logmax) {
     GtkWidget *line = gtk_widget_get_first_child(logtab.dyn.w);
     if (GTK_IS_LABEL(line)) gtk_label_set_text(GTK_LABEL(line), NULL);
     if (GTK_IS_WIDGET(line)) { gtk_list_box_remove(GTK_LIST_BOX(logtab.dyn.w), line); loglines--; } else break;
-    if (G_IS_OBJECT(line)) g_object_run_dispose(G_OBJECT(line)); // safe to free?
+//    if (G_IS_OBJECT(line)) g_object_run_dispose(G_OBJECT(line)); // sometimes not too safe to dispose
   }
 }
 
