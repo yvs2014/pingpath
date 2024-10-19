@@ -23,6 +23,10 @@ build() {
   meson compile -C "$_build"
 }
 
+check() {
+  meson test -C "$_build"
+}
+
 package() {
   DESTDIR="$pkgdir" meson install -C "$_build"
 }

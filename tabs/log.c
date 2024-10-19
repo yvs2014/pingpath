@@ -24,7 +24,6 @@ static void logtab_add(const char *str) {
     GtkWidget *line = gtk_widget_get_first_child(logtab.dyn.w);
     if (GTK_IS_LABEL(line)) gtk_label_set_text(GTK_LABEL(line), NULL);
     if (GTK_IS_WIDGET(line)) { gtk_list_box_remove(GTK_LIST_BOX(logtab.dyn.w), line); loglines--; } else break;
-//    if (G_IS_OBJECT(line)) g_object_run_dispose(G_OBJECT(line)); // sometimes not too safe to dispose
   }
 }
 

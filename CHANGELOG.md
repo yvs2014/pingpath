@@ -1,6 +1,9 @@
+## 0.3.32
+- add simple test unit
+
 ## 0.3.31
 - logtab: do not dispose lines manually
-- retoss headers in clang-tidy fiendlier way
+- retoss headers in clang-tidy friendlier way
 
 ## 0.3.30
 - friendlier to clang SA

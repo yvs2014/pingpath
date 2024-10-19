@@ -38,6 +38,9 @@ Written using GTK4 framework.
 %install
 %meson_install
 
+%check
+%meson_test
+
 %files
 %defattr(-,root,root,-)
 %dir %{docnam}

@@ -62,7 +62,7 @@ asst = 'assets'
 dotdsk = '.desktop'
 name2 = name + '2'
 desk2 = name2 + dotdsk
-executable(name2, srcs, dependencies: deps, c_args: cpps, install: true)
+pp = executable(name2, srcs, dependencies: deps, c_args: cpps, install: true)
 install_data(asst / desk2, rename: rdns + desk2, install_dir: deskdir)
 
 # optional: PLOT (default ON)
@@ -74,7 +74,7 @@ if plot
   deps += dependency('gl',    required: true)
   deps += dependency('cglm',  required: true)
   deps += dependency('epoxy', required: true)
-  executable(name, srcs, dependencies: deps, c_args: cpps, install: true)
+  pp = executable(name, srcs, dependencies: deps, c_args: cpps, install: true)
   desk = name + dotdsk
   install_data(asst / desk, rename: rdns + desk, install_dir: deskdir)
 endif
@@ -84,4 +84,7 @@ install_data(asst / 'icons' / name + '.svg', install_dir: datadir / 'icons/hicol
 conf = name + '.conf'
 docdir = get_option('docdir') != '' ? get_option('docdir') : datadir / 'doc'
 install_data(conf + '.sample', rename: conf, install_dir: docdir / name / 'examples')
+
+test(name, pp, args: ['--version'])
+test(name, pp, args: ['--cycles', '10', '--recap', 't', 'localhost'])
 

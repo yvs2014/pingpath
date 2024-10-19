@@ -30,8 +30,8 @@ jobs:
           sudo dpkg -i debs/pingpath_*_*.deb
       - name: Test run
         run: |
-          pingpath -V
-          pingpath -c 10 -r t 127.0.0.1
+          pingpath --version
+          pingpath --cycles 10 --recap t localhost
       - uses: actions/upload-artifact@v4
         with:
           name: auto-built-pingpath-deb

@@ -39,6 +39,10 @@ cd %{srcdir}
 cd %{srcdir}
 %meson_install
 
+%check
+cd %{srcdir}
+%meson_test
+
 %files
 %defattr(-,root,root,-)
 %dir %{docdir}
