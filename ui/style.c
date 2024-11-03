@@ -1,4 +1,7 @@
 
+#include <stdlib.h>
+#include <string.h>
+
 #include "common.h"
 #include "style.h"
 
@@ -87,27 +90,27 @@ static char* style_extra_css(const char *common) {
     g_strdup_printf("." CSS_ROTOR_COL  ":hover {background:%s;}\n", style_color.gry[p]),
 #endif
     NULL};
-  char *re = g_strjoinv(NULL, items);
-  for (char **p = items; *p; p++) g_free(*p);
-  return re;
+  char *str = g_strjoinv(NULL, items);
+  for (char **ptr = items; *ptr; ptr++) g_free(*ptr);
+  return str;
 };
 
-static const gboolean is_theme_dark(const char *theme) {
-  char *lc = g_utf8_strdown(theme, -1);
-  gboolean re = g_str_has_suffix(lc ? lc : theme, SFFX_DIV1 DARK_SFFX);
-  if (!re) re = g_str_has_suffix(lc ? lc : theme, SFFX_DIV2 DARK_SFFX);
-  g_free(lc); return re;
+static gboolean is_theme_dark(const char *theme) {
+  char *str = g_utf8_strdown(theme, -1);
+  gboolean dark = g_str_has_suffix(str ? str : theme, SFFX_DIV1 DARK_SFFX);
+  if (!dark) dark = g_str_has_suffix(str ? str : theme, SFFX_DIV2 DARK_SFFX);
+  g_free(str); return dark;
 }
 
 static char* style_basetheme(const char *theme) {
-  char *re = g_strdup(theme);
-  if (re) {
+  char *dup = g_strdup(theme);
+  if (dup) {
     gboolean is_dark = is_theme_dark(theme);
     if (is_dark) {
-      char *sfx = g_strrstr(re, SFFX_DIV1 DARK_SFFX);
-      if (!sfx) sfx = g_strrstr(re, SFFX_DIV2 DARK_SFFX);
+      char *sfx = g_strrstr(dup, SFFX_DIV1 DARK_SFFX);
+      if (!sfx) sfx = g_strrstr(dup, SFFX_DIV2 DARK_SFFX);
       if (sfx) *sfx = 0; }}
-  return re;
+  return dup;
 }
 
 static char* style_prefer(gboolean dark) {

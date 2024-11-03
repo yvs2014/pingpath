@@ -85,6 +85,23 @@ conf = name + '.conf'
 docdir = get_option('docdir') != '' ? get_option('docdir') : datadir / 'doc'
 install_data(conf + '.sample', rename: conf, install_dir: docdir / name / 'examples')
 
-test(name, pp, args: ['--version'])
-test(name, pp, args: ['--cycles', '10', '--recap', 't', 'localhost'])
+text_mode  =  ['--cycles', '1', '--recap', 't', 'localhost']
+test_args  = [['--version'], text_mode]
+if json
+test_args += [['--cycles', '1', '--recap', 'j', 'localhost']]
+test_args += [['--cycles', '1', '--recap', 'J', 'localhost']]
+endif
+test_args += [['--cycles', '1', '--recap', 'c', 'localhost']]
+test_args += [['--numeric']          + text_mode]
+test_args += [['--interval', '2']    + text_mode]
+test_args += [['--payload', 'ff']    + text_mode]
+test_args += [['--ttl', '2']         + text_mode]
+test_args += [['--info', 'hacdr']    + text_mode]
+test_args += [['--stat', 'lsrmbwaj'] + text_mode]
+test_args += [['-4']                 + text_mode]
+test_args += [['-6'] + ['--cycles', '1', '--recap', 't', 'ip6-localhost']]
+test_args += [['--file', meson.current_source_dir() / name + '.conf.sample'] + text_mode]
+foreach args: test_args
+  test(' '.join([name] + args), pp, args: args)
+endforeach
 

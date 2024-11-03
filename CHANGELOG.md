@@ -1,3 +1,6 @@
+## 0.3.33
+- tidy up and add a bit of readability
+
 ## 0.3.32
 - add simple test unit
 

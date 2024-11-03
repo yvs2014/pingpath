@@ -1,7 +1,11 @@
 
-#include <series.h>
-#include <pinger.h>
-#include <stat.h>
+#include <stdlib.h>
+
+#include "common.h"
+
+#include "series.h"
+#include "pinger.h"
+#include "stat.h"
 
 t_series_list stat_series[MAXTTL];
 const int series_count = MAXTTL;
@@ -25,10 +29,10 @@ GSList *on_scale_list;
 static void series_scale(int max) {
   series_datamax = max * GRAPH_DATA_GAP;
   for (GSList *item = on_scale_list; item; item = item->next) {
-    GtkWidget *w = item->data;
-    if (!GTK_IS_WIDGET(w)) continue;
-    gtk_widget_queue_draw(w);
-    if (!gtk_widget_get_visible(w)) gtk_widget_set_visible(w, true);
+    GtkWidget *widget = item->data;
+    if (!GTK_IS_WIDGET(widget)) continue;
+    gtk_widget_queue_draw(widget);
+    if (!gtk_widget_get_visible(widget)) gtk_widget_set_visible(widget, true);
   }
 }
 
@@ -43,27 +47,27 @@ static int max_in_series(GSList* list) {
   return max;
 }
 
-static void series_save_rseq(int i, t_rseq *data) {
+static void series_save_rseq(int nth, t_rseq *data) {
   if (grm_lock || !data) return;
-  t_rseq *copy = g_memdup2(data, sizeof(*data));
-  if (!copy) return; // highly unlikely
+  t_rseq *dup = g_memdup2(data, sizeof(*data));
+  if (!dup) return; // highly unlikely
   t_series_list* series = pinger_state.pause ? stat_series_kept : stat_series;
-  CURR_SERIES(i) = g_slist_prepend(CURR_SERIES(i), copy); CURR_SERIES_LEN(i)++;
+  CURR_SERIES(nth) = g_slist_prepend(CURR_SERIES(nth), dup); CURR_SERIES_LEN(nth)++;
   if (data->rtt > series_datamax) series_scale(data->rtt); // up-scale
-  while (CURR_SERIES(i) && (CURR_SERIES_LEN(i) > series_no)) {
-    GSList *last = g_slist_last(CURR_SERIES(i));
+  while (CURR_SERIES(nth) && (CURR_SERIES_LEN(nth) > series_no)) {
+    GSList *last = g_slist_last(CURR_SERIES(nth));
     if (!last) break;
     int rtt = last->data ? ((t_rseq*)last->data)->rtt : -1;
     if (last->data) { g_free(last->data); last->data = NULL; }
-    CURR_SERIES(i) = g_slist_delete_link(CURR_SERIES(i), last); CURR_SERIES_LEN(i)--;
+    CURR_SERIES(nth) = g_slist_delete_link(CURR_SERIES(nth), last); CURR_SERIES_LEN(nth)--;
     if ((rtt * GRAPH_DATA_GAP) >= series_datamax) {
-      int max = max_in_series(CURR_SERIES(i));
+      int max = max_in_series(CURR_SERIES(nth));
       if (((max * GRAPH_DATA_GAP) < series_datamax) && (max > PP_RTT0)) series_scale(max); // down-scale
     }
   }
 }
 
-static void* stat_dup_series(const void *src, void *data) { return g_memdup2(src, sizeof(t_rseq)); }
+static void* stat_dup_series(const void *src, void *unused) { return g_memdup2(src, sizeof(t_rseq)); }
 
 
 // pub
@@ -118,9 +122,9 @@ void series_unlock(void) {
   grm_lock = false;
 }
 
-inline void series_min(int no) { if (no > series_no) series_no = no; }
+inline void series_min_no(int number) { if (number > series_no) series_no = number; }
 
-void series_reg_on_scale(GtkWidget *w) {
-  if (GTK_IS_WIDGET(w)) on_scale_list = g_slist_append(on_scale_list, w);
+void series_reg_on_scale(GtkWidget *widget) {
+  if (GTK_IS_WIDGET(widget)) on_scale_list = g_slist_append(on_scale_list, widget);
 }
 

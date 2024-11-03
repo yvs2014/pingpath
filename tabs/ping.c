@@ -1,4 +1,9 @@
 
+#include <stdlib.h>
+#include <math.h>
+
+#include "common.h"
+
 #include "ping.h"
 #include "aux.h"
 #include "pinger.h"
@@ -7,8 +12,7 @@
 #include "ui/clipboard.h"
 #include "ui/option.h"
 
-#define ELEM_BUFF_SIZE 16
-#define HDRLINES 1
+enum { ELEM_BUFF_SIZE = 16, HDRLINES = 1 };
 
 #ifdef WITH_DND
 typedef struct listline t_listline;
@@ -73,6 +77,7 @@ static void pt_set_elem_align(int type, GtkWidget *label) {
     case PE_NO:
       pt_align_elem_label(label, GTK_ALIGN_END, false);
       break;
+    default: break;
   }
   gtk_widget_set_valign(label, GTK_ALIGN_START);
 }
@@ -80,9 +85,9 @@ static void pt_set_elem_align(int type, GtkWidget *label) {
 #ifdef WITH_DND
 #ifdef DNDORD_DEBUGGING
 static void pt_pr_elem_ndxs(const char *pre, const t_type_elem *elems, int len) {
-  GString *s = g_string_new(NULL);
-  for (int i = 0; i < len; i++) g_string_append_printf(s, " %d", elems[i].type);
-  g_message("REORDER %s%s", pre, s->str); g_string_free(s, true);
+  GString *str = g_string_new(NULL);
+  for (int i = 0; i < len; i++) g_string_append_printf(str, " %d", elems[i].type);
+  g_message("REORDER %s%s", pre, str->str); g_string_free(str, true);
 }
 #define PT_PRINT_ELEMS(pre, elems, len) do { if (verbose & 32) pt_pr_elem_ndxs(pre, elems, len); } while (0)
 #else
@@ -95,23 +100,23 @@ static gboolean pt_reorder_elems(int prev, int next, const t_elem_desc *desc) {
   if ((len <= 0) || (prev1 < 0) || (prev1 >= len) || (next1 < 0) || (next1 > len)) return false;
   //
   t_type_elem *elems = &desc->elems[desc->mm.min];
-  t_type_elem *el = g_memdup2(elems, len * sizeof(t_type_elem));
-  if (!el) return false;
-  int i = 0;
-  for (int j = 0; j < next1; j++) if (j != prev1) el[i++] = elems[j];
-  el[i++] = elems[prev1];
-  for (int j = next1; j < len; j++) if (j != prev1) el[i++] = elems[j];
-  memcpy(elems, el, len * sizeof(t_type_elem)); // BUFFNOLINT
-  g_free(el);
+  t_type_elem *dup = g_memdup2(elems, len * sizeof(t_type_elem));
+  if (!dup) return false;
+  int ndx = 0;
+  for (int i = 0; i < next1; i++) if (i != prev1) dup[ndx++] = elems[i];
+  dup[ndx++] = elems[prev1];
+  for (int i = next1; i < len; i++) if (i != prev1) dup[ndx++] = elems[i];
+  memcpy(elems, dup, len * sizeof(t_type_elem)); // BUFFNOLINT
+  g_free(dup);
   return true;
 }
 
 static GtkWidget* pt_box_nth_label(GtkWidget *box, int n) {
   if (GTK_IS_BOX(box)) {
-    GtkWidget *w = gtk_widget_get_first_child(box);
-    for (int i = 0; w && (i < PE_MAX); i++) {
-      if (i == n) return w;
-      w = gtk_widget_get_next_sibling(w);
+    GtkWidget *widget = gtk_widget_get_first_child(box);
+    for (int i = 0; widget && (i < PE_MAX); i++) {
+      if (i == n) return widget;
+      widget = gtk_widget_get_next_sibling(widget);
     }
   }
   return NULL;
@@ -119,22 +124,25 @@ static GtkWidget* pt_box_nth_label(GtkWidget *box, int n) {
 
 static int pt_box_wndx(GtkWidget *box, GtkWidget *widget) {
   if (GTK_IS_BOX(box) && GTK_IS_WIDGET(widget)) {
-    GtkWidget *w = gtk_widget_get_first_child(box);
-    for (int i = 0; w && (i < PE_MAX); i++) {
-      if (w == widget) return i;
-      w = gtk_widget_get_next_sibling(w);
+    GtkWidget *item = gtk_widget_get_first_child(box);
+    for (int i = 0; item && (i < PE_MAX); i++) {
+      if (item == widget) return i;
+      item = gtk_widget_get_next_sibling(item);
     }
   }
   return -1;
 }
 
 static void pt_recache_labels(GtkWidget *box, GtkWidget **cells) {
-  GtkWidget *w = gtk_widget_get_first_child(box);
-  for (int i = 0; w && (i < PE_MAX); i++) { cells[i] = w; w = gtk_widget_get_next_sibling(w); }
+  GtkWidget *widget = gtk_widget_get_first_child(box);
+  for (int i = 0; widget && (i < PE_MAX); i++) {
+    cells[i] = widget;
+    widget = gtk_widget_get_next_sibling(widget);
+  }
 }
 
 static gboolean pt_reorder_cells(t_listline *lines, int len, int sn, int dn, gboolean before) {
-  gboolean ok = true;
+  gboolean okay = true;
   for (int i = 0; i < len; i++) { // reorder line elements
     GtkWidget *box = lines[i].box;
     GtkWidget *slab = pt_box_nth_label(box, sn), *dlab = pt_box_nth_label(box, dn);
@@ -143,10 +151,11 @@ static gboolean pt_reorder_cells(t_listline *lines, int len, int sn, int dn, gbo
       memset(lines[i].labs, 0, sizeof(lines[i].labs)); // BUFFNOLINT
       pt_recache_labels(box, lines[i].labs);
       continue;
-    } else WARN("missed widgets at line=%d [src=%d,dst=%d]", i, sn, dn);
-    if (ok) ok = false;
+    }
+    WARN("missed widgets at line=%d [src=%d,dst=%d]", i, sn, dn);
+    if (okay) okay = false;
   }
-  return ok;
+  return okay;
 }
 
 #define PT_LAB_TEXT(lab) (GTK_IS_LABEL(lab) ? gtk_label_get_text(GTK_LABEL(lab)) : "")
@@ -263,8 +272,8 @@ static GtkWidget* pt_make_dynlist(t_listline *lines, int len, t_type_elem *elems
     if (elems) { // header
       if (!pt_init_line_elems(elems, &lines[i], bodylines, group)) return NULL;
     } else {     // line with number
-      char *s = stat_no_at_buff[i]; g_snprintf(s, ELEM_BUFF_SIZE, "%d.", i + 1);
-      bodyelem[PE_NO].name = s;
+      char *str = stat_no_at_buff[i]; g_snprintf(str, ELEM_BUFF_SIZE, "%d.", i + 1);
+      bodyelem[PE_NO].name = str;
       if (!pt_init_line_elems(bodyelem, &lines[i], NULL, group)) return NULL;
     }
     gtk_list_box_append(GTK_LIST_BOX(list), GTK_WIDGET(row));

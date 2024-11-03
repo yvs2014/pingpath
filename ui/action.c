@@ -1,4 +1,8 @@
 
+#include <stdlib.h>
+
+#include "common.h"
+
 #include "action.h"
 #include "appbar.h"
 #include "option.h"
@@ -49,12 +53,12 @@ static const char* kb_ctrl_scdn[]  = {"<Ctrl>Home",      "KP_Subtract",  NULL};
 
 #ifdef WITH_PLOT
 #define KBROTCSAUX(spn_ndx, cs_ndx, tndx, ang_sign, ax_rev) { .aux = &ent_spn[spn_ndx].list[0].aux[cs_ndx], \
-  .pval = &opts.orient[tndx], .sign = ang_sign, .rev = ax_rev }
+  .pval = &opts.orient[tndx], .sign = (ang_sign), .rev = (ax_rev) }
 #define KBROTAUX(lndx, gndx, labn, lsign, gsign) { \
   .global = KBROTCSAUX(ENT_SPN_GLOBAL, gndx, gndx, gsign, false), \
-  .local  = KBROTCSAUX(ENT_SPN_LOCAL,  lndx, gndx, lsign, lsign != gsign), \
-  .label = labn, .step = &opts.angstep }
-#define KBSCALEAUX(labn) { .label = labn, .global = { .aux = ent_spn[ENT_SPN_FOV].list[0].aux, .pval = &opts.fov }}
+  .local  = KBROTCSAUX(ENT_SPN_LOCAL,  lndx, gndx, lsign, (lsign) != (gsign)), \
+  .label  = (labn), .step = &opts.angstep }
+#define KBSCALEAUX(labn) { .label = (labn), .global = { .aux = ent_spn[ENT_SPN_FOV].list[0].aux, .pval = &opts.fov }}
 t_kb_plot_aux kb_plot_aux[ACCL_SA_MAX] = {
   [ACCL_SA_LEFT]  = KBROTAUX(0, 1, ACCL_SA_LEFT,   1, -1),
   [ACCL_SA_RIGHT] = KBROTAUX(0, 1, ACCL_SA_RIGHT, -1,  1),
@@ -99,7 +103,6 @@ static void on_help       (GSimpleAction*, GVariant*, GtkWindow*);
 static void on_quit       (GSimpleAction*, GVariant*, GtkWindow*);
 static void on_legend     (GSimpleAction*, GVariant*, void*);
 #ifdef WITH_PLOT
-       void on_rotation   (GSimpleAction*, GVariant*, t_kb_plot_aux*);
 static void on_scale      (GSimpleAction*, GVariant*, t_kb_plot_aux*);
 #endif
 typedef void (*ae_sa_fn)  (GSimpleAction*, GVariant*, void*);
@@ -135,6 +138,7 @@ static const char* menu_sa_label(int ndx) {
     case MENU_SA_RESET: return ACT_RESET_HDR;
     case MENU_SA_HELP:  return ACT_HELP_HDR;
     case MENU_SA_QUIT:  return ACT_QUIT_HDR;
+    default: break;
   }
   return "";
 }
@@ -152,6 +156,7 @@ static const char* accl_sa_label(int ndx) {
     case ACCL_SA_SCUP:  return ACT_SCUP_K_HDR;
     case ACCL_SA_SCDN:  return ACT_SCDN_K_HDR;
 #endif
+    default: break;
   }
   return "";
 }
@@ -183,8 +188,8 @@ static void hide_help_cb(GtkWidget *button, GtkWidget *dialog) {
   if (GTK_IS_WIDGET(dialog)) gtk_widget_set_visible(dialog, false);
 }
 
-static gboolean help_dialog_cb(GtkEventControllerKey *c, unsigned val, unsigned code, unsigned mo, GtkButton *btn) {
-  if ((val != GDK_KEY_Escape) || (mo & GDK_MODIFIER_MASK) || !GTK_IS_BUTTON(btn)) return false;
+static gboolean help_dialog_cb(GtkEventControllerKey *eck, unsigned val, unsigned code, unsigned mod, GtkButton *btn) {
+  if ((val != GDK_KEY_Escape) || (mod & GDK_MODIFIER_MASK) || !GTK_IS_BUTTON(btn)) return false;
   g_signal_emit_by_name(btn, EV_CLICK);
   return true;
 }
@@ -250,8 +255,8 @@ static inline char* get_help_message(void) {
 #undef SPANHDR
 #undef SPANOPT
 #undef SPANSUB
-  char* list[8] = {0}; int i = 0;
-#define HELP_MESG(cond, mesg) { if (cond && (i < G_N_ELEMENTS(list))) list[i++] = mesg; }
+  char* list[8] = {0}; int ndx = 0;
+#define HELP_MESG(cond, mesg) { if ((cond) && (ndx < G_N_ELEMENTS(list))) list[ndx++] = (mesg); }
   HELP_MESG(true,       prolog);
   HELP_MESG(opts.graph, prolog_graph);
 #ifdef WITH_PLOT
@@ -365,11 +370,8 @@ void on_scale(GSimpleAction *action, GVariant *var, t_kb_plot_aux *data) {
   if ((want < mm->min) || (want > mm->max)) return;
   *pval = want;
   notifier_inform("%s (%s): %d°", aux->prfx, aux->sfx, want);
-#ifdef WITH_PLOT
   plottab_refresh(PL_PARAM_FOV);
-#endif
 }
-
 #endif
 
 static GMenu* action_menu_init(GtkWidget *bar) {
@@ -400,7 +402,7 @@ static void map_sa_entries(GActionMap *map, GActionEntry entr[], t_sa_desc desc[
 }
 
 #define LOOP_SET_ACCELS(desc) { for (int i = 0; i < G_N_ELEMENTS(desc); i++) \
-  gtk_application_set_accels_for_action(app, desc[i].name, desc[i].shortcut); }
+  gtk_application_set_accels_for_action(app, (desc)[i].name, (desc)[i].shortcut); }
 
 static gboolean create_action_menu(GtkApplication *app, GtkWidget *win, GtkWidget *bar) {
   g_return_val_if_fail(GTK_IS_APPLICATION(app) && GTK_IS_WINDOW(win) && GTK_IS_HEADER_BAR(bar), false);

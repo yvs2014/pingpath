@@ -1,10 +1,15 @@
 
+#include <stdlib.h>
+#include <string.h>
+#include <sys/types.h>
+
+#include "common.h"
+
 #include "whois.h"
 #include "parser.h"
 
-#define WHOIS_HOST        "riswhois.ripe.net"
-#define WHOIS_PORT        43
-#define WHOIS_REQUEST_FMT "-m %s\n"
+static const char WHOIS_HOST[]  = "riswhois.ripe.net";
+static const int  WHOIS_PORT    = 43;
 
 typedef struct wc_elem { // whois cache element
   char *addr;
@@ -161,8 +166,10 @@ static void whois_cache_update(char *addr, t_whois *whois) {
         LOG("whois cache updated with addr=%s as=%s cc=%s rt=%s desc=%s", cache->addr,
           cached->elem[WHOIS_AS_NDX], cached->elem[WHOIS_CC_NDX],
           cached->elem[WHOIS_RT_NDX], cached->elem[WHOIS_DESC_NDX]);
-        PR_WHOIS_C; return;
-      } else FAILX(addr, "add cache");
+        PR_WHOIS_C;
+        return;
+      }
+      FAILX(addr, "add cache");
     } else FAILX(addr, "dup host");
   } else FAILX(addr, "alloc host");
   wc_free(cache);
@@ -181,8 +188,10 @@ static t_wq_elem* whois_query_save(const char *addr, t_hop *hop, int ndx) {
         GSList *added = list_add_nodup(&whois_query, elem, wq_cmp, WHOIS_QUERY_MAX);
         if (added) {
           WHOIS_DEBUG("%s(%s) hop[%d] host[%d]=%s", __func__, addr, hop->at, ndx, hop->host[ndx].addr);
-          PR_WHOIS_Q; return added->data;
-        } else FAILX(addr, "add query");
+          PR_WHOIS_Q;
+          return added->data;
+        }
+        FAILX(addr, "add query");
       } else FAILX(addr, "add ref");
     } else FAILX(addr, "dup addr");
   } else FAILX(addr, "alloc buffer");
@@ -230,7 +239,7 @@ static void on_whois_read(GObject *stream, GAsyncResult *result, t_wq_elem *elem
     if (size) { if (whois_reset_read(stream, size, elem)) return; }
     else { // EOF (size == 0)
       t_whois *whois = &elem->data.whois;
-      parser_whois(elem->buff, elem->size, &elem->data.whois);
+      parser_whois(elem->buff, &elem->data.whois);
       if (whois->elem[WHOIS_AS_NDX] && !whois->elem[WHOIS_AS_NDX][0])
         WHOIS_DEBUG("%s unresolved", elem->data.addr);
       WHOIS_DEBUG("%s(%s) as=%s cc=%s rt=%s desc=%s", __func__, elem->data.addr,

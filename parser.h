@@ -18,11 +18,11 @@ gboolean parser_init(void);
 void parser_parse(int at, char *input);
 char* parser_valid_target(const char *target);
 char* parser_str(const char *str, const char *option, int cat);
-void parser_whois(char *buff, int sz, t_whois* welem);
-gboolean parser_mmint(const char *str, const char *option, t_minmax mm, int *re);
-gboolean parser_range(char *range, char delim, const char *option, t_minmax *re);
+void parser_whois(char *buff, t_whois* welem);
+gboolean parser_mmint(const char *str, const char *option, t_minmax minmax, int *value);
+gboolean parser_range(char *range, char delim, const char *option, t_minmax *minmax);
 #ifdef WITH_PLOT
-gboolean parser_ivec(char *range, char delim, const char *option, int *dest, int n);
+gboolean parser_ivec(char *range, char delim, const char *option, int *dest, int max);
 #endif
 
 #endif

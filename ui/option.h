@@ -7,8 +7,8 @@
 #define SUBLIST_MAX   8
 
 #ifdef WITH_PLOT
-#define MIN_VIEW_ANGLE -180
-#define MAX_VIEW_ANGLE  180
+#define MIN_VIEW_ANGLE (-180)
+#define MAX_VIEW_ANGLE   180
 #endif
 
 enum { MINIMAX_SPIN,

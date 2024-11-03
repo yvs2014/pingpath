@@ -1,4 +1,9 @@
 
+#include <stdlib.h>
+#include <time.h>
+
+#include <common.h>
+
 #include "appbar.h"
 #include "style.h"
 #include "action.h"
@@ -74,13 +79,13 @@ gboolean appbar_init(GtkApplication *app, GtkWidget *win) {
   GtkWidget *bar = gtk_header_bar_new();
   g_return_val_if_fail(GTK_IS_HEADER_BAR(bar), false);
   gtk_window_set_titlebar(GTK_WINDOW(win), bar);
-  gboolean re = true;
-  if (!action_init(app, win, bar)) re = false;
-  if (!option_init(bar))           re = false;
-  if (!add_target_input(bar))      re = false;
+  gboolean okay = true;
+  if (!action_init(app, win, bar)) okay = false;
+  if (!option_init(bar))           okay = false;
+  if (!add_target_input(bar))      okay = false;
   start_datetime(bar);
   appbar_update();
-  return re;
+  return okay;
 }
 
 void appbar_update(void) { action_update(); option_update(); }

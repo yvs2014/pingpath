@@ -45,6 +45,5 @@ void stat_whois_enabler(void);
 void stat_run_whois_resolv(void);
 
 extern int tgtat /*target at*/, visibles;
-extern t_type_elem pingelem[PE_MAX]; // map ping-tab indexes to elems
 
 #endif

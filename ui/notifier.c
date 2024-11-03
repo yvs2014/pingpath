@@ -1,10 +1,18 @@
 
+#include <stdlib.h>
+#include <stdarg.h>
+#include <math.h>
+
+#include "common.h"
+
 #include "notifier.h"
 #include "style.h"
 #include "pinger.h"
 #include "stat.h"
 #include "tabs/graph.h"
+#ifdef WITH_PLOT
 #include "ui/action.h"
+#endif
 
 #define DASH_CHAR "—"
 #define LGND_ROW_DEF_STATE true
@@ -57,14 +65,16 @@ static t_notifier notifier[] = {
     .x = 50, .y = 50, .onright = true },
 #endif
 };
-#define NT_VALID_NDX(ndx) ((ndx >= 0) && (ndx < G_N_ELEMENTS(notifier)))
+#define NT_VALID_NDX(ndx) (((ndx) >= 0) && ((ndx) < G_N_ELEMENTS(notifier)))
 
 //
 
-static void nt_reload_css(GtkWidget *w, const char *css) {
-  if (w) {
-    if (gtk_widget_has_css_class(w, css)) gtk_widget_remove_css_class(w, css);
-    gtk_widget_add_css_class(w, css); }
+static void nt_reload_css(GtkWidget *widget, const char *css) {
+  if (widget) {
+    if (gtk_widget_has_css_class(widget, css))
+      gtk_widget_remove_css_class(widget, css);
+    gtk_widget_add_css_class(widget, css);
+  }
 }
 
 static gboolean nt_set_visible(t_notifier *nt, gboolean visible) {
@@ -95,18 +105,21 @@ static void nt_inform(t_notifier *nt, char *mesg) {
   if (nt->autohide) nt->visible = g_timeout_add_seconds(AUTOHIDE_IN, (GSourceFunc)nt_hide, nt);
 }
 
-static gboolean nt_ext_pos_cb(GtkOverlay *unused, GtkWidget *widget, GdkRectangle *r, t_notifier *nt) {
-  gboolean re = r && nt && GTK_IS_WIDGET(widget);
-  if (re) {
-    int w = 0;
-    gtk_widget_measure(widget, GTK_ORIENTATION_HORIZONTAL, -1, NULL, &w,   NULL, NULL);
+static gboolean nt_ext_pos_cb(GtkOverlay *unused, GtkWidget *widget, GdkRectangle *rect, t_notifier *nt) {
+  gboolean okay = rect && nt && GTK_IS_WIDGET(widget);
+  if (okay) {
+    int width = 0;
+    gtk_widget_measure(widget, GTK_ORIENTATION_HORIZONTAL, -1, NULL, &width,   NULL, NULL);
     gtk_widget_measure(widget, GTK_ORIENTATION_VERTICAL,   -1, NULL, NULL, NULL, NULL);
 #ifdef WITH_PLOT
-    if (nt->onright/*once*/ && w) { nt->x = r->width - w - nt->x; nt->onright = false; }
+    if (nt->onright/*once*/ && width) {
+      nt->x = rect->width - width - nt->x;
+      nt->onright = false;
+    }
 #endif
-    r->x = nt->x; r->y = nt->y;
+    rect->x = nt->x; rect->y = nt->y;
   }
-  return re;
+  return okay;
 }
 
 static void nt_add_lgelem(GtkWidget *widget, GtkWidget *box, int align, gboolean visible) {
@@ -127,10 +140,10 @@ static void nt_reveal_sets(GtkWidget *reveal, int align, int transition) {
   gtk_revealer_set_transition_type(GTK_REVEALER(reveal), transition);
 }
 
-static char* nb_lgnd_nth_state(int n, gboolean enable) {
-  static char nb_lgnd_state_buff[80]; n++;
-  if (enable) g_snprintf(nb_lgnd_state_buff, sizeof(nb_lgnd_state_buff), "%d", n);
-  else g_snprintf(nb_lgnd_state_buff, sizeof(nb_lgnd_state_buff), LGND_DIS_MARK_FMT, n);
+static char* nb_lgnd_nth_state(int nth, gboolean enable) {
+  static char nb_lgnd_state_buff[80]; nth++;
+  if (enable) g_snprintf(nb_lgnd_state_buff, sizeof(nb_lgnd_state_buff), "%d", nth);
+  else g_snprintf(nb_lgnd_state_buff, sizeof(nb_lgnd_state_buff), LGND_DIS_MARK_FMT, nth);
   return nb_lgnd_state_buff;
 }
 
@@ -138,18 +151,18 @@ static void nt_lgnd_row_cb(GtkListBox* self, GtkListBoxRow* row, void *data) {
   if (GTK_IS_LIST_BOX_ROW(row)) {
     GtkWidget *box = gtk_list_box_row_get_child(row);
     if (GTK_IS_BOX(box)) {
-      GtkWidget *no = gtk_widget_get_first_child(box);
-      if (GTK_IS_LABEL(no)) {
-        const char *txt = gtk_label_get_text(GTK_LABEL(no));
+      GtkWidget *lab = gtk_widget_get_first_child(box);
+      if (GTK_IS_LABEL(lab)) {
+        const char *txt = gtk_label_get_text(GTK_LABEL(lab));
         if (txt) {
-          int n = atoi(txt); n--;
-          if ((n >= opts.min) && (n < opts.lim)) {
-            gboolean en = !gtk_list_box_row_get_selectable(row);
-            if (en) lgnd_excl_mask &= ~(en << n); else lgnd_excl_mask |= (!en << n);
-            gtk_label_set_text(GTK_LABEL(no), nb_lgnd_nth_state(n, en));
-            gtk_label_set_use_markup(GTK_LABEL(no), true);
-            gtk_list_box_row_set_selectable(row, en);
-            gtk_widget_set_opacity(GTK_WIDGET(row), en ? 1 : 0.5);
+          int nth = atoi(txt); nth--;
+          if ((nth >= opts.min) && (nth < opts.lim)) {
+            gboolean sel = !gtk_list_box_row_get_selectable(row);
+            if (sel) lgnd_excl_mask &= ~(sel << nth); else lgnd_excl_mask |= (!sel << nth);
+            gtk_label_set_text(GTK_LABEL(lab), nb_lgnd_nth_state(nth, sel));
+            gtk_label_set_use_markup(GTK_LABEL(lab), true);
+            gtk_list_box_row_set_selectable(row, sel);
+            gtk_widget_set_opacity(GTK_WIDGET(row), sel ? 1 : 0.5);
             if (pinger_state.gotdata && !pinger_state.run) graphtab_update();
             LOG("graph exclusion mask: 0x%x", lgnd_excl_mask);
           }
@@ -179,23 +192,23 @@ static void nt_dnd_icon(GtkDragSource *src, GdkDrag *drag, t_notifier *nt) {
 }
 
 static gboolean nt_on_drop(GtkDropTarget *unused, const GValue *val, gdouble x, gdouble y, t_notifier *receiver) {
-  gboolean re = receiver && val && G_VALUE_HOLDS_POINTER(val);
-  if (re) {
+  gboolean okay = receiver && val && G_VALUE_HOLDS_POINTER(val);
+  if (okay) {
     t_notifier *sender = g_value_get_pointer(val);
-    re = sender && (sender == receiver);
-    if (re) {
+    okay = sender && (sender == receiver);
+    if (okay) {
       int sx = round(x) - sender->dx, sy = round(y) - sender->dy;
       DNDORD("DND-drop: x=%d y=%d, dx=%d dy=%d, cursor at x=%.0f y=%.0f", sx, sy, sender->dx, sender->dy, x, y);
       LOG("%s relocation: (%d %d) => (%d %d)", sender->css.def, sender->x, sender->y, sx, sy);
       sender->x = sx; sender->y = sy; }}
-  return re;
+  return okay;
 }
 #endif
 
-static inline void nt_make_leg_row(GtkListBox *box, GtkSizeGroup* group[], int i, t_nt_leg *leg, const char *css) {
+static inline void nt_make_leg_row(GtkListBox *box, GtkSizeGroup* group[], int nth, t_nt_leg *leg, const char *css) {
 #define LEG_GROUP(n, setuse) { if (group[n]) gtk_size_group_add_widget(group[n], leg->elem[n]); \
   gtk_label_set_use_markup(GTK_LABEL(leg->elem[n]), setuse); }
-#define LEG_LABEL(lab, txt, align, vis) { lab = gtk_label_new(txt); nt_add_lgelem(lab, leg->box, align, vis); }
+#define LEG_LABEL(lab, txt, align, vis) { (lab) = gtk_label_new(txt); nt_add_lgelem(lab, leg->box, align, vis); }
   if (!box || !leg) return;
   gtk_list_box_append(box, GTK_WIDGET(leg->row));
   gtk_list_box_row_set_selectable(leg->row, LGND_ROW_DEF_STATE);
@@ -203,10 +216,10 @@ static inline void nt_make_leg_row(GtkListBox *box, GtkSizeGroup* group[], int i
     nt_reload_css(GTK_WIDGET(leg->row), CSS_LEGEND_TEXT);
     if (css) nt_reload_css(GTK_WIDGET(leg->row), css);
   }
-  LEG_LABEL(leg->elem[GE_NO], nb_lgnd_nth_state(i, LGND_ROW_DEF_STATE), GTK_ALIGN_END, true);
+  LEG_LABEL(leg->elem[GE_NO], nb_lgnd_nth_state(nth, LGND_ROW_DEF_STATE), GTK_ALIGN_END, true);
   if (GTK_IS_WIDGET(leg->elem[GE_NO])) LEG_GROUP(GE_NO, true);
   { // colored dash
-    char span[100], *col = get_nth_color(i);
+    char span[100], *col = get_nth_color(nth);
     if (col) g_snprintf(span, sizeof(span), LGND_DASH_COL_FMT, col, DASH_CHAR);
     else g_snprintf(span, sizeof(span), LGND_DASH_DEF_FMT, DASH_CHAR);
     LEG_LABEL(leg->elem[GE_DASH], span, -1, is_grelem_enabled(GE_DASH));
@@ -264,7 +277,7 @@ static void nt_init_legend(GtkWidget *inbox, GtkWidget *over, t_notifier *nt) {
 }
 
 #ifdef WITH_PLOT
-static void nt_rotor_cb(GtkButton *unused, t_kb_plot_aux *kb) { if (kb) on_rotation(NULL, NULL, kb); }
+static void nt_rotor_cb(GtkButton *unused, t_kb_plot_aux *aux) { if (aux) on_rotation(NULL, NULL, aux); }
 
 static void nt_init_rotor(GtkWidget *inbox, GtkWidget *over, t_notifier *nt) {
   if (!GTK_IS_BOX(inbox)) return;
@@ -291,10 +304,10 @@ static void nt_init_rotor(GtkWidget *inbox, GtkWidget *over, t_notifier *nt) {
     if (row) {
       gtk_box_append(GTK_BOX(inbox), row);
       for (int j = 0; j < G_N_ELEMENTS(rotor_cntrl[j]); j++) {
-        t_rotor_arrow *a = rotor_cntrl[i][j]; GtkWidget *elem = NULL;
-        if (a) {
-          const char *ico = is_sysicon(a->ico);
-          elem = ico ? gtk_button_new_from_icon_name(ico) : gtk_button_new_with_label(a->alt);
+        t_rotor_arrow *arrow = rotor_cntrl[i][j]; GtkWidget *elem = NULL;
+        if (arrow) {
+          const char *ico = is_sysicon(arrow->ico);
+          elem = ico ? gtk_button_new_from_icon_name(ico) : gtk_button_new_with_label(arrow->alt);
         } else elem = gtk_button_new_with_label(NULL);
         if (!elem) continue;
         gtk_button_set_has_frame(GTK_BUTTON(elem), false);
@@ -383,7 +396,8 @@ static void nt_fill_legend_elem(GtkWidget* label, const char *f1, const char *f2
 // pub
 //
 
-inline GtkWidget* notifier_init(int ndx, GtkWidget *base) { return NT_VALID_NDX(ndx) ? nt_init(base, &notifier[ndx]) : NULL; }
+inline GtkWidget* notifier_init(int ndx, GtkWidget *base) {
+  return NT_VALID_NDX(ndx) ? nt_init(base, &notifier[ndx]) : NULL; }
 
 void notifier_inform(const char *fmt, ...) {
   va_list ap;
@@ -393,8 +407,10 @@ void notifier_inform(const char *fmt, ...) {
   va_end(ap);
 }
 
-inline gboolean notifier_get_visible(int ndx) { return NT_VALID_NDX(ndx) ? notifier[ndx].visible : false; }
-inline void notifier_set_visible(int ndx, gboolean visible) { if (NT_VALID_NDX(ndx)) nt_set_visible(&notifier[ndx], visible); }
+inline gboolean notifier_get_visible(int ndx) {
+  return NT_VALID_NDX(ndx) ? notifier[ndx].visible : false; }
+inline void notifier_set_visible(int ndx, gboolean visible) {
+  if (NT_VALID_NDX(ndx)) nt_set_visible(&notifier[ndx], visible); }
 
 void notifier_legend_vis_rows(int upto) {
   static int nt_lgnd_vis_rows;
@@ -414,15 +430,16 @@ void notifier_legend_vis_rows(int upto) {
 }
 
 void notifier_legend_update(void) {
-  t_nt_leg *leg = notifier[NT_LEGEND_NDX].content; int n = notifier[NT_LEGEND_NDX].content_n;
-  for (int i = 0; leg && (i < n) && (i < tgtat); i++, leg++) {
+  t_nt_leg *leg = notifier[NT_LEGEND_NDX].content; int max = notifier[NT_LEGEND_NDX].content_n;
+  for (int i = 0; leg && (i < max) && (i < tgtat); i++, leg++) {
     t_legend legend; stat_legend(i, &legend);
     for (int j = GE_MIN; j < GE_MAX; j++) {
-      GtkWidget *w = leg->elem[j];
+      GtkWidget *widget = leg->elem[j];
       switch (graphelem[j].type) {
-        case GE_AVJT: nt_fill_legend_elem(w, legend.jt, legend.av, "±"); break;
-        case GE_CCAS: nt_fill_legend_elem(w, legend.as, legend.cc, ":"); break;
-        case GE_LGHN: if (legend.name && GTK_IS_LABEL(w)) UPDATE_LABEL(w, legend.name); break;
+        case GE_AVJT: nt_fill_legend_elem(widget, legend.jt, legend.av, "±"); break;
+        case GE_CCAS: nt_fill_legend_elem(widget, legend.as, legend.cc, ":"); break;
+        case GE_LGHN: if (legend.name && GTK_IS_LABEL(widget)) UPDATE_LABEL(widget, legend.name); break;
+        default: break;
       }
     }
   }

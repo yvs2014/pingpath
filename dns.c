@@ -1,5 +1,9 @@
 
+#include <stdlib.h>
+
 #include "dns.h"
+#include "common.h"
+
 
 typedef struct dns_elem { // network stuff
   GSList *refs; // hops requested addr resolv
@@ -87,8 +91,10 @@ static void dns_cache_update(char *addr, char *name) {
     if (host->addr && host->name) {
       if (list_add_nodup(&dns_cache, host, host_cmp, DNS_CACHE_MAX)) {
         LOG("dns cache updated with addr=%s name=%s", host->addr, host->name);
-        PR_DNS_C; return;
-      } else FAILX(addr, "add cache");
+        PR_DNS_C;
+        return;
+      }
+      FAILX(addr, "add cache");
     } else FAILX(addr, "dup host");
   } else FAILX(addr, "alloc host");
   host_free(host);
@@ -105,8 +111,10 @@ static t_dns_elem* dns_query_save(const char *addr, t_hop *hop, int ndx) {
       GSList *added = list_add_nodup(&dns_query, elem, dns_query_cmp, DNS_QUERY_MAX);
       if (added) {
         DNS_DEBUG("%s(%s) hop[%d] host[%d]=%s", __func__, addr, hop->at, ndx, hop->host[ndx].addr);
-        PR_DNS_Q; return added->data;
-      } else FAILX(addr, "add query");
+        PR_DNS_Q;
+        return added->data;
+      }
+      FAILX(addr, "add query");
     } else FAILX(addr, "add ref");
   } else FAILX(addr, "dup addr");
   dns_query_free(elem);
@@ -164,11 +172,11 @@ void dns_lookup(t_hop *hop, int ndx) {
   if (!query) return;
   GResolver *res = g_resolver_get_default();
   if (res) {
-    GInetAddress *ia = g_inet_address_new_from_string(addr);
-    if (ia) {
+    GInetAddress *inet_addr = g_inet_address_new_from_string(addr);
+    if (inet_addr) {
       DNS_DEBUG("send query=%s", addr);
-      g_resolver_lookup_by_address_async(res, ia, NULL, (GAsyncReadyCallback)on_dns_lookup, query);
-      g_object_unref(ia);
+      g_resolver_lookup_by_address_async(res, inet_addr, NULL, (GAsyncReadyCallback)on_dns_lookup, query);
+      g_object_unref(inet_addr);
     } else FAIL("g_inet_address_new_from_string()");
     g_object_unref(res);
   } else FAIL("g_resolver_get_default()");

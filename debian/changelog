@@ -1,3 +1,9 @@
+pingpath (0.3.33) mantic noble; urgency=low
+
+  * tidy up and add a bit of readability
+
+ -- yvs <VSYakovetsky@gmail.com>  Sun, 03 Nov 2024 21:04:44 +0200
+
 pingpath (0.3.32) mantic noble; urgency=low
 
   * add simple test unit

@@ -1,8 +1,10 @@
 
+#include <stdlib.h>
 #include <cglm/cglm.h>
 
 #include "common.h"
 #include "plot_pango.h"
+#include "plot_aux.h"
 
 static PangoFontDescription *plot_font;
 
@@ -24,7 +26,7 @@ static cairo_t* plot_create_cairo_from_buff(int size[2], cairo_format_t format,
   *pbuff = g_malloc0_n(size[1], stride);
   g_return_val_if_fail(*pbuff, NULL);
   *psurf = cairo_image_surface_create_for_data(*pbuff, CAIRO_FORMAT_ARGB32, size[0], size[1], stride);
-  int status = *psurf ? cairo_surface_status(*psurf) : CAIRO_STATUS_NO_MEMORY;
+  unsigned status = *psurf ? cairo_surface_status(*psurf) : CAIRO_STATUS_NO_MEMORY;
   if (status == CAIRO_STATUS_SUCCESS) return cairo_create(*psurf);
   WARN("image error(%d): %s", status, cairo_status_to_string(status));
   g_free(*pbuff); *pbuff = NULL;
@@ -115,11 +117,11 @@ t_plot_vo plot_pango_vo_init(GLuint loc) {
   return vo;
 }
 
-void plot_pango_drawtex(GLuint id, GLuint vbo, GLuint typ, float x0, float y0, float w, float h) {
+void plot_pango_drawtex(GLuint id, GLuint vbo, GLuint typ, float x0, float y0, float width, float height) {
   if (!id || !vbo || !typ) return;
 #define TEXPOINTS 6
   vec4 vertex[TEXPOINTS] = {0};
-  float x1 = x0 + w, y1 = y0 + h;
+  float x1 = x0 + width, y1 = y0 + height;
   vec4_set(vertex[0], x0, y1, 0, 0);
   vec4_set(vertex[1], x0, y0, 0, 1);
   vec4_set(vertex[2], x1, y0, 1, 1);

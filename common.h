@@ -12,30 +12,31 @@
 #define MIN_GTK_RUNTIME(major, minor, micro) (!gtk_check_version(major, minor, micro))
 
 #define APPNAME "pingpath"
-#define VERSION "0.3.32"
+#define VERSION "0.3.33"
 
-#define X_RES 1024
-#define Y_RES 720
+#ifndef WITH_PLOT
+//#define WITH_PLOT // tmp
+#endif
 
-#define MAXADDR 10
-
-#define MINTTL  1
-#define MAXTTL  30
+enum { X_RES = 1024, Y_RES = 720 };
+enum { MAXADDR = 10 };
+enum { MINTTL = 1, MAXTTL = 30 };
 
 #define REF_MAX         MAXTTL
 #define DNS_QUERY_MAX   MAXTTL
 #define DNS_CACHE_MAX   MAXTTL
 #define WHOIS_QUERY_MAX MAXTTL
 #define WHOIS_CACHE_MAX MAXTTL
-#define DEF_LOGMAX      500 // max lines in log-tab
 
-#define MAIN_TIMING_SEC 1
-#define AUTOHIDE_IN     2   // popup notifications, in seconds
+enum { DEF_LOGMAX = 500 }; // max lines in log-tab
 
-#define MAXHOSTNAME     63  // in chars: must 63, should 255
-#define NET_BUFF_SIZE 4096  // suppose it's enough (dns or whois data is usually 200-300 bytes)
-#define BUFF_SIZE     1024
-#define PAD_SIZE        48
+enum { MAIN_TIMING_SEC = 1 };
+enum { AUTOHIDE_IN     = 2 };  // popup notifications, in seconds
+
+enum { MAXHOSTNAME   =   63 }; // in chars: must 63, should 255
+enum { NET_BUFF_SIZE = 4096 };  // suppose it's enough (dns or whois data is usually 200-300 bytes)
+enum { BUFF_SIZE     = 1024 };
+enum { PAD_SIZE      =   48 };
 
 #define INFO_PATT    "hacdr"
 #define STAT_PATT    "lsrmbwaj"
@@ -50,10 +51,7 @@
 #else
 #define RECAP_PATT   "tc"
 #endif
-#define RECAP_TEXT        't'
-#define RECAP_CSV         'c'
-#define RECAP_JSON_NUM    'j'
-#define RECAP_JSON_PRETTY 'J'
+enum { RECAP_TEXT = 't', RECAP_CSV = 'c', RECAP_JSON_NUM = 'j', RECAP_JSON_PRETTY = 'J' };
 
 #define EV_ACTIVE     "activate"
 #define EV_CLOSEQ     "close-request"
@@ -76,7 +74,7 @@
 #define EV_PLOT_DRAW   "render"
 #endif
 
-#define MAX_ICONS      5
+enum { MAX_ICONS = 5 };
 #define ICON_PROP      "icon-name"
 #define ACT_MENU_ICON  "open-menu-symbolic"
 #define ACT_MENU_ICOA  "view-more-symbolic"
@@ -130,17 +128,17 @@
 #endif
 
 #define PP_FONT_FAMILY "monospace"
-#define PP_RTT0      1000  // 1msec
+enum { PP_RTT0 = 1000 };   // 1msec
 #define PP_RTT_SCALE 1000. // usec to msec
 #define PP_RTT_FMT_LT10  "%.1f"
 #define PP_RTT_FMT_GE10  "%.0f"
 #define PP_TIME_FMT "%02d:%02d"
-#define PP_FMT_LT10(val) ((val < 1e-3f) ? PP_RTT_FMT_GE10 : PP_RTT_FMT_LT10)
-#define PP_FMT10(val) ((val < 10) ? PP_FMT_LT10(val) : PP_RTT_FMT_GE10)
-#define PP_MARK_MAXLEN 16
+#define PP_FMT_LT10(val) (((val) < 1e-3f) ? PP_RTT_FMT_GE10 : PP_RTT_FMT_LT10)
+#define PP_FMT10(val) (((val) < 10) ? PP_FMT_LT10(val) : PP_RTT_FMT_GE10)
+enum { PP_MARK_MAXLEN = 16 };
 
-#define MARGIN  8
-#define ACT_DOT 4 // beyond of "app." or "win."
+enum { MARGIN = 8 };
+enum { ACT_DOT = 4 }; // beyond of "app." or "win."
 
 // verbose & 1:  log to stdout
 // verbose & 2:  common debug
@@ -192,10 +190,11 @@
 
 #define STR_EQ(a, b) (!g_strcmp0(a, b))
 #define STR_NEQ(a, b) (g_strcmp0(a, b))
-#define CLR_STR(str) { if (str) { g_free(str); str = NULL; }}
-#define UPD_STR(str, val) { g_free(str); str = g_strdup(val); }
-#define UPD_NSTR(str, val, max) { g_free(str); str = g_strndup(val, max); }
-#define SET_SA(desc, ndx, cond) {if (G_IS_SIMPLE_ACTION(desc[ndx].sa)) g_simple_action_set_enabled(desc[ndx].sa, cond);}
+#define CLR_STR(str) { if (str) { g_free(str); (str) = NULL; }}
+#define UPD_STR(str, val) { g_free(str); (str) = g_strdup(val); }
+#define UPD_NSTR(str, val, max) { g_free(str); (str) = g_strndup(val, max); }
+#define SET_SA(desc, ndx, cond) { if (G_IS_SIMPLE_ACTION((desc)[ndx].sa)) \
+  g_simple_action_set_enabled((desc)[ndx].sa, cond); }
 
 #define ACT_TOOLTIP    "Command menu"
 #define ACT_START_HDR  "Start"
@@ -326,19 +325,13 @@
 #define TOGGLE_ON_HDR  "on"
 #define TOGGLE_OFF_HDR "off"
 
-#define CYCLES_MIN 1
-#define CYCLES_MAX 999999
-#define IVAL_MIN   1
-#define IVAL_MAX   9999
-#define PSIZE_MIN  16
-#define PSIZE_MAX  (9000 - 20 - 8)
-#define QOS_MAX    255
-#define LOGMAX_MAX 999
+enum { CYCLES_MIN = 1,  CYCLES_MAX = 999999 };
+enum { IVAL_MIN   = 1,  IVAL_MAX   = 9999 };
+enum { PSIZE_MIN  = 16, PSIZE_MAX  = (9000 - 20 - 8) };
+enum { QOS_MAX    = 255 };
+enum { LOGMAX_MAX = 999 };
 
-#define GRAPH_LEFT   60
-#define GRAPH_TOP    50
-#define GRAPH_RIGHT  40
-#define GRAPH_BOTTOM 40
+enum { GRAPH_LEFT = 60, GRAPH_TOP = 50, GRAPH_RIGHT = 40, GRAPH_BOTTOM = 40 };
 
 #define SPN_TTL_DELIM  "range"
 #define SPN_RCOL_DELIM "red"
@@ -347,11 +340,8 @@
 
 #define DEF_DNS    true
 #define DEF_WHOIS  true
-#define DEF_CYCLES 100
-#define DEF_TOUT   1
-#define DEF_QOS    0
 #define DEF_PPAD  "00"
-#define DEF_PSIZE  56
+enum { DEF_CYCLES = 100, DEF_TOUT = 1, DEF_QOS = 0, DEF_PSIZE = 56 };
 
 #define DEF_LEGEND     true
 #define DEF_DARK_MAIN  true
@@ -360,20 +350,13 @@
 #ifdef WITH_PLOT
 #define DEF_DARK_PLOT false
 
-#define DEF_RCOL_FROM 77
-#define DEF_RCOL_TO   77
-#define DEF_GCOL_FROM 230
-#define DEF_GCOL_TO   77
-#define DEF_BCOL_FROM 77
-#define DEF_BCOL_TO   230
+enum { DEF_RCOL_FROM =  77, DEF_RCOL_TO =  77 };
+enum { DEF_GCOL_FROM = 230, DEF_GCOL_TO =  77 };
+enum { DEF_BCOL_FROM =  77, DEF_BCOL_TO = 230 };
 
 #define DEF_RGLOBAL   true
-#define GL_ANGX       0
-#define GL_ANGY     -20
-#define GL_ANGZ       0
-#define DEF_ANGSTEP   5
-
-#define DEF_FOV      45
+enum { GL_ANGX = 0, GL_ANGY = -20, GL_ANGZ = 0, DEF_ANGSTEP = 5 };
+enum { DEF_FOV = 45 };
 #endif
 
 enum { GLIB_STRV, GTK_STRV, CAIRO_STRV, PANGO_STRV };
@@ -432,10 +415,8 @@ enum { POP_MENU_NDX_COPY, POP_MENU_NDX_SALL, POP_MENU_NDX_MAX };
 
 enum { GRAPH_TYPE_NONE, GRAPH_TYPE_DOT, GRAPH_TYPE_LINE, GRAPH_TYPE_CURVE, GRAPH_TYPE_MAX };
 
-typedef struct minmax {
-  int min, max;
-} t_minmax;
-#define MM_OKAY(mm, val) (((mm).min <= val) && (val <= (mm).max))
+typedef struct minmax { int min, max; } t_minmax;
+#define MM_OKAY(mm, val) (((mm).min <= (val)) && ((val) <= (mm).max))
 
 typedef struct opts {
   char *target;
@@ -542,9 +523,9 @@ extern const double colors[][3];
 extern const int n_colors;
 
 const char* onoff(gboolean on);
-char* get_nth_color(int i);
+char* get_nth_color(int nth);
 
-int char2ndx(int cat, gboolean ent, char c);
+int char2ndx(int cat, gboolean ent, char ch);
 gboolean*  pingelem_enabler(int type);
 gboolean* graphelem_enabler(int type);
 int  pingelem_type2ndx(int type);
@@ -573,10 +554,10 @@ extern void log_add(const char *fmt, ...);
 #define UPDATE_LABEL(label, str) { const char *txt = gtk_label_get_text(GTK_LABEL(label)); \
   if (STR_NEQ(txt, str)) gtk_label_set_text(GTK_LABEL(label), str); }
 
-#define IS_INFO_NDX(ndx) ((PE_HOST <= ndx) && (ndx <= PE_RT))
-#define IS_STAT_NDX(ndx) ((PE_LOSS <= ndx) && (ndx <= PE_JTTR))
-#define IS_GRLG_NDX(ndx) ((GE_AVJT <= ndx) && (ndx <= GE_LGHN))
-#define IS_GREX_NDX(ndx) ((GREX_MEAN <= ndx) && (ndx <= GREX_AREA))
+#define IS_INFO_NDX(ndx) ((PE_HOST <= (ndx)) && ((ndx) <= PE_RT))
+#define IS_STAT_NDX(ndx) ((PE_LOSS <= (ndx)) && ((ndx) <= PE_JTTR))
+#define IS_GRLG_NDX(ndx) ((GE_AVJT <= (ndx)) && ((ndx) <= GE_LGHN))
+#define IS_GREX_NDX(ndx) ((GREX_MEAN <= (ndx)) && ((ndx) <= GREX_AREA))
 
 // to use with clang static code analysis
 //   BUFFNOLINT: NOLINT(clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling)

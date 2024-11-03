@@ -12,11 +12,12 @@
 #include "ui/appbar.h"
 #include "ui/notifier.h"
 #include "ui/clipboard.h"
+#include "tabs/aux.h"
+#include "tabs/ping.h"
 #include "tabs/graph.h"
 #ifdef WITH_PLOT
 #include "tabs/plot.h"
 #endif
-#include "tabs/ping.h"
 #include "tabs/log.h"
 
 #define APPFLAGS G_APPLICATION_NON_UNIQUE
@@ -45,16 +46,23 @@ static gboolean on_win_close(GtkWindow *window, void *unused) {
 
 static void on_tab_switch(GtkNotebook *nb, GtkWidget *tab, unsigned ndx, void *unused) {
   tab_dependent(tab);
-  if (GTK_IS_BOX(tab)) for (GtkWidget *p = gtk_widget_get_first_child(tab); p; p = gtk_widget_get_next_sibling(p)) {
-    if (GTK_IS_LIST_BOX(p)) gtk_list_box_unselect_all(GTK_LIST_BOX(p));
-    else if (GTK_IS_SCROLLED_WINDOW(p)) {
-      GtkWidget *c = gtk_scrolled_window_get_child(GTK_SCROLLED_WINDOW(p));
-      if (GTK_IS_VIEWPORT(c)) c = gtk_viewport_get_child(GTK_VIEWPORT(c));
-      if (GTK_IS_BOX(c)) for (GtkWidget *n = gtk_widget_get_first_child(c); n; n = gtk_widget_get_next_sibling(n))
-        if (GTK_IS_LIST_BOX(n)) gtk_list_box_unselect_all(GTK_LIST_BOX(n));
+  if (GTK_IS_BOX(tab))
+    for (GtkWidget *widget = gtk_widget_get_first_child(tab);
+         widget; widget = gtk_widget_get_next_sibling(widget)) {
+    if (GTK_IS_LIST_BOX(widget)) gtk_list_box_unselect_all(GTK_LIST_BOX(widget));
+    else if (GTK_IS_SCROLLED_WINDOW(widget)) {
+      GtkWidget *obj = gtk_scrolled_window_get_child(GTK_SCROLLED_WINDOW(widget));
+      if (GTK_IS_VIEWPORT(obj)) obj = gtk_viewport_get_child(GTK_VIEWPORT(obj));
+      if (GTK_IS_BOX(obj))
+        for (GtkWidget *box = gtk_widget_get_first_child(obj);
+             box; box = gtk_widget_get_next_sibling(box))
+          if (GTK_IS_LIST_BOX(box)) gtk_list_box_unselect_all(GTK_LIST_BOX(box));
     }
   }
 }
+
+static inline void log_libver(const char *pre, char *ver) {
+  if (ver) { LOG("%s: %s", pre, ver); g_free(ver); }}
 
 static void app_cb(GtkApplication* app, void *unused) {
   style_set();
@@ -76,17 +84,17 @@ static void app_cb(GtkApplication* app, void *unused) {
   if (style_loaded) gtk_widget_add_css_class(nb, CSS_BGROUND);
   gtk_notebook_set_tab_pos(GTK_NOTEBOOK(nb), GTK_POS_BOTTOM);
   nb_tabs[TAB_PING_NDX] = pingtab_init(win);
-  if (opts.graph) nb_tabs[TAB_GRAPH_NDX] = graphtab_init(win);
+  if (opts.graph) nb_tabs[TAB_GRAPH_NDX] = graphtab_init();
 #ifdef WITH_PLOT
-  if (opts.plot) nb_tabs[TAB_PLOT_NDX] = plottab_init(win);
+  if (opts.plot) nb_tabs[TAB_PLOT_NDX] = plottab_init();
 #endif
   nb_tabs[TAB_LOG_NDX]  = logtab_init(win);
   for (int i = 0; i < G_N_ELEMENTS(nb_tabs); i++) {
     { if (!opts.graph && (i == TAB_GRAPH_NDX)) continue;
 #ifdef WITH_PLOT
-      if (!opts.plot && (i == TAB_PLOT_NDX)) continue;
+      if (!opts.plot  && (i == TAB_PLOT_NDX))  continue;
 #endif
-    } // TODO: replace with -1,-2,-3 options
+    }
     t_tab *tab = nb_tabs[i];
     if (!tab || !tab->tab.w || !tab->lab.w) APPQUIT("tab#%d", i);
     tab_setup(tab); tabrefs[i] = tab->tab.w;
@@ -105,13 +113,12 @@ static void app_cb(GtkApplication* app, void *unused) {
   //
   g_signal_connect(win, EV_CLOSEQ, G_CALLBACK(on_win_close), NULL);
   gtk_window_present(GTK_WINDOW(win));
-  { char *ver; // log runtime versions
-    LOG("%c%s: " VERSION, g_ascii_toupper(APPNAME[0]), &(APPNAME[1]));
-    if ((ver = rtver(GTK_STRV)))   { LOG("GTK: %s", ver);   g_free(ver); }
-    if ((ver = rtver(GLIB_STRV)))  { LOG("Glib: %s", ver);  g_free(ver); }
-    if ((ver = rtver(CAIRO_STRV))) { LOG("Cairo: %s", ver); g_free(ver); }
-    if ((ver = rtver(PANGO_STRV))) { LOG("Pango: %s", ver); g_free(ver); }
-  }
+  // log runtime versions
+  LOG("%c%s: " VERSION, g_ascii_toupper(APPNAME[0]), &APPNAME[1]);
+  log_libver("GTK",   rtver(GTK_STRV));
+  log_libver("Glib",  rtver(GLIB_STRV));
+  log_libver("Cairo", rtver(CAIRO_STRV));
+  log_libver("Pango", rtver(PANGO_STRV));
   if (autostart && opts.target) { pinger_start(); appbar_update(); }
 }
 
@@ -141,16 +148,16 @@ int main(int argc, char **argv) {
   setlocale(LC_ALL, "");  // parser: early l10n for CLI options
   putenv("LANG=C.UTF-8"); // parser: disable ping's i18n output
   if (!getenv("GSK_RENDERER")) { // to avoid ngl-n-vulkan issues in GTK 4.14/4.15
-    int major = gtk_get_major_version(), minor = gtk_get_minor_version();
+    unsigned major = gtk_get_major_version(), minor = gtk_get_minor_version();
     if ((major == 4) && (
       (minor == 14) || (minor == 15)
     )) putenv("GSK_RENDERER=gl"); }
-  g_return_val_if_fail(parser_init(), EX_SOFTWARE);
-  { gboolean valid_cli_options = cli_init(&argc, &argv);
-    g_return_val_if_fail(valid_cli_options, EX_USAGE); }
+  if (!parser_init()) return EX_SOFTWARE;
+  { int quit = cli_init(&argc, &argv);
+    if (quit) return (quit > 0) ? EX_USAGE : EXIT_SUCCESS; }
   stat_init(true);
   pinger_init();
-  GApplication *app;
+  GApplication *app = NULL;
   if (opts.recap) {
     app = g_application_new("net.tools." APPNAME, APPFLAGS);
     g_return_val_if_fail(G_IS_APPLICATION(app), EX_UNAVAILABLE);

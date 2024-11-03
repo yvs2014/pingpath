@@ -1,5 +1,6 @@
 
 #include <time.h>
+#include <string.h>
 
 #include "common.h"
 
@@ -133,8 +134,8 @@ static int char_ndxs[][MAXCHARS_IN_PATTERN][2] = { // max pattern is 8 chars
 #endif
 };
 
-int char2ndx(int cat, gboolean ent, char c) {
-  int n = -1, len = G_N_ELEMENTS(char_ndxs);
+int char2ndx(int cat, gboolean ent, char ch) {
+  int ndx = -1, len = G_N_ELEMENTS(char_ndxs);
   if ((cat >= 0) && (cat < len)) switch (cat) {
     case INFO_CHAR:
     case STAT_CHAR:
@@ -143,58 +144,62 @@ int char2ndx(int cat, gboolean ent, char c) {
 #ifdef WITH_PLOT
     case PLEL_CHAR:
 #endif
-    { char *p = strchr(char_pattern[cat], c); if (p) {
-        int pos = p - char_pattern[cat];
-        if (pos < MAXCHARS_IN_PATTERN) n = char_ndxs[cat][pos][ent ? 0 : 1];
-      }
-    } break;
+    { char *found = strchr(char_pattern[cat], ch);
+      if (found) {
+        long pos = found - char_pattern[cat];
+        if (pos < MAXCHARS_IN_PATTERN) ndx = char_ndxs[cat][pos][ent ? 0 : 1];
+    }} break;
+    default: break;
   }
-  return n;
+  return ndx;
 }
 
 static int pingelem_type2ent(int type) {
-  int n = -1;
+  int ndx = -1;
   switch (type) {
-    case PE_HOST: n = ENT_BOOL_HOST; break;
-    case PE_AS:   n = ENT_BOOL_AS;   break;
-    case PE_CC:   n = ENT_BOOL_CC;   break;
-    case PE_DESC: n = ENT_BOOL_DESC; break;
-    case PE_RT:   n = ENT_BOOL_RT;   break;
-    case PE_LOSS: n = ENT_BOOL_LOSS; break;
-    case PE_SENT: n = ENT_BOOL_SENT; break;
-    case PE_RECV: n = ENT_BOOL_RECV; break;
-    case PE_LAST: n = ENT_BOOL_LAST; break;
-    case PE_BEST: n = ENT_BOOL_BEST; break;
-    case PE_WRST: n = ENT_BOOL_WRST; break;
-    case PE_AVRG: n = ENT_BOOL_AVRG; break;
-    case PE_JTTR: n = ENT_BOOL_JTTR; break;
+    case PE_HOST: ndx = ENT_BOOL_HOST; break;
+    case PE_AS:   ndx = ENT_BOOL_AS;   break;
+    case PE_CC:   ndx = ENT_BOOL_CC;   break;
+    case PE_DESC: ndx = ENT_BOOL_DESC; break;
+    case PE_RT:   ndx = ENT_BOOL_RT;   break;
+    case PE_LOSS: ndx = ENT_BOOL_LOSS; break;
+    case PE_SENT: ndx = ENT_BOOL_SENT; break;
+    case PE_RECV: ndx = ENT_BOOL_RECV; break;
+    case PE_LAST: ndx = ENT_BOOL_LAST; break;
+    case PE_BEST: ndx = ENT_BOOL_BEST; break;
+    case PE_WRST: ndx = ENT_BOOL_WRST; break;
+    case PE_AVRG: ndx = ENT_BOOL_AVRG; break;
+    case PE_JTTR: ndx = ENT_BOOL_JTTR; break;
+    default: break;
   }
-  return n;
+  return ndx;
 }
 
 static int graphelem_type2ent(int type) {
-  int n = -1;
+  int ndx = -1;
   switch (type) {
-    case GE_AVJT: n = ENT_BOOL_AVJT; break;
-    case GE_CCAS: n = ENT_BOOL_CCAS; break;
-    case GE_LGHN: n = ENT_BOOL_LGHN; break;
-    case GX_MEAN: n = ENT_BOOL_MEAN; break;
-    case GX_JRNG: n = ENT_BOOL_JRNG; break;
-    case GX_AREA: n = ENT_BOOL_AREA; break;
+    case GE_AVJT: ndx = ENT_BOOL_AVJT; break;
+    case GE_CCAS: ndx = ENT_BOOL_CCAS; break;
+    case GE_LGHN: ndx = ENT_BOOL_LGHN; break;
+    case GX_MEAN: ndx = ENT_BOOL_MEAN; break;
+    case GX_JRNG: ndx = ENT_BOOL_JRNG; break;
+    case GX_AREA: ndx = ENT_BOOL_AREA; break;
+    default: break;
   }
-  return n;
+  return ndx;
 }
 
 #ifdef WITH_PLOT
 static int plotelem_type2ent(int type) {
-  int n = -1;
+  int ndx = -1;
   switch (type) {
-    case D3_BACK: n = ENT_BOOL_PLBK; break;
-    case D3_AXIS: n = ENT_BOOL_PLAX; break;
-    case D3_GRID: n = ENT_BOOL_PLGR; break;
-    case D3_ROTR: n = ENT_BOOL_PLRR; break;
+    case D3_BACK: ndx = ENT_BOOL_PLBK; break;
+    case D3_AXIS: ndx = ENT_BOOL_PLAX; break;
+    case D3_GRID: ndx = ENT_BOOL_PLGR; break;
+    case D3_ROTR: ndx = ENT_BOOL_PLRR; break;
+    default: break;
   }
-  return n;
+  return ndx;
 }
 #endif
 
@@ -219,8 +224,8 @@ static unsigned rgb2x(double c) { int n = c * 255; return n % 256; }
 
 inline const char* onoff(gboolean on) { return on ? TOGGLE_ON_HDR : TOGGLE_OFF_HDR; }
 
-char* get_nth_color(int i) {
-  int n = i % n_colors;
+char* get_nth_color(int nth) {
+  int n = nth % n_colors;
   return g_strdup_printf("#%02x%02x%02x", rgb2x(colors[n][0]), rgb2x(colors[n][1]), rgb2x(colors[n][2]));
 }
 
@@ -246,7 +251,7 @@ gboolean is_plelem_enabled(int type) {
 #endif
 
 #define CLEAN_ELEM_LOOP(elems, min, max) { for (int i = 0; i < G_N_ELEMENTS(elems); i++) \
-  if ((min <= elems[i].type) && (elems[i].type <= max)) elems[i].enable = false; }
+  if (((min) <= (elems)[i].type) && ((elems)[i].type <= (max))) (elems)[i].enable = false; }
 
 void clean_elems(int type) {
   switch (type) {
@@ -257,12 +262,14 @@ void clean_elems(int type) {
 #ifdef WITH_PLOT
     case ENT_EXP_PLEL: CLEAN_ELEM_LOOP(plotelem,  D3_BACK, D3_ROTR); break;
 #endif
+    default: break;
   }
 }
 
 const char *timestampit(void) {
   static char now_ts[32];
   time_t now = time(NULL);
+  now_ts[0] = 0;
   strftime(now_ts, sizeof(now_ts), "%F %T", localtime(&now));
   return now_ts;
 }
@@ -276,6 +283,7 @@ char* rtver(int ndx) {
       g_strdup_printf("%d.%d.%d", gtk_get_major_version(), gtk_get_minor_version(), gtk_get_micro_version());
     case CAIRO_STRV: ver = cairo_version(); break;
     case PANGO_STRV: ver = pango_version(); break;
+    default: break;
   }
   return ver ? g_strdup_printf("%d.%d.%d", ver / 10000, (ver % 10000) / 100, ver % 100) : NULL;
 }
@@ -312,10 +320,11 @@ t_ref* ref_new(t_hop *hop, int ndx) {
 void print_refs(GSList *refs, const char *prefix) {
   if (verbose < 3) return;
   int i = 0;
-  for (GSList* p = refs; p; p = p->next, i++) {
-    t_ref *r = p->data; if (!r) continue;
-    t_host *h = &r->hop->host[r->ndx];
-    LOG("%sref[%d]: hop=%p: ndx=%d: addr=%s name=%s", prefix ? prefix : "", i, r->hop, r->ndx, h->addr, h->name);
+  for (GSList* list = refs; list; list = list->next, i++) {
+    t_ref *ref = list->data; if (!ref) continue;
+    t_host *host = &ref->hop->host[ref->ndx];
+    LOG("%sref[%d]: hop=%p: ndx=%d: addr=%s name=%s", prefix ? prefix : "", i,
+      ref->hop, ref->ndx, host->addr, host->name);
   }
 }
 #endif

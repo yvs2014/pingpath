@@ -14,8 +14,8 @@ void series_update(void);
 void series_free(gboolean unreg);
 void series_lock(void);
 void series_unlock(void);
-void series_min(int no);
-void series_reg_on_scale(GtkWidget *w);
+void series_min_no(int number);
+void series_reg_on_scale(GtkWidget *widget);
 
 extern t_series_list stat_series[];
 #define SERIES(i) stat_series[i].list
@@ -25,6 +25,6 @@ extern int series_datamax;
 
 #define SERIES_LIM ((tgtat > series_count) ? series_count : tgtat)
 #define IS_RTT_DATA(d) ((d) && ((d)->rtt > 0))
-#define LIMVAL(val, lim) { if (val < 0) val += lim; else if (val >= lim) val -= lim; }
+#define LIMVAL(val, lim) { if ((val) < 0) (val) += (lim); else if ((val) >= (lim)) (val) -= (lim); }
 
 #endif

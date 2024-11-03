@@ -1,5 +1,12 @@
 
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+#include <math.h>
 #include <cglm/cglm.h>
+
+#include "common.h"
+#include "aux.h"
 
 #include "plot.h"
 #include "plot_aux.h"
@@ -25,9 +32,7 @@
 #define TTL_AXIS_TITLE "TTL"
 
 // x - ttl, y - time, z - delay
-#define PLANE_XN     8
-#define PLANE_YN    10
-#define PLANE_ZN    10
+enum { PLANE_XN = 8, PLANE_YN = 10, PLANE_ZN = 10 };
 #define SURF_XN MAXTTL
 #define SURF_YN PLOT_TIME_RANGE
 
@@ -56,8 +61,8 @@
 #define RTT_GRADIENT "4.0"
 #define TTL_GRADIENT "2.0"
 
-#define MIN_ASCII_CCHAR 0x20
-#define LIM_ASCII_CCHAR 0x7f
+static const unsigned char MIN_ASCII_CCHAR = 0x20;
+static const unsigned char LIM_ASCII_CCHAR = 0x7f;
 
 #define FONT_HEIGHT_PERCENT 1.5
 
@@ -200,9 +205,9 @@ static t_plot_char char_table[255];
 static gboolean plot_res_ready;
 static int draw_plot_at;
 
-static void plot_rtt_marks(t_mark_text mark[], int n);
-static void plot_tim_marks(t_mark_text mark[], int n);
-static void plot_ttl_marks(t_mark_text mark[], int n);
+static void plot_rtt_marks(t_mark_text mark[], int max);
+static void plot_tim_marks(t_mark_text mark[], int max);
+static void plot_ttl_marks(t_mark_text mark[], int max);
 
 enum { RNO_RTT, RNO_TIM, RNO_TTL, RNO_MAX };
 
@@ -226,8 +231,8 @@ static int area_size[2];
 
 //
 
-static void plot_set_char_norm(float w, float h) {
-  char0nm[0] = char0sz[0] * hfontf * h / w;
+static void plot_set_char_norm(float width, float height) {
+  char0nm[0] = char0sz[0] * hfontf * height / width;
   char0nm[1] = char0sz[1] * hfontf;
 }
 
@@ -235,12 +240,13 @@ static void plot_init_char_tables(void) {
   static gboolean plot_chars_ready;
   if (!plot_pango_init() || plot_chars_ready) return;;
   plot_chars_ready = true;
-  t_plot_char c = {0};
+  t_plot_char ch = {0};
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
   for (unsigned char i = MIN_ASCII_CCHAR; i < LIM_ASCII_CCHAR; i++) {
-    int sz[2];
-    if (!(c.tid = plot_pango_text(i, sz))) { plot_chars_ready = false; break; }
-    c.size[0] = sz[0]; c.size[1] = sz[1]; char_table[i] = c;
+    int size[2] = {0};
+    ch.tid = plot_pango_text(i, size);
+    if (!ch.tid) { plot_chars_ready = false; break; }
+    ch.size[0] = size[0]; ch.size[1] = size[1]; char_table[i] = ch;
   }
   char0sz[0] = char_table['0'].size[0];
   char0sz[1] = char_table['0'].size[1];
@@ -381,8 +387,8 @@ static gboolean plot_res_init(t_plot_res *res, GError **err) {
   (obj).vbo = plot_aux_vert_init_axis(dim[0], dim[1], typ, width, plot_plane_vert_attr, (obj).vao, res->plot.coord); \
   (obj).dbo.main = plot_aux_grid_init(dim[0], dim[1], typ); }
 //
-#define PLOT_GET_LOC(id, name, exec, fn, type) { id = fn(exec, name); \
-  if (id < 0) { PLOT_SETERR("Could not bind %s '%s'", type, name); return false; }}
+#define PLOT_GET_LOC(id, name, exec, fn, type) { (id) = fn(exec, name); \
+  if ((id) < 0) { PLOT_SETERR("Could not bind %s '%s'", type, name); return false; }}
 #define PLOT_GET_ATTR(prog, loc, name) { PLOT_GET_LOC((prog).loc, name, (prog).exec, glGetAttribLocation, "attribute"); }
 #define PLOT_GET_FORM(prog, loc, name) { PLOT_GET_LOC((prog).loc, name, (prog).exec, glGetUniformLocation, "uniform"); }
 //
@@ -477,7 +483,7 @@ static void area_init(GtkGLArea *area, t_plot_res *res) {
   plot_res_ready = true;
 }
 
-static void area_free(GtkGLArea *area, t_plot_res *res) { plot_res_free(res); }
+static void area_free(GtkGLArea *unused, t_plot_res *res) { plot_res_free(res); }
 
 static void plot_draw_elems(GLuint vao, t_plot_idc buff, GLint vtr,
     const vec4 colo1, GLint loc1, const vec4 colo2, GLint loc2, const mat4 mat, GLenum mode) {
@@ -501,8 +507,8 @@ static float plot_mark_shift(float chsz, float cw, int len, float pad, float cs)
 
 static bool plot_draw_text(t_plot_res *res, const char *text, int len,
     const vec4 color, const vec2 crd, const vec2 shift, const vec2 pad, vec4 *rect) {
-#define CENTER_TEXT(ptr, a, b, c, d) { float dx = c / 2, dy = d / 2; \
-  (ptr)[0] = a - dx; (ptr)[1] = b - dy; (ptr)[2] = a + dx; (ptr)[3] = b + dy; }
+#define CENTER_TEXT(ptr, a, b, c, d) { float dx = (c) / 2, dy = (d) / 2; \
+  (ptr)[0] = (a) - dx; (ptr)[1] = (b) - dy; (ptr)[2] = (a) + dx; (ptr)[3] = (b) + dy; }
 #define MARKMAXLEN 64
   if (!(len > 0) || !res || !text) return false;
   GLuint vao = res->vo[VO_TEXT].vao, vbo = res->vo[VO_TEXT].vbo.id, typ = res->vo[VO_TEXT].vbo.typ;
@@ -515,41 +521,48 @@ static bool plot_draw_text(t_plot_res *res, const char *text, int len,
   float x = crd[0] + plot_mark_shift(cw, cw, len, pad[0], shift[0]);
   float y = crd[1] + plot_mark_shift(ch, cw, 1,   pad[1], shift[1]);
   if (rect) CENTER_TEXT(*rect, x, y, (len + 1) * cw, ch);
-  int i = 0;
-  for (const char *p = text; *p && (i < MARKMAXLEN); p++, i++, x += cw) {
+  int cnt = 0;
+  for (const char *p = text; *p && (cnt < MARKMAXLEN); p++, cnt++) {
     unsigned tid = char_table[(unsigned char)*p].tid;
     if (tid) plot_pango_drawtex(tid, vbo, typ, x, y, cw, ch);
+    x += cw;
   }
   return true;
 #undef CENTER_TEXT
 #undef MARKMAXLEN
 }
 
-static void plot_rtt_marks(t_mark_text mark[], int n) {
-  float val = series_datamax / PP_RTT_SCALE; float step = val / (n - 1); val = 0;
-  for (int i = 0; i < n; i++, val += step)
+static void plot_rtt_marks(t_mark_text mark[], int max) {
+  float val = series_datamax / PP_RTT_SCALE;
+  float step = (max > 1) ? (val / (max - 1)) : 0;
+  val = 0;
+  for (int i = 0; i < max; i++) {
     mark[i].len = snprintf(mark[i].text, sizeof(mark[i].text), PP_FMT10(val), val); // BUFFNOLINT
+    val += step;
+  }
 }
 
-static void plot_tim_marks(t_mark_text mark[], int n) {
+static void plot_tim_marks(t_mark_text mark[], int max) {
   int dt = PLOT_TIME_RANGE * 2 / PLANE_YN; if (opts.timeout > 0) dt *= opts.timeout;
   if (!draw_plot_at || (pinger_state.run && !pinger_state.pause)) draw_plot_at = time(NULL) % 3600;
-  for (int i = 0, t = draw_plot_at - PLOT_TIME_RANGE; i < n; i++, t += dt) {
+  for (int i = 0, t = draw_plot_at - PLOT_TIME_RANGE; i < max; i++, t += dt) {
     LIMVAL(t, 3600);
     mark[i].len = snprintf(mark[i].text, sizeof(mark[i].text), PP_TIME_FMT, t / 60, t % 60); // BUFFNOLINT
   }
 }
 
-static void plot_ttl_marks(t_mark_text mark[], int n) {
-#define PLOT_TTL_FMT "%.0f%s"
-  float val = opts.min + 1; float step = (tgtat - val) / (n - 1);
-  for (int i = 0, printed = -1; i < n; i++, val += step) {
-    if ((i == (n - 1)) || ((int)val != printed)) printed = val;
-    else { mark[i].len = 0; continue; }
-    float r = fmodf(val, 1);
-    mark[i].len = snprintf(mark[i].text, sizeof(mark[i].text), PLOT_TTL_FMT, val, r ? ((r < 0.5) ? "-" : "+") : ""); // BUFFNOLINT
+static void plot_ttl_marks(t_mark_text mark[], int max) {
+  float val = opts.min + 1;
+  float step = (max > 1) ? ((tgtat - val) / (max - 1)) : 0;
+  for (int i = 0, printed = -1; i < max; i++) {
+    if ((i != (max - 1)) && ((int)val == printed)) mark[i].len = 0;
+    else {
+      printed = val;
+      float r = fmodf(val, 1);
+      mark[i].len = snprintf(mark[i].text, sizeof(mark[i].text), "%.0f%s", val, r ? ((r < 0.5) ? "-" : "+") : ""); // BUFFNOLINT
+    }
+    val += step;
   }
-#undef PLOT_TTL_FMT
 }
 
 static inline gboolean rect_overlapped(vec4 curr, vec4 prev) {
@@ -658,10 +671,10 @@ static gboolean area_draw(GtkGLArea *area, GdkGLContext *context, t_plot_res *re
 #define EXT_PROG_VALID(prog) (BASE_PROG_VALID(prog) && ((prog).colo2 >= 0))
   if (!GTK_IS_GL_AREA(area) || !GDK_IS_GL_CONTEXT(context) || !res) return false;
   plot_clear_area();
-  { int w = gtk_widget_get_width (GTK_WIDGET(area));
-    int h = gtk_widget_get_height(GTK_WIDGET(area));
-    if (((w != area_size[0]) || (h != area_size[1])) && ((w > 0) && (h > 0)))
-      plot_set_char_norm(w, h);
+  { int width  = gtk_widget_get_width (GTK_WIDGET(area));
+    int height = gtk_widget_get_height(GTK_WIDGET(area));
+    if (((width != area_size[0]) || (height != area_size[1])) && (width > 0) && (height > 0))
+      plot_set_char_norm(width, height);
   }
   if (BASE_PROG_VALID(res->text)) {
     if (not_cached_yet) { glsl_draw_text(res); plot_clear_area(); if (!res->base) not_cached_yet = false; }
@@ -690,17 +703,18 @@ static GtkWidget* plot_init_glarea(t_plot_res *res) {
 }
 
 static void plot_form_axis(mat4 src, t_plot_axis_params *param, gboolean ndx, gboolean atmax, gboolean rev) {
-#define MIDDLE_POINT(arr) { (arr[0][0] + arr[n - 1][0]) / 2, (arr[0][1] + arr[n - 1][1]) / 2 }
+#define MIDDLE_POINT(arr) { ((arr)[0][0] + (arr)[n - 1][0]) / 2, ((arr)[0][1] + (arr)[n - 1][1]) / 2 }
   if (!param) return;
   int n = param->crd_len; vec4 *dst = param->crd;
   float at = atmax ? 1 : -1;
   vec4 aux[n]; float x = -1, dx = 2; if (n != 1) dx /= n - 1;
-  for (int i = 0; i < n; i++, x += dx) {
+  for (int i = 0; i < n; i++) {
     vec4 crd = { [2] = -1, [3] = 1 }; crd[ndx] = at; crd[!ndx] = rev ? -x : x;
     vec4 axs; glm_mat4_mulv(src, crd, axs); glm_vec4_divs(axs, axs[3], dst[i]);
     vec4 dir; glm_vec4_copy(crd, dir); dir[ndx] *= 2;
     glm_mat4_mulv(src, dir, axs);
     glm_vec4_divs(axs, axs[3], aux[i]);
+    x += dx;
   }
   vec2 p1 = MIDDLE_POINT(dst), p2 = MIDDLE_POINT(aux);
   glm_vec2_sub(p2, p1, param->shift);
@@ -719,11 +733,11 @@ static inline void plot_trans_axes(t_plot_plane_at at) {
 }
 
 static void plot_rotate_copy(mat4 projview, mat4 model, int angle, vec3 axis, vec3 *mirror, mat4 dest) {
-  mat4 m; glm_mat4_copy(model, m);
+  mat4 dup; glm_mat4_copy(model, dup);
   if (mirror) angle += 180;
-  if (angle) glm_rotate(m, glm_rad(angle), axis);
-  if (mirror) glm_rotate(m, glm_rad(180), *mirror);
-  glm_mul(projview, m, dest);
+  if (angle) glm_rotate(dup, glm_rad(angle), axis);
+  if (mirror) glm_rotate(dup, glm_rad(180), *mirror);
+  glm_mul(projview, dup, dest);
 }
 
 static inline void plot_trans_planes(mat4 projview, int cube[3], t_plot_plane_at at) {
@@ -733,8 +747,8 @@ static inline void plot_trans_planes(mat4 projview, int cube[3], t_plot_plane_at
 }
 
 static inline void plottab_on_color_opts(void) {
-#define COL4_CMPNSET(dest, mm) { vec4 c = { opts.rcol.mm / 255., opts.gcol.mm / 255., opts.bcol.mm / 255., 1 }; \
-    if ((dest[0] != c[0]) || (dest[1] != c[1]) || (dest[2] != c[2])) glm_vec4_copy(c, dest); }
+#define COL4_CMPNSET(dst, mm) { vec4 c = { opts.rcol.mm / 255., opts.gcol.mm / 255., opts.bcol.mm / 255., 1 }; \
+    if (((dst)[0] != c[0]) || ((dst)[1] != c[1]) || ((dst)[2] != c[2])) glm_vec4_copy(c, dst); }
   COL4_CMPNSET(surf_colo1, min);
   COL4_CMPNSET(surf_colo2, max);
 #undef COL4_CMPNSET
@@ -757,11 +771,11 @@ static inline t_plot_plane_at plot_planes_at(mat4 base) {
   return at;
 }
 
-static inline void plot_projview(mat4 m) {
+static inline void plot_projview(mat4 matrix) {
   mat4 proj, view;
   glm_perspective(glm_rad(opts.fov), (float)X_RES / Y_RES, PERSPECTIVE_NEAR, PERSPECTIVE_FAR, proj);
   glm_lookat(LOOKAT_EYE, LOOKAT_CENTER, LOOKAT_UP, view);
-  glm_mul(proj, view, m);
+  glm_mul(proj, view, matrix);
 }
 
 static inline void plot_axis_at2ndx(t_plot_plane_at at, t_plot_axes_set *ax) {
@@ -792,8 +806,8 @@ static void pl_post_rotation(void) {
 
 static inline void pl_init_orientation(void) {
   for (int i = 0; i < 3; i++) if (opts.orient[i]) {
-    int q[4] = {0, 0, 0, opts.orient[i]}; q[i] = 1;
-    pl_on_rotation(q);
+    int quat[4] = {0, 0, 0, opts.orient[i]}; quat[i] = 1;
+    pl_on_rotation(quat);
   }
   pl_post_rotation();
 }
@@ -813,8 +827,8 @@ void plottab_redraw(void) {
   if (GTK_IS_WIDGET(plot_dyn_area))  gtk_gl_area_queue_render(GTK_GL_AREA(plot_dyn_area));
 }
 
-t_tab* plottab_init(GtkWidget* win) {
-#define PL_INIT_LAYER(widget, descr) { widget = plot_init_glarea(descr); \
+t_tab* plottab_init(void) {
+#define PL_INIT_LAYER(widget, descr) { (widget) = plot_init_glarea(descr); \
     g_return_val_if_fail(widget, NULL); layers = g_slist_append(layers, widget); }
   { int units = 1; glGetIntegerv(GL_MAX_VERTEX_TEXTURE_IMAGE_UNITS, &units);
     if (!units) { WARN("No support for texture lookups in the vertex shader"); return NULL; }}
@@ -828,7 +842,7 @@ t_tab* plottab_init(GtkWidget* win) {
     PL_INIT_LAYER(plot_dyn_area,  &plot_dyna_res);
     if (!drawtab_init(&plottab, CSS_PLOT_BG, layers, NT_ROTOR_NDX)) return NULL;
     g_slist_free(layers); }
-  { series_reg_on_scale(plot_base_area); series_min(PLOT_TIME_RANGE); }
+  { series_reg_on_scale(plot_base_area); series_min_no(PLOT_TIME_RANGE); }
   return &plottab;
 #undef PL_INIT_LAYER
 }
@@ -842,5 +856,5 @@ void plottab_update(void) {
 
 void plottab_refresh(gboolean flags) { if (flags) plottab_on_opts(flags); plottab_redraw(); }
 
-inline void plottab_on_trans_opts(int q[4]) { pl_on_rotation(q); pl_post_rotation(); }
+inline void plottab_on_trans_opts(int quat[4]) { pl_on_rotation(quat); pl_post_rotation(); }
 

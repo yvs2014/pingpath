@@ -1,4 +1,11 @@
 
+#include <stdlib.h>
+#include <string.h>
+#include <stdarg.h>
+
+#include "common.h"
+#include "aux.h"
+
 #include "log.h"
 #include "pinger.h"
 #include "ui/clipboard.h"
@@ -14,9 +21,9 @@ static t_tab logtab = { .self = &logtab, .name = "log-tab",
 
 static void logtab_add(const char *str) {
   if (atquit || !str || !GTK_IS_LIST_BOX(logtab.dyn.w)) return;
-  { char *cp = strchr(str, '\n') ? g_strdup(str) : NULL;
-    GtkWidget *line = gtk_label_new(cp ? g_strdelimit(cp, "\n", ',') : str);
-    g_free(cp); g_return_if_fail(line);
+  { char *dup = strchr(str, '\n') ? g_strdup(str) : NULL;
+    GtkWidget *line = gtk_label_new(dup ? g_strdelimit(dup, "\n", ',') : str);
+    g_free(dup); g_return_if_fail(line);
     gtk_widget_set_halign(line, GTK_ALIGN_START);
     gtk_list_box_append(GTK_LIST_BOX(logtab.dyn.w), line);
     loglines++; }
@@ -27,12 +34,12 @@ static void logtab_add(const char *str) {
   }
 }
 
-static inline void logtab_set_dyn_props(GtkWidget *w) {
-  if (!GTK_IS_LIST_BOX(w)) return;
-  gtk_list_box_set_selection_mode(GTK_LIST_BOX(w), GTK_SELECTION_MULTIPLE);
-  gtk_list_box_set_activate_on_single_click(GTK_LIST_BOX(w), false);
-  gtk_widget_set_halign(w, GTK_ALIGN_FILL);
-  gtk_widget_set_hexpand(w, false);
+static inline void logtab_set_dyn_props(GtkWidget *widget) {
+  if (!GTK_IS_LIST_BOX(widget)) return;
+  gtk_list_box_set_selection_mode(GTK_LIST_BOX(widget), GTK_SELECTION_MULTIPLE);
+  gtk_list_box_set_activate_on_single_click(GTK_LIST_BOX(widget), false);
+  gtk_widget_set_halign(widget, GTK_ALIGN_FILL);
+  gtk_widget_set_hexpand(widget, false);
 }
 
 

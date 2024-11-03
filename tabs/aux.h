@@ -4,8 +4,8 @@
 #include "common.h"
 
 typedef struct tab_widget { GtkWidget *w; const char *css, *col; } t_tab_widget;
-#define TAB_ELEM_WITH(tabw, maker, cssclass, color, retval) { tabw.css = cssclass; tabw.col = color; \
-  tabw.w = maker; g_return_val_if_fail(tabw.w, retval); }
+#define TAB_ELEM_WITH(tabw, maker, cssclass, color, retval) { (tabw).css = cssclass; (tabw).col = color; \
+  (tabw).w = maker; g_return_val_if_fail((tabw).w, retval); }
 
 typedef struct t_sa_desc {
   GSimpleAction* sa;
@@ -27,7 +27,7 @@ typedef struct tab {
 } t_tab;
 
 gboolean basetab_init(t_tab *tab, GtkWidget* (*make_dyn)(void), GtkWidget* (*make_extra)(void));
-gboolean drawtab_init(t_tab *tab, const char *bg, GSList *layers, int ndx);
+gboolean drawtab_init(t_tab *tab, const char *color, GSList *layers, int ndx);
 void tab_setup(t_tab *tab);
 void tab_color(t_tab *tab);
 void tab_reload_theme(void);

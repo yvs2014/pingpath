@@ -3,7 +3,7 @@
 
 #include <gtk/gtk.h>
 
-gboolean cli_init(int *pargc, char ***pargv);
+int cli_init(int *pargc, char ***pargv);
 extern gboolean autostart;
 
 #endif

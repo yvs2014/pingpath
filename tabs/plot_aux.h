@@ -4,9 +4,8 @@
 #include <gtk/gtk.h>
 #include <epoxy/gl.h>
 
-#define MIN_GL_VER 30
-
-#define PLOT_TIME_RANGE 60 // in intervals
+enum { MIN_GL_VER = 30 };
+enum { PLOT_TIME_RANGE = 60 }; // in intervals
 
 typedef struct plot_idc {
   GLuint id; GLsizei count, stride, hold, typ;

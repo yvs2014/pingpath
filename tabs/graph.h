@@ -3,7 +3,7 @@
 
 #include "aux.h"
 
-t_tab* graphtab_init(GtkWidget *win);
+t_tab* graphtab_init(void);
 void graphtab_free(void);
 void graphtab_update(void);
 void graphtab_refresh(void);

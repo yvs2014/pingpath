@@ -1,4 +1,8 @@
 
+#include <stdlib.h>
+
+#include "common.h"
+
 #include "stat.h"
 #include "pinger.h"
 #include "dns.h"
@@ -8,21 +12,20 @@
 #define INT_FMT "%d"
 #define DBL_FMT "%.*f"
 #define DBL_SFX DBL_FMT "%s"
-#define ELEM_LEN 5
-#define NUM_BUFF_SZ 16
 
+enum { ELEM_LEN = 5, NUM_BUFF_SZ = 16 };
 enum { NONE = 0, RX = 1, TX = 2, RXTX = 3 };
 
 int tgtat = MAXTTL;
 int visibles = -1;
 
-#define IS_WHOIS_NDX(ndx) ((PE_AS <= ndx) && (ndx <= PE_RT))
+#define IS_WHOIS_NDX(ndx) ((PE_AS <= (ndx)) && ((ndx) <= PE_RT))
 
 static t_hop hops[MAXTTL];
 
 static void update_addrname(int at, t_host *b) { // addr is mandatory, name not
   if (!b) return;
-  gboolean done;
+  gboolean done = false;
   int vacant = -1;
   t_hop *hop = &hops[at];
   for (int i = 0; i < MAXADDR; i++) {
@@ -74,16 +77,16 @@ static void set_target_at(int at, const char *info) {
 static void uniq_unreach(int at) {
   const char *addr = hops[at].host[0].addr;
   if (!addr) return;
-  int i;
-  for (i = at; i > 0; i--) {
-    if (hops[i - 1].reach) break;
-    if (STR_NEQ(addr, hops[i - 1].host[0].addr)) break;
+  int last = at;
+  for (; last > 0; last--) {
+    if (hops[last - 1].reach) break;
+    if (STR_NEQ(addr, hops[last - 1].host[0].addr)) break;
   }
-  if (tgtat != (i + 1)) set_target_at(i + 1, "unreachable duplicates");
+  if (tgtat != (last + 1)) set_target_at(last + 1, "unreachable duplicates");
 }
 
-#define STAT_AVERAGE(count, avrg, val) { count++; \
-  if (count > 0) { if (avrg < 0) avrg = 0; avrg += (val - avrg) / count; }}
+#define STAT_AVERAGE(count, avrg, val) { (count)++; \
+  if ((count) > 0) { if ((avrg) < 0) (avrg) = 0; (avrg) += ((val) - (avrg)) / (count); }}
 
 enum { PREV, CURR };
 
@@ -119,7 +122,7 @@ static int calc_rtt(int at, t_tseq *mark) {
 }
 
 // Note: name[0] is shortcut for "" test instead of STR_NEQ(name, unkn_field)
-#define ADDRNAME(addr, name) ((name && name[0]) ? (name) : ADDRONLY(addr))
+#define ADDRNAME(addr, name) (((name) && (name)[0]) ? (name) : ADDRONLY(addr))
 #define ADDRONLY(addr) ((addr) ? (addr) : unkn_field)
 static inline const char* addrname(int ndx, t_host *host) {
   return opts.dns ? ADDRNAME(host[ndx].addr, host[ndx].name) : ADDRONLY(host[ndx].addr);
@@ -134,16 +137,16 @@ static const char *info_host(int at) {
   t_host *host = hop->host;
   if (host[0].addr) { // as a marker
     if (hop->cached) return hostinfo_cache[at];
-    char *s = hostinfo_cache[at];
-    int l = g_snprintf(s, BUFF_SIZE, "%s", addrname(0, host));
-    for (int i = 1; (i < MAXADDR) && (l < BUFF_SIZE); i++) {
-      if (host[i].addr) l += g_snprintf(s + l, BUFF_SIZE - l, "\n%s", addrname(i, host));
+    char *str = hostinfo_cache[at];
+    int len = g_snprintf(str, BUFF_SIZE, "%s", addrname(0, host));
+    for (int i = 1; (i < MAXADDR) && (len < BUFF_SIZE); i++) {
+      if (host[i].addr) len += g_snprintf(str + len, BUFF_SIZE - len, "\n%s", addrname(i, host));
       else break;
     }
-    if (hop->info && (l < BUFF_SIZE)) g_snprintf(s + l, BUFF_SIZE - l, "\n%s", hop->info);
+    if (hop->info && (len < BUFF_SIZE)) g_snprintf(str + len, BUFF_SIZE - len, "\n%s", hop->info);
     hop->cached = true;
-    LOG("hostinfo cache[%d] updated with %s", at, (s && s[0]) ? s : log_empty);
-    return s;
+    LOG("hostinfo cache[%d] updated with %s", at, (str && str[0]) ? str : log_empty);
+    return str;
   }
   return NULL;
 }
@@ -154,27 +157,27 @@ static const char *info_host_nl(int at) {
   t_host *host = hop->host;
   if (host[0].addr) { // as a marker
     if (hop->cached_nl) return hostinfo_nl_cache[at];
-    char *s = hostinfo_nl_cache[at];
-    g_snprintf(s, BUFF_SIZE, "%s", addrname(0, host));
+    char *str = hostinfo_nl_cache[at];
+    g_snprintf(str, BUFF_SIZE, "%s", addrname(0, host));
     hop->cached_nl = true;
-    LOG("hostinfo_nl cache[%d] updated with %s", at, (s && s[0]) ? s : log_empty);
-    return s;
+    LOG("hostinfo_nl cache[%d] updated with %s", at, (str && str[0]) ? str : log_empty);
+    return str;
   }
   return NULL;
 }
 
 static int column_host(int at, t_ping_column *column) {
-  t_host *host = hops[at].host; int n = 0;
-  if (column) for (; n < MAXADDR; n++) {
-    if (host[n].addr) column->cell[n] = addrname(n, host); else break; }
-  return n;
+  t_host *host = hops[at].host; int nth = 0;
+  if (column) for (; nth < MAXADDR; nth++) {
+    if (host[nth].addr) column->cell[nth] = addrname(nth, host); else break; }
+  return nth;
 }
 
 static int column_addrhost(int at, t_ping_column* column, gboolean num) {
-  t_host *host = hops[at].host; int n = 0;
-  if (column) for (; n < MAXADDR; n++) {
-    if (host[n].addr) column->cell[n] = addr_or_name(n, host, num); else break; }
-  return n;
+  t_host *host = hops[at].host; int nth = 0;
+  if (column) for (; nth < MAXADDR; nth++) {
+    if (host[nth].addr) column->cell[nth] = addr_or_name(nth, host, num); else break; }
+  return nth;
 }
 
 static const char *info_whois(int at, int type) {
@@ -182,18 +185,18 @@ static const char *info_whois(int at, int type) {
   t_whois *whois = hops[at].whois;
   char *elem = whois[0].elem[type];
   if (elem) { // as a marker
-    char *s = whois_cache[at][type];
+    char *str = whois_cache[at][type];
     if (!hops[at].wcached[type]) {
-      int l = g_snprintf(s, BUFF_SIZE, "%s", elem);
-      for (int i = 1; (i < MAXADDR) && (l < BUFF_SIZE); i++) {
+      size_t len = g_snprintf(str, BUFF_SIZE, "%s", elem);
+      for (int i = 1; (i < MAXADDR) && (len < BUFF_SIZE); i++) {
         elem = whois[i].elem[type];
         if (!elem) break;
-        l += g_snprintf(s + l, BUFF_SIZE - l, "\n%s", elem);
+        len += g_snprintf(str + len, BUFF_SIZE - len, "\n%s", elem);
       }
       hops[at].wcached[type] = true;
-      LOG("whois cache[%d,%d] updated with %s", at, type, (s && s[0]) ? s : log_empty);
+      LOG("whois cache[%d,%d] updated with %s", at, type, (str && str[0]) ? str : log_empty);
     }
-    return s;
+    return str;
   }
   return NULL;
 }
@@ -203,27 +206,27 @@ static const char *info_whois_nl(int at, int type) {
   t_whois *whois = hops[at].whois;
   char *elem = whois[0].elem[type];
   if (elem) { // as a marker
-    char *s = whois_nl_cache[at][type];
+    char *str = whois_nl_cache[at][type];
     if (!hops[at].wcached_nl[type]) {
-      g_snprintf(s, MAXHOSTNAME, "%s", elem);
+      g_snprintf(str, MAXHOSTNAME, "%s", elem);
       hops[at].wcached_nl[type] = true;
-      LOG("whois_nl cache[%d,%d] updated with %s", at, type, (s && s[0]) ? s : log_empty);
+      LOG("whois_nl cache[%d,%d] updated with %s", at, type, (str && str[0]) ? str : log_empty);
     }
-    return s;
+    return str;
   }
   return NULL;
 }
 
 static int column_whois(int at, int type, t_ping_column *column) {
-  t_whois *whois = hops[at].whois; int n = 0;
-  if (column) for (; n < MAXADDR; n++) {
-    char *s = whois[n].elem[type];
-    if (s) column->cell[n] = s; else break;
+  t_whois *whois = hops[at].whois; int nth = 0;
+  if (column) for (; nth < MAXADDR; nth++) {
+    char *str = whois[nth].elem[type];
+    if (str) column->cell[nth] = str; else break;
   }
-  return n;
+  return nth;
 }
 
-static int prec(double v) { return ((v > 0) && (v < 10)) ? (v < 0.1 ? 2 : 1) : 0; }
+static int prec(double val) { return ((val > 0) && (val < 10)) ? ((val < 0.1) ? 2 : 1) : 0; }
 
 static const char* fill_stat_int(int val, char* buff, int size) {
   if (val >= 0) g_snprintf(buff, size, INT_FMT, val); else buff[0] = 0;
@@ -233,9 +236,9 @@ static const char* fill_stat_int(int val, char* buff, int size) {
 static const char* fill_stat_dbl(double val, char* buff, int size, const char *sfx, int factor) {
   if (val < 0) buff[0] = 0; else {
     if (factor) val /= factor;
-    int n = prec(val);
-    if (sfx) g_snprintf(buff, size, DBL_SFX, n, val, sfx);
-    else g_snprintf(buff, size, DBL_FMT, n, val);
+    int dec = prec(val);
+    if (sfx) g_snprintf(buff, size, DBL_SFX, dec, val, sfx);
+    else g_snprintf(buff, size, DBL_FMT, dec, val);
   }
   return buff;
 }
@@ -266,6 +269,7 @@ static const char *stat_hop(int type, t_hop *hop) {
     case PE_WRST: return fill_stat_rtt(hop->wrst, buff_wrst, sizeof(buff_wrst));
     case PE_AVRG: return fill_stat_dbl(hop->avrg, buff_avrg, sizeof(buff_avrg), NULL, 1000);
     case PE_JTTR: return fill_stat_dbl(hop->jttr, buff_jttr, sizeof(buff_jttr), NULL, 1000);
+    default: break;
   }
   return NULL;
 }
@@ -389,6 +393,7 @@ const char *stat_str_elem(int at, int type) {
     case PE_AVRG:
     case PE_JTTR:
       return stat_hop(type, &hops[at]);
+    default: break;
   }
   return NULL;
 }
@@ -400,52 +405,56 @@ static const char *stat_strnl_elem(int at, int type) {
     case PE_CC:   return info_whois_nl(at, WHOIS_CC_NDX);
     case PE_DESC: return info_whois_nl(at, WHOIS_DESC_NDX);
     case PE_RT:   return info_whois_nl(at, WHOIS_RT_NDX);
+    default: break;
   }
   return NULL;
 }
 
 int stat_ping_column(int at, int type, t_ping_column *column) {
-  int n = 0;
+  int ndx = 0;
   if (column)  {
     memset(column, 0, sizeof(*column)); // BUFFNOLINT
     switch (type) {
-      case PE_HOST: n = column_host(at, column);                  break;
-      case PE_AS:   n = column_whois(at, WHOIS_AS_NDX, column);   break;
-      case PE_CC:   n = column_whois(at, WHOIS_CC_NDX, column);   break;
-      case PE_DESC: n = column_whois(at, WHOIS_DESC_NDX, column); break;
-      case PE_RT:   n = column_whois(at, WHOIS_RT_NDX, column);   break;
-      case PX_ADDR: n = column_addrhost(at, column, true);        break;
-      case PX_HOST: n = column_addrhost(at, column, false);       break;
+      case PE_HOST: ndx = column_host(at, column);                  break;
+      case PE_AS:   ndx = column_whois(at, WHOIS_AS_NDX, column);   break;
+      case PE_CC:   ndx = column_whois(at, WHOIS_CC_NDX, column);   break;
+      case PE_DESC: ndx = column_whois(at, WHOIS_DESC_NDX, column); break;
+      case PE_RT:   ndx = column_whois(at, WHOIS_RT_NDX, column);   break;
+      case PX_ADDR: ndx = column_addrhost(at, column, true);        break;
+      case PX_HOST: ndx = column_addrhost(at, column, false);       break;
+      default: break;
     }
   }
-  return n;
+  return ndx;
 }
 
 double stat_dbl_elem(int at, int type) {
-  double re = -1;
+  double val = -1;
   switch (type) {
-    case PE_LOSS: re = hops[at].loss; break;
-    case PE_SENT: re = hops[at].sent; break;
-    case PE_RECV: re = hops[at].recv; break;
-    case PE_LAST: re = hops[at].last; break;
-    case PE_BEST: re = hops[at].best; break;
-    case PE_WRST: re = hops[at].wrst; break;
-    case PE_AVRG: re = hops[at].avrg; break;
-    case PE_JTTR: re = hops[at].jttr; break;
+    case PE_LOSS: val = hops[at].loss; break;
+    case PE_SENT: val = hops[at].sent; break;
+    case PE_RECV: val = hops[at].recv; break;
+    case PE_LAST: val = hops[at].last; break;
+    case PE_BEST: val = hops[at].best; break;
+    case PE_WRST: val = hops[at].wrst; break;
+    case PE_AVRG: val = hops[at].avrg; break;
+    case PE_JTTR: val = hops[at].jttr; break;
+    default: break;
   }
-  return re;
+  return val;
 }
 
 int stat_int_elem(int at, int type) {
-  int re = -1;
+  int val = -1;
   switch (type) {
-    case PE_SENT: re = hops[at].sent; break;
-    case PE_RECV: re = hops[at].recv; break;
-    case PE_LAST: re = hops[at].last; break;
-    case PE_BEST: re = hops[at].best; break;
-    case PE_WRST: re = hops[at].wrst; break;
+    case PE_SENT: val = hops[at].sent; break;
+    case PE_RECV: val = hops[at].recv; break;
+    case PE_LAST: val = hops[at].last; break;
+    case PE_BEST: val = hops[at].best; break;
+    case PE_WRST: val = hops[at].wrst; break;
+    default: break;
   }
-  return re;
+  return val;
 }
 
 

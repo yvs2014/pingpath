@@ -1,16 +1,21 @@
 
+#include <stdlib.h>
+#include <string.h>
+
 #include "common.h"
+
 #include "option.h"
 #include "parser.h"
 #include "pinger.h"
 #include "stat.h"
 #include "style.h"
 #include "notifier.h"
+#include "tabs/aux.h"
+#include "tabs/ping.h"
 #include "tabs/graph.h"
 #ifdef WITH_PLOT
 #include "tabs/plot.h"
 #endif
-#include "tabs/ping.h"
 
 typedef gboolean (*optmenu_add_items_fn)(GtkWidget *);
 
@@ -235,17 +240,17 @@ static gboolean opt_silent;
 //
 
 static gboolean check_bool_val(GtkCheckButton *check, t_ent_bool *en, void (*update)(void)) {
-  gboolean state = gtk_check_button_get_active(check), re = false;
+  gboolean state = gtk_check_button_get_active(check), okay = false;
   if (en) {
-    gboolean *pb = EN_BOOLPTR(en);
-    if (pb && (*pb != state)) {
-      *pb = state; re = true;
+    gboolean *pbool = EN_BOOLPTR(en);
+    if (pbool && (*pbool != state)) {
+      *pbool = state; okay = true;
       if (update) update();
     }
     if (en->prefix) OPT_NOTIFY("%s: %s %s", en->prefix, en->en.name, onoff(state))
     else            OPT_NOTIFY("%s: %s",                en->en.name, onoff(state));
   }
-  return re;
+  return okay;
 }
 
 static void set_ed_texthint(t_ent_str *en) {
@@ -336,23 +341,22 @@ static void toggle_cb(GtkCheckButton *check, t_ent_bool *en) {
       check_bool_val(check, en, option_up_menu_ext);
       break;
 #endif
+    default: break;
   }
 }
 
 static void radio_cb(GtkCheckButton *check, t_ent_rad_map *map) {
   if (!GTK_IS_CHECK_BUTTON(check) || !map) return;
   int ndx = map->ndx; if ((ndx < 0) || (ndx >= G_N_ELEMENTS(ent_rad))) return;
-  t_ent_rad *en = &ent_rad[ndx]; int *pval = en->pval;
-  if (pval) switch (en->c.en.type) {
-    case ENT_RAD_IPV:
-    case ENT_RAD_GRAPH: {
-      gboolean selected = gtk_check_button_get_active(check);
-      if (selected && (map->val != *pval)) {
-        *(en->pval) = map->val;
-        if (en->cb) en->cb();
-        if (map->str) OPT_NOTIFY("%s: %s", en->c.en.name, map->str)
-        else          OPT_NOTIFY("%s: %d", en->c.en.name, map->val);
-      }
+  t_ent_rad *en = &ent_rad[ndx];
+  int *pval = en->pval, type = en->c.en.type;
+  if (pval && ((type == ENT_RAD_IPV) || (type == ENT_RAD_GRAPH))) {
+    gboolean selected = gtk_check_button_get_active(check);
+    if (selected && (map->val != *pval)) {
+      *(en->pval) = map->val;
+      if (en->cb) en->cb();
+      if (map->str) OPT_NOTIFY("%s: %s", en->c.en.name, map->str)
+      else          OPT_NOTIFY("%s: %d", en->c.en.name, map->val);
     }
   }
 }
@@ -395,6 +399,7 @@ static void input_cb(GtkWidget *input, t_ent_str *en) {
         g_free(pad);
       } else set_ed_texthint(en);
     } break;
+    default: break;
   }
   DEBUG("%s: %s", en->en.name, got);
 }
@@ -407,20 +412,20 @@ static void minttl_cb(GtkSpinButton *spin, t_ent_spn_elem *en) {
   if (*pmin == val) return;
   t_ent_spn_aux *aux = &en->aux[1];
   int *plim = aux->pval;
-  t_minmax *mm = aux->mm ? aux->mm : &opt_mm_ttl;
-  int max = plim ? *plim : mm->max;
-  if (pinger_within_range(mm->min, max, got)) {
+  t_minmax *minmax = aux->mm ? aux->mm : &opt_mm_ttl;
+  int max = plim ? *plim : minmax->max;
+  if (pinger_within_range(minmax->min, max, got)) {
     OPT_NOTIFY("%s: %d <=> %d", en->title, got, max);
     *pmin = val;
     // then adjust right:range
-    double cp_min, cp_max;
+    double cp_min = NAN, cp_max = NAN;
     gtk_spin_button_get_range(aux->spin, &cp_min, &cp_max);
     if (got != cp_min) {
       int cp_val = gtk_spin_button_get_value_as_int(aux->spin);
       if (cp_val >= got) // avoid callback triggering
         gtk_spin_button_set_range(aux->spin, got, cp_max);
     }
-  } else WARN("out-of-range[%d,%d]: %d", mm->min, max, got);
+  } else WARN("out-of-range[%d,%d]: %d", minmax->min, max, got);
 }
 
 static void maxttl_cb(GtkSpinButton *spin, t_ent_spn_elem *en) {
@@ -431,19 +436,19 @@ static void maxttl_cb(GtkSpinButton *spin, t_ent_spn_elem *en) {
   t_ent_spn_aux *aux = &en->aux[0];
   int *pmin = aux->pval;
   int min = (pmin ? *pmin : 0) + 1;
-  t_minmax *mm = aux->mm ? aux->mm : &opt_mm_ttl;
-  if (pinger_within_range(min, mm->max, got)) {
+  t_minmax *minmax = aux->mm ? aux->mm : &opt_mm_ttl;
+  if (pinger_within_range(min, minmax->max, got)) {
     OPT_NOTIFY("%s: %d <=> %d", en->title, min, got);
     *plim = got;
     // then adjust left:range
-    double cp_min, cp_max;
+    double cp_min = NAN, cp_max = NAN;
     gtk_spin_button_get_range(aux->spin, &cp_min, &cp_max);
     if (got != cp_max) {
       int cp_val = gtk_spin_button_get_value_as_int(aux->spin);
       if (cp_val <= got) // avoid callback triggering
         gtk_spin_button_set_range(GTK_SPIN_BUTTON(aux->spin), cp_min, got);
     }
-  } else WARN("out-of-range[%d,%d]: %d", min, mm->max, got);
+  } else WARN("out-of-range[%d,%d]: %d", min, minmax->max, got);
 }
 
 #ifdef WITH_PLOT
@@ -452,12 +457,12 @@ static void colgrad_cb(GtkSpinButton *spin, t_ent_spn_aux *aux) {
   int *pval = aux->pval; if (!pval) return;
   int got = gtk_spin_button_get_value_as_int(spin);
   if (*pval == got) return;
-  t_minmax *mm = aux->mm ? aux->mm : &opt_mm_col;
-  if ((mm->min <= got) && (got <= mm->max)) {
+  t_minmax *minmax = aux->mm ? aux->mm : &opt_mm_col;
+  if ((minmax->min <= got) && (got <= minmax->max)) {
     *pval = got;
     OPT_NOTIFY("%s: %s %d (0x%02x)", aux->prfx, aux->sfx, got, got);
     plottab_refresh(PL_PARAM_COLOR);
-  } else WARN("out-of-range[%d,%d]: %d", mm->min, mm->max, got);
+  } else WARN("out-of-range[%d,%d]: %d", minmax->min, minmax->max, got);
 }
 
 void set_rotor_n_redraw(int step, gboolean rev, int n) {
@@ -473,14 +478,14 @@ static void rotation_cb(GtkSpinButton *spin, t_ent_spn_aux *aux) {
   int want = gtk_spin_button_get_value_as_int(spin);
   int step = want - *pval; if (aux->wrap) step %= aux->wrap;
   if (!step) return;
-  t_minmax *mm = aux->mm ? aux->mm : &opt_mm_rot;
-  if ((mm->min <= want) && (want <= mm->max)) {
+  t_minmax *minmax = aux->mm ? aux->mm : &opt_mm_rot;
+  if ((minmax->min <= want) && (want <= minmax->max)) {
     OPT_NOTIFY("%s: %d", aux->sfx, want)
     if (aux->sn) {
       *pval = want; t_ent_spn_elem *list = ent_spn[aux->sn].list;
       if (list) for (int i = 0; i < ENT_SPN_ANGS; i++) { // adjust angle entries' step
-        GtkSpinButton *sb = list->aux[i].spin;
-        if (GTK_IS_SPIN_BUTTON(sb)) gtk_spin_button_set_increments(sb, want, want * 6); }
+        GtkSpinButton *spin = list->aux[i].spin;
+        if (GTK_IS_SPIN_BUTTON(spin)) gtk_spin_button_set_increments(spin, want, want * 6); }
     } else { *pval = want; set_rotor_n_redraw(step, aux->rev, aux->pn); }
   }
 }
@@ -489,8 +494,8 @@ static void scalefov_cb(GtkSpinButton *spin, t_ent_spn_aux *aux) {
   if (!GTK_IS_SPIN_BUTTON(spin) || !aux) return;
   int *pval = aux->pval; if (!pval) return;
   int got = gtk_spin_button_get_value_as_int(spin);
-  t_minmax *mm = aux->mm ? aux->mm : &opt_mm_fov;
-  if ((*pval == got) || (got < mm->min) || (got > mm->max)) return;
+  t_minmax *minmax = aux->mm ? aux->mm : &opt_mm_fov;
+  if ((*pval == got) || (got < minmax->min) || (got > minmax->max)) return;
   *pval = got;
   OPT_NOTIFY("%s (%s): %d°", aux->prfx, aux->sfx, got);
   plottab_refresh(PL_PARAM_FOV);
@@ -534,8 +539,8 @@ static GtkWidget* add_opt_check(GtkWidget* list, t_ent_bool *en) {
     gtk_widget_set_halign(check, GTK_ALIGN_END);
     g_signal_connect(check, EV_TOGGLE, G_CALLBACK(toggle_cb), en);
     en->check = GTK_CHECK_BUTTON(check);
-    gboolean *pb = EN_BOOLPTR(en);
-    if (pb) gtk_check_button_set_active(en->check, *pb);
+    gboolean *pbool = EN_BOOLPTR(en);
+    if (pbool) gtk_check_button_set_active(en->check, *pbool);
   }
   return box;
 }
@@ -602,10 +607,10 @@ static GtkWidget* add_opt_expand(GtkWidget* list, t_ent_exp *en) {
 }
 
 #define SPN_MM_OR_DEF(aux, inc) ((aux).pval ? (*((aux).pval) + (inc)) : (aux).def)
-#define SPN_MM_NDX(mm_ndx, inc) ((ndx == mm_ndx) ? (en->aux[mm_ndx].def) : SPN_MM_OR_DEF(en->aux[mm_ndx], inc))
+#define SPN_MM_NDX(mm_ndx, inc) ((ndx == (mm_ndx)) ? (en->aux[mm_ndx].def) : SPN_MM_OR_DEF(en->aux[mm_ndx], inc))
 
-static gboolean add_minmax(GtkWidget *box, t_ent_spn_elem *en, int ndx, int *step, gboolean wrap) {
-  gboolean re = false;
+static gboolean add_minmax(GtkWidget *box, t_ent_spn_elem *en, int ndx, const int *step, gboolean wrap) {
+  gboolean okay = false;
   if (GTK_IS_BOX(box) && en) {
     t_minmax *mm0 = en->aux[en->bond ? 0 : ndx].mm;
     t_minmax *mm1 = en->aux[en->bond ? 1 : ndx].mm;
@@ -627,10 +632,10 @@ static gboolean add_minmax(GtkWidget *box, t_ent_spn_elem *en, int ndx, int *ste
         en->aux[ndx].spin = GTK_SPIN_BUTTON(spin);
         if (en->aux[ndx].cb)
           g_signal_connect(spin, EV_VAL_CHANGE, en->aux[ndx].cb, en->bond ? (void*)en : &en->aux[ndx]);
-        re = true;
+        okay = true;
      } else WARN("gtk_spin_button_new_with_range()");
   }}
-  return re;
+  return okay;
 }
 
 static void grey_into_box(GtkWidget *box, GtkWidget *widget, gboolean sens, gboolean hexp) {
@@ -673,9 +678,9 @@ static GtkWidget* add_opt_range(GtkWidget* listbox, t_ent_spn *en) {
             add_minmax(row, elem, i, elem->aux[i].step, elem->aux[i].wrap);
             gtk_box_append(GTK_BOX(subbox), row);
             if ((i >= ENT_SPN_ROT0) && (i <= ENT_SPN_ROT2)) // leave only buttons for rotation spins
-              for (GtkWidget *c = gtk_widget_get_first_child(GTK_WIDGET(elem->aux[i].spin));
-                GTK_IS_WIDGET(c); c = gtk_widget_get_next_sibling(c))
-                  if (GTK_IS_TEXT(c)) gtk_widget_set_visible(c, false);
+              for (GtkWidget *txt = gtk_widget_get_first_child(GTK_WIDGET(elem->aux[i].spin));
+                GTK_IS_WIDGET(txt); txt = gtk_widget_get_next_sibling(txt))
+                  if (GTK_IS_TEXT(txt)) gtk_widget_set_visible(txt, false);
           }
           break;
         case SCALE_SPIN:
@@ -683,6 +688,7 @@ static GtkWidget* add_opt_range(GtkWidget* listbox, t_ent_spn *en) {
           add_minmax(subbox, elem, 0, NULL, false);
           break;
 #endif
+        default: break;
       }
     }
   }
@@ -696,14 +702,14 @@ static GtkWidget* add_opt_radio(GtkWidget* list, t_ent_rad *en) {
     GtkWidget *group = NULL;
     t_ent_rad_map *map = en->map;
     for (int i = 0; (i < G_N_ELEMENTS(en->map)) && map && map->str; i++, map++) {
-      GtkWidget *rb = gtk_check_button_new_with_label(map->str);
-      g_return_val_if_fail(GTK_CHECK_BUTTON(rb), box);
-      if (style_loaded) gtk_widget_add_css_class(rb, CSS_PAD);
-      if (group) gtk_check_button_set_group(GTK_CHECK_BUTTON(rb), GTK_CHECK_BUTTON(group));
-      else group = rb;
-      if (en->pval) gtk_check_button_set_active(GTK_CHECK_BUTTON(rb), *(en->pval) == map->val);
-      g_signal_connect(rb, EV_TOGGLE, G_CALLBACK(radio_cb), map);
-      gtk_list_box_append(GTK_LIST_BOX(en->c.sub), rb);
+      GtkWidget *button = gtk_check_button_new_with_label(map->str);
+      g_return_val_if_fail(GTK_CHECK_BUTTON(button), box);
+      if (style_loaded) gtk_widget_add_css_class(button, CSS_PAD);
+      if (group) gtk_check_button_set_group(GTK_CHECK_BUTTON(button), GTK_CHECK_BUTTON(group));
+      else group = button;
+      if (en->pval) gtk_check_button_set_active(GTK_CHECK_BUTTON(button), *(en->pval) == map->val);
+      g_signal_connect(button, EV_TOGGLE, G_CALLBACK(radio_cb), map);
+      gtk_list_box_append(GTK_LIST_BOX(en->c.sub), button);
     }
   }
   return box;
@@ -813,10 +819,10 @@ gboolean option_init(GtkWidget* bar) {
 }
 
 #define ENT_LOOP_SET(row) { if (GTK_IS_WIDGET(row)) gtk_widget_set_sensitive(row, notrun); }
-#define ENT_LOOP_STR(arr) { for (int i = 0; i < G_N_ELEMENTS(arr); i++) ENT_LOOP_SET(arr[i].box); }
-#define ENT_LOOP_EXP(arr) { for (int i = 0; i < G_N_ELEMENTS(arr); i++) if (!arr[i].c.atrun) { \
-  ENT_LOOP_SET(arr[i].c.box); if (GTK_IS_TOGGLE_BUTTON(arr[i].c.arrow)) \
-    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(arr[i].c.arrow), false); }}
+#define ENT_LOOP_STR(arr) { for (int i = 0; i < G_N_ELEMENTS(arr); i++) ENT_LOOP_SET((arr)[i].box); }
+#define ENT_LOOP_EXP(arr) { for (int i = 0; i < G_N_ELEMENTS(arr); i++) if (!(arr)[i].c.atrun) { \
+  ENT_LOOP_SET((arr)[i].c.box); if (GTK_IS_TOGGLE_BUTTON((arr)[i].c.arrow)) \
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON((arr)[i].c.arrow), false); }}
 
 void option_update(void) {
   gboolean notrun = !pinger_state.run;
@@ -830,8 +836,8 @@ void option_up_menu_ext(void)  { if (!opt_silent) { opt_silent = true; create_ex
 
 void option_legend(void) {
   t_ent_bool *en = &ent_bool[ENT_BOOL_LGND];
-  gboolean *pb = EN_BOOLPTR(en);
-  if (en->check && pb) gtk_check_button_set_active(en->check, *pb);
+  gboolean *pbool = EN_BOOLPTR(en);
+  if (en->check && pbool) gtk_check_button_set_active(en->check, *pbool);
   toggle_legend();
 }
 

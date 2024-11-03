@@ -1,5 +1,9 @@
 
 #include <stdlib.h>
+#include <string.h>
+#include <limits.h>
+
+#include "common.h"
 
 #include "cli.h"
 #include "pinger.h"
@@ -66,10 +70,10 @@ typedef struct t_config_section {
 
 #ifdef DNDORD_DEBUGGING
 static void cli_pr_elems(t_type_elem *elems, int max) {
-  GString *s = g_string_new(NULL);
+  GString *string = g_string_new(NULL);
   for (int i = 0; i < max; i++)
-    g_string_append_printf(s, " %c%d", elems[i].enable ? '+' : '-', elems[i].type);
-  g_message("REORDER: elem:%s", s->str); g_string_free(s, true);
+    g_string_append_printf(string, " %c%d", elems[i].enable ? '+' : '-', elems[i].type);
+  g_message("REORDER: elem:%s", string->str); g_string_free(string, true);
 }
 #define CLI_REORDER_PRINT_ELEMS(elems, max) do { if (verbose & 32) cli_pr_elems(elems, max); } while (0)
 #else
@@ -90,8 +94,8 @@ static gboolean cli_int_opt(const char *name, const char *value, GError **error,
     int min, int max, int *opt) {
   gboolean okay = false;
   if (value && hdr) {
-    t_minmax mm = { .min = min, .max = max };
-    okay = parser_mmint(value, hdr, mm, opt);
+    t_minmax minmax = { .min = min, .max = max };
+    okay = parser_mmint(value, hdr, minmax, opt);
     if (okay) { if (opt) g_message("%s: %d", hdr, *opt); }
     else CLI_SET_ERR;
   }
@@ -120,28 +124,28 @@ static gboolean cli_opt_g(const char *name, const char *value, t_opts *opts, GEr
 
 static gboolean cli_opt_t(const char *name, const char *value, t_opts *opts, GError **error) {
   if (!value || !opts) return false;
-  char *cp = g_strdup(value);
+  char *dup = g_strdup(value);
   gboolean okay = false;
-  if (cp) {
+  if (dup) {
     t_ent_ndx *enc = &ent_spn[ENT_SPN_TTL].c.en;
     t_ent_spn_elem *elem = &ent_spn[ENT_SPN_TTL].list[0];
     int *pmin = elem->aux[0].pval;
     int *plim = elem->aux[1].pval;
     int min = opt_mm_ttl.min - 1, lim = opt_mm_ttl.max;
-    t_minmax range; okay = parser_range(cp, COMMA, OPT_TTL_HDR, &range);
+    t_minmax range; okay = parser_range(dup, COMMA, OPT_TTL_HDR, &range);
     if (okay) {
       if (range.min != INT_MIN) {
-        okay &= pinger_within_range(opt_mm_ttl.min, plim ? *plim : lim, range.min);
+        okay = pinger_within_range(opt_mm_ttl.min, plim ? *plim : lim, range.min);
         if (okay) { min = range.min - 1; if (pmin) *pmin = min; }
       }
       if (range.max != INT_MIN) {
-        okay &= pinger_within_range(pmin ? (*pmin + 1) : opt_mm_ttl.min, opt_mm_ttl.max, range.max);
+        okay = pinger_within_range(pmin ? (*pmin + 1) : opt_mm_ttl.min, opt_mm_ttl.max, range.max);
         if (okay) { lim = range.max; if (plim) *plim = lim; }
       }
     }
     if (okay) g_message("%s: %d <=> %d", enc->name, min + 1, lim);
     else g_warning("%s: no match with [%d,%d]", enc->name, opt_mm_ttl.min, opt_mm_ttl.max);
-    g_free(cp);
+    g_free(dup);
   }
   if (!okay) CLI_SET_ERR;
   return okay;
@@ -149,97 +153,103 @@ static gboolean cli_opt_t(const char *name, const char *value, t_opts *opts, GEr
 
 #ifdef WITH_PLOT
 
-#define SET_XPAR(src, dst, mm) { if (okay) okay &= set_xparam_tag(src, dst, mm); }
-static gboolean set_xparam_tag(int inp, int *outp, t_minmax mm) {
+enum { X_TAGS = 5, R_TAG = 'r', G_TAG = 'g', B_TAG = 'b', O_TAG = 'o', F_TAG = 'f' };
+enum { XO_SPACE, XO_AXISX, XO_AXISY, XO_AXISZ, XO_STEP, XO_ITEMS };
+
+static gboolean set_xparam_tag(int in, int *out, const t_minmax minmax) {
   gboolean okay = true;
-  if (inp != INT_MIN) { okay = MM_OKAY(mm, inp); if (okay && outp) *outp = inp; }
-  return okay;
-}
-
-#define R_TAG 'r'
-#define G_TAG 'g'
-#define B_TAG 'b'
-#define O_TAG 'o'
-#define F_TAG 'f'
-
-static gboolean cli_opt_X_rgb(char *cp, int typ, int ndx, t_minmax *mm) {
-  gboolean okay = false;
-  if (cp && mm) {
-    const char *name = ent_spn[typ].c.en.name;
-    t_ent_spn_elem *elem = &ent_spn[typ].list[ndx];
-    t_minmax inp; okay = parser_range(cp, COLON, elem->title, &inp);
-    if (okay) {
-      int *pfrom = elem->aux[0].pval, *pto = elem->aux[1].pval;
-      SET_XPAR(inp.min, pfrom, opt_mm_col);
-      SET_XPAR(inp.max, pto,   opt_mm_col);
-      if (okay) g_message("%s: from %d (0x%02x) to %d (0x%02x)", elem->title, mm->min, mm->min, mm->max, mm->max);
-      else g_warning("%s: no match with [%d,%d]", name, opt_mm_col.min, opt_mm_col.max);
-    } else g_warning("%s: cannot parse: %s", name, cp);
+  if (in != INT_MIN) {
+    okay = MM_OKAY(minmax, in);
+    if (okay && out) *out = in;
   }
   return okay;
 }
 
-static gboolean cli_opt_X_o(char *cp, int typ, int ndx, int *pval[]) {
+static gboolean cli_opt_X_rgb(char *dup, int type, int ndx, t_minmax *minmax) {
   gboolean okay = false;
-  if (cp && pval) {
-    const char *name = ent_spn[typ].c.en.name;
-    const char *title = ent_spn[typ].list[ndx].title;
-    int arr[5]; okay = parser_ivec(cp, COLON, title, arr, G_N_ELEMENTS(arr));
+  if (dup && minmax) {
+    const char *name = ent_spn[type].c.en.name;
+    t_minmax input; t_ent_spn_elem *elem = &ent_spn[type].list[ndx];
+    okay = parser_range(dup, COLON, elem->title, &input);
     if (okay) {
-      t_minmax mm = {.min = 0, .max = 1};
-      SET_XPAR(arr[0], pval[0], mm);
-      if (okay) { mm = opt_mm_rot;
-        SET_XPAR(arr[1], pval[1], mm);
-        SET_XPAR(arr[2], pval[2], mm);
-        SET_XPAR(arr[3], pval[3], mm); }
-      if (okay) { mm = opt_mm_ang;
-        SET_XPAR(arr[4], pval[4], mm); }
+      { okay = set_xparam_tag(input.min, elem->aux[0].pval, opt_mm_col); }
+      if (okay)
+        okay = set_xparam_tag(input.max, elem->aux[1].pval, opt_mm_col);
+      if (okay) g_message("%s: from %d (0x%02x) to %d (0x%02x)", elem->title,
+        minmax->min, minmax->min, minmax->max, minmax->max);
+      else g_warning("%s: no match with [%d,%d]", name, opt_mm_col.min, opt_mm_col.max);
+    } else g_warning("%s: cannot parse: %s", name, dup);
+  }
+  return okay;
+}
+
+static gboolean cli_opt_X_o(char *dup, int type, int ndx, int *pval[]) {
+  gboolean okay = false;
+  if (dup && pval) {
+    const char *name = ent_spn[type].c.en.name;
+    const char *title = ent_spn[type].list[ndx].title;
+    int arr[XO_ITEMS]; okay = parser_ivec(dup, COLON, title, arr, G_N_ELEMENTS(arr));
+    if (okay) {
+      t_minmax minmax = {.min = 0, .max = 1};
+      okay = set_xparam_tag(arr[XO_SPACE], pval[XO_SPACE], minmax);
+      if (okay) {
+        minmax = opt_mm_rot;
+        { okay = set_xparam_tag(arr[XO_AXISX], pval[XO_AXISX], minmax); }
+        if (okay)
+          okay = set_xparam_tag(arr[XO_AXISY], pval[XO_AXISY], minmax);
+        if (okay)
+          okay = set_xparam_tag(arr[XO_AXISZ], pval[XO_AXISZ], minmax);
+      }
+      if (okay) {
+        minmax = opt_mm_ang;
+        { okay = set_xparam_tag(arr[XO_STEP], pval[XO_STEP], minmax); }
+      }
       if (okay) g_message("%s: %s space, orientation %d %d %d, step %d", title,
         *pval[0] ? "global" : "local", *pval[1], *pval[2], *pval[3], *pval[4]);
-      else g_warning("%s: no match with [%d,%d]", name, mm.min, mm.max);
-    } else g_warning("%s: cannot parse: %s", name, cp);
+      else g_warning("%s: no match with [%d,%d]", name, minmax.min, minmax.max);
+    } else g_warning("%s: cannot parse: %s", name, dup);
   }
   return okay;
 }
 
-static gboolean cli_opt_X_f(char *cp, int typ, int ndx) {
+static gboolean cli_opt_X_f(char *dup, int type, int ndx) {
   gboolean okay = false;
-  t_ent_spn_aux *aux = ent_spn[typ].list[ndx].aux;
-  if (cp && aux && aux->mm && aux->pval) {
-    okay = parser_mmint(cp, aux->sfx, *aux->mm, aux->pval);
+  t_ent_spn_aux *aux = ent_spn[type].list[ndx].aux;
+  if (dup && aux && aux->mm && aux->pval) {
+    okay = parser_mmint(dup, aux->sfx, *aux->mm, aux->pval);
     if (okay) g_message("%s (%s): %d°", aux->prfx, aux->sfx, *aux->pval);
-    else g_warning("%s: no match with [%d,%d]", ent_spn[typ].c.en.name, aux->mm->min, aux->mm->max);
+    else g_warning("%s: no match with [%d,%d]", ent_spn[type].c.en.name, aux->mm->min, aux->mm->max);
   }
   return okay;
 }
 
 static gboolean xnth_nodup(unsigned *mask, unsigned nth) {
-  gboolean re = true;
+  gboolean okay = true;
   if (mask && nth) {
-    unsigned flag = 1 << nth;
-    if (*mask & flag) { re = false; *mask |= 1; } else *mask |= flag;
+    unsigned flag = 1U << nth;
+    if (*mask & flag) { okay = false; *mask |= 1U; } else *mask |= flag;
   }
-  return re;
+  return okay;
 }
 
 static gboolean cli_opt_X_pair(const char *value, char tag, const char *name, t_opts *opts) {
   static unsigned xpairbits;
   gboolean okay = false;
   if (value && opts) {
-    char *cp = g_strdup(value);
-    if (cp) switch (tag) {
-      case R_TAG: if (xnth_nodup(&xpairbits, 1)) okay = cli_opt_X_rgb(cp, ENT_SPN_COLOR, 0, &opts->rcol); break;
-      case G_TAG: if (xnth_nodup(&xpairbits, 2)) okay = cli_opt_X_rgb(cp, ENT_SPN_COLOR, 1, &opts->gcol); break;
-      case B_TAG: if (xnth_nodup(&xpairbits, 3)) okay = cli_opt_X_rgb(cp, ENT_SPN_COLOR, 2, &opts->bcol); break;
+    char *dup = g_strdup(value);
+    if (dup) switch (tag) {
+      case R_TAG: if (xnth_nodup(&xpairbits, 1)) okay = cli_opt_X_rgb(dup, ENT_SPN_COLOR, 0, &opts->rcol); break;
+      case G_TAG: if (xnth_nodup(&xpairbits, 2)) okay = cli_opt_X_rgb(dup, ENT_SPN_COLOR, 1, &opts->gcol); break;
+      case B_TAG: if (xnth_nodup(&xpairbits, 3)) okay = cli_opt_X_rgb(dup, ENT_SPN_COLOR, 2, &opts->bcol); break;
       case O_TAG: if (xnth_nodup(&xpairbits, 4)) {
-        int* pval[5] = { &opts->rglob, &opts->orient[0], &opts->orient[1], &opts->orient[2], &opts->angstep };
-        okay = cli_opt_X_o(cp, ENT_SPN_GLOBAL, 0, pval);
+        int* pval[XO_ITEMS] = { &opts->rglob, &opts->orient[0], &opts->orient[1], &opts->orient[2], &opts->angstep };
+        okay = cli_opt_X_o(dup, ENT_SPN_GLOBAL, 0, pval);
       } break;
-      case F_TAG: if (xnth_nodup(&xpairbits, 5)) okay = cli_opt_X_f(cp, ENT_SPN_FOV, 0); break;
+      case F_TAG: if (xnth_nodup(&xpairbits, 5)) okay = cli_opt_X_f(dup, ENT_SPN_FOV, 0); break;
       default: g_warning("%s: wrong tag: '%c'", name, tag);
     }
-    g_free(cp);
-    if (xpairbits & 1) { g_warning("%s: tag duplicate: '%c'", name, tag); xpairbits &= ~1; }
+    g_free(dup);
+    if (xpairbits & 1U) { g_warning("%s: tag duplicate: '%c'", name, tag); xpairbits &= ~1U; }
   }
   return okay;
 }
@@ -247,14 +257,14 @@ static gboolean cli_opt_X_pair(const char *value, char tag, const char *name, t_
 static gboolean cli_opt_X(const char *name, const char *value, t_opts *opts, GError **error) {
   gboolean okay = false;
   if (value && opts) { // tag=subvalues
-    char **pairs = g_strsplit(value, ",", 6);
-    if (pairs) for (char **s = pairs; *s; s++) {
+    char **pairs = g_strsplit(value, ",", X_TAGS + 1);
+    if (pairs) for (char **tagval = pairs; *tagval; tagval++) {
       okay = false;
-      char **pair = g_strsplit(*s, "=", 2); // tag=pair
+      char **pair = g_strsplit(*tagval, "=", 2); // tag=pair
       if ((pair[0] && pair[0][0]) && (pair[1] && pair[1][0])) {
         if (pair[0][1]) g_warning("%s: no char tag: %s", name, pair[0]);
         else okay = cli_opt_X_pair(pair[1], pair[0][0], name, opts);
-      } else g_warning("%s: wrong pair: %s", name, *s);
+      } else g_warning("%s: wrong pair: %s", name, *tagval);
       g_strfreev(pair);
       if (!okay) break;
     }
@@ -263,20 +273,16 @@ static gboolean cli_opt_X(const char *name, const char *value, t_opts *opts, GEr
   }
   return okay;
 }
-#undef SET_XPAR
-#undef R_TAG
-#undef G_TAG
-#undef B_TAG
-#undef O_TAG
-#undef F_TAG
 #endif
 
 static char* cli_opt_charelem(char *str, const char *patt, int ch) {
-  if (str && patt && (ch >= 0)) for (const char *p = str; *p; p++) {
-    int ndx = char2ndx(ch, true, *p); if (ndx < 0) continue;
-    t_ent_bool *en = strchr(patt, *p) ? &ent_bool[ndx] : NULL; if (!en) continue;
-    gboolean *pb = EN_BOOLPTR(en);
-    if (pb) { *pb = true; g_message("%s: %s: " TOGGLE_ON_HDR, en->prefix, en->en.name); }
+  if (str && patt && (ch >= 0)) for (const char *pchar = str; *pchar; pchar++) {
+    int ndx = char2ndx(ch, true, *pchar);
+    if (ndx < 0) continue;
+    t_ent_bool *en = strchr(patt, *pchar) ? &ent_bool[ndx] : NULL;
+    if (!en) continue;
+    gboolean *pbool = EN_BOOLPTR(en);
+    if (pbool) { *pbool = true; g_message("%s: %s: " TOGGLE_ON_HDR, en->prefix, en->en.name); }
   }
   return str;
 }
@@ -298,19 +304,20 @@ static void reorder_elems(const char *str, t_elem_desc *desc) {
   int len = desc->mm.max - desc->mm.min + 1;
   type2ndx_fn type2ndx = desc->t2n;
   if (type2ndx && order && (len > 0) && (strnlen(order, len + 1) == len)) {
-    t_type_elem *elems = &desc->elems[desc->mm.min], newelems[len];
-    int n = 0, sz = len * sizeof(t_type_elem);
-    memmove(newelems, elems, sz); // BUFFNOLINT
+    t_type_elem *elems = &desc->elems[desc->mm.min];
+    t_type_elem newelems[len];
+    memmove(newelems, elems, sizeof(newelems)); // BUFFNOLINT
+    int n = 0;
     for (const char *p = order; *p; p++, n++) {
-      int c = *p;
-      int ndx = char2ndx(desc->cat, true, c), type = char2ndx(desc->cat, false, c);
+      int ndx = char2ndx(desc->cat, true, *p);
+      int type = char2ndx(desc->cat, false, *p);
       if ((type < 0) || (ndx < 0)) WARN("Not valid indexes: ent=%d elem=%d", ndx, type); else {
-        int ndx = type2ndx(type);
+        ndx = type2ndx(type);
         if (ndx < 0) WARN("Unknown %d type", type);
         else newelems[n] = desc->elems[ndx];
       }
     }
-    memmove(elems, newelems, sz); // BUFFNOLINT
+    memmove(elems, newelems, sizeof(newelems)); // BUFFNOLINT
   } else WARN("Number of indexes are different");
   g_free(order);
 }
@@ -325,7 +332,7 @@ static char* cli_char_opts(int type, const char *value, int cat, t_elem_desc *de
   return str;
 }
 
-#define RECAP_TYPE_EXPAND(type) ((type == 't') ? "text" : ((type == 'c') ? "csv" : \
+#define RECAP_TYPE_EXPAND(type) (((type) == 't') ? "text" : (((type) == 'c') ? "csv" : \
  ((g_ascii_tolower(type) == 'j') ? "json" : "unknown")))
 
 static gboolean cli_opt_elem(const char *name, const char *value, GError **error, int cat) {
@@ -356,6 +363,7 @@ static gboolean cli_opt_elem(const char *name, const char *value, GError **error
       str = parser_str(value, OPT_RECAP_HDR, OPT_TYPE_RECAP);
       if (str) { opts.recap = str[0]; g_message("Summary: %s", RECAP_TYPE_EXPAND(opts.recap)); }
     } break;
+    default: break;
   }
   if (str) { g_free(str); return true; }
   CLI_SET_ERR; return false;
@@ -373,16 +381,16 @@ static gboolean cli_opt_S(const char *name, const char *value, void *unused, GEr
   return cli_opt_elem(name, value, error, OPT_TYPE_STAT);
 }
 
-static gboolean cli_opt_L(const char *name, const char *value, t_opts *opts, GError **error) {
+static gboolean cli_opt_L(const char *name, const char *value, void *unused, GError **error) {
   return cli_opt_elem(name, value, error, OPT_TYPE_GRLG);
 }
 
-static gboolean cli_opt_G(const char *name, const char *value, t_opts *opts, GError **error) {
+static gboolean cli_opt_G(const char *name, const char *value, void *unused, GError **error) {
   return cli_opt_elem(name, value, error, OPT_TYPE_GREX);
 }
 
 #ifdef WITH_PLOT
-static gboolean cli_opt_P(const char *name, const char *value, t_opts *opts, GError **error) {
+static gboolean cli_opt_P(const char *name, const char *value, void *unused, GError **error) {
   return cli_opt_elem(name, value, error, OPT_TYPE_PLEL);
 }
 #endif
@@ -395,8 +403,9 @@ static gboolean cli_opt_T(const char *name, const char *value, t_opts *opts, GEr
 #else
     , max = 0x7;
 #endif
-  gboolean re = cli_int_opt(name, value, error, "Theme bits", 0, max, &mask);
-  if (re) {
+
+  gboolean okay = cli_int_opt(name, value, error, "Theme bits", 0, max, &mask);
+  if (okay) {
     opts->darktheme = (mask & 0x1) ? true : false;
     opts->darkgraph = (mask & 0x2) ? true : false;
     opts->legend    = (mask & 0x4) ? true : false;
@@ -404,14 +413,14 @@ static gboolean cli_opt_T(const char *name, const char *value, t_opts *opts, GEr
     opts->darkplot  = (mask & 0x8) ? true : false;
 #endif
   }
-  return re;
+  return okay;
 }
 
 static gboolean cli_opt_r(const char *name, const char *value, void *unused, GError **error) {
   return cli_opt_elem(name, value, error, OPT_TYPE_RECAP);
 }
 
-static gboolean cli_opt_A(const char *name, const char *value, t_opts *opts, GError **error) {
+static gboolean cli_opt_A(const char *name, const char *value, void *unused, GError **error) {
   int aopt = activetab + 1;
   gboolean valid = cli_int_opt(name, value, error, OPT_ATAB_HDR, ATAB_MIN + 1, ATAB_MAX + 1, &aopt);
   if (valid) activetab = aopt - 1;
@@ -479,7 +488,7 @@ static gboolean cli_opt_f(const char *name, const char *value, t_opts *opts, GEr
         optval = g_key_file_get_string(file, section, optname, &strerr);
         if (strerr) {
           if (config_opt_not_found(strerr, section, optname, optval, error)) continue;
-          else return false;
+          return false;
         }
         CONF_DEBUG("validate %s:%s=%s", section, optname, optval);
       }
@@ -531,6 +540,7 @@ static gboolean cli_opt_f(const char *name, const char *value, t_opts *opts, GEr
         case CNF_OPT_RECAP: if (optval) {
           if (option->data && !(((GOptionArgFunc)option->data)(optname, optval, opts, error))) return false;
         } break;
+        default: break;
       }
       if (opterr && !config_opt_not_found(opterr, section, optname, optval, error)) return false;
     }
@@ -542,18 +552,16 @@ static gboolean cli_opt_f(const char *name, const char *value, t_opts *opts, GEr
 // pub
 //
 
-#define CLI_FAIL(fmt, arg) { g_message(fmt, arg); g_option_context_free(oc); return false; }
-
 #ifdef WITH_JSON
 #define RECAP_TYPE_MESG "text, csv, or json"
 #else
 #define RECAP_TYPE_MESG "text, csv"
 #endif
 
-#define CLI_OPT_NONE(sname, lname, adata, mdesc) { .short_name = sname, .long_name = lname, \
-  .description = mdesc, .arg = G_OPTION_ARG_NONE, .arg_data = adata }
-#define CLI_OPT_SMTH(sname, lname, adata, mdesc, adesc, type) { .short_name = sname, .long_name = lname, \
-  .description = mdesc, .arg = type, .arg_data = adata, .arg_description = adesc }
+#define CLI_OPT_NONE(sname, lname, adata, mdesc) { .short_name = (sname), .long_name = (lname), \
+  .description = (mdesc), .arg = G_OPTION_ARG_NONE, .arg_data = (adata) }
+#define CLI_OPT_SMTH(sname, lname, adata, mdesc, adesc, type) { .short_name = (sname), .long_name = (lname), \
+  .description = (mdesc), .arg = (type), .arg_data = (adata), .arg_description = (adesc) }
 #define CLI_OPT_CALL(sname, lname, adata, mdesc, adesc) \
   CLI_OPT_SMTH(sname, lname, adata, mdesc, adesc, G_OPTION_ARG_CALLBACK)
 #define CLI_OPT_INTC(sname, lname, adata, mdesc, adesc) \
@@ -561,19 +569,23 @@ static gboolean cli_opt_f(const char *name, const char *value, t_opts *opts, GEr
 
 gboolean autostart;
 
-static inline gboolean cli_tab_opt(gboolean off[2], t_opts *opts) {
-  gboolean re = (off[0] + off[1]) < 2;
-  if (re) {
+static inline gboolean cli_tab_opt(const gboolean off[2], t_opts *opts) {
+  gboolean okay = (off[0] + off[1]) < 2;
+  if (okay) {
     if (opts && off[0]) { opts->graph = 0; TABON(TAB1D); }
 #ifdef WITH_PLOT
     if (opts && off[1]) TABON(TAB2D);
 #endif
   } else g_message("options %s are mutually exclusive", "-1/-2");
-  return re;
+  return okay;
 }
 
-gboolean cli_init(int *pargc, char ***pargv) {
-  if (!pargc || !pargv) return false;
+static inline void print_libver(const char *pre, char *ver) {
+  if (ver) { g_print(" +%s-%s", pre, ver); g_free(ver); }}
+
+int cli_init(int *pargc, char ***pargv) {
+#define CLI_FAIL(fmt, arg) { g_message(fmt, arg); g_option_context_free(context); return EXIT_FAILURE; }
+  if (!pargc || !pargv) return EXIT_FAILURE;
   char** target = NULL;
   int num = -1; gboolean onoff[ONOFF_MAX + 1] = {false};
   const GOptionEntry options[] = {
@@ -610,38 +622,42 @@ gboolean cli_init(int *pargc, char ***pargv) {
 #endif
     CLI_OPT_NONE('4', "ipv4",         &onoff[ONOFF_IPV4], OPT_IPV4_HDR " only"),
     CLI_OPT_NONE('6', "ipv6",         &onoff[ONOFF_IPV6], OPT_IPV6_HDR " only"),
-    { .long_name = G_OPTION_REMAINING, .arg = G_OPTION_ARG_STRING_ARRAY, .arg_data = &target, .arg_description = "TARGET" },
+    { .long_name = G_OPTION_REMAINING,
+      .arg = G_OPTION_ARG_STRING_ARRAY, .arg_data = (void*)&target, .arg_description = "TARGET" },
     {} // trailing 0
   };
   // options
-  GOptionGroup *og = g_option_group_new(APPNAME, APPNAME, "options", &opts, NULL);
-  if (!og) return false;
-  g_option_group_add_entries(og, options);
-  GOptionContext *oc = g_option_context_new(NULL);
-  if (!oc) return false;
-  g_option_context_set_main_group(oc, og);
+  GOptionGroup *group = g_option_group_new(APPNAME, APPNAME, "options", &opts, NULL);
+  if (!group) return EXIT_FAILURE;
+  g_option_group_add_entries(group, options);
+  GOptionContext *context = g_option_context_new(NULL);
+  if (!context) return EXIT_FAILURE;
+  g_option_context_set_main_group(context, group);
   { GError *error = NULL;
-    cli = true; gboolean okay = g_option_context_parse(oc, pargc, pargv, &error); cli = false;
+    cli = true; gboolean okay = g_option_context_parse(context, pargc, pargv, &error); cli = false;
     if (!okay) {
       g_warning("%s", error ? error->message : unkn_error); g_error_free(error);
-      g_option_context_free(oc); return false; }
-    if (onoff[ONOFF_VERSION]) { g_print("%s", appver); char *ver;
-      if ((ver = rtver(GTK_STRV)))   { g_print(" +gtk-%s", ver);   g_free(ver); }
-      if ((ver = rtver(GLIB_STRV)))  { g_print(" +glib-%s", ver);  g_free(ver); }
-      if ((ver = rtver(CAIRO_STRV))) { g_print(" +cairo-%s", ver); g_free(ver); }
-      if ((ver = rtver(PANGO_STRV))) { g_print(" +pango-%s", ver); g_free(ver); }
-      g_print("\n"); g_option_context_free(oc); exit(EXIT_SUCCESS);
+      g_option_context_free(context); return EXIT_FAILURE; }
+    if (onoff[ONOFF_VERSION]) {
+      g_print("%s", appver);
+      print_libver("gtk",   rtver(GTK_STRV));
+      print_libver("glib",  rtver(GLIB_STRV));
+      print_libver("cairo", rtver(CAIRO_STRV));
+      print_libver("pango", rtver(PANGO_STRV));
+      g_print("\n");
+      g_option_context_free(context);
+      return -1;
     }
   }
-  if (!cli_tab_opt(&onoff[ONOFF_1D], &opts)) return false;
+  if (!cli_tab_opt(&onoff[ONOFF_1D], &opts)) return EXIT_FAILURE;
   if (onoff[ONOFF_IPV4] && onoff[ONOFF_IPV6]) CLI_FAIL("options %s are mutually exclusive", "-4/-6");
   if (onoff[ONOFF_IPV4] && (opts.ipv != 4)) { opts.ipv = 4; g_message(OPT_IPV4_HDR " only " TOGGLE_ON_HDR); }
   if (onoff[ONOFF_IPV6] && (opts.ipv != 6)) { opts.ipv = 6; g_message(OPT_IPV6_HDR " only " TOGGLE_ON_HDR); }
   if (num >= 0) cli_set_opt_dns(num, &opts);
   // arguments
   if (target) {
-    for (char **p = target; *p; p++) {
-      const char *arg = *p;
+    for (char **ptr = target; *ptr; ptr++) {
+      const char *arg = *ptr;
       if (!arg || !arg[0]) continue;
       if (arg[0] == '-') CLI_FAIL("Unknown option: '%s'", arg);
       if (opts.target) g_message(ENT_TARGET_HDR " is already set, skip '%s'", arg);
@@ -650,7 +666,7 @@ gboolean cli_init(int *pargc, char ***pargv) {
         if (pinghost) g_message(ENT_TARGET_HDR " %s", pinghost);
         else {
           g_message("Invalid " ENT_TARGET_HDR ": '%s'", arg);
-          g_strfreev(target); g_option_context_free(oc); return false;
+          g_strfreev(target); g_option_context_free(context); return EXIT_FAILURE;
         }
         g_free(opts.target); opts.target = pinghost;
       }
@@ -666,9 +682,8 @@ gboolean cli_init(int *pargc, char ***pargv) {
     if (opts.target) g_message("%s", "Non-interactive mode with summary at exit");
     else CLI_FAIL("Recap option %s is only used with TARGET setted", "-r");
   }
-  g_option_context_free(oc);
-  return true;
-#undef EXCL_OPT123
-#undef ON_STARTPAGE
+  g_option_context_free(context);
+  return EXIT_SUCCESS;
+#undef CLI_FAIL
 }
 

@@ -1,10 +1,11 @@
 
-#include <string.h>
+#include <stdlib.h>
 #include <cglm/cglm.h>
+
+#include "common.h"
 
 #include "plot_aux.h"
 #include "stat.h"
-#include "pinger.h"
 #include "series.h"
 
 int gl_ver;
@@ -18,7 +19,7 @@ static void plot_aux_chkerr(void) {
   last_known_gl_error = err; g_warning("GL error: 0x%04x", err);
 }
 
-static const float PLOT_NAN = -1.01;
+static const float PLOT_NAN = -1.01F;
 static vec3 *surf_vertex;
 static t_plot_idc surf_vertex_idc;
 
@@ -27,7 +28,7 @@ static inline void vec3_xy(vec3 vec, float a, float b) { vec[0] = a; vec[1] = b;
 
 static inline float rttscaled(float rtt) { return (rtt < 0) ? PLOT_NAN : rtt / series_datamax * 2 - 1; }
 
-#define SETIFDEF(ptr, val) { if (ptr) *ptr = val; }
+#define SETIFDEF(ptr, val) { if (ptr) *(ptr) = val; }
 static void grid_params(int xn, int yn, float *x0, float *x1, float *y0, float *y1, float *dx, float *dy) {
   vec4 r = { -1, 1, -1, 1 }; vec2 d = { 2. / xn, 2. / yn };
   SETIFDEF(x0, r[0]); SETIFDEF(x1, r[1]);
@@ -38,21 +39,22 @@ static void grid_params(int xn, int yn, float *x0, float *x1, float *y0, float *
 #define PLOT_VAL_NAN(val) ((val) == PLOT_NAN)
 #define PLOT_RTT_VAL { t_rseq *data = item->data; item = item->next; \
   if (IS_RTT_DATA(data)) val = rttscaled(data->rtt); }
-#define PLOT_AVG_VAL(prev, curr) (PLOT_VAL_NAN(prev) ? (curr) : (PLOT_VAL_NAN(curr) ? (prev) : ((curr + prev) / 2)))
+#define PLOT_AVG_VAL(prev, curr) (PLOT_VAL_NAN(prev) ? (curr) : (PLOT_VAL_NAN(curr) ? (prev) : (((curr) + (prev)) / 2)))
 
 static void plot_surf_vertex(vec3 *vertex, int xn, int yn) {
-  float x0, y0, x1, y1, dx, dy; grid_params(xn, yn, &x0, &x1, &y0, &y1, &dx, &dy);
+  float x0 = NAN, y0 = NAN, x1 = NAN, y1 = NAN, dx = NAN, dy = NAN;
+  grid_params(xn, yn, &x0, &x1, &y0, &y1, &dx, &dy);
   float dxs = dx / 2 * (float)xn;
   { int range = tgtat - opts.min; dxs /= (range > 0) ? range : tgtat; }
   int xn1 = xn + 1, yn1 = yn + 1; // note: xn,yn are mandatory even numbers
   int imin = opts.min * 2, imax = SERIES_LIM * 2;
   float x = x0 - imin * dxs;
-  for (int i = 0, n = 0; i < xn1; i++, x += dxs) {
+  for (int i = 0, n = 0; i < xn1; i++) {
     GSList *item = SERIES(i / 2);
     gboolean xodd = i % 2, skip = (i < imin) || (i > imax);
     float prev = PLOT_NAN, y = y1;
     int ndx = n + yn;
-    for (int j = yn; j >= 0; j--, n++, ndx--, y -= dy) {
+    for (int j = yn; j >= 0; j--, n++, ndx--) {
       float val = PLOT_NAN;
       if (!skip) {
         vec3_xy(vertex[ndx], y, x);
@@ -66,8 +68,10 @@ static void plot_surf_vertex(vec3 *vertex, int xn, int yn) {
           vertex[ndx][2] = val;
         }
       }
+      y -= dy;
     }
     if (xodd) vertex[ndx + 1][2] = prev;
+    x += dxs;
   }
   { int max = xn1 * yn1; // approximation between 'x-odd' lines
     for (int i = 0, n = 0; i < xn1; i++) {
@@ -82,8 +86,8 @@ static void plot_surf_vertex(vec3 *vertex, int xn, int yn) {
   }
 }
 
-static void keep_surf_coords(vec3 *vertex, int sz, t_plot_idc *idc) {
-  vec3 *dup = g_memdup2(vertex, sz);
+static void keep_surf_coords(vec3 *vertex, int size, t_plot_idc *idc) {
+  vec3 *dup = g_memdup2(vertex, size);
   if (dup) {
     g_free(surf_vertex);
     surf_vertex = dup;
@@ -101,7 +105,7 @@ static inline gboolean surf_is_vert(int n) {
   if (n >= surf_vertex_idc.count) return false;
   float d = surf_vertex[n][2]; return ((-1 <= d) && (d <= 1)); }
 
-#define FILL_NDX_TRIA(ndx1, ndx2, ndx3) { int n1 = ndx1, n2 = ndx2, n3 = ndx3; \
+#define FILL_NDX_TRIA(ndx1, ndx2, ndx3) { int n1 = (ndx1), n2 = (ndx2), n3 = (ndx3); \
   if (surf_is_vert(n1) && surf_is_vert(n2) && surf_is_vert(n3)) { \
     *p++ = n1; *p++ = n2; *p++ = n3; cnt++; }}
 
@@ -121,10 +125,10 @@ static void plot_fill_ndx_surf(GLushort *p, t_plot_idc *idc) {
 #define FILL_SURF_LINE(ndx, offn) { int n1 = (ndx); int n2 = n1 + (offn); \
   if (surf_is_vert(n1) && surf_is_vert(n2)) { *p++ = n1; *p++ = n2; cnt++; }}
 
-#define PLO_IS_FLAT(typ)   (typ != PLO_SURF)
-#define PLO_IS_YAXIS(typ) ((typ == PLO_AXIS_YL) || (typ == PLO_AXIS_YR))
-#define PLO_IS_LAXIS(typ) ((typ == PLO_AXIS_XL) || (typ == PLO_AXIS_YL))
-#define PLO_IS_AXIS(typ)  ((typ == PLO_AXIS_XL) || (typ == PLO_AXIS_XR) || (typ == PLO_AXIS_YL) || (typ == PLO_AXIS_YR))
+#define PLO_IS_FLAT(typ)   ((typ) != PLO_SURF)
+#define PLO_IS_YAXIS(typ) (((typ) == PLO_AXIS_YL) || ((typ) == PLO_AXIS_YR))
+#define PLO_IS_LAXIS(typ) (((typ) == PLO_AXIS_XL) || ((typ) == PLO_AXIS_YL))
+#define PLO_IS_AXIS(typ)  (((typ) == PLO_AXIS_XL) || ((typ) == PLO_AXIS_XR) || PLO_IS_YAXIS(typ))
 
 static void plot_fill_ndx_grid(GLushort *p, t_plot_idc *idc) {
   if (!p || !idc) return;
@@ -159,18 +163,21 @@ static void plot_vert_array_init(vec3 *p, t_plot_idc *idc) {
   if (!p || !idc) return;
   int xn = idc->x, yn = idc->y;
   int xn1 = xn + 1, yn1 = yn + 1;
-  float x0, y0, x1, y1, dx, dy; grid_params(xn, yn, &x0, &x1, &y0, &y1, &dx, &dy);
+  float x0 = NAN, y0 = NAN, x1 = NAN, y1 = NAN, dx = NAN, dy = NAN;
+  grid_params(xn, yn, &x0, &x1, &y0, &y1, &dx, &dy);
   gboolean flat = PLO_IS_FLAT(idc->plo);
   float filler = flat ? -1 : PLOT_NAN;
   int n = 0;
   if (flat) {
-    { float xi = x0; for (int i = 0; i < xn1; i++, xi += dx) {
+    { float xi = x0; for (int i = 0; i < xn1; i++) {
       vec3_set(p[n++], y0, xi, filler);
       vec3_set(p[n++], y1, xi, filler);
+      xi += dx;
     }}
-    { float yi = y0; for (int j = 0; j < yn1; j++, yi += dy) {
+    { float yi = y0; for (int j = 0; j < yn1; j++) {
       vec3_set(p[n++], yi, x0, filler);
       vec3_set(p[n++], yi, x1, filler);
+      yi += dy;
     }}
   } else {
     for (int i = 0; i < xn1; i++) for (int j = 0; j < yn1; j++)
@@ -185,9 +192,10 @@ static void plot_vert_axis_init(vec3 *p, int lim, gboolean is_y, float width, gb
   float w0 = 1, w1 = 1 + width;
   if (beginning) { w0 = - w0; w1 = - w1; }
   int i0 = !is_y, i1 = is_y, i2 = 2;
-  for (int n = 0, k = lim; n < lim; n++, k++, f += df) {
+  for (int n = 0, k = lim; n < lim; n++, k++) {
     p[n][i0] = w0; p[n][i1] = f; p[n][i2] = -1;
     p[k][i0] = w1; p[k][i1] = f; p[k][i2] = -1;
+    f += df;
   }
 }
 
@@ -249,6 +257,7 @@ static void plot_aux_buff_update(t_plot_idc *idc, int datatyp) {
       case GRID_DBO: plot_fill_ndx_grid((GLushort*)data, idc); break;
       case SURF_VBO: plot_fill_vbo_surf((vec3*)data, idc); break;
       case VERT_IBO: plot_vert_array_init((vec3*)data, idc); break;
+      default: break;
     }
     GLboolean rc = gl_named ? glUnmapNamedBuffer(idc->id) : glUnmapBuffer(idc->typ); if (!rc) plot_aux_chkerr();
   } else plot_aux_chkerr();

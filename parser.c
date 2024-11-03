@@ -1,9 +1,15 @@
 
+#include <stdlib.h>
+#include <string.h>
+#include <limits.h>
+#include <errno.h>
+#include <math.h>
+
+#include "common.h"
+
 #include "parser.h"
 #include "stat.h"
 #include "ui/notifier.h"
-
-#define MAX_LINES 10
 
 #define REN_NAME "name"
 #define REN_ADDR "addr"
@@ -28,9 +34,7 @@
 #define WHOIS_DESC_TAG "descr"
 
 #define WHOIS_NL       "\n"
-#define WHOIS_COMMENT  '%'
-#define WHOIS_DELIM    ':'
-#define WHOIS_CCDEL    ','
+enum { WHOIS_COMMENT = '%', WHOIS_DELIM = ':', WHOIS_CCDEL = ',' };
 
 #define PARSER_MESG(fmt, ...) { if (cli) g_message(fmt, __VA_ARGS__); else notifier_inform(fmt, __VA_ARGS__); }
 
@@ -93,32 +97,32 @@ static GRegex* compile_regex(const char *pattern, GRegexCompileFlags flags) {
 }
 
 static char* fetch_named_str(GMatchInfo* match, char *prop) {
-  char *s = g_match_info_fetch_named(match, prop);
-  char *val = (s && s[0]) ? g_strdup(s) : NULL;
-  g_free(s); return val;
+  char *str = g_match_info_fetch_named(match, prop);
+  char *val = (str && str[0]) ? g_strdup(str) : NULL;
+  g_free(str); return val;
 }
 
 static int fetch_named_int(GMatchInfo* match, char *prop) {
-  char *s = g_match_info_fetch_named(match, prop);
-  int val = (s && s[0]) ? atoi(s) : -1;
-  g_free(s); return val;
+  char *str = g_match_info_fetch_named(match, prop);
+  int val = (str && str[0]) ? atoi(str) : -1;
+  g_free(str); return val;
 }
 
 static long long fetch_named_ll(GMatchInfo* match, char *prop) {
-  char *s = g_match_info_fetch_named(match, prop);
-  long long val = (s && s[0]) ? atoll(s) : -1;
-  g_free(s); return val;
+  char *str = g_match_info_fetch_named(match, prop);
+  long long val = (str && str[0]) ? atoll(str) : -1;
+  g_free(str); return val;
 }
 
 static int fetch_named_rtt(GMatchInfo* match, char *prop) {
-  char *s = g_match_info_fetch_named(match, prop);
+  char *str = g_match_info_fetch_named(match, prop);
   double val = -1;
-  if (s && s[0]) {
-    val = g_ascii_strtod(s, NULL);
+  if (str && str[0]) {
+    val = g_ascii_strtod(str, NULL);
     if (ERANGE == errno) val = -1;
     if (val > 0) val *= 1000; // msec to usec
   }
-  g_free(s); return (val < 0) ? -1 : floor(val);
+  g_free(str); return (val < 0) ? -1 : floor(val);
 }
 
 static gboolean valid_mark(GMatchInfo* match, t_tseq *mark) {
@@ -203,12 +207,12 @@ static void analyze_line(int at, const char *line) {
 #define GREEDY false
 #define LAZY   true
 
-static char* split_pair(char **ps, int c, gboolean lazy) {
-  if (!ps || !*ps) return NULL;
-  char *val = lazy ? strchr(*ps, c) : strrchr(*ps, c);
+static char* split_pair(char **pstr, int ch, gboolean lazy) {
+  if (!pstr || !*pstr) return NULL;
+  char *val = lazy ? strchr(*pstr, ch) : strrchr(*pstr, ch);
   if (!val) return NULL;
   *val++ = 0;
-  *ps = g_strstrip(*ps);
+  *pstr = g_strstrip(*pstr);
   return g_strstrip(val);
 }
 
@@ -217,12 +221,12 @@ static inline gboolean parser_valid_host(char *host) { return g_regex_match(host
 
 #define HNAME_ERROR(cause) PARSER_MESG("Hostname %s", cause)
 
-static gboolean target_meet_all_conditions(char *s, int len, int max) {
+static gboolean target_meet_all_conditions(char *str, int len, int max) {
   // rfc1123,rfc952 restrictions
   if (len > max) { PARSER_MESG("Hostname: out of length limit (%d > %d)", len, max); return false; }
-  if (s[len - 1] == '-') { HNAME_ERROR("cannot end with hyphen"); return false; }
-  if (!parser_valid_char0(s)) { HNAME_ERROR("must start with a letter or a digit"); return false; }
-  if (!parser_valid_host(s)) { HNAME_ERROR("contains not allowed characters"); return false; }
+  if (str[len - 1] == '-') { HNAME_ERROR("cannot end with hyphen"); return false; }
+  if (!parser_valid_char0(str)) { HNAME_ERROR("must start with a letter or a digit"); return false; }
+  if (!parser_valid_host(str)) { HNAME_ERROR("contains not allowed characters"); return false; }
   return true;
 }
 
@@ -244,42 +248,44 @@ gboolean parser_init(void) {
   multiline_regex = compile_regex("\\n", G_REGEX_MULTILINE);
   hostname_char0_regex = compile_regex("^[" DIGIT_OR_LETTER ":]", 0);
   hostname_chars_regex = compile_regex("^[" DIGIT_OR_LETTER ":.-]+$", 0);
-  gboolean re = multiline_regex && hostname_char0_regex && hostname_chars_regex;
+  gboolean okay = multiline_regex && hostname_char0_regex && hostname_chars_regex;
   for (int i = 0; i < G_N_ELEMENTS(regexes); i++) {
     regexes[i].rx.regex = compile_regex(regexes[i].rx.pattern, 0);
-    if (!regexes[i].rx.regex) re = false;
+    if (!regexes[i].rx.regex) okay = false;
   }
   for (int i = 0; i < G_N_ELEMENTS(str_rx); i++) {
     str_rx[i].regex = compile_regex(str_rx[i].pattern, 0);
-    if (!str_rx[i].regex) re = false;
+    if (!str_rx[i].regex) okay = false;
   }
-  return re;
+  return okay;
 }
 
 void parser_parse(int at, char *input) {
   if (input) {
     char **lines = g_regex_split(multiline_regex, input, 0);
     if (lines) {
-      for (char **s = lines; *s; s++) if ((*s)[0]) analyze_line(at, *s);
+      for (char **pstr = lines; *pstr; pstr++) if ((*pstr)[0]) analyze_line(at, *pstr);
       g_strfreev(lines);
     }
   }
 }
 
-gboolean parser_mmint(const char *str, const char *option, t_minmax mm, int *re) {
+gboolean parser_mmint(const char *str, const char *option, t_minmax minmax, int *value) {
   gboolean okay = false;
   if (str) {
     char *val = parser_valid_int(option, str);
     if (val) {
-      errno = 0; int n = strtol(val, NULL, 0); okay = !errno && MM_OKAY(mm, n); errno = 0; g_free(val);
-      if (okay) { if (re) *re = n; }
-      else PARSER_MESG("%s: out of range[%d,%d]", option, mm.min, mm.max)
+      errno = 0; int len = strtol(val, NULL, 0);
+      okay = !errno && MM_OKAY(minmax, len);
+      errno = 0; g_free(val);
+      if (okay) { if (value) *value = len; }
+      else PARSER_MESG("%s: out of range[%d,%d]", option, minmax.min, minmax.max)
   }}
   return okay;
 }
 
-#define PARSE_MAX_CHARS 128
 char* parser_str(const char *str, const char *option, int cat) {
+  const int PARSE_MAX_CHARS = 128;
   if ((cat >= 0) && (cat < G_N_ELEMENTS(str_rx))) {
     char *buff = g_strndup(str, PARSE_MAX_CHARS);
     if (buff) {
@@ -296,38 +302,38 @@ char* parser_str(const char *str, const char *option, int cat) {
 
 char* parser_valid_target(const char *target) {
   if (!target || !target[0]) return NULL;
-  char *copy = g_strdup(target);
-  char *hostname = NULL, *s = g_strstrip(copy);
-  int len = s ? g_utf8_strlen(s, MAXHOSTNAME + 1) : 0;
-  if (len && target_meet_all_conditions(s, len, MAXHOSTNAME)) hostname = g_strdup(s);
-  g_free(copy);
+  char *dup = g_strdup(target);
+  char *hostname = NULL, *str = g_strstrip(dup);
+  int len = str ? g_utf8_strlen(str, MAXHOSTNAME + 1) : 0;
+  if (len && target_meet_all_conditions(str, len, MAXHOSTNAME)) hostname = g_strdup(str);
+  g_free(dup);
   return hostname;
 }
 
 #define DUP_WITH_MARK(dst, val) { \
-  if (dst) { CLR_STR(dst); dst = g_strdup_printf("%s*", val); } \
-  else dst = g_strndup(val, MAXHOSTNAME); }
+  if (dst) { CLR_STR(dst); (dst) = g_strdup_printf("%s*", val); } \
+  else (dst) = g_strndup(val, MAXHOSTNAME); }
 
-void parser_whois(char *buff, int sz, t_whois *welem) {
+void parser_whois(char *buff, t_whois *welem) {
   // if there are multiple sources (despite -m query), take the last tag and mark it with '*'
   static const char skip_as_prfx[] = "AS";
   static int as_prfx_len = sizeof(skip_as_prfx) - 1;
   if (!buff || !welem) return;
   memset(welem, 0, sizeof(*welem)); // BUFFNOLINT
-  char *p = buff, *s;
-  while ((s = strsep(&p, WHOIS_NL))) {
-    s = g_strstrip(s);
-    if (s && s[0] && (s[0] != WHOIS_COMMENT)) {
-      char *val = split_pair(&s, WHOIS_DELIM, LAZY);
+  char *str = NULL;
+  while ((str = strsep(&buff, WHOIS_NL))) {
+    str = g_strstrip(str);
+    if (str && str[0] && (str[0] != WHOIS_COMMENT)) {
+      char *val = split_pair(&str, WHOIS_DELIM, LAZY);
       if (!val) continue;
       int ndx = -1;
-      if (STR_EQ(s, WHOIS_RT_TAG)) ndx = WHOIS_RT_NDX;
-      else if (STR_EQ(s, WHOIS_AS_TAG)) {
+      if (STR_EQ(str, WHOIS_RT_TAG)) ndx = WHOIS_RT_NDX;
+      else if (STR_EQ(str, WHOIS_AS_TAG)) {
         ndx = WHOIS_AS_NDX;
-        int l = strnlen(val, MAXHOSTNAME);
-        if ((l > as_prfx_len) && !g_ascii_strncasecmp(val, skip_as_prfx, as_prfx_len))
+        size_t len = strnlen(val, MAXHOSTNAME);
+        if ((len > as_prfx_len) && !g_ascii_strncasecmp(val, skip_as_prfx, as_prfx_len))
           val += as_prfx_len;
-      } else if (STR_EQ(s, WHOIS_DESC_TAG)) {
+      } else if (STR_EQ(str, WHOIS_DESC_TAG)) {
         ndx = WHOIS_DESC_NDX;
         char *cc = split_pair(&val, WHOIS_CCDEL, GREEDY);
         if (cc) DUP_WITH_MARK(welem->elem[WHOIS_CC_NDX], cc);
@@ -351,29 +357,29 @@ static gboolean parser_valint(const char* inp, int* outp, const char *option) {
   return okay;
 }
 
-gboolean parser_range(char *range, char delim, const char *option, t_minmax *re) {
-  if (!range || !re) return false;
+gboolean parser_range(char *range, char delim, const char *option, t_minmax *minmax) {
+  if (!range || !minmax) return false;
   char *min = range;
   char *max = split_pair(&min, delim, LAZY);
-  t_minmax val = { INT_MIN, INT_MIN };
+  t_minmax val = {INT_MIN, INT_MIN};
   gboolean okay = true;
   okay &= parser_valint(min, &val.min, option);
   okay &= parser_valint(max, &val.max, option);
-  if (okay) *re = val;
+  if (okay) *minmax = val;
   return okay;
 }
 
 #ifdef WITH_PLOT
-gboolean parser_ivec(char *range, char delim, const char *option, int *dest, int n) {
-  if (!range || (n <= 0)) return false;
+gboolean parser_ivec(char *range, char delim, const char *option, int *dest, int max) {
+  if (!range || (max <= 0)) return false;
   const char delims[] = { delim, 0 };
-  char **abcs = g_strsplit(range, delims, n);
-  int val[n]; for (int i = 0; i < n; i++) val[i] = INT_MIN;
+  char **abcs = g_strsplit(range, delims, max);
+  int val[max]; for (int i = 0; i < max; i++) val[i] = INT_MIN;
   gboolean okay = true;
   if (abcs) for (int i = 0; abcs[i] && (i < G_N_ELEMENTS(val)); i++)
     okay &= parser_valint(abcs[i], &val[i], option);
   g_strfreev(abcs);
-  if (okay) for (int i = 0; i < n; i++) dest[i] = val[i];
+  if (okay) for (int i = 0; i < max; i++) dest[i] = val[i];
   return okay;
 }
 #endif
