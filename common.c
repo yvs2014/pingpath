@@ -13,21 +13,6 @@ const char *unkn_whois = "";
 gboolean cli;
 int verbose, activetab = TAB_PING_NDX;
 
-t_opts opts = { .target = NULL, .dns = DEF_DNS, .whois = DEF_WHOIS, .cycles = DEF_CYCLES, .qos = DEF_QOS, .size = DEF_PSIZE,
-  .min = MINTTL - 1, .lim = MAXTTL, .timeout = DEF_TOUT, .tout_usec = DEF_TOUT * G_USEC_PER_SEC, .logmax = DEF_LOGMAX,
-  .graph = GRAPH_TYPE_CURVE, .legend = DEF_LEGEND, .darktheme = DEF_DARK_MAIN, .darkgraph = DEF_DARK_GRAPH,
-#ifdef WITH_PLOT
-  .plot = true, .darkplot = DEF_DARK_PLOT,
-  .rcol = {DEF_RCOL_FROM, DEF_RCOL_TO},
-  .gcol = {DEF_GCOL_FROM, DEF_GCOL_TO},
-  .bcol = {DEF_BCOL_FROM, DEF_BCOL_TO},
-  .rglob   = DEF_RGLOBAL,
-  .orient  = {GL_ANGX, GL_ANGY, GL_ANGZ},
-  .angstep = DEF_ANGSTEP,
-  .fov  = DEF_FOV,
-#endif
-};
-
 t_type_elem pingelem[PE_MAX] = {
   [PE_NO]   = { .type = PE_NO,   .enable = true, .name = "" },
   [PE_HOST] = { .type = PE_HOST, .enable = true, .name = ELEM_HOST_HDR, .tip = ELEM_HOST_TIP },

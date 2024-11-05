@@ -1,3 +1,6 @@
+## 0.3.34
+- reassure opt-ent-kb init order
+
 ## 0.3.33
 - tidy up and add a bit of readability
 

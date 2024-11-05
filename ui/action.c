@@ -47,31 +47,25 @@ static const char* kb_ctrl_up[]    = {"<Ctrl>Up",        "KP_Up",        NULL};
 static const char* kb_ctrl_down[]  = {"<Ctrl>Down",      "KP_Down",      NULL};
 static const char* kb_ctrl_pgup[]  = {"<Ctrl>Page_Up",   "KP_Page_Up", "KP_Page_Down", "KP_Begin", NULL};
 static const char* kb_ctrl_pgdn[]  = {"<Ctrl>Page_Down", "KP_Home",    "KP_End", NULL};
-static const char* kb_ctrl_scup[]  = {"<Ctrl>End",       "KP_Add",       NULL};
-static const char* kb_ctrl_scdn[]  = {"<Ctrl>Home",      "KP_Subtract",  NULL};
+static const char* kb_ctrl_in[]    = {"<Ctrl>End",       "KP_Add",       NULL};
+static const char* kb_ctrl_out[]   = {"<Ctrl>Home",      "KP_Subtract",  NULL};
 #endif
 
 #ifdef WITH_PLOT
-#define KBROTCSAUX(spn_ndx, cs_ndx, tndx, ang_sign, ax_rev) { .aux = &ent_spn[spn_ndx].list[0].aux[cs_ndx], \
-  .pval = &opts.orient[tndx], .sign = (ang_sign), .rev = (ax_rev) }
-#define KBROTAUX(lndx, gndx, labn, lsign, gsign) { \
-  .global = KBROTCSAUX(ENT_SPN_GLOBAL, gndx, gndx, gsign, false), \
-  .local  = KBROTCSAUX(ENT_SPN_LOCAL,  lndx, gndx, lsign, (lsign) != (gsign)), \
-  .label  = (labn), .step = &opts.angstep }
-#define KBSCALEAUX(labn) { .label = (labn), .global = { .aux = ent_spn[ENT_SPN_FOV].list[0].aux, .pval = &opts.fov }}
+#define LGL_SET(labndx, lsign, gsign) { .label  = (labndx), \
+  .global = { .sign = (gsign), .rev = false }, \
+  .local  = { .sign = (lsign), .rev = (lsign) != (gsign) }}
 t_kb_plot_aux kb_plot_aux[ACCL_SA_MAX] = {
-  [ACCL_SA_LEFT]  = KBROTAUX(0, 1, ACCL_SA_LEFT,   1, -1),
-  [ACCL_SA_RIGHT] = KBROTAUX(0, 1, ACCL_SA_RIGHT, -1,  1),
-  [ACCL_SA_UP]    = KBROTAUX(2, 0, ACCL_SA_UP,    -1, -1),
-  [ACCL_SA_DOWN]  = KBROTAUX(2, 0, ACCL_SA_DOWN,   1,  1),
-  [ACCL_SA_PGUP]  = KBROTAUX(1, 2, ACCL_SA_PGUP,   1,  1),
-  [ACCL_SA_PGDN]  = KBROTAUX(1, 2, ACCL_SA_PGDN,  -1, -1),
-  [ACCL_SA_SCUP]  = KBSCALEAUX(ACCL_SA_SCUP),
-  [ACCL_SA_SCDN]  = KBSCALEAUX(ACCL_SA_SCDN),
+  [ACCL_SA_LEFT]  = LGL_SET(ACCL_SA_LEFT,   1, -1),
+  [ACCL_SA_RIGHT] = LGL_SET(ACCL_SA_RIGHT, -1,  1),
+  [ACCL_SA_UP]    = LGL_SET(ACCL_SA_UP,    -1, -1),
+  [ACCL_SA_DOWN]  = LGL_SET(ACCL_SA_DOWN,   1,  1),
+  [ACCL_SA_PGUP]  = LGL_SET(ACCL_SA_PGUP,   1,  1),
+  [ACCL_SA_PGDN]  = LGL_SET(ACCL_SA_PGDN,  -1, -1),
+  [ACCL_SA_IN]    = { .label = ACCL_SA_IN  },
+  [ACCL_SA_OUT]   = { .label = ACCL_SA_OUT },
 };
-#undef KBSCALEAUX
-#undef KBROTCSAUX
-#undef KBROTAUX
+#undef LGL_SET
 #endif
 
 static t_sa_desc menu_sa_desc[MENU_SA_MAX] = {
@@ -91,8 +85,8 @@ static t_sa_desc accl_sa_desc[] = {
   [ACCL_SA_DOWN]  = { .name = "app.act_down",  .shortcut = kb_ctrl_down,  .data = &kb_plot_aux[ACCL_SA_DOWN]  },
   [ACCL_SA_PGUP]  = { .name = "app.act_pgup",  .shortcut = kb_ctrl_pgup,  .data = &kb_plot_aux[ACCL_SA_PGUP]  },
   [ACCL_SA_PGDN]  = { .name = "app.act_pgdn",  .shortcut = kb_ctrl_pgdn,  .data = &kb_plot_aux[ACCL_SA_PGDN]  },
-  [ACCL_SA_SCUP]  = { .name = "app.act_scup",  .shortcut = kb_ctrl_scup,  .data = &kb_plot_aux[ACCL_SA_SCUP]  },
-  [ACCL_SA_SCDN]  = { .name = "app.act_scdn",  .shortcut = kb_ctrl_scdn,  .data = &kb_plot_aux[ACCL_SA_SCDN]  },
+  [ACCL_SA_IN]    = { .name = "app.act_in",    .shortcut = kb_ctrl_in,    .data = &kb_plot_aux[ACCL_SA_IN]    },
+  [ACCL_SA_OUT]   = { .name = "app.act_out",   .shortcut = kb_ctrl_out,   .data = &kb_plot_aux[ACCL_SA_OUT]   },
 #endif
 };
 
@@ -124,8 +118,8 @@ static GActionEntry accl_sa_entries[ACCL_SA_MAX] = {
   [ACCL_SA_DOWN]  = { .activate = (ae_sa_fn)on_rotation },
   [ACCL_SA_PGUP]  = { .activate = (ae_sa_fn)on_rotation },
   [ACCL_SA_PGDN]  = { .activate = (ae_sa_fn)on_rotation },
-  [ACCL_SA_SCUP]  = { .activate = (ae_sa_fn)on_scale },
-  [ACCL_SA_SCDN]  = { .activate = (ae_sa_fn)on_scale },
+  [ACCL_SA_IN]    = { .activate = (ae_sa_fn)on_scale },
+  [ACCL_SA_OUT]   = { .activate = (ae_sa_fn)on_scale },
 #endif
 };
 
@@ -153,8 +147,8 @@ static const char* accl_sa_label(int ndx) {
     case ACCL_SA_DOWN:  return ACT_DOWN_K_HDR;
     case ACCL_SA_PGUP:  return ACT_PGUP_K_HDR;
     case ACCL_SA_PGDN:  return ACT_PGDN_K_HDR;
-    case ACCL_SA_SCUP:  return ACT_SCUP_K_HDR;
-    case ACCL_SA_SCDN:  return ACT_SCDN_K_HDR;
+    case ACCL_SA_IN:    return ACT_IN_K_HDR;
+    case ACCL_SA_OUT:   return ACT_OUT_K_HDR;
 #endif
     default: break;
   }
@@ -361,7 +355,7 @@ void on_rotation(GSimpleAction *action, GVariant *var, t_kb_plot_aux *data) {
 
 void on_scale(GSimpleAction *action, GVariant *var, t_kb_plot_aux *data) {
   if (!data || !is_tab_that(TAB_PLOT_NDX)) return;
-  int step = (data->label == ACCL_SA_SCUP) ? -1 : ((data->label == ACCL_SA_SCDN) ? 1 : 0);
+  int step = (data->label == ACCL_SA_IN) ? -1 : ((data->label == ACCL_SA_OUT) ? 1 : 0);
   const t_ent_spn_aux *aux = data->global.aux;
   int *pval = aux->pval;
   if (!pval || !step) return;
@@ -421,8 +415,8 @@ static gboolean create_action_menu(GtkApplication *app, GtkWidget *win, GtkWidge
   SET_SA(accl_sa_desc, ACCL_SA_DOWN,  opts.plot);
   SET_SA(accl_sa_desc, ACCL_SA_PGUP,  opts.plot);
   SET_SA(accl_sa_desc, ACCL_SA_PGDN,  opts.plot);
-  SET_SA(accl_sa_desc, ACCL_SA_SCUP,  opts.plot);
-  SET_SA(accl_sa_desc, ACCL_SA_SCDN,  opts.plot);
+  SET_SA(accl_sa_desc, ACCL_SA_IN,    opts.plot);
+  SET_SA(accl_sa_desc, ACCL_SA_OUT,   opts.plot);
 #endif
   return true;
 }
@@ -439,11 +433,37 @@ static void action_update_internal(GMenu *menu) {
   SET_SA(menu_sa_desc, MENU_SA_RESET, run);
 }
 
+#ifdef WITH_PLOT
+#define APS_LINK(nth, rot, axis) { \
+  kb_plot_aux[nth].local.aux   = &ent_spn[ENT_SPN_LOCAL].list[0].aux[rot]; \
+  kb_plot_aux[nth].local.pval  = &opts.orient[axis]; \
+  kb_plot_aux[nth].global.aux  = &ent_spn[ENT_SPN_GLOBAL].list[0].aux[axis]; \
+  kb_plot_aux[nth].global.pval = &opts.orient[axis]; \
+  kb_plot_aux[nth].step = &opts.angstep; \
+}
+static inline void kb_link_to_ent(void) {
+  APS_LINK(ACCL_SA_LEFT,  0, 1);
+  APS_LINK(ACCL_SA_RIGHT, 0, 1);
+  APS_LINK(ACCL_SA_UP,    2, 0);
+  APS_LINK(ACCL_SA_DOWN,  2, 0);
+  APS_LINK(ACCL_SA_PGUP,  1, 2);
+  APS_LINK(ACCL_SA_PGDN,  1, 2);
+  kb_plot_aux[ACCL_SA_IN].global.aux  = ent_spn[ENT_SPN_FOV].list[0].aux;
+  kb_plot_aux[ACCL_SA_IN].global.pval = &opts.fov;
+  kb_plot_aux[ACCL_SA_OUT].global.aux  = kb_plot_aux[ACCL_SA_IN].global.aux;
+  kb_plot_aux[ACCL_SA_OUT].global.pval = kb_plot_aux[ACCL_SA_IN].global.pval;
+};
+#undef KB_APS_LINK
+#endif
+
 
 // pub
 //
 
 gboolean action_init(GtkApplication *app, GtkWidget* win, GtkWidget* bar) {
+#ifdef WITH_PLOT
+  kb_link_to_ent();
+#endif
   g_return_val_if_fail(create_action_menu(app, win, bar), false);
   return true;
 }

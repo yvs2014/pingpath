@@ -17,7 +17,20 @@
 #include "tabs/plot.h"
 #endif
 
-typedef gboolean (*optmenu_add_items_fn)(GtkWidget *);
+t_opts opts = { .target = NULL, .dns = DEF_DNS, .whois = DEF_WHOIS, .cycles = DEF_CYCLES, .qos = DEF_QOS, .size = DEF_PSIZE,
+  .min = MINTTL - 1, .lim = MAXTTL, .timeout = DEF_TOUT, .tout_usec = DEF_TOUT * G_USEC_PER_SEC, .logmax = DEF_LOGMAX,
+  .graph = GRAPH_TYPE_CURVE, .legend = DEF_LEGEND, .darktheme = DEF_DARK_MAIN, .darkgraph = DEF_DARK_GRAPH,
+#ifdef WITH_PLOT
+  .plot = true, .darkplot = DEF_DARK_PLOT,
+  .rcol = {DEF_RCOL_FROM, DEF_RCOL_TO},
+  .gcol = {DEF_GCOL_FROM, DEF_GCOL_TO},
+  .bcol = {DEF_BCOL_FROM, DEF_BCOL_TO},
+  .rglob   = DEF_RGLOBAL,
+  .orient  = {GL_ANGX, GL_ANGY, GL_ANGZ},
+  .angstep = DEF_ANGSTEP,
+  .fov  = DEF_FOV,
+#endif
+};
 
 typedef struct ent_rad_map {
   int ndx, val;
@@ -116,12 +129,12 @@ t_ent_str ent_str[] = {
 };
 
 static t_ent_exp ent_exp[] = {
-  [ENT_EXP_INFO] = { .c = {.en = {.type = ENT_EXP_INFO, .name = OPT_INFO_HDR }}, .desc = &info_desc },
-  [ENT_EXP_STAT] = { .c = {.en = {.type = ENT_EXP_STAT, .name = OPT_STAT_HDR }}, .desc = &stat_desc },
-  [ENT_EXP_LGFL] = { .c = {.en = {.type = ENT_EXP_LGFL, .name = OPT_GRLG_HDR }}, .desc = &grlg_desc },
-  [ENT_EXP_GREX] = { .c = {.en = {.type = ENT_EXP_GREX, .name = OPT_GREX_HDR }}, .desc = &grex_desc },
+  [ENT_EXP_INFO] = { .c = {.en = {.type = ENT_EXP_INFO, .name = OPT_INFO_HDR }}},
+  [ENT_EXP_STAT] = { .c = {.en = {.type = ENT_EXP_STAT, .name = OPT_STAT_HDR }}},
+  [ENT_EXP_LGFL] = { .c = {.en = {.type = ENT_EXP_LGFL, .name = OPT_GRLG_HDR }}},
+  [ENT_EXP_GREX] = { .c = {.en = {.type = ENT_EXP_GREX, .name = OPT_GREX_HDR }}},
 #ifdef WITH_PLOT
-  [ENT_EXP_PLEL] = { .c = {.en = {.type = ENT_EXP_PLEL, .name = OPT_PLOT_HDR }}, .desc = &plot_desc },
+  [ENT_EXP_PLEL] = { .c = {.en = {.type = ENT_EXP_PLEL, .name = OPT_PLOT_HDR }}},
 #endif
 };
 
@@ -724,7 +737,7 @@ static void gtk_compat_list_box_remove_all(GtkListBox *box) {
 #endif
 }
 
-static gboolean create_optmenu(GtkWidget *bar, const char **icons, const char *tooltip, optmenu_add_items_fn fn) {
+static gboolean create_optmenu(GtkWidget *bar, const char **icons, const char *tooltip, gboolean (*fn)(GtkWidget*)) {
   g_return_val_if_fail(GTK_IS_HEADER_BAR(bar), false);
   GtkWidget *menu = gtk_menu_button_new();
   g_return_val_if_fail(GTK_IS_MENU_BUTTON(menu), false);
@@ -806,11 +819,22 @@ static gboolean create_ext_optmenu(GtkWidget *list) {
   return okay;
 }
 
+static inline void ent_link_to_desc(void) {
+  ent_exp[ENT_EXP_INFO].desc = &info_desc;
+  ent_exp[ENT_EXP_STAT].desc = &stat_desc;
+  ent_exp[ENT_EXP_LGFL].desc = &grlg_desc;
+  ent_exp[ENT_EXP_GREX].desc = &grex_desc;
+#ifdef WITH_PLOT
+  ent_exp[ENT_EXP_PLEL].desc = &plot_desc;
+#endif
+};
+
 
 // pub
 //
 
 gboolean option_init(GtkWidget* bar) {
+  ent_link_to_desc();
   { const char *icons[] = { ub_theme ? OPT_MAIN_MENU_ICOA : OPT_MAIN_MENU_ICON, OPT_MAIN_MENU_ICOA, NULL};
     g_return_val_if_fail(create_optmenu(bar, icons, OPT_MAIN_MENU_TIP, create_main_optmenu), false); }
   { const char *icons[] = { OPT_EXT_MENU_ICON, OPT_EXT_MENU_ICOA, NULL};

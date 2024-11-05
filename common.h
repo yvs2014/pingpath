@@ -12,7 +12,7 @@
 #define MIN_GTK_RUNTIME(major, minor, micro) (!gtk_check_version(major, minor, micro))
 
 #define APPNAME "pingpath"
-#define VERSION "0.3.33"
+#define VERSION "0.3.34"
 
 #ifndef WITH_PLOT
 //#define WITH_PLOT // tmp
@@ -215,8 +215,8 @@ enum { ACT_DOT = 4 }; // beyond of "app." or "win."
 #define ACT_DOWN_K_HDR  "Rotate Down"
 #define ACT_PGUP_K_HDR  "Rotate Clockwise"
 #define ACT_PGDN_K_HDR  "Rotate AntiClockwise"
-#define ACT_SCUP_K_HDR  "Scale Up"
-#define ACT_SCDN_K_HDR  "Scale Down"
+#define ACT_IN_K_HDR    "Scale Up"
+#define ACT_OUT_K_HDR   "Scale Down"
 #endif
 
 #define ENT_TARGET_HDR "Target"

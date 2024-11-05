@@ -25,9 +25,10 @@ enum {
   JRNG_MIN  =  4,  // LINE_SIZE * 2
 };
 
-static const double FONT_RATIO = 0.28;
+#define FONT_RATIO 0.28
 static const double LINE_ALPHA = 0.6;
 static const double AREA_ALPHA = 0.2;
+
 enum { SUBCELLS = 5, X_FREQ = 2, SCOPE_TICK = 2 };
 
 typedef struct graph_geom {
@@ -40,8 +41,6 @@ typedef struct gr_point_desc {
   int rtt;
   gboolean conn;
 } t_gr_point_desc;
-
-typedef void (*draw_smth_fn)(int ttl, cairo_t *cr, double x);
 
 static const t_th_color dash_col = { .ondark = 0.85, .onlight = 0.7 };
 static const t_th_color text_col = { .ondark = 0.85, .onlight = 0   };
@@ -200,7 +199,8 @@ static void gr_draw_curve_loop(int ttl, cairo_t *cr, double x0) {
 
 #define SKIP_EXCLUDED { if (lgnd_excl_mask && (lgnd_excl_mask & (1U << n))) continue; }
 
-static void gr_draw_smth(cairo_t *cr, double width, double alpha, draw_smth_fn draw) {
+static void gr_draw_smth(cairo_t *cr, double width, double alpha,
+    void (*draw)(int ttl, cairo_t *cr, double x)) {
   if (!cr || !draw) return;
   cairo_set_line_cap(cr, CAIRO_LINE_CAP_ROUND);
   if (width >= 0) cairo_set_line_width(cr, width);
