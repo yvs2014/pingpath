@@ -38,11 +38,24 @@ srcs += tb/ 'ping.c'
 srcs += tb/ 'graph.c'
 srcs += tb/ 'log.c'
 
+#
+cc = meson.get_compiler('c')
+cpps  = []
+
+# aux
+fnhdr = {
+  'secure_getenv': 'stdlib.h',
+  'localtime_r':   'time.h',
+}
+foreach fn, hdr: fnhdr
+  if cc.has_function(fn, prefix: '#define _GNU_SOURCE\n#include <' + hdr + '>\n')
+    cpps += '-D' + fn.underscorify().to_upper() + '=1'
+  endif
+endforeach
+
 # dependencies
-cc    = meson.get_compiler('c')
 deps  = [cc.find_library('m', required: true)]
 deps +=  dependency('gtk4',   required: true)
-cpps  = []
 
 # optional: DND (default ON)
 if dnd

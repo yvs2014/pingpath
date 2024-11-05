@@ -1,3 +1,9 @@
+pingpath (0.3.35) mantic noble; urgency=low
+
+  * use secure_getenv() and localtime_r() if available
+
+ -- yvs <VSYakovetsky@gmail.com>  Wed, 06 Nov 2024 00:52:54 +0200
+
 pingpath (0.3.34) mantic noble; urgency=low
 
   * reassure opt-ent-kb init order

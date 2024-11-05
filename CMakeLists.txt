@@ -32,6 +32,16 @@ endif()
 pkg_check_modules(GTK4 REQUIRED IMPORTED_TARGET gtk4)
 link_libraries(PkgConfig::GTK4)
 
+# aux
+set(FN_LIST secure_getenv localtime_r)
+foreach(fn IN LISTS FN_LIST)
+  string(TOUPPER "${fn}" FN_DEF)
+  check_library_exists(c "${fn}" "${CMAKE_LIBRARY_PATH}" "${FN_DEF}")
+  if("${${FN_DEF}}")
+    add_compile_options("-D${FN_DEF}=1")
+  endif()
+endforeach()
+
 # optional: DND (default ON)
 option(DND "DND support" ON)
 if(DND)

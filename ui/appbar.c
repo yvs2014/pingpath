@@ -17,16 +17,16 @@
 unsigned datetime_id;
 
 static int update_datetime(void *label) {
-  static char datetime_label[32]; // note: for 'datetime_id' timer only
-  if (atquit) { datetime_id = 0; return G_SOURCE_REMOVE; }
+  if (atquit) datetime_id = 0;
   if (datetime_id) {
-    gboolean is_label = GTK_IS_LABEL(label);
-    if (!is_label) { datetime_id = 0; g_return_val_if_fail(is_label, G_SOURCE_REMOVE); }
-    time_t now = time(NULL);
-    strftime(datetime_label, sizeof(datetime_label), "%F %T", localtime(&now));
-    gtk_label_set_text(GTK_LABEL(label), datetime_label);
+    if (GTK_IS_LABEL(label)) {
+      char ts[32];
+      gtk_label_set_text(GTK_LABEL(label), timestamp(ts, sizeof(ts)));
+      return G_SOURCE_CONTINUE;
+    }
+    datetime_id = 0;
   }
-  return G_SOURCE_CONTINUE;
+  return G_SOURCE_REMOVE;
 }
 
 static gboolean start_datetime(GtkWidget *bar) {

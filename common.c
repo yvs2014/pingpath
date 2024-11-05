@@ -1,6 +1,7 @@
 
-#include <time.h>
+#include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 #include "common.h"
 
@@ -251,12 +252,21 @@ void clean_elems(int type) {
   }
 }
 
-const char *timestampit(void) {
-  static char now_ts[32];
-  time_t now = time(NULL);
-  now_ts[0] = 0;
-  strftime(now_ts, sizeof(now_ts), "%F %T", localtime(&now));
-  return now_ts;
+const char *timestamp(char *ts, size_t size) {
+  if (ts) {
+    ts[0] = 0;
+    time_t now = time(NULL);
+    if (now > 0) {
+#ifdef LOCALTIME_R
+      struct tm re;
+      struct tm *tm = localtime_r(&now, &re);
+#else
+      struct tm *tm = localtime(&now);
+#endif
+      if (tm) strftime(ts, size, "%F %T", tm);
+    }
+  }
+  return ts;
 }
 
 char* rtver(int ndx) {

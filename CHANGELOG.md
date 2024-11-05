@@ -1,3 +1,6 @@
+## 0.3.35
+- use secure_getenv() and localtime_r() if available
+
 ## 0.3.34
 - reassure opt-ent-kb init order
 

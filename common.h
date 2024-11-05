@@ -12,7 +12,7 @@
 #define MIN_GTK_RUNTIME(major, minor, micro) (!gtk_check_version(major, minor, micro))
 
 #define APPNAME "pingpath"
-#define VERSION "0.3.34"
+#define VERSION "0.3.35"
 
 #ifndef WITH_PLOT
 //#define WITH_PLOT // tmp
@@ -155,8 +155,8 @@ enum { ACT_DOT = 4 }; // beyond of "app." or "win."
 
 #define NOOP ((void)0)
 
-#define LOG(fmt, ...) do { VERBOSE(fmt, __VA_ARGS__); \
-  log_add("[%s] " fmt, timestampit(), __VA_ARGS__); } while (0)
+#define LOG(fmt, ...) do { VERBOSE(fmt, __VA_ARGS__); char ts[32]; \
+  log_add("[%s] " fmt, timestamp(ts, sizeof(ts)), __VA_ARGS__); } while (0)
 
 #ifdef LOGGING
 #define VERBOSE(fmt, ...) do { if (verbose & 1) g_message(fmt, __VA_ARGS__); } while (0)
@@ -539,7 +539,7 @@ gboolean is_plelem_enabled(int type);
 #endif
 
 char* rtver(int ndx);
-const char *timestampit(void);
+const char *timestamp(char *ts, size_t size);
 GtkListBoxRow* line_row_new(GtkWidget *child, gboolean visible);
 
 void host_free(t_host *host);

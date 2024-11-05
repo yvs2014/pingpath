@@ -82,8 +82,8 @@ static void pinger_error_free(void) { for (int i = 0; i < MAXTTL; i++) pinger_nt
   int len = g_utf8_strlen(str, MAXHOSTNAME); if (len > maxes[j]) maxes[j] = len; }}
 
 static void pinger_print_text(gboolean csv) {
-  csv ? g_print("%s%c%s\n", timestampit(), CSV_DEL, opts.target) :
-    g_print("[%s] %s\n", timestampit(), opts.target);
+  { char ts[32]; timestamp(ts, sizeof(ts));
+    csv ? g_print("%s%c%s\n", ts, CSV_DEL, opts.target) : g_print("[%s] %s\n", ts, opts.target); }
   PRINT_CSV_DIV;
   if (pinger_state.gotdata) {
     if (csv) g_print("%s", OPT_TTL_HDR); else HOP_INDENT;
@@ -286,7 +286,8 @@ static void pinger_print_json(gboolean pretty) {
     if (obj) {
       json_node_take_object(node, obj);
       pinger_json_prop_str(obj, ENT_TARGET_HDR, opts.target, pretty);
-      pinger_json_prop_str(obj, ENT_TSTAMP_HDR, timestampit(), pretty);
+      { char ts[32];
+        pinger_json_prop_str(obj, ENT_TSTAMP_HDR, timestamp(ts, sizeof(ts)), pretty); }
       char *info = NULL;
       gboolean okay = true;
       if (pinger_state.gotdata) {

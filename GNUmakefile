@@ -53,6 +53,14 @@ APP = $(NAME2)
 BUILDDIR = $(OBJDIR2)
 endif
 
+ifndef NO_SECURE_GETENV
+CFLAGS += -DSECURE_GETENV
+endif
+
+ifndef NO_LOCALTIME_R
+CFLAGS += -DLOCALTIME_R
+endif
+
 CFLAGS += $(shell $(PKGCONFIG) --cflags $(PKGS))
 LIBS += $(shell $(PKGCONFIG) --libs $(PKGS))
 

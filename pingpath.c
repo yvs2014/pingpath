@@ -1,4 +1,8 @@
 
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
+
 #include <stdlib.h>
 #include <sysexits.h>
 #include <locale.h>
@@ -144,10 +148,16 @@ void tab_dependent(GtkWidget *tab) {
 inline gboolean is_tab_that(unsigned ndx) { return (ndx < G_N_ELEMENTS(tabrefs)) ? (currtabref == tabrefs[ndx]) : false; }
 #endif
 
+#ifdef SECURE_GETENV
+#define GETENV secure_getenv
+#else
+#define GETENV getenv
+#endif
+
 int main(int argc, char **argv) {
   setlocale(LC_ALL, "");  // parser: early l10n for CLI options
   putenv("LANG=C.UTF-8"); // parser: disable ping's i18n output
-  if (!getenv("GSK_RENDERER")) { // to avoid ngl-n-vulkan issues in GTK 4.14/4.15
+  if (!GETENV("GSK_RENDERER")) { // to avoid ngl-n-vulkan issues in GTK 4.14/4.15
     unsigned major = gtk_get_major_version(), minor = gtk_get_minor_version();
     if ((major == 4) && (
       (minor == 14) || (minor == 15)
