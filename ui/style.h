@@ -3,6 +3,8 @@
 
 #include <gtk/gtk.h>
 
+#include "config.h"
+
 #define CSS_ID_DATETIME "datetime"
 #define CSS_BGROUND     "bground"
 #define CSS_BGONDARK    "bgondark"

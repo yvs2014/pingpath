@@ -16,10 +16,11 @@ finish-args:
   - --device=dri
 modules:
   - name: pingpath
-    buildsystem: simple
+    buildsystem: meson
     build-commands:
-      - make
-      - DESTDIR=${FLATPAK_DEST} PREFIX= make install
+      - meson setup _build
+      - meson compile -C _build
+      - DESTDIR=${FLATPAK_DEST} meson install -C _build
     sources:
       - type: dir
         path: .

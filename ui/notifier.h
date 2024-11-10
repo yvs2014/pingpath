@@ -3,6 +3,8 @@
 
 #include <gtk/gtk.h>
 
+#include "config.h"
+
 enum { NT_MAIN_NDX, NT_LEGEND_NDX,
 #ifdef WITH_PLOT
   NT_ROTOR_NDX,

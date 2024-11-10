@@ -3,13 +3,12 @@
 *.a
 /.cache/
 /_build/
-/_build2/
 /uninstall/
 /pingpath
-/pingpath2
 
 .*.swp
 *~
+config.h
 compile_commands.json
 *.snap
 /.flatpak-builder/

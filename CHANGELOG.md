@@ -1,3 +1,8 @@
+## 0.3.36
+- simplify by building full 3d version only
+- add basic config.h
+- uselocale() if available
+
 ## 0.3.35
 - use secure_getenv() and localtime_r() if available
 

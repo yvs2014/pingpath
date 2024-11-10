@@ -14,6 +14,7 @@ dnd  = get_option('DND')
 json = get_option('JSON')
 plot = get_option('PLOT')
 summary({'DND': dnd, 'JSON': json, 'PLOT': plot}, bool_yn: true)
+config = configuration_data()
 
 # sources
 srcs  = [name + '.c']
@@ -40,16 +41,16 @@ srcs += tb/ 'log.c'
 
 #
 cc = meson.get_compiler('c')
-cpps  = []
 
 # aux
 fnhdr = {
   'secure_getenv': 'stdlib.h',
   'localtime_r':   'time.h',
+  'uselocale':     'locale.h',
 }
 foreach fn, hdr: fnhdr
   if cc.has_function(fn, prefix: '#define _GNU_SOURCE\n#include <' + hdr + '>\n')
-    cpps += '-D' + fn.underscorify().to_upper() + '=1'
+    config.set('HAVE_' + fn.underscorify().to_upper(), 1)
   endif
 endforeach
 
@@ -59,38 +60,36 @@ deps +=  dependency('gtk4',   required: true)
 
 # optional: DND (default ON)
 if dnd
-  cpps += '-DWITH_DND=1'
+  config.set('WITH_DND', 1)
 endif
 
 # optional: JSON (default ON)
 if json
-  cpps += '-DWITH_JSON=1'
+  config.set('WITH_JSON', 1)
   deps += dependency('json-glib-1.0', required: true)
 endif
 
-datadir = get_option('datadir')
-deskdir = datadir / 'applications'
-rdns = 'net.tools.'
-asst = 'assets'
-dotdsk = '.desktop'
-name2 = name + '2'
-desk2 = name2 + dotdsk
-pp = executable(name2, srcs, dependencies: deps, c_args: cpps, install: true)
-install_data(asst / desk2, rename: rdns + desk2, install_dir: deskdir)
-
 # optional: PLOT (default ON)
 if plot
+  config.set('WITH_PLOT', 1)
   srcs += tb/ 'plot.c'
   srcs += tb/ 'plot_aux.c'
   srcs += tb/ 'plot_pango.c'
-  cpps += '-DWITH_PLOT=1'
   deps += dependency('gl',    required: true)
   deps += dependency('cglm',  required: true)
   deps += dependency('epoxy', required: true)
-  pp = executable(name, srcs, dependencies: deps, c_args: cpps, install: true)
-  desk = name + dotdsk
-  install_data(asst / desk, rename: rdns + desk, install_dir: deskdir)
 endif
+
+config_h = 'config.h'
+configure_file(input: config_h + '.meson', output: config_h, configuration: config)
+
+pp = executable(name, srcs, dependencies: deps, install: true)
+
+datadir = get_option('datadir')
+asst = 'assets'
+
+desk = name + '.desktop'
+install_data(asst / desk, rename: 'net.tools.' + desk, install_dir: datadir / 'applications')
 
 install_man(name + '.1')
 install_data(asst / 'icons' / name + '.svg', install_dir: datadir / 'icons/hicolor/scalable/apps')
@@ -112,9 +111,13 @@ test_args += [['--ttl', '2']         + text_mode]
 test_args += [['--info', 'hacdr']    + text_mode]
 test_args += [['--stat', 'lsrmbwaj'] + text_mode]
 test_args += [['-4']                 + text_mode]
-test_args += [['-6'] + ['--cycles', '1', '--recap', 't', 'ip6-localhost']]
+test_args += [['-6'] + ['--cycles', '1', '--recap', 't', '::1']]
 test_args += [['--file', meson.current_source_dir() / name + '.conf.sample'] + text_mode]
 foreach args: test_args
-  test(' '.join([name] + args), pp, args: args)
+  cmd = ' '.join([name] + args)
+  if meson.version().version_compare('>=0.58')
+    cmd = cmd.replace(':', '_')
+  endif
+  test(cmd, pp, args: args)
 endforeach
 

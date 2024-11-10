@@ -3,6 +3,7 @@
 #include <string.h>
 #include <time.h>
 
+#include "config.h"
 #include "common.h"
 
 const char *appver = APPNAME "-" VERSION;
@@ -257,7 +258,7 @@ const char *timestamp(char *ts, size_t size) {
     ts[0] = 0;
     time_t now = time(NULL);
     if (now > 0) {
-#ifdef LOCALTIME_R
+#ifdef HAVE_LOCALTIME_R
       struct tm re;
       struct tm *tm = localtime_r(&now, &re);
 #else

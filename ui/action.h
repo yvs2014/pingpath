@@ -3,6 +3,8 @@
 
 #include <gtk/gtk.h>
 
+#include "config.h"
+
 #ifdef WITH_PLOT
 #include "ui/option.h"
 #endif

@@ -1,6 +1,5 @@
 
 NAME     = pingpath
-NAME2    = $(NAME)2
 GROUP    = net.tools
 ASSETS   = assets
 ICONNAME = $(ASSETS)/icons/$(NAME)
@@ -18,12 +17,8 @@ SMPLDIR   ?= $(SHRDIR)/doc/$(NAME)/examples
 DESC  = $(NAME).desktop
 DESC_SRC  = $(ASSETS)/$(DESC)
 DESC_DST  = $(GROUP).$(DESC)
-DESC2 = $(NAME2).desktop
-DESC2_SRC = $(ASSETS)/$(DESC2)
-DESC2_DST = $(GROUP).$(DESC2)
 
-OBJDIR  = _build
-OBJDIR2 = $(OBJDIR)2
+BUILDDIR  = _build
 
 PKGS = gtk4
 
@@ -41,24 +36,21 @@ ifndef NO_DND
 CFLAGS += -DWITH_DND
 endif
 
-ifdef PLOT
+ifndef NO_PLOT
 CFLAGS += -DWITH_PLOT
 PKGS += gl
 PKGS += cglm
 PKGS += epoxy
-APP = $(NAME)
-BUILDDIR = $(OBJDIR)
-else
-APP = $(NAME2)
-BUILDDIR = $(OBJDIR2)
 endif
 
 ifndef NO_SECURE_GETENV
-CFLAGS += -DSECURE_GETENV
+CFLAGS += -DHAVE_SECURE_GETENV
 endif
-
 ifndef NO_LOCALTIME_R
-CFLAGS += -DLOCALTIME_R
+CFLAGS += -DHAVE_LOCALTIME_R
+endif
+ifndef NO_USELOCALE
+CFLAGS += -DHAVE_USELOCALE
 endif
 
 CFLAGS += $(shell $(PKGCONFIG) --cflags $(PKGS))
@@ -86,38 +78,33 @@ SRC += pinger.c parser.c stat.c series.c dns.c whois.c cli.c
 SRC += ui/style.c ui/appbar.c ui/action.c ui/option.c
 SRC += ui/clipboard.c ui/notifier.c
 SRC += tabs/aux.c tabs/ping.c tabs/graph.c tabs/log.c
-ifdef PLOT
+ifndef NO_PLOT
 SRC += tabs/plot.c tabs/plot_aux.c tabs/plot_pango.c
 endif
 
 OBJS = $(SRC:%.c=$(BUILDDIR)/%.o)
 
-all:
-	@echo 'make $(NAME2) with 2D graphs'
-	@make $(NAME2)
-	@echo 'make $(NAME) with 2D graphs and 3D plots'
-	@make PLOT=1 $(NAME)
+$(NAME): config $(OBJS)
+	@echo '  LD $@'
+	@$(CC) -o $@ $(OBJS) $(LDFLAGS) $(LIBS)
 
 $(OBJS): $(BUILDDIR)/%.o: %.c common.h
 	@mkdir -p $(@D)
 	@echo '  CC $@'
 	@$(CC) -c -o $@ $(CFLAGS) $<
 
-$(APP): $(OBJS)
-	@echo '  LD $@'
-	@$(CC) -o $@ $(OBJS) $(LDFLAGS) $(LIBS)
+config:
+	@touch config.h
 
 clean:
-	rm -f -- $(NAME) $(NAME2)
-	rm -rf -- $(OBJDIR) $(OBJDIR2)
+	rm -f -- $(NAME) config.h
+	rm -rf -- $(BUILDDIR)
 
-install: $(NAME) $(NAME2)
+install: $(NAME)
 	install -m 755 -d $(BASEDIR)/bin $(MANDIR) $(SMPLDIR) $(DSCDIR) $(SVGICODIR)
 	install -m 755 -s $(NAME) $(BASEDIR)/bin/
-	install -m 755 -s $(NAME2) $(BASEDIR)/bin/
 	install -m 644 $(NAME).1 $(MANDIR)/
 	install -m 644 -T $(CONF_SRC) $(SMPLDIR)/$(CONF_DST)
 	install -m 644 -T $(DESC_SRC) $(DSCDIR)/$(DESC_DST)
-	install -m 644 -T $(DESC2_SRC) $(DSCDIR)/$(DESC2_DST)
 	install -m 644 $(ICONNAME).svg $(SVGICODIR)/
 

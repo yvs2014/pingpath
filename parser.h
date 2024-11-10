@@ -1,10 +1,8 @@
 #ifndef PARSER_H
 #define PARSER_H
 
+#include "config.h"
 #include "common.h"
-
-#define COMMA ','
-#define COLON ':'
 
 enum { ENT_STR_CYCLES, ENT_STR_IVAL, ENT_STR_QOS, ENT_STR_PLOAD, ENT_STR_PSIZE, ENT_STR_LOGMAX };
 enum { OPT_TYPE_INT, OPT_TYPE_PAD, OPT_TYPE_INFO, OPT_TYPE_STAT, OPT_TYPE_GRLG, OPT_TYPE_GREX,

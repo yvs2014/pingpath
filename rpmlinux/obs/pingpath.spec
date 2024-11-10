@@ -26,7 +26,6 @@ Written using GTK4 framework.
 %define dskdir %{datdir}/applications
 %define docnam %{_docdir}/%{name}
 %define smpdir %{docnam}/examples
-%define rdns net.tools.%{name}
 
 %prep
 %autosetup
@@ -46,9 +45,7 @@ Written using GTK4 framework.
 %dir %{docnam}
 %dir %{smpdir}
 %{_bindir}/%{name}
-%{dskdir}/%{rdns}.desktop
-%{_bindir}/%{name}2
-%{dskdir}/%{rdns}2.desktop
+%{dskdir}/net.tools.%{name}.desktop
 %{datdir}/icons/hicolor/scalable/apps/%{name}.svg
 %{smpdir}/%{name}.conf
 %{_mandir}/man1/%{name}.1*

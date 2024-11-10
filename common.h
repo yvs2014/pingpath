@@ -11,8 +11,10 @@
 #endif
 #define MIN_GTK_RUNTIME(major, minor, micro) (!gtk_check_version(major, minor, micro))
 
+#include "config.h"
+
 #define APPNAME "pingpath"
-#define VERSION "0.3.35"
+#define VERSION "0.3.36"
 
 #ifndef WITH_PLOT
 //#define WITH_PLOT // tmp

@@ -1,15 +1,10 @@
 #ifndef UI_OPTION_H
 #define UI_OPTION_H
 
+#include "config.h"
 #include "common.h"
 
-#define ENT_BUFF_SIZE 64
-#define SUBLIST_MAX   8
-
-#ifdef WITH_PLOT
-#define MIN_VIEW_ANGLE (-180)
-#define MAX_VIEW_ANGLE   180
-#endif
+enum { SUBLIST_MAX = 8, ENT_BUFF_SIZE = 64 };
 
 enum { MINIMAX_SPIN,
 #ifdef WITH_PLOT

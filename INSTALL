@@ -2,21 +2,21 @@
 Basic Build
 ------------------
 
-It can be built with pure make (last resort), cmake, or meson (preferable)
+Three ways to build: (1) meson [preferable], (2) cmake, (3) pure make [last resort]
 
-1) make
-make
-# make install
+(1) meson
+meson setup _build
+meson compile -C _build
+# meson install -C _build
 
-2) cmake
+(2) cmake
 cmake -B _build -S $(pwd)
 cmake --build _build
 # cmake --install _build
 
-3) meson
-meson setup _build
-meson compile -C _build
-# meson install -C _build
+(3) make
+make
+# make install
 
 
 Package Templates

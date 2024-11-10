@@ -17,18 +17,10 @@ grade: stable
 confinement: strict
 
 apps:
-  pingpath:  # with 3D plots and 2D graphs
+  pingpath:
     extensions: [gnome]
     command: usr/bin/pingpath
     desktop: usr/share/applications/net.tools.pingpath.desktop
-    plugs:
-      - network
-      - network-observe # for system 'ping' tool
-      - network-status  # for whois requests
-  pingpath2: # with 2D graphs
-    extensions: [gnome]
-    command: usr/bin/pingpath2
-    desktop: usr/share/applications/net.tools.pingpath2.desktop
     plugs:
       - network
       - network-observe # for system 'ping' tool
@@ -48,7 +40,6 @@ parts:
       _ICODIR="/usr/share/icons/hicolor/scalable/apps"
       _SEDEXP="s|Icon=pingpath|Icon=$_ICODIR/pingpath.svg|"
       sed -i "$_SEDEXP" assets/pingpath.desktop
-      sed -i "$_SEDEXP" assets/pingpath2.desktop
     build-packages:
       - git
       - build-essential
@@ -58,10 +49,8 @@ parts:
       - libcglm-dev
     prime:
       - usr/bin/pingpath
-      - usr/bin/pingpath2
       - usr/share/man/man1/pingpath.1*
       - usr/share/doc/pingpath/examples/pingpath.conf
       - usr/share/applications/net.tools.pingpath.desktop
-      - usr/share/applications/net.tools.pingpath2.desktop
       - usr/share/icons/hicolor/scalable/apps/pingpath.svg
 

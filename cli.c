@@ -3,6 +3,7 @@
 #include <string.h>
 #include <limits.h>
 
+#include "config.h"
 #include "common.h"
 
 #include "cli.h"
@@ -132,7 +133,7 @@ static gboolean cli_opt_t(const char *name, const char *value, t_opts *opts, GEr
     int *pmin = elem->aux[0].pval;
     int *plim = elem->aux[1].pval;
     int min = opt_mm_ttl.min - 1, lim = opt_mm_ttl.max;
-    t_minmax range; okay = parser_range(dup, COMMA, OPT_TTL_HDR, &range);
+    t_minmax range; okay = parser_range(dup, ',', OPT_TTL_HDR, &range);
     if (okay) {
       if (range.min != INT_MIN) {
         okay = pinger_within_range(opt_mm_ttl.min, plim ? *plim : lim, range.min);
@@ -170,7 +171,7 @@ static gboolean cli_opt_X_rgb(char *dup, int type, int ndx, t_minmax *minmax) {
   if (dup && minmax) {
     const char *name = ent_spn[type].c.en.name;
     t_minmax input; t_ent_spn_elem *elem = &ent_spn[type].list[ndx];
-    okay = parser_range(dup, COLON, elem->title, &input);
+    okay = parser_range(dup, ':', elem->title, &input);
     if (okay) {
       { okay = set_xparam_tag(input.min, elem->aux[0].pval, opt_mm_col); }
       if (okay)
@@ -188,7 +189,7 @@ static gboolean cli_opt_X_o(char *dup, int type, int ndx, int *pval[]) {
   if (dup && pval) {
     const char *name = ent_spn[type].c.en.name;
     const char *title = ent_spn[type].list[ndx].title;
-    int arr[XO_ITEMS]; okay = parser_ivec(dup, COLON, title, arr, G_N_ELEMENTS(arr));
+    int arr[XO_ITEMS]; okay = parser_ivec(dup, ':', title, arr, G_N_ELEMENTS(arr));
     if (okay) {
       t_minmax minmax = {.min = 0, .max = 1};
       okay = set_xparam_tag(arr[XO_SPACE], pval[XO_SPACE], minmax);

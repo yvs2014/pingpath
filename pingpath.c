@@ -7,6 +7,8 @@
 #include <sysexits.h>
 #include <locale.h>
 
+#include "config.h"
+
 #include "common.h"
 #include "cli.h"
 #include "pinger.h"
@@ -148,14 +150,20 @@ void tab_dependent(GtkWidget *tab) {
 inline gboolean is_tab_that(unsigned ndx) { return (ndx < G_N_ELEMENTS(tabrefs)) ? (currtabref == tabrefs[ndx]) : false; }
 #endif
 
-#ifdef SECURE_GETENV
+#ifdef HAVE_SECURE_GETENV
 #define GETENV secure_getenv
 #else
 #define GETENV getenv
 #endif
 
 int main(int argc, char **argv) {
-  setlocale(LC_ALL, "");  // parser: early l10n for CLI options
+  // early l10n for CLI options
+#ifdef HAVE_USELOCALE
+  locale_t locale = newlocale(LC_ALL_MASK, "", NULL);
+  if (locale) uselocale(locale);
+#else
+  setlocale(LC_ALL, "");
+#endif
   putenv("LANG=C.UTF-8"); // parser: disable ping's i18n output
   if (!GETENV("GSK_RENDERER")) { // to avoid ngl-n-vulkan issues in GTK 4.14/4.15
     unsigned major = gtk_get_major_version(), minor = gtk_get_minor_version();
@@ -181,6 +189,11 @@ int main(int argc, char **argv) {
   int rc = g_application_run(app, argc, argv);
   pinger_cleanup();
   g_object_unref(app);
+#ifdef HAVE_USELOCALE
+  if (locale) freelocale(locale);
+#else
+  setlocale(LC_ALL, NULL);
+#endif
   return exit_code || rc;
 }
 

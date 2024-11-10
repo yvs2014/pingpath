@@ -1,3 +1,13 @@
+pingpath (0.3.36) mantic noble; urgency=low
+
+  * simplify by building full 3d version only
+
+  * add basic config.h
+
+  * uselocale() if available
+
+ -- yvs <VSYakovetsky@gmail.com>  Sun, 10 Nov 2024 21:29:02 +0200
+
 pingpath (0.3.35) mantic noble; urgency=low
 
   * use secure_getenv() and localtime_r() if available

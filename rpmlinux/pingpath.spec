@@ -48,9 +48,7 @@ cd %{srcdir}
 %dir %{docdir}
 %dir %{docdir}/examples
 %{_bindir}/%{name}
-%{_bindir}/%{name}2
 %{dskdir}/net.tools.%{name}.desktop
-%{dskdir}/net.tools.%{name}2.desktop
 %{datdir}/icons/hicolor/scalable/apps/%{name}.svg
 %{docdir}/examples/%{name}.conf
 %{_mandir}/man1/%{name}.1*

@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "config.h"
 #include "common.h"
 
 #include "option.h"
@@ -15,6 +16,8 @@
 #include "tabs/graph.h"
 #ifdef WITH_PLOT
 #include "tabs/plot.h"
+
+enum { MIN_VIEW_ANGLE = -180, MAX_VIEW_ANGLE = 180 };
 #endif
 
 t_opts opts = { .target = NULL, .dns = DEF_DNS, .whois = DEF_WHOIS, .cycles = DEF_CYCLES, .qos = DEF_QOS, .size = DEF_PSIZE,
