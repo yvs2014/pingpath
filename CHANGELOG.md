@@ -1,3 +1,7 @@
+## 0.3.37
+- add workaround for GSK4.16
+- add Alpine apk packaging template
+
 ## 0.3.36
 - simplify by building full 3d version only
 - add basic config.h

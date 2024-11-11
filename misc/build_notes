@@ -17,6 +17,13 @@ build .aur:
   install:
     pacman -U aur/pingpath-*.zst
 
+build .apk (alpine):
+  build:
+    misc/build_alp.sh
+  install:
+    apk update
+    apk install pingpath
+
 build .snap:
   pre-install unless done before:
     snap install snapcraft
@@ -27,7 +34,7 @@ build .snap:
   run:
     /snap/bin/pingpath
 
-build .flatpak (requires runtime with 'iputils-ping')
+-build .flatpak (requires runtime with 'iputils-ping')
   pre-install unless done before:
     flatpak flatpak-builder [flatpak-xdg-utils]
     flatpak install org.gnome.Platform//45 org.gnome.Sdk//45
@@ -35,8 +42,4 @@ build .flatpak (requires runtime with 'iputils-ping')
     flatpak-builder --user --install build-dir flatpak.yaml --force-clean
   run:
     flatpak run net.tools.pingpath
-
-build .appimage:
-  make install DESTDIR=AppDir PREFIX=/usr
-  ... not yet
 

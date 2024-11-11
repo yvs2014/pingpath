@@ -1,3 +1,11 @@
+pingpath (0.3.37) mantic noble; urgency=low
+
+  * add workaround for GSK4.16
+
+  * add Alpine apk packaging template
+
+ -- yvs <VSYakovetsky@gmail.com>  Mon, 11 Nov 2024 03:24:42 +0200
+
 pingpath (0.3.36) mantic noble; urgency=low
 
   * simplify by building full 3d version only

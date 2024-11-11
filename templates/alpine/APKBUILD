@@ -1,0 +1,57 @@
+# Maintainer: yvs <VSYakovetsky@gmail.com>
+
+# sample (replace N and COMMIT correspondently)
+
+_ver='0.3.N'
+_git='COMMIT'
+_build='_build'
+
+pkgname=pingpath
+pkgver="$_ver"
+pkgrel=1
+pkgdesc='ping wrapper to display path'
+url="https://github.com/yvs2014/$pkgname"
+giturl="$url"
+arch='x86_64 aarch64 armhf ppc64le s390x'
+license='GPL'
+depends='iputils-ping'
+makedepends='git meson pkgconf gcc gtk4.0-dev json-glib-dev libepoxy-dev cglm-dev'
+options='strip !debug'
+subpackages="$pkgname-doc"
+
+snapshot() {
+  mkdir -p "$srcdir"
+  cd "$srcdir"
+  if [ -d "$pkgname" ]; then
+    cd $pkgname
+    git fetch
+  else
+    git clone "$giturl" "$pkgname"
+    cd $pkgname
+    git checkout -q "$_git"
+  fi
+  git archive --prefix="$pkgname/" -o "$srcdir/$pkgname-$pkgver.tar.gz" "$_git"
+}
+
+prepare() {
+  default_prepare
+  snapshot
+}
+
+build() {
+  cd "$srcdir/$pkgname"
+  abuild-meson "$_build" .
+  meson compile -C "$_build"
+}
+
+check() {
+  cd "$srcdir/$pkgname"
+  meson test -C "$_build"
+}
+
+package() {
+  cd "$srcdir/$pkgname"
+  DESTDIR="$pkgdir" meson install -C "$_build"
+}
+
+sha256sums=SKIP

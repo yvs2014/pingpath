@@ -17,5 +17,5 @@ compile_commands.json
 **/*.debhelper.log
 /obj-*-linux-gnu/
 /aur/
-archlinux/pingpath/
+templates/aurlike/pingpath/
 /rpms/

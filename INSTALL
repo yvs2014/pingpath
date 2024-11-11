@@ -22,9 +22,13 @@ make
 Package Templates
 ------------------
 
-Template samples are located in
+  Template samples are located in
+
 debian/
-rpmlinux/
-archlinux/
 snap/
+
+templates/
+  rpmlike/
+  aurlike/
+  alpine/
 

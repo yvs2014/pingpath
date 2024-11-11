@@ -164,12 +164,17 @@ int main(int argc, char **argv) {
 #else
   setlocale(LC_ALL, "");
 #endif
-  putenv("LANG=C.UTF-8"); // parser: disable ping's i18n output
-  if (!GETENV("GSK_RENDERER")) { // to avoid ngl-n-vulkan issues in GTK 4.14/4.15
-    unsigned major = gtk_get_major_version(), minor = gtk_get_minor_version();
-    if ((major == 4) && (
-      (minor == 14) || (minor == 15)
-    )) putenv("GSK_RENDERER=gl"); }
+  putenv("LANG=C.UTF-8"); // to get ping's uniform output
+  if (!GETENV("GSK_RENDERER")) {
+    unsigned sure = gtk_get_major_version(), fix = gtk_get_minor_version();
+    if (sure == 4) switch (fix) {
+      case 14: // renderer workarounds since 4.14
+      case 15: putenv("GSK_RENDERER=gl");     break;
+      case 16: putenv("GSK_RENDERER=ngl");    break;
+//    case 17: putenv("GSK_RENDERER=vulkan"); break; /* not needed yet */
+      default: break;
+    }
+  }
   if (!parser_init()) return EX_SOFTWARE;
   { int quit = cli_init(&argc, &argv);
     if (quit) return (quit > 0) ? EX_USAGE : EXIT_SUCCESS; }

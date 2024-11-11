@@ -5,7 +5,7 @@ AUR=aur
 export PKGDEST="$(pwd)/$AUR"
 
 mkdir -p "$AUR"
-cd archlinux
+cd templates/aurlike
 makepkg -cf || :
 cd -
 ls -l "$AUR"
