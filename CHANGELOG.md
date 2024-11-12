@@ -1,3 +1,6 @@
+## 0.3.39
+- workaround for overlay positioning on xfce4 session
+
 ## 0.3.38
 - add build option to set ping dir (Guix, GnomeOS, etc)
 

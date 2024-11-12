@@ -40,9 +40,7 @@ typedef struct notifier {
 #ifdef WITH_DND
   int dx, dy;
 #endif
-#ifdef WITH_PLOT
   gboolean onright;
-#endif
 } t_notifier;
 
 #ifdef WITH_PLOT
@@ -106,19 +104,33 @@ static void nt_inform(t_notifier *nt, char *mesg) {
   if (nt->autohide) nt->visible = g_timeout_add_seconds(AUTOHIDE_IN, (GSourceFunc)nt_hide, nt);
 }
 
+#if 0
+static inline void pr_measure(GtkWidget *widget, const char *str) {
+  int w = 0, h = 0;
+  gtk_widget_measure(widget, GTK_ORIENTATION_HORIZONTAL, -1, NULL, &w, NULL, NULL);
+  gtk_widget_measure(widget, GTK_ORIENTATION_VERTICAL,   -1, NULL, &h, NULL, NULL);
+  g_message("DEBUG(%s): w=%d h=%d", str, w, h);
+}
+#endif
+
 static gboolean nt_ext_pos_cb(GtkOverlay *unused, GtkWidget *widget, GdkRectangle *rect, t_notifier *nt) {
+  const int maxsize = SHRT_MAX / 2;
   gboolean okay = rect && nt && GTK_IS_WIDGET(widget);
   if (okay) {
-    int width = 0;
-    gtk_widget_measure(widget, GTK_ORIENTATION_HORIZONTAL, -1, NULL, &width,   NULL, NULL);
-    gtk_widget_measure(widget, GTK_ORIENTATION_VERTICAL,   -1, NULL, NULL, NULL, NULL);
-#ifdef WITH_PLOT
-    if (nt->onright/*once*/ && width) {
-      nt->x = rect->width - width - nt->x;
-      nt->onright = false;
+    bool w_ok = (rect->width  > 0) && (rect->width  < maxsize);
+    bool h_ok = (rect->height > 0) && (rect->height < maxsize);
+    if (nt->onright/*once*/ && w_ok) {
+      int width = 0;
+      gtk_widget_measure(widget, GTK_ORIENTATION_HORIZONTAL, -1, NULL, &width,   NULL, NULL);
+      if (width > 0) {
+        nt->x = rect->width - width - nt->x;
+        nt->onright = false;
+      }
     }
-#endif
-    rect->x = nt->x; rect->y = nt->y;
+    rect->x = nt->x;
+    rect->y = nt->y;
+    if (!w_ok) rect->width  = maxsize;
+    if (!h_ok) rect->height = maxsize;
   }
   return okay;
 }
