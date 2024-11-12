@@ -1,3 +1,6 @@
+## 0.3.40
+- tuneup prev workaround
+
 ## 0.3.39
 - workaround for overlay positioning on xfce4 session
 

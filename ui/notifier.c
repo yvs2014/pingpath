@@ -117,15 +117,14 @@ static gboolean nt_ext_pos_cb(GtkOverlay *unused, GtkWidget *widget, GdkRectangl
   const int maxsize = SHRT_MAX / 2;
   gboolean okay = rect && nt && GTK_IS_WIDGET(widget);
   if (okay) {
+    int width = 0;
+    gtk_widget_measure(widget, GTK_ORIENTATION_HORIZONTAL, -1, NULL, &width, NULL, NULL);
+    gtk_widget_measure(widget, GTK_ORIENTATION_VERTICAL,   -1, NULL, NULL,   NULL, NULL);
     bool w_ok = (rect->width  > 0) && (rect->width  < maxsize);
     bool h_ok = (rect->height > 0) && (rect->height < maxsize);
-    if (nt->onright/*once*/ && w_ok) {
-      int width = 0;
-      gtk_widget_measure(widget, GTK_ORIENTATION_HORIZONTAL, -1, NULL, &width,   NULL, NULL);
-      if (width > 0) {
-        nt->x = rect->width - width - nt->x;
-        nt->onright = false;
-      }
+    if (nt->onright/*once*/ && (width > 0) && w_ok) {
+      nt->x = rect->width - width - nt->x;
+      nt->onright = false;
     }
     rect->x = nt->x;
     rect->y = nt->y;
