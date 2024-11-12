@@ -69,6 +69,11 @@ if(PLOT)
   link_libraries(PkgConfig::EPOXY)
 endif()
 
+option(pingdir "Path to ping" OFF)
+if(pingdir)
+  set("PINGDIR" "${pingdir}")
+endif()
+
 set(CONFIG "config.h")
 configure_file("${CONFIG}.cmake" "${CONFIG}" @ONLY)
 

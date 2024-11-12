@@ -1,3 +1,6 @@
+## 0.3.38
+- add build option to set ping dir (Guix, GnomeOS, etc)
+
 ## 0.3.37
 - add workaround for GSK4.16
 - add Alpine apk packaging template

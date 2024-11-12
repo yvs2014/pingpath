@@ -7,6 +7,7 @@
 #cmakedefine WITH_PLOT
 
 /* aux */
+#cmakedefine PINGDIR "@PINGDIR@"
 #cmakedefine HAVE_SECURE_GETENV
 #cmakedefine HAVE_LOCALTIME_R
 #cmakedefine HAVE_USELOCALE

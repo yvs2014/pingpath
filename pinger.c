@@ -24,8 +24,11 @@
 #include "tabs/ping.h"
 #include "series.h"
 
-#define PING "/bin/ping"
-#define SKIPNAME PING ": "
+#ifndef PINGDIR
+#define PINGDIR "/bin"
+#endif
+#define BINPING PINGDIR "/ping"
+#define SKIPNAME BINPING ": "
 
 #define RESET_ISTREAM(ins, buff, cb, data) g_input_stream_read_async(G_INPUT_STREAM(ins), \
   (buff), BUFF_SIZE, G_PRIORITY_DEFAULT, NULL, (GAsyncReadyCallback)(cb), (data))
@@ -452,7 +455,7 @@ static gboolean create_ping(int at, t_proc *proc) {
   if (!proc->err) proc->err = g_malloc0(BUFF_SIZE);
   if (!proc->out || !proc->err) { WARN("at=%d: g_malloc0() failed", at); return false; }
   const char* argv[MAX_ARGC] = {0}; int argc = 0;
-  argv[argc++] = PING;
+  argv[argc++] = BINPING;
   argv[argc++] = "-OD";
   if (!opts.dns) argv[argc++] = "-n";
   char sttl[16]; g_snprintf(sttl, sizeof(sttl), "-t%d", at + 1);       argv[argc++] = sttl;

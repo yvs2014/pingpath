@@ -7,6 +7,7 @@
 #mesondefine WITH_PLOT
 
 /* aux */
+#mesondefine PINGDIR
 #mesondefine HAVE_SECURE_GETENV
 #mesondefine HAVE_LOCALTIME_R
 #mesondefine HAVE_USELOCALE

@@ -13,6 +13,8 @@ name = meson.project_name()
 dnd  = get_option('DND')
 json = get_option('JSON')
 plot = get_option('PLOT')
+docdir  = get_option('docdir')
+pingdir = get_option('pingdir')
 summary({'DND': dnd, 'JSON': json, 'PLOT': plot}, bool_yn: true)
 config = configuration_data()
 
@@ -80,6 +82,10 @@ if plot
   deps += dependency('epoxy', required: true)
 endif
 
+if pingdir != ''
+  config.set_quoted('PINGDIR', pingdir)
+endif
+
 config_h = 'config.h'
 configure_file(input: config_h + '.meson', output: config_h, configuration: config)
 
@@ -94,8 +100,8 @@ install_data(asst / desk, rename: 'net.tools.' + desk, install_dir: datadir / 'a
 install_man(name + '.1')
 install_data(asst / 'icons' / name + '.svg', install_dir: datadir / 'icons/hicolor/scalable/apps')
 conf = name + '.conf'
-docdir = get_option('docdir') != '' ? get_option('docdir') : datadir / 'doc'
-install_data(conf + '.sample', rename: conf, install_dir: docdir / name / 'examples')
+datadoc = docdir != '' ? docdir : datadir / 'doc'
+install_data(conf + '.sample', rename: conf, install_dir: datadoc / name / 'examples')
 
 text_mode  =  ['--cycles', '1', '--recap', 't', 'localhost']
 test_args  = [['--version'], text_mode]

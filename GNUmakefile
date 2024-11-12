@@ -43,6 +43,10 @@ PKGS += cglm
 PKGS += epoxy
 endif
 
+ifdef PINGDIR
+CFLAGS += -DPINGDIR='"$(PINGDIR)"'
+endif
+
 ifndef NO_SECURE_GETENV
 CFLAGS += -DHAVE_SECURE_GETENV
 endif
