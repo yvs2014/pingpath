@@ -1,3 +1,6 @@
+## 0.3.41
+- notifier on the right side: a bit more universal
+
 ## 0.3.40
 - tuneup prev workaround
 

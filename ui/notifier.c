@@ -40,7 +40,7 @@ typedef struct notifier {
 #ifdef WITH_DND
   int dx, dy;
 #endif
-  gboolean onright;
+  gboolean movetoright;
 } t_notifier;
 
 #ifdef WITH_PLOT
@@ -61,7 +61,7 @@ static t_notifier notifier[] = {
     .content = nt_leg, .content_n = G_N_ELEMENTS(nt_leg) },
 #ifdef WITH_PLOT
   { .type = NT_ROTOR_NDX, .css = { .def = CSS_ROTOR, .col = CSS_PLOT_BG },
-    .x = 50, .y = 50, .onright = true },
+    .x = 50, .y = 50, .movetoright = true },
 #endif
 };
 #define NT_VALID_NDX(ndx) (((ndx) >= 0) && ((ndx) < G_N_ELEMENTS(notifier)))
@@ -113,25 +113,27 @@ static inline void pr_measure(GtkWidget *widget, const char *str) {
 }
 #endif
 
-static gboolean nt_ext_pos_cb(GtkOverlay *unused, GtkWidget *widget, GdkRectangle *rect, t_notifier *nt) {
-  const int maxsize = SHRT_MAX / 2;
-  gboolean okay = rect && nt && GTK_IS_WIDGET(widget);
-  if (okay) {
-    int width = 0;
-    gtk_widget_measure(widget, GTK_ORIENTATION_HORIZONTAL, -1, NULL, &width, NULL, NULL);
-    gtk_widget_measure(widget, GTK_ORIENTATION_VERTICAL,   -1, NULL, NULL,   NULL, NULL);
-    bool w_ok = (rect->width  > 0) && (rect->width  < maxsize);
-    bool h_ok = (rect->height > 0) && (rect->height < maxsize);
-    if (nt->onright/*once*/ && (width > 0) && w_ok) {
-      nt->x = rect->width - width - nt->x;
-      nt->onright = false;
-    }
-    rect->x = nt->x;
-    rect->y = nt->y;
-    if (!w_ok) rect->width  = maxsize;
-    if (!h_ok) rect->height = maxsize;
+static gboolean nt_ext_pos_cb(GtkWidget *over, GtkWidget *widget, GdkRectangle *rect, t_notifier *nt) {
+  if (!(GTK_IS_OVERLAY(over) && GTK_IS_WIDGET(widget) && rect && nt)) return false;;
+  GtkRequisition ch = {
+    .width  = gtk_widget_get_width(widget),
+    .height = gtk_widget_get_height(widget) };
+  if (ch.width  <= 0)
+    gtk_widget_measure(widget, GTK_ORIENTATION_HORIZONTAL, -1, NULL, &ch.width,  NULL, NULL);
+  if (ch.height <= 0)
+    gtk_widget_measure(widget, GTK_ORIENTATION_VERTICAL,   -1, NULL, &ch.height, NULL, NULL);
+  GtkRequisition ov = {
+    .width  = gtk_widget_get_width(over),
+    .height = gtk_widget_get_height(over) };
+  if (nt->movetoright/*once*/) {
+    nt->x = ov.width - ch.width - nt->x;
+    nt->movetoright = false;
   }
-  return okay;
+  rect->x = nt->x;
+  rect->y = nt->y;
+  rect->width  = ov.width;
+  rect->height = ov.height;
+  return true;
 }
 
 static void nt_add_lgelem(GtkWidget *widget, GtkWidget *box, int align, gboolean visible) {

@@ -1,3 +1,9 @@
+pingpath (0.3.41) mantic noble; urgency=low
+
+  * notifier on the right side: a bit more universal
+
+ -- yvs <VSYakovetsky@gmail.com>  Sat, 16 Nov 2024 01:28:54 +0200
+
 pingpath (0.3.40) mantic noble; urgency=low
 
   * tuneup prev workaround
