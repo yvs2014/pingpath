@@ -14,7 +14,7 @@
 #include "config.h"
 
 #define APPNAME "pingpath"
-#define VERSION "0.3.41"
+#define VERSION "0.3.42"
 
 #ifndef WITH_PLOT
 //#define WITH_PLOT // tmp

@@ -1,3 +1,6 @@
+## 0.3.42
+- notifier position: reassure again gtk_widget_measure() call
+
 ## 0.3.41
 - notifier on the right side: a bit more universal
 

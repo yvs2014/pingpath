@@ -115,13 +115,9 @@ static inline void pr_measure(GtkWidget *widget, const char *str) {
 
 static gboolean nt_ext_pos_cb(GtkWidget *over, GtkWidget *widget, GdkRectangle *rect, t_notifier *nt) {
   if (!(GTK_IS_OVERLAY(over) && GTK_IS_WIDGET(widget) && rect && nt)) return false;;
-  GtkRequisition ch = {
-    .width  = gtk_widget_get_width(widget),
-    .height = gtk_widget_get_height(widget) };
-  if (ch.width  <= 0)
-    gtk_widget_measure(widget, GTK_ORIENTATION_HORIZONTAL, -1, NULL, &ch.width,  NULL, NULL);
-  if (ch.height <= 0)
-    gtk_widget_measure(widget, GTK_ORIENTATION_VERTICAL,   -1, NULL, &ch.height, NULL, NULL);
+  GtkRequisition ch = {0};
+  gtk_widget_measure(widget, GTK_ORIENTATION_HORIZONTAL, -1, NULL, &ch.width,  NULL, NULL);
+  gtk_widget_measure(widget, GTK_ORIENTATION_VERTICAL,   -1, NULL, &ch.height, NULL, NULL);
   GtkRequisition ov = {
     .width  = gtk_widget_get_width(over),
     .height = gtk_widget_get_height(over) };

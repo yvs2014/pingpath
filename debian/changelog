@@ -1,3 +1,9 @@
+pingpath (0.3.42) mantic noble; urgency=low
+
+  * notifier position: reassure again gtk_widget_measure() call
+
+ -- yvs <VSYakovetsky@gmail.com>  Sat, 16 Nov 2024 02:20:42 +0200
+
 pingpath (0.3.41) mantic noble; urgency=low
 
   * notifier on the right side: a bit more universal
