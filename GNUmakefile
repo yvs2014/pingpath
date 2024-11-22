@@ -24,6 +24,7 @@ PKGS = gtk4
 
 CC ?= gcc
 CFLAGS += -Wall
+CFLAGS += -Wextra
 CFLAGS += -I.
 LIBS = -lm
 

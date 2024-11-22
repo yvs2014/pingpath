@@ -161,14 +161,16 @@ static gboolean pt_reorder_cells(t_listline *lines, int len, int sn, int dn, gbo
 
 #define PT_LAB_TEXT(lab) (GTK_IS_LABEL(lab) ? gtk_label_get_text(GTK_LABEL(lab)) : "")
 
-static GdkContentProvider* pt_hdr_dnd_drag(GtkDragSource *src, gdouble x, gdouble y, t_pt_dnd *dnd) {
+static GdkContentProvider* pt_hdr_dnd_drag(GtkDragSource *self G_GNUC_UNUSED,
+    gdouble x, gdouble y, t_pt_dnd *dnd)
+{
   if (!dnd) return NULL;
   dnd->dx = round(x); dnd->dy = round(y);
   DNDORD("DND-drag[%s]: dx,dy=(%d,%d)", PT_LAB_TEXT(dnd->w), dnd->dx, dnd->dy);
   return gdk_content_provider_new_typed(G_TYPE_POINTER, dnd);
 }
 
-static void pt_hdr_dnd_icon(GtkDragSource *src, GdkDrag *drag, t_pt_dnd *dnd) {
+static void pt_hdr_dnd_icon(GtkDragSource *src, GdkDrag *drag G_GNUC_UNUSED, t_pt_dnd *dnd) {
   if (!GTK_IS_DRAG_SOURCE(src) || !dnd || !GTK_IS_WIDGET(dnd->w)) return;
   GdkPaintable *icon = gtk_widget_paintable_new(dnd->w);
   if (!GDK_IS_PAINTABLE(icon)) return;
@@ -177,7 +179,9 @@ static void pt_hdr_dnd_icon(GtkDragSource *src, GdkDrag *drag, t_pt_dnd *dnd) {
   DNDORD("DND-icon[%s]: dx,dy=(%d,%d)", PT_LAB_TEXT(dnd->w), dnd->dx, dnd->dy);
 }
 
-static GdkDragAction pt_hdr_on_move(GtkDropTarget *dst, gdouble x, gdouble y, t_pt_dnd *ddnd) {
+static GdkDragAction pt_hdr_on_move(GtkDropTarget *dst,
+    gdouble x G_GNUC_UNUSED, gdouble y G_GNUC_UNUSED, t_pt_dnd *ddnd)
+{
   if (!GTK_IS_DROP_TARGET(dst) || !ddnd)
     return 0; // ENUMNOLINT
   const GValue *val = gtk_drop_target_get_value(dst);
@@ -185,8 +189,10 @@ static GdkDragAction pt_hdr_on_move(GtkDropTarget *dst, gdouble x, gdouble y, t_
   return (sdnd && (sdnd != ddnd) && (sdnd->desc == ddnd->desc)) ? GDK_ACTION_COPY : 0; // ENUMNOLINT
 }
 
-static gboolean pt_hdr_on_drop(GtkDropTarget *dst, const GValue *val, gdouble x, gdouble y, t_pt_dnd *ddnd) {
-  t_pt_dnd *sdnd = (val && G_VALUE_HOLDS_POINTER(val)) ? g_value_get_pointer(val) : NULL;
+static gboolean pt_hdr_on_drop(GtkDropTarget *self G_GNUC_UNUSED, const GValue *value,
+    gdouble x, gdouble y, t_pt_dnd *ddnd)
+{
+  t_pt_dnd *sdnd = (value && G_VALUE_HOLDS_POINTER(value)) ? g_value_get_pointer(value) : NULL;
   if (!sdnd || !ddnd || !ddnd->desc || !ddnd->hdr || !ddnd->body) return false;
   int sn = pt_box_wndx(ddnd->b, sdnd->w), dn = pt_box_wndx(ddnd->b, ddnd->w);
   if ((sn < 0) || (dn < 0) || (sn == dn)) return false;
@@ -304,13 +310,13 @@ static GtkWidget* pt_make_info(void) {
 
 static GtkWidget* pt_make_dyn(void) {
   GtkSizeGroup* group[PE_MAX];
-  for (int i = 0; i < G_N_ELEMENTS(group); i++) {
+  for (unsigned i = 0; i < G_N_ELEMENTS(group); i++) {
     group[i] = gtk_size_group_new(GTK_SIZE_GROUP_HORIZONTAL); g_return_val_if_fail(group[i], NULL); }
   TAB_ELEM_WITH(pingtab.hdr, pt_make_dynlist(listbox.hdrlines, HDRLINES, pingelem, listbox.bodylines, group),
     NULL, CSS_BGROUND, NULL);
   gtk_box_append(GTK_BOX(pingtab.tab.w), pingtab.hdr.w);
   GtkWidget *dyn = pt_make_dynlist(listbox.bodylines, MAXTTL, NULL, NULL, group);
-  for (int i = 0; i < G_N_ELEMENTS(group); i++) if (group[i]) g_object_unref(group[i]);
+  for (unsigned i = 0; i < G_N_ELEMENTS(group); i++) if (group[i]) g_object_unref(group[i]);
   return dyn;
 }
 

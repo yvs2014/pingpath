@@ -308,7 +308,7 @@ static GLuint plot_compile_shader(const GLchar* src, GLenum type, GError **err) 
 }
 
 static void plot_del_res_vao(t_plot_res *res) {
-  if (res) for (int i = 0; i < G_N_ELEMENTS(res->vo); i++) {
+  if (res) for (unsigned i = 0; i < G_N_ELEMENTS(res->vo); i++) {
     GLuint *pvao = &(res->vo[i].vao);
     if (*pvao > 0) { glDeleteVertexArrays(1, pvao); *pvao = 0; }
   }
@@ -317,7 +317,7 @@ static void plot_del_res_vao(t_plot_res *res) {
 static void plot_del_vbo(GLuint *pid) { if (pid && *pid) { glDeleteBuffers(1, pid); *pid = 0; }}
 
 static void plot_del_res_vbo_dbo(t_plot_res *res) {
-  if (res) for (int i = 0; i < G_N_ELEMENTS(res->vo); i++) {
+  if (res) for (unsigned i = 0; i < G_N_ELEMENTS(res->vo); i++) {
     plot_del_vbo(&(res->vo[i].vbo.id));
     plot_del_vbo(&(res->vo[i].dbo.main.id));
     plot_del_vbo(&(res->vo[i].dbo.ext.id));
@@ -399,7 +399,7 @@ static gboolean plot_res_init(t_plot_res *res, GError **err) {
 #define PLOT_EXT_ATTR(prog) { PLOT_BASE_ATTR(prog); PLOT_GET_FORM(prog, colo2, PLOT_COL2); }
   if (!res) return false;
   if (!plot_compile_res(res, err)) return false;
-  for (int i = 0; i < G_N_ELEMENTS(res->vo); i++) {
+  for (unsigned i = 0; i < G_N_ELEMENTS(res->vo); i++) {
     GLuint *pvao = &(res->vo[i].vao);
     glGenVertexArrays(1, pvao);
     if (*pvao) continue;
@@ -483,7 +483,7 @@ static void area_init(GtkGLArea *area, t_plot_res *res) {
   plot_res_ready = true;
 }
 
-static void area_free(GtkGLArea *unused, t_plot_res *res) { plot_res_free(res); }
+static void area_free(GtkWidget *self G_GNUC_UNUSED, t_plot_res *res) { plot_res_free(res); }
 
 static void plot_draw_elems(GLuint vao, t_plot_idc buff, GLint vtr,
     const vec4 colo1, GLint loc1, const vec4 colo2, GLint loc2, const mat4 mat, GLenum mode) {

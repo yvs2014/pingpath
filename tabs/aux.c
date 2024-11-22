@@ -42,7 +42,7 @@ gboolean basetab_init(t_tab *tab, GtkWidget* (*make_dyn)(void), GtkWidget* (*mak
   return true;
 }
 
-gboolean drawtab_init(t_tab *tab, const char *color, GSList *layers, int ndx) {
+gboolean drawtab_init(t_tab *tab, const char *color, GSList *layers, unsigned ndx) {
   if (!tab || !layers) return false;
   TAB_ELEM_INIT(tab->lab, gtk_box_new(GTK_ORIENTATION_VERTICAL, 2), CSS_PAD, NULL);
   TAB_ELEM_INIT(tab->dyn, gtk_box_new(GTK_ORIENTATION_VERTICAL, 0), NULL,    color);
@@ -77,7 +77,7 @@ void tab_setup(t_tab *tab) {
     }
   }
   t_tab_widget tab_widget[] = {tab->hdr, tab->dyn, tab->info};
-  for (int i = 0; i < G_N_ELEMENTS(tab_widget); i++)
+  for (unsigned i = 0; i < G_N_ELEMENTS(tab_widget); i++)
     if (GTK_IS_WIDGET(tab_widget[i].w))
       gtk_widget_set_can_focus(tab_widget[i].w, false);
   if (style_loaded && tab->tab.css && GTK_IS_WIDGET(tab->tab.w))
@@ -87,7 +87,7 @@ void tab_setup(t_tab *tab) {
 void tab_color(t_tab *tab) {
   if (!style_loaded || !tab) return;
   t_tab_widget tab_widget[] = {tab->hdr, tab->dyn, tab->info};
-  for (int i = 0; i < G_N_ELEMENTS(tab_widget); i++)
+  for (unsigned i = 0; i < G_N_ELEMENTS(tab_widget); i++)
     if (tab_widget[i].col && GTK_IS_WIDGET(tab_widget[i].w))
       tab_aux_reload_css(&tab_widget[i], tab_widget[i].col);
   if (tab->tab.col && GTK_IS_WIDGET(tab->tab.w))
@@ -95,7 +95,7 @@ void tab_color(t_tab *tab) {
 }
 
 void tab_reload_theme(void) {
-  for (int i = 0; i < G_N_ELEMENTS(nb_tabs); i++) if (nb_tabs[i]) tab_color(nb_tabs[i]);
+  for (unsigned i = 0; i < G_N_ELEMENTS(nb_tabs); i++) if (nb_tabs[i]) tab_color(nb_tabs[i]);
 }
 
 inline gboolean need_drawing(void) {

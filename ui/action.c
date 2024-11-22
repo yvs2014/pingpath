@@ -156,14 +156,18 @@ static const char* accl_sa_label(int ndx) {
   return "";
 }
 
-static void on_startstop(GSimpleAction *action, GVariant *var, void *unused) {
+static void on_startstop(GSimpleAction *action G_GNUC_UNUSED,
+    GVariant *parameter G_GNUC_UNUSED, gpointer user_data G_GNUC_UNUSED)
+{
   if (!opts.target) return;
   MI_LOG(MENU_SA_START, menu_sa_label);
   if (stat_timer) pinger_stop("by request"); else pinger_start();
   appbar_update();
 }
 
-static void on_pauseresume(GSimpleAction *action, GVariant *var, void *unused) {
+static void on_pauseresume(GSimpleAction *action G_GNUC_UNUSED,
+    GVariant *parameter G_GNUC_UNUSED, gpointer user_data G_GNUC_UNUSED)
+{
   MI_LOG(MENU_SA_PAUSE, menu_sa_label);
   pinger_state.pause = !pinger_state.pause;
   action_update();
@@ -174,19 +178,22 @@ static void on_pauseresume(GSimpleAction *action, GVariant *var, void *unused) {
   }
 }
 
-static void on_reset(GSimpleAction *action, GVariant *var, void *unused) {
+static void on_reset(GSimpleAction *action G_GNUC_UNUSED,
+    GVariant *parameter G_GNUC_UNUSED, gpointer user_data G_GNUC_UNUSED)
+{
   MI_LOG(MENU_SA_RESET, menu_sa_label);
   pinger_clear_data(false);
 }
 
-static void hide_help_cb(GtkWidget *button, GtkWidget *dialog) {
+static void on_hide_help(GtkButton *self G_GNUC_UNUSED, GtkWidget *dialog) {
   if (GTK_IS_WIDGET(dialog)) gtk_widget_set_visible(dialog, false);
 }
 
-static gboolean help_dialog_cb(GtkEventControllerKey *eck, unsigned val, unsigned code, unsigned mod, GtkButton *btn) {
-  if ((val != GDK_KEY_Escape) || (mod & GDK_MODIFIER_MASK) || !GTK_IS_BUTTON(btn)) return false;
-  g_signal_emit_by_name(btn, EV_CLICK);
-  return true;
+static void help_on_escape(GtkEventControllerKey *self G_GNUC_UNUSED,
+    guint keyval, guint keycode G_GNUC_UNUSED, GdkModifierType state, GtkButton *button)
+{
+  if ((keyval == GDK_KEY_Escape) && !(state & GDK_MODIFIER_MASK) && GTK_IS_BUTTON(button))
+    g_signal_emit_by_name(button, EV_CLICK);
 }
 
 static gboolean show_help_dialog(GtkWidget *win) {
@@ -250,7 +257,7 @@ static inline char* get_help_message(void) {
 #undef SPANHDR
 #undef SPANOPT
 #undef SPANSUB
-  char* list[8] = {0}; int ndx = 0;
+  char* list[8] = {0}; unsigned ndx = 0;
 #define HELP_MESG(cond, mesg) { if ((cond) && (ndx < G_N_ELEMENTS(list))) list[ndx++] = (mesg); }
   HELP_MESG(true,       prolog);
   HELP_MESG(opts.graph, prolog_graph);
@@ -266,7 +273,7 @@ static inline char* get_help_message(void) {
 #undef HELP_MESG
 }
 
-static void on_help(GSimpleAction *action, GVariant *var, GtkWindow *win) {
+static void on_help(GSimpleAction *action G_GNUC_UNUSED, GVariant *parameter G_GNUC_UNUSED, GtkWindow *win) {
   static t_help_dialog_in help_dialog;
   if (!GTK_IS_WINDOW(win)) return;
   if (show_help_dialog(help_dialog.win)) return;
@@ -306,11 +313,11 @@ static void on_help(GSimpleAction *action, GVariant *var, GtkWindow *win) {
   if (!GTK_IS_BUTTON(help_dialog.btn)) {
     help_dialog.btn = gtk_button_new_with_label(OKAY_BUTTON);
     g_return_if_fail(GTK_IS_BUTTON(help_dialog.btn));
-    g_signal_connect(help_dialog.btn, EV_CLICK, G_CALLBACK(hide_help_cb), help_dialog.win);
+    g_signal_connect(help_dialog.btn, EV_CLICK, G_CALLBACK(on_hide_help), help_dialog.win);
     gtk_box_append(GTK_BOX(help_dialog.box), help_dialog.btn);
     GtkEventController *kcntrl = gtk_event_controller_key_new();
     if (GTK_IS_EVENT_CONTROLLER(kcntrl)) { // optional
-      g_signal_connect(kcntrl, EV_KEY, G_CALLBACK(help_dialog_cb), help_dialog.btn);
+      g_signal_connect(kcntrl, EV_KEY, G_CALLBACK(help_on_escape), help_dialog.btn);
       gtk_widget_add_controller(help_dialog.win, kcntrl);
     }
   }
@@ -327,18 +334,21 @@ static void on_help(GSimpleAction *action, GVariant *var, GtkWindow *win) {
   show_help_dialog(help_dialog.win);
 }
 
-static void on_quit(GSimpleAction *action, GVariant *var, GtkWindow *win) {
+static void on_quit(GSimpleAction *action G_GNUC_UNUSED, GVariant *parameter G_GNUC_UNUSED, GtkWindow *win) {
   if (GTK_IS_WINDOW(win)) { MA_LOG(MENU_SA_QUIT, menu_sa_label); gtk_window_close(win); }
 }
 
-static void on_legend(GSimpleAction *action, GVariant *var, void *unused) {
+static void on_legend(GSimpleAction *action G_GNUC_UNUSED,
+    GVariant *parameter G_GNUC_UNUSED, gpointer user_data G_GNUC_UNUSED) {
   MA_LOG(ACCL_SA_LGND, accl_sa_label);
   opts.legend = !opts.legend;
   option_legend();
 }
 
 #ifdef WITH_PLOT
-void on_rotation(GSimpleAction *action, GVariant *var, t_kb_plot_aux *data) {
+void on_rotation(GSimpleAction *action G_GNUC_UNUSED,
+    GVariant *parameter G_GNUC_UNUSED, t_kb_plot_aux *data)
+{
   if (!data || !is_tab_that(TAB_PLOT_NDX)) return;
   t_lg_space lg = opts.rglob ? data->global : data->local;
   if (!lg.aux || !lg.pval) return;
@@ -354,7 +364,9 @@ void on_rotation(GSimpleAction *action, GVariant *var, t_kb_plot_aux *data) {
   set_rotor_n_redraw(step, lg.rev, lg.aux->pn);
 }
 
-void on_scale(GSimpleAction *action, GVariant *var, t_kb_plot_aux *data) {
+void on_scale(GSimpleAction *action G_GNUC_UNUSED,
+    GVariant *parameter G_GNUC_UNUSED, t_kb_plot_aux *data)
+{
   if (!data || !is_tab_that(TAB_PLOT_NDX)) return;
   int step = (data->label == ACCL_SA_IN) ? -1 : ((data->label == ACCL_SA_OUT) ? 1 : 0);
   const t_ent_spn_aux *aux = data->global.aux;
@@ -396,14 +408,14 @@ static void map_sa_entries(GActionMap *map, GActionEntry entr[], t_sa_desc desc[
   for (int i = 0; i < n; i++) desc[i].sa = G_SIMPLE_ACTION(g_action_map_lookup_action(map, entr[i].name));
 }
 
-#define LOOP_SET_ACCELS(desc) { for (int i = 0; i < G_N_ELEMENTS(desc); i++) \
+#define LOOP_SET_ACCELS(desc) { for (unsigned i = 0; i < G_N_ELEMENTS(desc); i++) \
   gtk_application_set_accels_for_action(app, (desc)[i].name, (desc)[i].shortcut); }
 
 static gboolean create_action_menu(GtkApplication *app, GtkWidget *win, GtkWidget *bar) {
   g_return_val_if_fail(GTK_IS_APPLICATION(app) && GTK_IS_WINDOW(win) && GTK_IS_HEADER_BAR(bar), false);
   GActionMap *map = G_ACTION_MAP(app);
   map_sa_entries(map, menu_sa_entries, menu_sa_desc, G_N_ELEMENTS(menu_sa_entries), win);
-  for (int i = 0; i < G_N_ELEMENTS(accl_sa_entries); i++)
+  for (unsigned i = 0; i < G_N_ELEMENTS(accl_sa_entries); i++)
     map_sa_entries(map, &accl_sa_entries[i], &accl_sa_desc[i], 1, accl_sa_desc[i].data);
   if (!(action_menu = action_menu_init(bar))) return false;
   LOOP_SET_ACCELS(menu_sa_desc);
@@ -425,7 +437,7 @@ static gboolean create_action_menu(GtkApplication *app, GtkWidget *win, GtkWidge
 static void action_update_internal(GMenu *menu) {
   if (G_IS_MENU(menu)) {
     g_menu_remove_all(menu);
-    for (int i = 0; i < G_N_ELEMENTS(menu_sa_desc); i++) {
+    for (unsigned i = 0; i < G_N_ELEMENTS(menu_sa_desc); i++) {
       GMenuItem *item = g_menu_item_new(menu_sa_label(i), menu_sa_desc[i].name);
       if (item) { g_menu_append_item(menu, item); g_object_unref(item); }}}
   gboolean run = pinger_state.run, pause = pinger_state.pause;

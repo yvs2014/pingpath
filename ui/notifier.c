@@ -64,7 +64,6 @@ static t_notifier notifier[] = {
     .x = 50, .y = 50, .movetoright = true },
 #endif
 };
-#define NT_VALID_NDX(ndx) (((ndx) >= 0) && ((ndx) < G_N_ELEMENTS(notifier)))
 
 //
 
@@ -157,7 +156,9 @@ static char* nb_lgnd_nth_state(int nth, gboolean enable) {
   return nb_lgnd_state_buff;
 }
 
-static void nt_lgnd_row_cb(GtkListBox* self, GtkListBoxRow* row, void *data) {
+static void nt_lgnd_row_cb(GtkListBox *self G_GNUC_UNUSED,
+    GtkListBoxRow *row, gpointer user_data G_GNUC_UNUSED)
+{
   if (GTK_IS_LIST_BOX_ROW(row)) {
     GtkWidget *box = gtk_list_box_row_get_child(row);
     if (GTK_IS_BOX(box)) {
@@ -183,7 +184,9 @@ static void nt_lgnd_row_cb(GtkListBox* self, GtkListBoxRow* row, void *data) {
 }
 
 #ifdef WITH_DND
-static GdkContentProvider* nt_dnd_drag(GtkDragSource *unused, gdouble x, gdouble y, t_notifier *nt) {
+static GdkContentProvider* nt_dnd_drag(GtkDragSource *self G_GNUC_UNUSED,
+    gdouble x, gdouble y, t_notifier *nt)
+{
   GdkContentProvider *prov = NULL;
   if (nt) {
     nt->dx = round(x); nt->dy = round(y);
@@ -192,7 +195,7 @@ static GdkContentProvider* nt_dnd_drag(GtkDragSource *unused, gdouble x, gdouble
   return prov;
 }
 
-static void nt_dnd_icon(GtkDragSource *src, GdkDrag *drag, t_notifier *nt) {
+static void nt_dnd_icon(GtkDragSource *src, GdkDrag *drag G_GNUC_UNUSED, t_notifier *nt) {
   if (GTK_IS_DRAG_SOURCE(src) && nt && GTK_IS_WIDGET(nt->box)) {
     GdkPaintable *icon = gtk_widget_paintable_new(nt->box);
     if (icon) {
@@ -201,10 +204,12 @@ static void nt_dnd_icon(GtkDragSource *src, GdkDrag *drag, t_notifier *nt) {
       DNDORD("DND-icon: dx=%d dy=%d", nt->dx, nt->dy); }}
 }
 
-static gboolean nt_on_drop(GtkDropTarget *unused, const GValue *val, gdouble x, gdouble y, t_notifier *receiver) {
-  gboolean okay = receiver && val && G_VALUE_HOLDS_POINTER(val);
+static gboolean nt_on_drop(GtkDropTarget *self G_GNUC_UNUSED, const GValue *value,
+    gdouble x, gdouble y, t_notifier *receiver)
+{
+  gboolean okay = receiver && value && G_VALUE_HOLDS_POINTER(value);
   if (okay) {
-    t_notifier *sender = g_value_get_pointer(val);
+    t_notifier *sender = g_value_get_pointer(value);
     okay = sender && (sender == receiver);
     if (okay) {
       int sx = round(x) - sender->dx, sy = round(y) - sender->dy;
@@ -268,7 +273,7 @@ static void nt_init_legend(GtkWidget *inbox, GtkWidget *over, t_notifier *nt) {
   g_signal_connect(inbox, EV_ROW_ACTIVE, G_CALLBACK(nt_lgnd_row_cb), NULL);
   if (style_loaded) nt_reload_css(inbox, CSS_GRAPH_BG);
   GtkSizeGroup* group[GE_MAX];
-  for (int i = 0; i < G_N_ELEMENTS(group); i++)
+  for (unsigned i = 0; i < G_N_ELEMENTS(group); i++)
     group[i] = gtk_size_group_new(GTK_SIZE_GROUP_HORIZONTAL);
   t_nt_leg *leg = nt->content ? nt->content : NULL; int n = nt->content_n;
   for (int i = 0; leg && (i < n); i++, leg++) {
@@ -280,14 +285,16 @@ static void nt_init_legend(GtkWidget *inbox, GtkWidget *over, t_notifier *nt) {
       if (leg->row) nt_make_leg_row(GTK_LIST_BOX(inbox), group, i, leg, nt->css.col);
     }
   }
-  for (int i = 0; i < G_N_ELEMENTS(group); i++) if (group[i]) g_object_unref(group[i]);
+  for (unsigned i = 0; i < G_N_ELEMENTS(group); i++) if (group[i]) g_object_unref(group[i]);
 #ifdef WITH_DND
   nt_init_dnd_over(inbox, over, nt);
 #endif
 }
 
 #ifdef WITH_PLOT
-static void nt_rotor_cb(GtkButton *unused, t_kb_plot_aux *aux) { if (aux) on_rotation(NULL, NULL, aux); }
+static void nt_rotor_cb(GtkButton *self G_GNUC_UNUSED, t_kb_plot_aux *aux) {
+  if (aux) on_rotation(NULL, NULL, aux);
+}
 
 static void nt_init_rotor(GtkWidget *inbox, GtkWidget *over, t_notifier *nt) {
   if (!GTK_IS_BOX(inbox)) return;
@@ -307,13 +314,13 @@ static void nt_init_rotor(GtkWidget *inbox, GtkWidget *over, t_notifier *nt) {
     {&kb_plot_aux[ACCL_SA_PGDN], &kb_plot_aux[ACCL_SA_DOWN], &kb_plot_aux[ACCL_SA_PGUP] },
   };
   GtkSizeGroup* group[G_N_ELEMENTS(rotor_cntrl[0])];
-  for (int i = 0; i < G_N_ELEMENTS(group); i++)
+  for (unsigned i = 0; i < G_N_ELEMENTS(group); i++)
     group[i] = gtk_size_group_new(GTK_SIZE_GROUP_HORIZONTAL);
-  for (int i = 0; i < G_N_ELEMENTS(rotor_cntrl); i++) {
+  for (unsigned i = 0; i < G_N_ELEMENTS(rotor_cntrl); i++) {
     GtkWidget *row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     if (row) {
       gtk_box_append(GTK_BOX(inbox), row);
-      for (int j = 0; j < G_N_ELEMENTS(rotor_cntrl[j]); j++) {
+      for (unsigned j = 0; j < G_N_ELEMENTS(rotor_cntrl[j]); j++) {
         t_rotor_arrow *arrow = rotor_cntrl[i][j]; GtkWidget *elem = NULL;
         if (arrow) {
           const char *ico = is_sysicon(arrow->ico);
@@ -329,7 +336,7 @@ static void nt_init_rotor(GtkWidget *inbox, GtkWidget *over, t_notifier *nt) {
       }
     }
   }
-  for (int i = 0; i < G_N_ELEMENTS(group); i++) if (group[i]) g_object_unref(group[i]);
+  for (unsigned i = 0; i < G_N_ELEMENTS(group); i++) if (group[i]) g_object_unref(group[i]);
 #ifdef WITH_DND
   nt_init_dnd_over(inbox, over, nt);
 #endif
@@ -406,8 +413,8 @@ static void nt_fill_legend_elem(GtkWidget* label, const char *f1, const char *f2
 // pub
 //
 
-inline GtkWidget* notifier_init(int ndx, GtkWidget *base) {
-  return NT_VALID_NDX(ndx) ? nt_init(base, &notifier[ndx]) : NULL; }
+inline GtkWidget* notifier_init(unsigned ndx, GtkWidget *base) {
+  return (ndx < G_N_ELEMENTS(notifier)) ? nt_init(base, &notifier[ndx]) : NULL; }
 
 void notifier_inform(const char *fmt, ...) {
   va_list ap;
@@ -417,10 +424,10 @@ void notifier_inform(const char *fmt, ...) {
   va_end(ap);
 }
 
-inline gboolean notifier_get_visible(int ndx) {
-  return NT_VALID_NDX(ndx) ? notifier[ndx].visible : false; }
-inline void notifier_set_visible(int ndx, gboolean visible) {
-  if (NT_VALID_NDX(ndx)) nt_set_visible(&notifier[ndx], visible); }
+inline gboolean notifier_get_visible(unsigned ndx) {
+  return (ndx < G_N_ELEMENTS(notifier)) ? notifier[ndx].visible : false; }
+inline void notifier_set_visible(unsigned ndx, gboolean visible) {
+  if (ndx < G_N_ELEMENTS(notifier)) nt_set_visible(&notifier[ndx], visible); }
 
 void notifier_legend_vis_rows(int upto) {
   static int nt_lgnd_vis_rows;

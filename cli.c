@@ -302,7 +302,8 @@ static char* reorder_patt(const char *str, const char *patt) {
 static void reorder_elems(const char *str, t_elem_desc *desc) {
   if (!str || !desc || !desc->elems || !desc->patt) return;
   char *order = reorder_patt(str, desc->patt);
-  int len = desc->mm.max - desc->mm.min + 1;
+  int num = desc->mm.max - desc->mm.min + 1;
+  size_t len = (num > 0) ? num : 0;
   type2ndx_fn type2ndx = desc->t2n;
   if (type2ndx && order && (len > 0) && (strnlen(order, len + 1) == len)) {
     t_type_elem *elems = &desc->elems[desc->mm.min];
@@ -323,7 +324,7 @@ static void reorder_elems(const char *str, t_elem_desc *desc) {
   g_free(order);
 }
 
-static char* cli_char_opts(int type, const char *value, int cat, t_elem_desc *desc, int max, const char *hdr) {
+static char* cli_char_opts(int type, const char *value, unsigned cat, t_elem_desc *desc, int max, const char *hdr) {
   if (!desc || !desc->elems) return NULL;
   CLI_REORDER_PRINT_ELEMS(desc->elems, max);
   clean_elems(type);
@@ -336,7 +337,7 @@ static char* cli_char_opts(int type, const char *value, int cat, t_elem_desc *de
 #define RECAP_TYPE_EXPAND(type) (((type) == 't') ? "text" : (((type) == 'c') ? "csv" : \
  ((g_ascii_tolower(type) == 'j') ? "json" : "unknown")))
 
-static gboolean cli_opt_elem(const char *name, const char *value, GError **error, int cat) {
+static gboolean cli_opt_elem(const char *name, const char *value, GError **error, unsigned cat) {
   if (!value) return false;
   char *str = NULL;
   switch (cat) {
@@ -370,28 +371,28 @@ static gboolean cli_opt_elem(const char *name, const char *value, GError **error
   CLI_SET_ERR; return false;
 }
 
-static gboolean cli_opt_p(const char *name, const char *value, void *unused, GError **error) {
+static gboolean cli_opt_p(const char *name, const char *value, t_opts *opts G_GNUC_UNUSED, GError **error) {
   return cli_opt_elem(name, value, error, OPT_TYPE_PAD);
 }
 
-static gboolean cli_opt_I(const char *name, const char *value, void *unused, GError **error) {
+static gboolean cli_opt_I(const char *name, const char *value, t_opts *opts G_GNUC_UNUSED, GError **error) {
   return cli_opt_elem(name, value, error, OPT_TYPE_INFO);
 }
 
-static gboolean cli_opt_S(const char *name, const char *value, void *unused, GError **error) {
+static gboolean cli_opt_S(const char *name, const char *value, t_opts *opts G_GNUC_UNUSED, GError **error) {
   return cli_opt_elem(name, value, error, OPT_TYPE_STAT);
 }
 
-static gboolean cli_opt_L(const char *name, const char *value, void *unused, GError **error) {
+static gboolean cli_opt_L(const char *name, const char *value, t_opts *opts G_GNUC_UNUSED, GError **error) {
   return cli_opt_elem(name, value, error, OPT_TYPE_GRLG);
 }
 
-static gboolean cli_opt_G(const char *name, const char *value, void *unused, GError **error) {
+static gboolean cli_opt_G(const char *name, const char *value, t_opts *opts G_GNUC_UNUSED, GError **error) {
   return cli_opt_elem(name, value, error, OPT_TYPE_GREX);
 }
 
 #ifdef WITH_PLOT
-static gboolean cli_opt_P(const char *name, const char *value, void *unused, GError **error) {
+static gboolean cli_opt_P(const char *name, const char *value, t_opts *opts G_GNUC_UNUSED, GError **error) {
   return cli_opt_elem(name, value, error, OPT_TYPE_PLEL);
 }
 #endif
@@ -417,11 +418,11 @@ static gboolean cli_opt_T(const char *name, const char *value, t_opts *opts, GEr
   return okay;
 }
 
-static gboolean cli_opt_r(const char *name, const char *value, void *unused, GError **error) {
+static gboolean cli_opt_r(const char *name, const char *value, t_opts *opts G_GNUC_UNUSED, GError **error) {
   return cli_opt_elem(name, value, error, OPT_TYPE_RECAP);
 }
 
-static gboolean cli_opt_A(const char *name, const char *value, void *unused, GError **error) {
+static gboolean cli_opt_A(const char *name, const char *value, t_opts *opts G_GNUC_UNUSED, GError **error) {
   int aopt = activetab + 1;
   gboolean valid = cli_int_opt(name, value, error, OPT_ATAB_HDR, ATAB_MIN + 1, ATAB_MAX + 1, &aopt);
   if (valid) activetab = aopt - 1;

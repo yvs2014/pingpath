@@ -44,7 +44,7 @@ static gboolean start_datetime(GtkWidget *bar) {
   return true;
 }
 
-static void target_cb(GtkWidget *widget, GtkWidget *entry) {
+static void on_target(GtkEntry *entry G_GNUC_UNUSED, gpointer user_data G_GNUC_UNUSED) {
   g_return_if_fail(GTK_IS_EDITABLE(entry));
   char *target = parser_valid_target(gtk_editable_get_text(GTK_EDITABLE(entry)));
   if (target) {
@@ -64,7 +64,7 @@ static gboolean add_target_input(GtkWidget *bar) {
   gtk_editable_set_editable(GTK_EDITABLE(entry), true);
   gtk_editable_set_max_width_chars(GTK_EDITABLE(entry), g_utf8_strlen(hint, MAXHOSTNAME) - 5);
   if (opts.target) gtk_editable_set_text(GTK_EDITABLE(entry), opts.target);
-  g_signal_connect(entry, EV_ACTIVE, G_CALLBACK(target_cb), entry);
+  g_signal_connect(entry, EV_ACTIVE, G_CALLBACK(on_target), NULL);
   gtk_header_bar_pack_start(GTK_HEADER_BAR(bar), entry);
   return true;
 }

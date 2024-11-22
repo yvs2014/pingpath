@@ -21,6 +21,7 @@ set(SRCS "${PROJECT_NAME}.c" common.c
 
 # mandatory
 add_compile_options("-Wall")
+add_compile_options("-Wextra")
 check_library_exists(c sqrt "${CMAKE_LIBRARY_PATH}" HAVE_SQRT_IN_C)
 if(NOT HAVE_SQRT_IN_C)
   check_library_exists(m sqrt "${CMAKE_LIBRARY_PATH}" HAVE_SQRT_IN_M)

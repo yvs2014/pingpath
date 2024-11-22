@@ -250,11 +250,11 @@ gboolean parser_init(void) {
   hostname_char0_regex = compile_regex("^[" DIGIT_OR_LETTER ":]", 0);
   hostname_chars_regex = compile_regex("^[" DIGIT_OR_LETTER ":.-]+$", 0);
   gboolean okay = multiline_regex && hostname_char0_regex && hostname_chars_regex;
-  for (int i = 0; i < G_N_ELEMENTS(regexes); i++) {
+  for (unsigned i = 0; i < G_N_ELEMENTS(regexes); i++) {
     regexes[i].rx.regex = compile_regex(regexes[i].rx.pattern, 0);
     if (!regexes[i].rx.regex) okay = false;
   }
-  for (int i = 0; i < G_N_ELEMENTS(str_rx); i++) {
+  for (unsigned i = 0; i < G_N_ELEMENTS(str_rx); i++) {
     str_rx[i].regex = compile_regex(str_rx[i].pattern, 0);
     if (!str_rx[i].regex) okay = false;
   }
@@ -285,9 +285,9 @@ gboolean parser_mmint(const char *str, const char *option, t_minmax minmax, int 
   return okay;
 }
 
-char* parser_str(const char *str, const char *option, int cat) {
+char* parser_str(const char *str, const char *option, unsigned cat) {
   const int PARSE_MAX_CHARS = 128;
-  if ((cat >= 0) && (cat < G_N_ELEMENTS(str_rx))) {
+  if (cat < G_N_ELEMENTS(str_rx)) {
     char *buff = g_strndup(str, PARSE_MAX_CHARS);
     if (buff) {
       char *val = g_strdup(g_strstrip(buff)); g_free(buff);
@@ -318,7 +318,7 @@ char* parser_valid_target(const char *target) {
 void parser_whois(char *buff, t_whois *welem) {
   // if there are multiple sources (despite -m query), take the last tag and mark it with '*'
   static const char skip_as_prfx[] = "AS";
-  static int as_prfx_len = sizeof(skip_as_prfx) - 1;
+  static unsigned as_prfx_len = sizeof(skip_as_prfx) - 1;
   if (!buff || !welem) return;
   memset(welem, 0, sizeof(*welem)); // BUFFNOLINT
   char *str = NULL;
@@ -371,16 +371,16 @@ gboolean parser_range(char *range, char delim, const char *option, t_minmax *min
 }
 
 #ifdef WITH_PLOT
-gboolean parser_ivec(char *range, char delim, const char *option, int *dest, int max) {
+gboolean parser_ivec(char *range, char delim, const char *option, int *dest, unsigned max) {
   if (!range || (max <= 0)) return false;
   const char delims[] = { delim, 0 };
   char **abcs = g_strsplit(range, delims, max);
-  int val[max]; for (int i = 0; i < max; i++) val[i] = INT_MIN;
+  int val[max]; for (unsigned i = 0; i < max; i++) val[i] = INT_MIN;
   gboolean okay = true;
-  if (abcs) for (int i = 0; abcs[i] && (i < G_N_ELEMENTS(val)); i++)
+  if (abcs) for (unsigned i = 0; abcs[i] && (i < G_N_ELEMENTS(val)); i++)
     okay &= parser_valint(abcs[i], &val[i], option);
   g_strfreev(abcs);
-  if (okay) for (int i = 0; i < max; i++) dest[i] = val[i];
+  if (okay) for (unsigned i = 0; i < max; i++) dest[i] = val[i];
   return okay;
 }
 #endif

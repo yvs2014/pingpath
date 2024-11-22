@@ -47,7 +47,9 @@ static void cb_popover_show(GtkWidget *popover, double x, double y) {
   gtk_popover_popup(GTK_POPOVER(popover));
 }
 
-static void cb_on_press(GtkGestureClick *gest, int cnt, double x, double y, GtkWidget *pop) {
+static void cb_on_press(GtkGestureClick *gest, gint n_press G_GNUC_UNUSED,
+    gdouble x, gdouble y, GtkWidget *pop)
+{
   if (!GTK_IS_GESTURE_CLICK(gest) || !GTK_IS_POPOVER(pop)) return;
   GdkEvent *ev = gtk_gesture_get_last_event(GTK_GESTURE(gest),
     gtk_gesture_single_get_current_sequence(GTK_GESTURE_SINGLE(gest)));
@@ -68,7 +70,9 @@ static gboolean any_list_sel(t_tab *tab) {
   return false;
 }
 
-static void cb_on_sel(GtkListBox* list, t_tab *tab) { if (tab) { tab->sel = any_list_sel(tab); cb_menu_update(tab); }}
+static void cb_on_sel(GtkListBox *self G_GNUC_UNUSED, t_tab *tab) {
+  if (tab) { tab->sel = any_list_sel(tab); cb_menu_update(tab); }
+}
 
 static char* c_strjoinv(const char delim, const char **array) {
   if (!array) return NULL;
@@ -204,7 +208,7 @@ gboolean clipboard_init(GtkWidget *win, t_tab *tab) {
   gtk_widget_set_parent(tab->pop, tab->tab.w);
   g_signal_connect(gest, EV_PRESS, G_CALLBACK(cb_on_press), tab->pop);
   GtkWidget* list[] = {tab->hdr.w, tab->dyn.w, tab->info.w};
-  for (int i = 0; i < G_N_ELEMENTS(list); i++) if (GTK_IS_LIST_BOX(list[i]))
+  for (unsigned i = 0; i < G_N_ELEMENTS(list); i++) if (GTK_IS_LIST_BOX(list[i]))
     g_signal_connect(list[i], EV_ROW_CHANGE, G_CALLBACK(cb_on_sel), tab);
   gtk_gesture_single_set_button(GTK_GESTURE_SINGLE(gest), 0);
   gtk_gesture_single_set_exclusive(GTK_GESTURE_SINGLE(gest), true);
@@ -213,7 +217,7 @@ gboolean clipboard_init(GtkWidget *win, t_tab *tab) {
   return true;
 }
 
-void cb_on_copy_l1(GSimpleAction *action, GVariant *var, void *data) {
+void cb_on_copy_l1(GSimpleAction *self G_GNUC_UNUSED, GVariant *parameter G_GNUC_UNUSED, gpointer data) {
   t_tab *tab = data;
   if (!tab || !GTK_IS_LIST_BOX(tab->dyn.w)) return;
   GdkClipboard *clipboard = gtk_widget_get_clipboard(GTK_WIDGET(tab->tab.w));
@@ -224,7 +228,7 @@ void cb_on_copy_l1(GSimpleAction *action, GVariant *var, void *data) {
   }
 }
 
-void cb_on_copy_l2(GSimpleAction *action, GVariant *var, void *data) {
+void cb_on_copy_l2(GSimpleAction *self G_GNUC_UNUSED, GVariant *parameter G_GNUC_UNUSED, gpointer data) {
   t_tab *tab = data;
   if (!tab || !GTK_IS_LIST_BOX(tab->dyn.w)) return;
   GdkClipboard *clipboard = gtk_widget_get_clipboard(GTK_WIDGET(tab->tab.w));
@@ -257,7 +261,7 @@ void cb_tab_unsel(t_tab *tab) {
   }
 }
 
-void cb_on_sall(GSimpleAction *action, GVariant *var, void *data) {
+void cb_on_sall(GSimpleAction *self G_GNUC_UNUSED, GVariant *parameter G_GNUC_UNUSED, gpointer data) {
   t_tab *tab = data;
   if (!tab || !GTK_IS_LIST_BOX(tab->dyn.w)) return;
   VERBOSE("%s action %s", tab->name, cb_menu_label(tab->sel));

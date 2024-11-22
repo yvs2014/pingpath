@@ -1,3 +1,6 @@
+## 0.3.43
+- increase warning-level to 2 (+Wextra) and fix warnings
+
 ## 0.3.42
 - notifier position: reassure again gtk_widget_measure() call
 

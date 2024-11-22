@@ -1,8 +1,8 @@
 
 #include <stdlib.h>
 
-#include "dns.h"
 #include "common.h"
+#include "dns.h"
 
 
 typedef struct dns_elem { // network stuff
@@ -182,13 +182,20 @@ void dns_lookup(t_hop *hop, int ndx) {
   } else FAIL("g_resolver_get_default()");
 }
 
+static void dns_host_on_free(gpointer data, gpointer user_data G_GNUC_UNUSED) {
+  host_free(data);
+}
+static void dns_query_on_free(gpointer data, gpointer user_data G_GNUC_UNUSED) {
+  dns_query_free(data);
+}
+
 void dns_cache_free(void) {
   PR_DNS_C;
-  g_slist_foreach(dns_cache, (GFunc)host_free, NULL);
+  g_slist_foreach(dns_cache, dns_host_on_free, NULL);
   g_slist_free_full(dns_cache, g_free);
   dns_cache = NULL;
   PR_DNS_Q;
-  g_slist_foreach(dns_query, (GFunc)dns_query_free, NULL);
+  g_slist_foreach(dns_query, dns_query_on_free, NULL);
   g_slist_free_full(dns_query, g_free);
   dns_query = NULL;
 }

@@ -215,7 +215,9 @@ static void gr_draw_smth(cairo_t *cr, double width, double alpha,
   }
 }
 
-static void gr_draw_grid(GtkDrawingArea *area, cairo_t* cr, int width, int height, void *unused) {
+static void gr_draw_grid(GtkDrawingArea *area, cairo_t *cr,
+    int width, int height, gpointer user_data G_GNUC_UNUSED)
+{
   const double dash_size[] = {1};
   if (!GTK_IS_DRAWING_AREA(area) || !cr || !width || !height) return;
   int w0 = width - (GRAPH_LEFT + GRAPH_RIGHT), h0 = height - (GRAPH_TOP + GRAPH_BOTTOM);
@@ -272,7 +274,9 @@ static void gr_draw_grid(GtkDrawingArea *area, cairo_t* cr, int width, int heigh
   }
 }
 
-static void gr_draw_marks(GtkDrawingArea *area, cairo_t* cr, int width, int height, void *unused) {
+static void gr_draw_marks(GtkDrawingArea *area, cairo_t *cr,
+    int width G_GNUC_UNUSED, int height G_GNUC_UNUSED, gpointer user_data G_GNUC_UNUSED)
+{
   if (!GTK_IS_DRAWING_AREA(area) || !cr || !graph_font || (grm.y0 <= 0)) return;
   if (!mark_pango) {
     mark_pango = pango_cairo_create_layout(cr);
@@ -335,7 +339,9 @@ static void gr_draw_mean(cairo_t *cr, gboolean mean, gboolean area) {
   }
 }
 
-static void gr_draw_graph(GtkDrawingArea *area, cairo_t* cr, int width, int height, void *unused) {
+static void gr_draw_graph(GtkDrawingArea *area, cairo_t* cr,
+    int width G_GNUC_UNUSED, int height G_GNUC_UNUSED, gpointer user_data G_GNUC_UNUSED)
+{
   static const int graph_tsz = (CELL_SIZE - TICK_SIZE) * X_FREQ;
   if (!GTK_IS_DRAWING_AREA(area) || !cr) return;
   if (!graph_pango) {

@@ -15,12 +15,12 @@ enum { OPT_TYPE_INT, OPT_TYPE_PAD, OPT_TYPE_INFO, OPT_TYPE_STAT, OPT_TYPE_GRLG, 
 gboolean parser_init(void);
 void parser_parse(int at, char *input);
 char* parser_valid_target(const char *target);
-char* parser_str(const char *str, const char *option, int cat);
+char* parser_str(const char *str, const char *option, unsigned cat);
 void parser_whois(char *buff, t_whois* welem);
 gboolean parser_mmint(const char *str, const char *option, t_minmax minmax, int *value);
 gboolean parser_range(char *range, char delim, const char *option, t_minmax *minmax);
 #ifdef WITH_PLOT
-gboolean parser_ivec(char *range, char delim, const char *option, int *dest, int max);
+gboolean parser_ivec(char *range, char delim, const char *option, int *dest, unsigned max);
 #endif
 
 #endif

@@ -482,7 +482,7 @@ void stat_legend(int at, t_legend *data) {
 
 void stat_whois_enabler(void) {
   gboolean enable = false;
-  for (int i = 0; i < G_N_ELEMENTS(pingelem); i++)
+  for (unsigned i = 0; i < G_N_ELEMENTS(pingelem); i++)
     if (IS_WHOIS_NDX(pingelem[i].type) && pingelem[i].enable) { enable = true; break; }
   if (enable != opts.whois) { opts.whois = enable; LOG("whois %sabled", enable ? "en" : "dis"); }
 }

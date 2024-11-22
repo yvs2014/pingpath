@@ -36,7 +36,8 @@ t_opts opts = { .target = NULL, .dns = DEF_DNS, .whois = DEF_WHOIS, .cycles = DE
 };
 
 typedef struct ent_rad_map {
-  int ndx, val;
+  unsigned ndx;
+  int val;
   char *str;
 } t_ent_rad_map;
 
@@ -363,7 +364,7 @@ static void toggle_cb(GtkCheckButton *check, t_ent_bool *en) {
 
 static void radio_cb(GtkCheckButton *check, t_ent_rad_map *map) {
   if (!GTK_IS_CHECK_BUTTON(check) || !map) return;
-  int ndx = map->ndx; if ((ndx < 0) || (ndx >= G_N_ELEMENTS(ent_rad))) return;
+  unsigned ndx = map->ndx; if (ndx >= G_N_ELEMENTS(ent_rad)) return;
   t_ent_rad *en = &ent_rad[ndx];
   int *pval = en->pval, type = en->c.en.type;
   if (pval && ((type == ENT_RAD_IPV) || (type == ENT_RAD_GRAPH))) {
@@ -377,9 +378,8 @@ static void radio_cb(GtkCheckButton *check, t_ent_rad_map *map) {
   }
 }
 
-static void arrow_cb(GtkWidget *widget, t_ent_exp_common *en) {
-  if (!en) return;
-  if (GTK_IS_TOGGLE_BUTTON(en->arrow)) {
+static void arrow_cb(GtkToggleButton *self G_GNUC_UNUSED, t_ent_exp_common *en) {
+  if (en && GTK_IS_TOGGLE_BUTTON(en->arrow)) {
     gboolean active = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(en->arrow));
     g_object_set(G_OBJECT(en->arrow), ICON_PROP, active ? GO_UP_ICON : GO_DOWN_ICON, NULL);
     if (GTK_IS_WIDGET(en->sub)) gtk_widget_set_visible(en->sub, active);
@@ -611,10 +611,10 @@ static GtkWidget* add_opt_expand(GtkWidget* list, t_ent_exp *en) {
   if (!en) return NULL;
   GtkWidget *box = add_expand_common(list, &en->c);
   if (GTK_IS_BOX(box) && en->c.sub && en->desc) {
-    t_elem_desc *desc = en->desc; type2ndx_fn type2ndx = desc->t2e;
-    if (type2ndx) for (int i = desc->mm.min; i <= desc->mm.max; i++) {
+    t_elem_desc *desc = en->desc; type2ent_fn type2ent = desc->t2e;
+    if (type2ent) for (int i = desc->mm.min; i <= desc->mm.max; i++) {
       int type = desc->elems[i].type;
-      int ndx = type2ndx(type);
+      int ndx = type2ent(type);
       if (ndx < 0) WARN("Unknown %d type", type);
       else add_opt_check(en->c.sub, &ent_bool[ndx]);
     }
@@ -666,7 +666,7 @@ static GtkWidget* add_opt_range(GtkWidget* listbox, t_ent_spn *en) {
   GtkWidget *box = add_expand_common(listbox, &en->c);
   if (GTK_IS_BOX(box) && en->c.sub) {
     t_ent_spn_elem *elem = en->list;
-    for (int n = 0; (n < G_N_ELEMENTS(en->list)) && elem && elem->title; n++, elem++) {
+    for (unsigned n = 0; (n < G_N_ELEMENTS(en->list)) && elem && elem->title; n++, elem++) {
       GtkWidget *subbox = NULL;
       switch (elem->kind) {
 #ifdef WITH_PLOT
@@ -687,13 +687,13 @@ static GtkWidget* add_opt_range(GtkWidget* listbox, t_ent_spn *en) {
 #ifdef WITH_PLOT
         case ROTOR_COLUMN:
           add_opt_check(subbox, &ent_bool[ENT_BOOL_GLOB]);
-          for (int i = 0; i < ENT_SPN_ROT_MAX; i++) if (elem->aux[i].sfx) {
+          for (unsigned i = 0; i < ENT_SPN_ROT_MAX; i++) if (elem->aux[i].sfx) {
             GtkWidget *row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, MARGIN);
             if (!row) continue;
             grey_into_box(row, gtk_label_new(elem->aux[i].sfx), true, true);
             add_minmax(row, elem, i, elem->aux[i].step, elem->aux[i].wrap);
             gtk_box_append(GTK_BOX(subbox), row);
-            if ((i >= ENT_SPN_ROT0) && (i <= ENT_SPN_ROT2)) // leave only buttons for rotation spins
+            if (/*(i >= ENT_SPN_ROT0) &&*/ i <= ENT_SPN_ROT2) // leave only buttons for rotation spins
               for (GtkWidget *txt = gtk_widget_get_first_child(GTK_WIDGET(elem->aux[i].spin));
                 GTK_IS_WIDGET(txt); txt = gtk_widget_get_next_sibling(txt))
                   if (GTK_IS_TEXT(txt)) gtk_widget_set_visible(txt, false);
@@ -717,7 +717,7 @@ static GtkWidget* add_opt_radio(GtkWidget* list, t_ent_rad *en) {
   if (GTK_IS_BOX(box) && en->c.sub) {
     GtkWidget *group = NULL;
     t_ent_rad_map *map = en->map;
-    for (int i = 0; (i < G_N_ELEMENTS(en->map)) && map && map->str; i++, map++) {
+    for (unsigned i = 0; (i < G_N_ELEMENTS(en->map)) && map && map->str; i++, map++) {
       GtkWidget *button = gtk_check_button_new_with_label(map->str);
       g_return_val_if_fail(GTK_CHECK_BUTTON(button), box);
       if (style_loaded) gtk_widget_add_css_class(button, CSS_PAD);
@@ -846,8 +846,8 @@ gboolean option_init(GtkWidget* bar) {
 }
 
 #define ENT_LOOP_SET(row) { if (GTK_IS_WIDGET(row)) gtk_widget_set_sensitive(row, notrun); }
-#define ENT_LOOP_STR(arr) { for (int i = 0; i < G_N_ELEMENTS(arr); i++) ENT_LOOP_SET((arr)[i].box); }
-#define ENT_LOOP_EXP(arr) { for (int i = 0; i < G_N_ELEMENTS(arr); i++) if (!(arr)[i].c.atrun) { \
+#define ENT_LOOP_STR(arr) { for (unsigned i = 0; i < G_N_ELEMENTS(arr); i++) ENT_LOOP_SET((arr)[i].box); }
+#define ENT_LOOP_EXP(arr) { for (unsigned i = 0; i < G_N_ELEMENTS(arr); i++) if (!(arr)[i].c.atrun) { \
   ENT_LOOP_SET((arr)[i].c.box); if (GTK_IS_TOGGLE_BUTTON((arr)[i].c.arrow)) \
     gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON((arr)[i].c.arrow), false); }}
 

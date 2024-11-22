@@ -65,14 +65,14 @@ const int n_colors = G_N_ELEMENTS(colors);
 
 //
 
-static int elem_type2ndx(int type, t_type_elem *elem, int max) {
-  for (int i = 0; i < max; i++) if (type == elem[i].type) return i;
+static unsigned elem_type2ndx(int type, t_type_elem *elem, unsigned max) {
+  for (unsigned i = 0; i < max; i++) if (type == elem[i].type) return i;
   return -1;
 }
-int  pingelem_type2ndx(int type) { return elem_type2ndx(type, pingelem,  G_N_ELEMENTS(pingelem));  }
-int graphelem_type2ndx(int type) { return elem_type2ndx(type, graphelem, G_N_ELEMENTS(graphelem)); }
+unsigned  pingelem_type2ndx(int type) { return elem_type2ndx(type, pingelem,  G_N_ELEMENTS(pingelem));  }
+unsigned graphelem_type2ndx(int type) { return elem_type2ndx(type, graphelem, G_N_ELEMENTS(graphelem)); }
 #ifdef WITH_PLOT
-int  plotelem_type2ndx(int type) { return elem_type2ndx(type, plotelem,  G_N_ELEMENTS(plotelem));  }
+unsigned  plotelem_type2ndx(int type) { return elem_type2ndx(type, plotelem,  G_N_ELEMENTS(plotelem));  }
 #endif
 
 static const char* char_pattern[] = { [INFO_CHAR] = INFO_PATT, [STAT_CHAR] = STAT_PATT,
@@ -224,20 +224,20 @@ gboolean*  pingelem_enabler(int type) { return elem_enabler(type, pingelem,  G_N
 gboolean* graphelem_enabler(int type) { return elem_enabler(type, graphelem, G_N_ELEMENTS(graphelem)); }
 
 gboolean is_grelem_enabled(int type) {
-  int ndx = graphelem_type2ndx(type);
-  return ((ndx >= 0) && (ndx < G_N_ELEMENTS(graphelem))) ? graphelem[ndx].enable : false;
+  unsigned ndx = graphelem_type2ndx(type);
+  return (ndx < G_N_ELEMENTS(graphelem)) ? graphelem[ndx].enable : false;
 }
 
 #ifdef WITH_PLOT
 gboolean* plotelem_enabler(int type) { return elem_enabler(type, plotelem, G_N_ELEMENTS(plotelem)); }
 
 gboolean is_plelem_enabled(int type) {
-  int ndx = plotelem_type2ndx(type);
-  return ((ndx >= 0) && (ndx < G_N_ELEMENTS(plotelem))) ? plotelem[ndx].enable : false;
+  unsigned ndx = plotelem_type2ndx(type);
+  return (ndx < G_N_ELEMENTS(plotelem)) ? plotelem[ndx].enable : false;
 }
 #endif
 
-#define CLEAN_ELEM_LOOP(elems, min, max) { for (int i = 0; i < G_N_ELEMENTS(elems); i++) \
+#define CLEAN_ELEM_LOOP(elems, min, max) { for (unsigned i = 0; i < G_N_ELEMENTS(elems); i++) \
   if (((min) <= (elems)[i].type) && ((elems)[i].type <= (max))) (elems)[i].enable = false; }
 
 void clean_elems(int type) {
@@ -325,7 +325,7 @@ void print_refs(GSList *refs, const char *prefix) {
 }
 #endif
 
-GSList* list_add_nodup(GSList **list, void *data, GCompareFunc cmp, int max) {
+GSList* list_add_nodup(GSList **list, void *data, GCompareFunc cmp, unsigned max) {
   if (!list || !data || !cmp) return NULL;
   GSList *elem = g_slist_find_custom(*list, data, cmp);
   if (elem) { g_free(data); return elem; }

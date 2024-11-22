@@ -312,13 +312,16 @@ void whois_resolv(t_hop *hop, int ndx) {
   } else FAIL("g_socket_client_new()");
 }
 
+static void wc_on_free(gpointer data, gpointer user_data G_GNUC_UNUSED) { wc_free(data); }
+static void wq_on_close(gpointer data, gpointer user_data G_GNUC_UNUSED) { whois_query_close(data); }
+
 void whois_cache_free(void) {
   PR_WHOIS_C;
-  g_slist_foreach(whois_cache, (GFunc)wc_free, NULL);
+  g_slist_foreach(whois_cache, wc_on_free, NULL);
   g_slist_free_full(whois_cache, g_free);
   whois_cache = NULL;
   PR_WHOIS_Q;
-  g_slist_foreach(whois_query, (GFunc)whois_query_close, NULL);
+  g_slist_foreach(whois_query, wq_on_close, NULL);
   g_slist_free(whois_query);
   whois_query = NULL;
 }

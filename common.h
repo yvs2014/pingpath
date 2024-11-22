@@ -14,11 +14,7 @@
 #include "config.h"
 
 #define APPNAME "pingpath"
-#define VERSION "0.3.42"
-
-#ifndef WITH_PLOT
-//#define WITH_PLOT // tmp
-#endif
+#define VERSION "0.3.43"
 
 enum { X_RES = 1024, Y_RES = 720 };
 enum { MAXADDR = 10 };
@@ -490,14 +486,16 @@ typedef struct t_type_elem {
 
 typedef struct t_legend { const char *name, *as, *cc, *av, *jt; } t_legend;
 
-typedef int (*type2ndx_fn)(int);
+typedef unsigned (*type2ndx_fn)(int);
+typedef int (*type2ent_fn)(int);
 
 typedef struct elem_desc {
   t_type_elem *elems;
   const t_minmax mm;
   const int cat;
   const char *patt;
-  type2ndx_fn t2n, t2e;
+  type2ndx_fn t2n;
+  type2ent_fn t2e;
 } t_elem_desc;
 
 typedef struct th_color { double ondark, onlight; } t_th_color;
@@ -530,13 +528,13 @@ char* get_nth_color(int nth);
 int char2ndx(int cat, gboolean ent, char ch);
 gboolean*  pingelem_enabler(int type);
 gboolean* graphelem_enabler(int type);
-int  pingelem_type2ndx(int type);
-int graphelem_type2ndx(int type);
+unsigned  pingelem_type2ndx(int type);
+unsigned graphelem_type2ndx(int type);
 gboolean is_grelem_enabled(int type);
 void clean_elems(int type);
 #ifdef WITH_PLOT
 gboolean* plotelem_enabler(int type);
-int plotelem_type2ndx(int type);
+unsigned plotelem_type2ndx(int type);
 gboolean is_plelem_enabled(int type);
 #endif
 
@@ -549,7 +547,7 @@ int host_cmp(const void *a, const void *b);
 int ref_cmp(const t_ref *a, const t_ref *b);
 t_ref* ref_new(t_hop *hop, int ndx);
 void print_refs(GSList *refs, const char *prefix);
-GSList* list_add_nodup(GSList **list, void *data, GCompareFunc cmp, int max);
+GSList* list_add_nodup(GSList **list, void *data, GCompareFunc cmp, unsigned max);
 GSList* list_add_ref(GSList **list, t_hop *hop, int ndx);
 extern void log_add(const char *fmt, ...);
 

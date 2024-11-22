@@ -107,7 +107,7 @@ static void pinger_print_text(gboolean csv) {
     for (int i = opts.min; i < lim; i++) { // data per hop
       t_ping_column column[G_N_ELEMENTS(pingelem)] = {0};
       int lines = 0;
-      for (int j = 0; j < G_N_ELEMENTS(pingelem); j++) if (pingelem[j].enable) {
+      for (unsigned j = 0; j < G_N_ELEMENTS(pingelem); j++) if (pingelem[j].enable) {
         int type = pingelem[j].type;
         switch (type) {
           case PE_NO:
@@ -508,7 +508,7 @@ static gboolean create_ping(int at, t_proc *proc) {
   return proc->active;
 }
 
-static int pinger_check_expired(void *unused) {
+static gboolean pinger_on_expired(gpointer user_data G_GNUC_UNUSED) {
   if (!atquit) for (int i = 0; i < MAXTTL; i++) if (pings[i].active) {
     LOG("proc(%d) is still active after expire time, stopping..", i);
     pinger_nth_stop(i, "runtime expired");
@@ -536,7 +536,7 @@ void pinger_start(void) {
   // schedule expiration check out
   if (exp_timer) { g_source_remove(exp_timer); exp_timer = 0; }
   unsigned exp_in = round(opts.cycles * (opts.timeout * 1.024)) + opts.timeout * 2; // ~24msec of possible ping time resolution
-  exp_timer = g_timeout_add_seconds(exp_in, pinger_check_expired, NULL);
+  exp_timer = g_timeout_add_seconds(exp_in, pinger_on_expired, NULL);
   LOG("expiration set to %d seconds for %d cycles", exp_in, opts.cycles);
 }
 

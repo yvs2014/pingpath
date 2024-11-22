@@ -67,7 +67,9 @@ static void series_save_rseq(int nth, t_rseq *data) {
   }
 }
 
-static void* stat_dup_series(const void *src, void *unused) { return g_memdup2(src, sizeof(t_rseq)); }
+static gpointer series_on_copy(gconstpointer src, gpointer data G_GNUC_UNUSED) {
+  return g_memdup2(src, sizeof(t_rseq));
+}
 
 
 // pub
@@ -106,7 +108,7 @@ void series_free(gboolean unreg) {
 void series_lock(void) {
   grm_lock = true;
   for (int i = 0; i < series_count; i++) { // keep current data
-    KEPT_SERIES(i) = SERIES(i) ? g_slist_copy_deep(SERIES(i), stat_dup_series, NULL) : NULL;
+    KEPT_SERIES(i) = SERIES(i) ? g_slist_copy_deep(SERIES(i), series_on_copy, NULL) : NULL;
     KEPT_SERIES_LEN(i) = g_slist_length(KEPT_SERIES(i));
   }
   grm_lock = false;

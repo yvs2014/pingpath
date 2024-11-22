@@ -1,7 +1,7 @@
 
 project('pingpath', 'c',
   default_options: [ # 'c_std=gnu99,c99',
-    'warning_level=1' ],
+    'warning_level=2' ],
   meson_version: '>= 0.53',
   license: 'GPL-2.0-or-later',
   version: '.'.join(['0', '3', find_program('git', required: false).found() ?

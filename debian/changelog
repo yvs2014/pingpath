@@ -1,3 +1,9 @@
+pingpath (0.3.43) mantic noble; urgency=low
+
+  * increase warning-level to 2 (+Wextra) and fix warnings
+
+ -- yvs <VSYakovetsky@gmail.com>  Fri, 22 Nov 2024 15:14:27 +0200
+
 pingpath (0.3.42) mantic noble; urgency=low
 
   * notifier position: reassure again gtk_widget_measure() call

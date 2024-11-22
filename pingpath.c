@@ -37,7 +37,7 @@ static GtkWidget *currtabref, *tabrefs[TAB_NDX_MAX];
 static GtkNotebook *nb_ref;
 #endif
 
-static gboolean on_win_close(GtkWindow *window, void *unused) {
+static gboolean on_win_close(GtkWindow *self G_GNUC_UNUSED, gpointer user_data G_GNUC_UNUSED) {
   // workarounds to exit gracefully
   cb_tab_unsel(nb_tabs[TAB_PING_NDX]);
   cb_tab_unsel(nb_tabs[TAB_LOG_NDX]);
@@ -50,7 +50,9 @@ static gboolean on_win_close(GtkWindow *window, void *unused) {
   return false;
 }
 
-static void on_tab_switch(GtkNotebook *nb, GtkWidget *tab, unsigned ndx, void *unused) {
+static void on_tab_switch(GtkNotebook *self G_GNUC_UNUSED, GtkWidget *tab,
+    guint page_num G_GNUC_UNUSED, gpointer user_data G_GNUC_UNUSED)
+{
   tab_dependent(tab);
   if (GTK_IS_BOX(tab))
     for (GtkWidget *widget = gtk_widget_get_first_child(tab);
@@ -70,7 +72,7 @@ static void on_tab_switch(GtkNotebook *nb, GtkWidget *tab, unsigned ndx, void *u
 static inline void log_libver(const char *pre, char *ver) {
   if (ver) { LOG("%s: %s", pre, ver); g_free(ver); }}
 
-static void app_cb(GtkApplication* app, void *unused) {
+static void on_app_activate(GtkApplication* app, gpointer user_data G_GNUC_UNUSED) {
   style_set();
   GtkWidget *win = gtk_application_window_new(app);
   if (!GTK_IS_WINDOW(win)) APPQUIT("%s", "app window");
@@ -95,7 +97,7 @@ static void app_cb(GtkApplication* app, void *unused) {
   if (opts.plot) nb_tabs[TAB_PLOT_NDX] = plottab_init();
 #endif
   nb_tabs[TAB_LOG_NDX]  = logtab_init(win);
-  for (int i = 0; i < G_N_ELEMENTS(nb_tabs); i++) {
+  for (unsigned i = 0; i < G_N_ELEMENTS(nb_tabs); i++) {
     { if (!opts.graph && (i == TAB_GRAPH_NDX)) continue;
 #ifdef WITH_PLOT
       if (!opts.plot  && (i == TAB_PLOT_NDX))  continue;
@@ -128,7 +130,7 @@ static void app_cb(GtkApplication* app, void *unused) {
   if (autostart && opts.target) { pinger_start(); appbar_update(); }
 }
 
-static void recap_cb(GApplication* app, void *unused) {
+static void on_recap_activate(GApplication *app, gpointer user_data G_GNUC_UNUSED) {
   g_timeout_add_seconds(1, (GSourceFunc)pinger_recap_cb, app);
   if (G_IS_APPLICATION(app)) g_application_hold(app);
   pinger_start();
@@ -184,11 +186,11 @@ int main(int argc, char **argv) {
   if (opts.recap) {
     app = g_application_new("net.tools." APPNAME, APPFLAGS);
     g_return_val_if_fail(G_IS_APPLICATION(app), EX_UNAVAILABLE);
-    g_signal_connect(app, EV_ACTIVE, G_CALLBACK(recap_cb), NULL);
+    g_signal_connect(app, EV_ACTIVE, G_CALLBACK(on_recap_activate), NULL);
   } else {
     GtkApplication *gtkapp = gtk_application_new("net.tools." APPNAME, APPFLAGS);
     g_return_val_if_fail(GTK_IS_APPLICATION(gtkapp), EX_UNAVAILABLE);
-    g_signal_connect(gtkapp, EV_ACTIVE, G_CALLBACK(app_cb), NULL);
+    g_signal_connect(gtkapp, EV_ACTIVE, G_CALLBACK(on_app_activate), NULL);
     app = G_APPLICATION(gtkapp);
   }
   int rc = g_application_run(app, argc, argv);
