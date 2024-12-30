@@ -77,6 +77,7 @@ endif()
 
 set(CONFIG "config.h")
 configure_file("${CONFIG}.cmake" "${CONFIG}" @ONLY)
+add_compile_options(-include "${CONFIG}")
 
 add_executable("${PROJECT_NAME}" ${SRCS})
 install(TARGETS "${PROJECT_NAME}" DESTINATION "${CMAKE_INSTALL_BINDIR}")

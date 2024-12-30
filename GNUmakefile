@@ -26,6 +26,7 @@ CC ?= gcc
 CFLAGS += -Wall
 CFLAGS += -Wextra
 CFLAGS += -I.
+CFLAGS += -include config.h
 LIBS = -lm
 
 ifndef NO_JSON

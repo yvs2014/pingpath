@@ -2,9 +2,7 @@
 #include <stdlib.h>
 #include <math.h>
 
-#include "config.h"
 #include "common.h"
-
 #include "ping.h"
 #include "aux.h"
 #include "pinger.h"

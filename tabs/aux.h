@@ -1,7 +1,6 @@
 #ifndef TABS_AUX_H
 #define TABS_AUX_H
 
-#include "config.h"
 #include "common.h"
 
 typedef struct tab_widget { GtkWidget *w; const char *css, *col; } t_tab_widget;

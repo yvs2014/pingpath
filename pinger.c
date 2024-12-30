@@ -4,8 +4,6 @@
 #include <signal.h>
 #include <math.h>
 
-#include "config.h"
-
 #ifdef WITH_JSON
 #include <json-glib/json-glib.h>
 #endif

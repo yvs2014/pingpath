@@ -3,9 +3,7 @@
 #include <stdarg.h>
 #include <math.h>
 
-#include "config.h"
 #include "common.h"
-
 #include "notifier.h"
 #include "style.h"
 #include "pinger.h"

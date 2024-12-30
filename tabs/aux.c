@@ -1,9 +1,7 @@
 
 #include <stdlib.h>
 
-#include "config.h"
 #include "common.h"
-
 #include "aux.h"
 #include "ui/style.h"
 #include "ui/notifier.h"

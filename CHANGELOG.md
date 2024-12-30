@@ -1,3 +1,6 @@
+## 0.3.44
+- add config.h via cc option
+
 ## 0.3.43
 - increase warning-level to 2 (+Wextra) and fix warnings
 

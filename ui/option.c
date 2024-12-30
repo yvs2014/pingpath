@@ -2,9 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "config.h"
 #include "common.h"
-
 #include "option.h"
 #include "parser.h"
 #include "pinger.h"
@@ -830,7 +828,7 @@ static inline void ent_link_to_desc(void) {
 #ifdef WITH_PLOT
   ent_exp[ENT_EXP_PLEL].desc = &plot_desc;
 #endif
-};
+}
 
 
 // pub

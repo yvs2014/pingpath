@@ -11,10 +11,8 @@
 #endif
 #define MIN_GTK_RUNTIME(major, minor, micro) (!gtk_check_version(major, minor, micro))
 
-#include "config.h"
-
 #define APPNAME "pingpath"
-#define VERSION "0.3.43"
+#define VERSION "0.3.44"
 
 enum { X_RES = 1024, Y_RES = 720 };
 enum { MAXADDR = 10 };

@@ -7,8 +7,6 @@
 #include <sysexits.h>
 #include <locale.h>
 
-#include "config.h"
-
 #include "common.h"
 #include "cli.h"
 #include "pinger.h"

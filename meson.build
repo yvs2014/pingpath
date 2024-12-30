@@ -88,6 +88,7 @@ endif
 
 config_h = 'config.h'
 configure_file(input: config_h + '.meson', output: config_h, configuration: config)
+add_project_arguments('-include', config_h, language: 'c')
 
 pp = executable(name, srcs, dependencies: deps, install: true)
 

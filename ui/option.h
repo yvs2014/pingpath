@@ -1,7 +1,6 @@
 #ifndef UI_OPTION_H
 #define UI_OPTION_H
 
-#include "config.h"
 #include "common.h"
 
 enum { SUBLIST_MAX = 8, ENT_BUFF_SIZE = 64 };

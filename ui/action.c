@@ -1,9 +1,7 @@
 
 #include <stdlib.h>
 
-#include "config.h"
 #include "common.h"
-
 #include "action.h"
 #include "appbar.h"
 #include "option.h"
@@ -465,7 +463,7 @@ static inline void kb_link_to_ent(void) {
   kb_plot_aux[ACCL_SA_IN].global.pval = &opts.fov;
   kb_plot_aux[ACCL_SA_OUT].global.aux  = kb_plot_aux[ACCL_SA_IN].global.aux;
   kb_plot_aux[ACCL_SA_OUT].global.pval = kb_plot_aux[ACCL_SA_IN].global.pval;
-};
+}
 #undef KB_APS_LINK
 #endif
 

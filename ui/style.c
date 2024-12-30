@@ -6,7 +6,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "config.h"
 #include "common.h"
 #include "style.h"
 
@@ -98,7 +97,7 @@ static char* style_extra_css(const char *common) {
   char *str = g_strjoinv(NULL, items);
   for (char **ptr = items; *ptr; ptr++) g_free(*ptr);
   return str;
-};
+}
 
 static gboolean is_theme_dark(const char *theme) {
   char *str = g_utf8_strdown(theme, -1);

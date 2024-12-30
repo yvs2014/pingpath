@@ -5,9 +5,7 @@
 #include <errno.h>
 #include <math.h>
 
-#include "config.h"
 #include "common.h"
-
 #include "parser.h"
 #include "stat.h"
 #include "ui/notifier.h"

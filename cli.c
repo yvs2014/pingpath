@@ -3,7 +3,6 @@
 #include <string.h>
 #include <limits.h>
 
-#include "config.h"
 #include "common.h"
 
 #include "cli.h"

@@ -3,7 +3,6 @@
 #include <string.h>
 #include <time.h>
 
-#include "config.h"
 #include "common.h"
 
 const char *appver = APPNAME "-" VERSION;
