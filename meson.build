@@ -9,6 +9,8 @@ project('pingpath', 'c',
   ]).strip('.'),
 )
 
+add_project_arguments('-D_GNU_SOURCE', language: 'c')
+
 name = meson.project_name()
 dnd  = get_option('DND')
 json = get_option('JSON')

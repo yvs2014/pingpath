@@ -1,3 +1,6 @@
+## 0.3.45
+- define _GNU_SOURCE via project arguments
+
 ## 0.3.44
 - add config.h via cc option
 

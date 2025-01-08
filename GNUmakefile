@@ -25,6 +25,7 @@ PKGS = gtk4
 CC ?= gcc
 CFLAGS += -Wall
 CFLAGS += -Wextra
+CFLAGS += -D_GNU_SOURCE
 CFLAGS += -I.
 CFLAGS += -include config.h
 LIBS = -lm

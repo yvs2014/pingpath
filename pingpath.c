@@ -1,8 +1,4 @@
 
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif
-
 #include <stdlib.h>
 #include <sysexits.h>
 #include <locale.h>
