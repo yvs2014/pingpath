@@ -1,0 +1,209 @@
+msgid ""
+msgstr ""
+"Language: uk\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11) ? 0 : "
+"n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2;\n"
+
+# target hint
+msgid "Enter hostname or IP address ..."
+msgstr "Введіть назву або IP адресу ..."
+
+# button
+msgid "Okay"
+msgstr "Гаразд"
+
+# unit: seconds
+msgid "sec"
+msgstr "сек"
+
+# hexadecinal
+msgid "0x"
+msgstr "0x"
+
+# help window: actions
+msgid "Actions"
+msgstr "Дії"
+
+# help window: command line interface
+msgid "CLI"
+msgstr "Інтерфейс командного рядка"
+
+# help window: theme1
+msgid "Main theme"
+msgstr "Загальна тема"
+
+# help window: theme2
+msgid "Graph theme"
+msgstr "Тема графіків"
+
+# help window: theme3
+msgid "3D-plot theme"
+msgstr "Тема 3D-графіки"
+
+# action menu tooltip
+msgid "Command Menu"
+msgstr "Меню команд"
+
+# option menu tooltip
+msgid "Main Options"
+msgstr "Основні параметри"
+
+# aux menu tooltip
+msgid "Auxiliary"
+msgstr "Додатково"
+
+# action-menu: 1
+msgid "Start"
+msgstr "Розпочати"
+
+# action-menu: 2
+msgid "Stop"
+msgstr "Зупинити"
+
+# action-menu: 3
+msgid "Pause"
+msgstr "Призупинити"
+
+# action-menu: 4
+msgid "Resume"
+msgstr "Продовжити"
+
+# action-menu: 5
+msgid "Reset"
+msgstr "Обнулити"
+
+# action-menu: 6
+msgid "Help"
+msgstr "Довідка"
+
+# action-menu: 7
+msgid "Exit"
+msgstr "Вихід"
+
+# option-menu: 1
+msgid "Cycles"
+msgstr "Кількість циклів"
+
+# option-menu: 2
+msgid "Interval"
+msgstr "Інтервал"
+
+# option-menu: 3
+msgid "DNS"
+msgstr "Імена вузлів"
+
+# option-menu: 4
+msgid "Hop Info"
+msgstr "Інфо щодо вузлів"
+
+# option-menu: 5
+msgid "Statistics"
+msgstr "Статистика"
+
+# option-menu: 6
+msgid "TTL"
+msgstr "TTL (кількість переходів)"
+
+# option-menu: 7
+msgid "QoS"
+msgstr "QoS (якість сервісу)"
+
+# option-menu: 8
+msgid "Payload"
+msgstr "Вміст"
+
+# option-menu: 9
+msgid "Size"
+msgstr "Розмір"
+
+# option-menu: 10
+msgid "IP Version"
+msgstr "IP версія"
+
+# option-menu: 9.1
+msgid "Auto"
+msgstr "Автоматично"
+
+# option-menu: 9.2
+msgid "IPv4"
+msgstr "Версія 4"
+
+# option-menu: 9.3
+msgid "IPv6"
+msgstr "Версія 6"
+
+# aux-menu: 1
+msgid "Main dark theme"
+msgstr "Загальна темна тема"
+
+# aux-menu: 2
+msgid "Graph dark theme"
+msgstr "Темна тема графіків"
+
+# aux-menu: 3
+msgid "3D-plot dark theme"
+msgstr "Темна тема 3D-графіки"
+
+# aux-menu: 4
+msgid "Graph type"
+msgstr "Тип графіків"
+
+# aux-menu: 4.1
+msgid "Dots"
+msgstr "Крапки"
+
+# aux-menu: 4.2
+msgid "Lines"
+msgstr "Лінії"
+
+# aux-menu: 4.3
+msgid "Splines"
+msgstr "Сплайни"
+
+# aux-menu: 5
+msgid "Graph legend"
+msgstr "Опис графіків"
+
+# aux-menu: 6
+msgid "Legend fields"
+msgstr "Пункти опису графіків"
+
+# aux-menu: 7
+msgid "Extra graph elements"
+msgstr "Додаткові елементи на графіках"
+
+# aux-menu: 8
+msgid "Plot elements"
+msgstr "Елементи 3D-графіки"
+
+# aux-menu: 9
+msgid "Plot gradient"
+msgstr "Градієнт 3D-графіки"
+
+# aux-menu: 10
+msgid "Plot rotation"
+msgstr "Обертання 3D-графіки"
+
+# aux-menu: 10.1
+msgid "Global space"
+msgstr "Глобальні координати"
+
+# aux-menu: 11
+msgid "Plot scale"
+msgstr "Масштабування 3D-графіки"
+
+# aux-menu: 11.1
+msgid "Field of view"
+msgstr "Поле зору"
+
+# aux-menu: 12
+msgid "LogTab rows"
+msgstr "Рядків у вкладці логування"
+
+# cli-opt-X
+msgid "Plot parameters"
+msgstr "Параметри 3D-графіки"
+

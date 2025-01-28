@@ -2,8 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "text.h"
 #include "common.h"
-
 #include "clipboard.h"
 #include "tabs/aux.h"
 

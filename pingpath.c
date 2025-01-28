@@ -1,7 +1,9 @@
 
 #include <stdlib.h>
 #include <sysexits.h>
-#include <locale.h>
+#ifdef WITH_NLS
+#include <libintl.h>
+#endif
 
 #include "common.h"
 #include "cli.h"
@@ -152,15 +154,43 @@ inline gboolean is_tab_that(unsigned ndx) { return (ndx < G_N_ELEMENTS(tabrefs))
 #define GETENV getenv
 #endif
 
-int main(int argc, char **argv) {
-  // early l10n for CLI options
-#ifdef HAVE_USELOCALE
-  locale_t locale = newlocale(LC_ALL_MASK, "", NULL);
-  if (locale) uselocale(locale);
+#ifdef WITH_NLS
+#define SETLOCALE setlocale(LC_ALL, "")
 #else
-  setlocale(LC_ALL, "");
+#define SETLOCALE setlocale(LC_ALL, "C")
 #endif
-  putenv("LANG=C.UTF-8"); // to get ping's uniform output
+
+#ifdef HAVE_USELOCALE
+locale_t locale, localeC;
+#ifdef WITH_NLS
+#define USELOCALE uselocale(locale)
+#else
+#define USELOCALE uselocale(localeC)
+#endif
+#endif
+
+int main(int argc, char **argv) {
+  // init locales
+#ifdef HAVE_USELOCALE
+  locale  = newlocale(LC_ALL_MASK, "",  NULL);
+  localeC = newlocale(LC_ALL_MASK, "C", NULL);
+  if (locale && localeC)
+    USELOCALE;
+  else {
+    if (locale)  { freelocale(locale);  locale  = 0; }
+    if (localeC) { freelocale(localeC); localeC = 0; }
+    SETLOCALE;
+  }
+#else
+  SETLOCALE;
+#endif
+#ifdef WITH_NLS
+  // NLS bindings
+  bindtextdomain(APPNAME, LOCALEDIR);
+  bind_textdomain_codeset(APPNAME, "UTF-8");
+  textdomain(APPNAME);
+#endif
+  // GSK workarounds
   if (!GETENV("GSK_RENDERER")) {
     unsigned sure = gtk_get_major_version(), fix = gtk_get_minor_version();
     if (sure == 4) switch (fix) {
@@ -171,6 +201,7 @@ int main(int argc, char **argv) {
       default: break;
     }
   }
+  //
   if (!parser_init()) return EX_SOFTWARE;
   { int quit = cli_init(&argc, &argv);
     if (quit) return (quit > 0) ? EX_USAGE : EXIT_SUCCESS; }
@@ -191,7 +222,8 @@ int main(int argc, char **argv) {
   pinger_cleanup();
   g_object_unref(app);
 #ifdef HAVE_USELOCALE
-  if (locale) freelocale(locale);
+  if (locale)  freelocale(locale);
+  if (localeC) freelocale(localeC);
 #else
   setlocale(LC_ALL, NULL);
 #endif

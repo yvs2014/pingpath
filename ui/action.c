@@ -1,6 +1,7 @@
 
 #include <stdlib.h>
 
+#include "text.h"
 #include "common.h"
 #include "action.h"
 #include "appbar.h"
@@ -25,11 +26,19 @@
 #define MA_LOG(ndx, lab) LOG("Action %s", lab(ndx))
 #define MI_LOG(ndx, lab) notifier_inform("Action %s", lab(ndx))
 
-#define OKAY_BUTTON "Okay"
-
 typedef struct help_dialog_in {
   GtkWidget *win, *box, *hdr, *scroll, *body, *btn;
 } t_help_dialog_in;
+
+typedef struct help_line_s {
+  char *l, *r;
+} help_line_s;
+
+typedef struct help_section_s {
+  char *name;
+  help_line_s *lines;
+  unsigned len;
+} help_section_s;
 
 enum { MENU_SA_START, MENU_SA_PAUSE, MENU_SA_RESET, MENU_SA_HELP, MENU_SA_QUIT, MENU_SA_MAX };
 
@@ -126,8 +135,10 @@ static GMenu *action_menu;
 
 static const char* menu_sa_label(int ndx) {
   switch (ndx) {
-    case MENU_SA_START: return pinger_state.run ? ACT_STOP_HDR : ACT_START_HDR;
-    case MENU_SA_PAUSE: return pinger_state.pause ? ACT_RESUME_HDR : ACT_PAUSE_HDR;
+    case MENU_SA_START:
+      return pinger_state.run   ? ACT_STOP_HDR   : ACT_START_HDR;
+    case MENU_SA_PAUSE:
+      return pinger_state.pause ? ACT_RESUME_HDR : ACT_PAUSE_HDR;
     case MENU_SA_RESET: return ACT_RESET_HDR;
     case MENU_SA_HELP:  return ACT_HELP_HDR;
     case MENU_SA_QUIT:  return ACT_QUIT_HDR;
@@ -201,74 +212,152 @@ static gboolean show_help_dialog(GtkWidget *win) {
   return true;
 }
 
-static inline char* get_help_message(void) {
-#define SPANSZ(h, sz, txt) "<span " LINE_HEIGHT(h) " size='" sz "'>" txt "</span>\n"
-#define SPANHDR(txt)  SPANSZ("1.5", "large",  txt)
-#define SPANOPT(l, r) SPANSZ("1.5", "medium", "<b>\t" l "\t</b>" r)
-#define SPANSUB(txt)  SPANSZ("1",   "medium", "\t\t<tt>" txt "</tt>")
-  char *prolog =
-    SPANHDR("Actions")
-    SPANOPT(ACT_START_HDR   "/" ACT_STOP_HDR "\t", "target pings")
-    SPANOPT(ACT_PAUSE_HDR   "/" ACT_RESUME_HDR,    "displaying data")
-    SPANOPT(ACT_RESET_HDR   "\t\t", "ping statistics")
-    SPANOPT(ACT_QUIT_HDR    "\t\t\t", "stop and quit")
-    "\n"
-    SPANHDR("Main Options")
-    SPANOPT(OPT_CYCLES_HDR  "\t", "Number of ping cycles [" G_STRINGIFY(DEF_CYCLES) "]")
-    SPANOPT(OPT_IVAL_HDR    "\t", "Gap in seconds between pings [" G_STRINGIFY(DEF_TOUT) "]")
-    SPANOPT(OPT_DNS_HDR     "\t", "IP address resolving, on | off")
-    SPANOPT(OPT_INFO_HDR    "\t", "Hop elements to display:")
-      SPANSUB(ELEM_HOST_HDR " " ELEM_AS_HDR " " ELEM_CC_HDR " " ELEM_DESC_HDR " " ELEM_RT_HDR)
-    SPANOPT(OPT_STAT_HDR,   "Stat elements to display:")
-      SPANSUB(ELEM_LOSS_HDR " " ELEM_SENT_HDR " " ELEM_RECV_HDR " " ELEM_LAST_HDR " " ELEM_BEST_HDR
-        " " ELEM_WRST_HDR " " ELEM_AVRG_HDR " " ELEM_JTTR_HDR)
-    SPANOPT(OPT_TTL_HDR     "\t\t", "working TTL range [0-" G_STRINGIFY(MAXTTL) "]")
-    SPANOPT(OPT_QOS_HDR     "\t", "QoS/ToS bits of IP header [" G_STRINGIFY(DEF_QOS) "]")
-    SPANOPT(OPT_PLOAD_HDR   "\t", "Up to 16 bytes in hex format [" DEF_PPAD "]")
-    SPANOPT(OPT_PSIZE_HDR   "\t\t", "ICMP data size [" G_STRINGIFY(DEF_PSIZE) "]")
-    SPANOPT(OPT_IPV_HDR,    "either " OPT_IPVA_HDR ", or " OPT_IPV4_HDR ", or " OPT_IPV6_HDR)
-    "\n"
-    SPANHDR("Auxiliary")
-    SPANOPT(OPT_MN_DARK_HEADER, "dark | light");
-  char *epilog =
-    SPANOPT(OPT_LOGMAX_HDR, "Max rows in log tab [" G_STRINGIFY(DEF_LOGMAX) "]")
-    "\n"
-    SPANHDR("CLI")
-    SPANSZ("1.5", "medium", "\tfor command-line options see <b>pingpath(1)</b> manual page");
-  char *prolog_graph =
-    SPANOPT(OPT_GR_DARK_HEADER, "light | dark");
-  char *epilog_graph =
-    SPANOPT(OPT_GRAPH_HDR,  "either " OPT_GR_DOT_HDR ", or " OPT_GR_LINE_HDR ", or " OPT_GR_CURVE_HDR)
-    SPANOPT(OPT_GRLG_HDR,   GRLG_AVJT_HDR  " " GRLG_CCAS_HDR " " GRLG_LGHN_HDR)
-    SPANOPT(OPT_GREX_HDR,   GREX_MEAN_HDR  " " GREX_JRNG_HDR " " GREX_AREA_HDR);
+static inline GtkWidget* get_help_content(void) {
+  GtkWidget *list = gtk_list_box_new();
+  g_return_val_if_fail(GTK_IS_LIST_BOX(list), NULL);
+  //
+  help_line_s actions[] = {
+    { .l = g_strdup_printf("%s/%s", ACT_START_HDR, ACT_STOP_HDR),
+      .r = g_strdup(_("pinging")) },
+    { .l = g_strdup_printf("%s/%s", ACT_PAUSE_HDR, ACT_RESUME_HDR),
+      .r = g_strdup(_("data refreshing")) },
+    { .l = g_strdup(ACT_RESET_HDR),
+      .r = g_strdup(_("statistics data")) },
+    { .l = g_strdup(ACT_QUIT_HDR),
+      .r = g_strdup(_("stop and quit")) },
+  };
+  help_line_s main_options[] = {
+    { .l = g_strdup(OPT_CYCLES_HDR),
+      .r = g_strdup_printf("%s [%d]", _("Number of ping cycles"), DEF_CYCLES) },
+    { .l = g_strdup(OPT_IVAL_HDR),
+      .r = g_strdup_printf("%s [%d]", _("Gap in seconds between pings"), DEF_TOUT) },
+    { .l = g_strdup(OPT_DNS_HDR),
+      .r = g_strdup(_("IP address resolving, on | off")) },
+    { .l = g_strdup(OPT_INFO_HDR),
+      .r = g_strdup_printf("%s:\n%s, %s, %s, %s, %s",
+            _("Hop elements to display"),
+             ELEM_HOST_HDR, ELEM_AS_HDR, ELEM_CC_HDR, ELEM_DESC_HDR, ELEM_RT_HDR) },
+    { .l = g_strdup(OPT_STAT_HDR),
+      .r = g_strdup_printf("%s:\n%s, %s, %s, %s, %s, %s, %s, %s",
+             _("Stat elements to display"),
+             ELEM_LOSS_HDR, ELEM_SENT_HDR, ELEM_RECV_HDR, ELEM_LAST_HDR,
+             ELEM_BEST_HDR, ELEM_WRST_HDR, ELEM_AVRG_HDR, ELEM_JTTR_HDR) },
+    { .l = g_strdup(OPT_TTL_HDR),
+      .r = g_strdup_printf("%s [%d - %d]", _("TTL range"), 0, MAXTTL) },
+    { .l = g_strdup(OPT_QOS_HDR),
+      .r = g_strdup_printf("%s [%d]", _("QoS/ToS bits"), DEF_QOS) },
+    { .l = g_strdup(OPT_PLOAD_HDR),
+      .r = g_strdup_printf("%s [%s]", _("Up to 16 bytes in hex format"), DEF_PPAD) },
+    { .l = g_strdup(OPT_PSIZE_HDR),
+      .r = g_strdup_printf("%s [%d]", _("ICMP data size"), DEF_PSIZE) },
+    { .l = g_strdup(OPT_IPV_HDR),
+      .r = g_strdup_printf("%s | %s | %s", OPT_IPVA_HDR, OPT_IPV4_HDR, OPT_IPV6_HDR) },
+  };
+  help_line_s aux_options[] = {
+    { .l = g_strdup(HELP_THEME_MAIN),
+      .r = g_strdup_printf("%s | %s", _("dark"), _("light")) },
+    { .l = g_strdup(HELP_THEME_GRAPH),
+      .r = g_strdup_printf("%s | %s", _("light"), _("dark")) },
 #ifdef WITH_PLOT
-  char *prolog_plot =
-    SPANOPT(OPT_PL_DARK_HEADER, "light | dark");
-  char *epilog_plot =
-    SPANOPT(OPT_PLOT_HDR,   PLEL_BACK_HDR  " " PLEL_AXIS_HDR " " PLEL_GRID_HDR " " PLEL_ROTR_HDR)
-    SPANOPT(OPT_GRAD_HDR,   "to color 3D-surface:")
-      SPANSUB("Start-end pairs of RGB colors")
-    SPANOPT(OPT_ROTOR_HDR,  "Space, Orientation, and Step")
-    SPANOPT(OPT_SCALE_HDR,  OPT_FOV_HDR);
+    { .l = g_strdup(HELP_THEME_3D),
+      .r = g_strdup_printf("%s | %s", _("light"), _("dark")) },
 #endif
-#undef SPANSZ
-#undef SPANHDR
-#undef SPANOPT
-#undef SPANSUB
-  char* list[8] = {0}; unsigned ndx = 0;
-#define HELP_MESG(cond, mesg) { if ((cond) && (ndx < G_N_ELEMENTS(list))) list[ndx++] = (mesg); }
-  HELP_MESG(true,       prolog);
-  HELP_MESG(opts.graph, prolog_graph);
+    { .l = g_strdup(OPT_GRAPH_HDR),
+      .r = g_strdup_printf("%s | %s | %s",
+             OPT_GR_DOT_HDR, OPT_GR_LINE_HDR, OPT_GR_CURVE_HDR) },
+    { .l = g_strdup(OPT_GRLG_HDR),
+      .r = g_strdup_printf("%s, %s, %s",
+             GRLG_AVJT_HDR, GRLG_CCAS_HDR, GRLG_LGHN_HDR) },
+    { .l = g_strdup(OPT_GREX_HDR),
+      .r = g_strdup_printf("%s, %s, %s",
+             GREX_MEAN_HDR, GREX_JRNG_HDR, GREX_AREA_HDR) },
 #ifdef WITH_PLOT
-  HELP_MESG(opts.plot,  prolog_plot)
+    { .l = g_strdup(OPT_PLOT_HDR),
+      .r = g_strdup_printf("%s, %s, %s, %s",
+             PLEL_BACK_HDR, PLEL_AXIS_HDR, PLEL_GRID_HDR, PLEL_ROTR_HDR) },
+    { .l = g_strdup(OPT_GRAD_HDR),
+      .r = g_strdup_printf("%s:\n%s %s", _("3D-surface colors"),
+             _("RGB color pairs like"), "r=80:80,g=230:80,b=80:230") },
+    { .l = g_strdup(OPT_ROTOR_HDR),
+      .r = g_strdup(_("Space, Orientation, and Step")) },
+    { .l = g_strdup(OPT_SCALE_HDR),
+      .r = g_strdup(OPT_FOV_HDR) },
 #endif
-  HELP_MESG(opts.graph, epilog_graph);
-#ifdef WITH_PLOT
-  HELP_MESG(opts.plot,  epilog_plot)
-#endif
-  HELP_MESG(true,       epilog);
-  return g_strjoinv(NULL, list);
-#undef HELP_MESG
+    { .l = g_strdup(OPT_LOGMAX_HDR),
+      .r = g_strdup_printf("%s [%d]", _("Max rows in log-tab"), DEF_LOGMAX) },
+  };
+  help_line_s cli_options[] = {
+    { .l = g_strdup(_("for command-line options see " APPNAME "(1) manual page")) }
+  };
+  //
+  help_section_s sections[] = {
+    { .name  = g_strdup(HELP_ACT_TITLE),
+      .lines = actions,
+      .len   = G_N_ELEMENTS(actions) },
+    { .name  = g_strdup(OPT_MAINMENU_TIP),
+      .lines = main_options,
+      .len   = G_N_ELEMENTS(main_options) },
+    { .name  = g_strdup(OPT_AUXMENU_TIP),
+      .lines = aux_options,
+      .len   = G_N_ELEMENTS(aux_options) },
+    { .name  = g_strdup(HELP_CLI_TITLE),
+      .lines = cli_options,
+      .len   = G_N_ELEMENTS(cli_options) },
+  };
+  //
+#define ADD_H_LABEL(group, str, css) if (str) {        \
+  GtkWidget *label = gtk_label_new(str);               \
+  if (GTK_IS_LABEL(label)) {                           \
+    gtk_label_set_selectable(GTK_LABEL(label), false); \
+    gtk_box_append(GTK_BOX(box), label);               \
+    gtk_label_set_xalign(GTK_LABEL(label), 0);         \
+    gtk_widget_set_valign(label, GTK_ALIGN_START);     \
+    gtk_widget_set_hexpand(label, true);               \
+    if (style_loaded && (css))                         \
+      gtk_widget_add_css_class(label, (css));          \
+    if (group)                                         \
+      gtk_size_group_add_widget((group), label);       \
+  }                                                    \
+}
+  GtkSizeGroup *g0 = gtk_size_group_new(GTK_SIZE_GROUP_HORIZONTAL);
+  GtkSizeGroup *g1 = gtk_size_group_new(GTK_SIZE_GROUP_HORIZONTAL);
+  for (unsigned i = 0; i < G_N_ELEMENTS(sections); i++) {
+    GtkWidget *box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, MARGIN);
+    if (GTK_IS_BOX(box)) {
+      ADD_H_LABEL(0, sections[i].name, NULL);
+      if (style_loaded) {
+        gtk_widget_add_css_class(box, CSS_PAD4);
+        gtk_widget_add_css_class(box, CSS_TPAD);
+      }
+      GtkWidget *div = gtk_separator_new(GTK_ORIENTATION_HORIZONTAL);
+      if (div) gtk_list_box_append(GTK_LIST_BOX(list), div);
+      gtk_list_box_append(GTK_LIST_BOX(list), box);
+    }
+    g_free(sections[i].name);
+    for (unsigned j = 0; j < sections[i].len; j++) {
+      char *l = sections[i].lines[j].l;
+      char *r = sections[i].lines[j].r;
+      GtkWidget *box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, MARGIN * 2);
+      if (GTK_IS_BOX(box)) {
+        ADD_H_LABEL(r ? g0 : 0, l, CSS_LPAD_BOLD);
+        ADD_H_LABEL(g1, r, CSS_RPAD);
+        if (style_loaded)
+          gtk_widget_add_css_class(box, CSS_PAD4);
+        gtk_list_box_append(GTK_LIST_BOX(list), box);
+      }
+      g_free(l);
+      g_free(r);
+    }
+  }
+  g_object_unref(g0);
+  g_object_unref(g1);
+#undef ADD_H_LABEL
+  //
+  if (GTK_IS_LIST_BOX(list)) {
+    gtk_list_box_set_selection_mode(GTK_LIST_BOX(list), GTK_SELECTION_NONE);
+    gtk_list_box_set_show_separators(GTK_LIST_BOX(list), false);
+  }
+  return list;
 }
 
 static void on_help(GSimpleAction *action G_GNUC_UNUSED, GVariant *parameter G_GNUC_UNUSED, GtkWindow *win) {
@@ -293,24 +382,24 @@ static void on_help(GSimpleAction *action G_GNUC_UNUSED, GVariant *parameter G_G
   }
   //
   if (!GTK_IS_LABEL(help_dialog.hdr)) {
-    help_dialog.hdr = gtk_label_new(appver);
+    help_dialog.hdr = gtk_label_new(APPVER);
     g_return_if_fail(GTK_IS_LABEL(help_dialog.hdr));
-    if (style_loaded) gtk_widget_add_css_class(help_dialog.hdr, CSS_PAD6);
     gtk_box_append(GTK_BOX(help_dialog.box), help_dialog.hdr);
-    GtkWidget *div = gtk_separator_new(GTK_ORIENTATION_HORIZONTAL);
-    if (GTK_IS_SEPARATOR(div)) gtk_box_append(GTK_BOX(help_dialog.box), div);
   }
   //
   if (!GTK_IS_SCROLLED_WINDOW(help_dialog.scroll)) {
     help_dialog.scroll = gtk_scrolled_window_new();
     g_return_if_fail(GTK_IS_SCROLLED_WINDOW(help_dialog.scroll));
-    gtk_widget_set_size_request(help_dialog.scroll, X_RES * 0.47, Y_RES * 0.76);
+    gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(help_dialog.scroll),
+      GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
+    gtk_widget_set_size_request(help_dialog.scroll, -1, Y_RES * 0.8);
     gtk_box_append(GTK_BOX(help_dialog.box), help_dialog.scroll);
   }
   //
   if (!GTK_IS_BUTTON(help_dialog.btn)) {
-    help_dialog.btn = gtk_button_new_with_label(OKAY_BUTTON);
+    help_dialog.btn = gtk_button_new_with_label(BUTTON_OKAY);
     g_return_if_fail(GTK_IS_BUTTON(help_dialog.btn));
+//    gtk_button_set_use_underline(GTK_BUTTON(help_dialog.btn), true);
     g_signal_connect(help_dialog.btn, EV_CLICK, G_CALLBACK(on_hide_help), help_dialog.win);
     gtk_box_append(GTK_BOX(help_dialog.box), help_dialog.btn);
     GtkEventController *kcntrl = gtk_event_controller_key_new();
@@ -320,16 +409,15 @@ static void on_help(GSimpleAction *action G_GNUC_UNUSED, GVariant *parameter G_G
     }
   }
   //
-  if (!GTK_IS_LABEL(help_dialog.body)) {
-    char *mesg = get_help_message();
-    help_dialog.body = gtk_label_new(mesg); g_free(mesg);
-    g_return_if_fail(GTK_IS_LABEL(help_dialog.body));
-    gtk_label_set_use_markup(GTK_LABEL(help_dialog.body), true);
-    gtk_label_set_selectable(GTK_LABEL(help_dialog.body), false);
+  if (!GTK_IS_WIDGET(help_dialog.body)) {
+    help_dialog.body = get_help_content();
+    g_return_if_fail(GTK_IS_WIDGET(help_dialog.body));
     gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(help_dialog.scroll), help_dialog.body);
   }
   //
   show_help_dialog(help_dialog.win);
+  if (help_dialog.btn)
+    gtk_widget_grab_focus(help_dialog.btn);
 }
 
 static void on_quit(GSimpleAction *action G_GNUC_UNUSED, GVariant *parameter G_GNUC_UNUSED, GtkWindow *win) {
@@ -387,16 +475,18 @@ static GMenu* action_menu_init(GtkWidget *bar) {
   gtk_header_bar_pack_start(GTK_HEADER_BAR(bar), button);
   const char *icons[] = {ACT_MENU_ICON, ACT_MENU_ICOA, NULL};
   const char *ico = is_sysicon(icons);
-  if (!ico) WARN("No icon found for %s", "action menu");
-  else gtk_menu_button_set_icon_name(GTK_MENU_BUTTON(button), ico);
-  gtk_widget_set_tooltip_text(button, ACT_TOOLTIP);
+  if (ico) gtk_menu_button_set_icon_name(GTK_MENU_BUTTON(button), ico);
+  else WARN("No icon found for %s", "action menu");
+  gtk_widget_set_tooltip_text(button, OPT_ACTIONS_TIP);
   GMenu *menu = g_menu_new();
   if (G_IS_MENU(menu)) {
     GtkWidget *popover = gtk_popover_menu_new_from_model(G_MENU_MODEL(menu));
-    if (GTK_IS_POPOVER_MENU(popover)) gtk_menu_button_set_popover(GTK_MENU_BUTTON(button), popover);
+    if (GTK_IS_POPOVER_MENU(popover))
+      gtk_menu_button_set_popover(GTK_MENU_BUTTON(button), popover);
     else okay = false;
   } else okay = false;
-  if (!okay) gtk_header_bar_remove(GTK_HEADER_BAR(bar), button);
+  if (!okay)
+    gtk_header_bar_remove(GTK_HEADER_BAR(bar), button);
   return okay ? menu : NULL;
 }
 

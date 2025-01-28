@@ -44,7 +44,7 @@ static void update_addrname(int at, t_host *b) { // addr is mandatory, name not
     }
   }
   if (!done) { // add addrname
-    if (vacant < 0) { LOG("no free slots for hop#%d address(%s)", at, b->addr); }
+    if (vacant < 0) LOG("no free slots for hop#%d address(%s)", at, b->addr);
     else {
       t_host *a = &hop->host[vacant];
       UPD_STR(a->addr, b->addr);
@@ -55,8 +55,10 @@ static void update_addrname(int at, t_host *b) { // addr is mandatory, name not
         hops[at].wcached[j] = hops[at].wcached_nl[j] = false;
       }
       LOG("set addrname[%d]: %s %s", at, b->addr, b->name ? b->name : "");
-      if (!b->name && opts.dns) dns_lookup(hop, vacant); // run dns lookup
-      if (opts.whois) whois_resolv(hop, vacant);         // run whois resolv
+      if (!b->name && opts.dns)
+        dns_lookup(hop, vacant);   // make dns query
+      if (opts.whois)
+        whois_resolv(hop, vacant); // make whois query
     }
   }
   // cleanup dups

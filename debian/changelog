@@ -1,3 +1,11 @@
+pingpath (0.3.46) noble; urgency=low
+
+  * work-in-progress: prepare NLS infra
+
+  * wip: NLS menu
+
+ -- yvs <VSYakovetsky@gmail.com>  Tue, 28 Jan 2025 02:02:34 +0200
+
 pingpath (0.3.45) mantic noble; urgency=low
 
   * define _GNU_SOURCE via project arguments

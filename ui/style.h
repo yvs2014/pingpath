@@ -14,10 +14,14 @@
 #define CSS_PLOT_BG     "bgplot"
 #define CSS_ROTOR_COL   "rtrcol"
 #endif
-#define CSS_PAD         "pad"
-#define CSS_PAD6        "pad6"
 #define CSS_NOPAD       "nopad"
-#define CSS_CHPAD       "chpad"
+#define CSS_PAD         "pad"
+#define CSS_PAD4        "pad4"
+#define CSS_LPAD        "lpad"
+#define CSS_LPAD_BOLD   "lpad_bold"
+#define CSS_TPAD        "tpad"
+#define CSS_RPAD        "rpad"
+#define CSS_RPAD_BOLD   "rpad_bold"
 #define CSS_NOFRAME     "noframe"
 #define CSS_ROUNDED     "rounded"
 #define CSS_ROUNDG      "roundg"
@@ -26,6 +30,8 @@
 #define CSS_LEGEND_COL  "lgndcol"
 #define CSS_LEGEND_TEXT "lgndtxt"
 #define CSS_ROTOR       "rotor"
+#define CSS_LEFT_PAD    "left_pad"
+#define CSS_PAD4        "pad4"
 
 void style_set(void);
 void style_free(void);

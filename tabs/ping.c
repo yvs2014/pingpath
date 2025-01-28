@@ -270,7 +270,7 @@ static GtkWidget* pt_make_dynlist(t_listline *lines, int len, t_type_elem *elems
   for (int i = 0; i < len; i++) {
     GtkWidget *box = lines[i].box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, MARGIN);
     g_return_val_if_fail(box, NULL);
-    if (style_loaded) gtk_widget_add_css_class(box, CSS_PAD6);
+    if (style_loaded) gtk_widget_add_css_class(box, CSS_RPAD);
     gtk_widget_set_visible(box, elems != NULL);
     GtkListBoxRow *row = lines[i].row = line_row_new(box, elems != NULL);
     g_return_val_if_fail(row, NULL);

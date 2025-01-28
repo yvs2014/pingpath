@@ -43,7 +43,7 @@ mv "$_mf" "$MD_CHANGELOG"
 _mntr=$(sed -n 's/^Maintainer: //p' debian/control)
 _tf="/tmp/$(basename $DEB_CHANGELOG).$$"
 cp "$DEB_CHANGELOG" "$_tf"
-printf "$NAME ($vn) mantic noble; urgency=low\n$deb_comments\n -- $_mntr  $(date -R)\n\n" | cat - "$_tf" >"$DEB_CHANGELOG"
+printf "$NAME ($vn) noble; urgency=low\n$deb_comments\n -- $_mntr  $(date -R)\n\n" | cat - "$_tf" >"$DEB_CHANGELOG"
 rm -f "$_tf"
 
 echo "Keep in mind:"

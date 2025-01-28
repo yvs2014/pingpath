@@ -14,7 +14,7 @@ DSCDIR    ?= $(SHRDIR)/applications
 SVGICODIR ?= $(SHRDIR)/icons/hicolor/scalable/apps
 SMPLDIR   ?= $(SHRDIR)/doc/$(NAME)/examples
 
-DESC  = $(NAME).desktop
+DESC      = $(NAME).desktop
 DESC_SRC  = $(ASSETS)/$(DESC)
 DESC_DST  = $(GROUP).$(DESC)
 
@@ -89,16 +89,35 @@ ifndef NO_PLOT
 SRC += tabs/plot.c tabs/plot_aux.c tabs/plot_pango.c
 endif
 
-OBJS = $(SRC:%.c=$(BUILDDIR)/%.o)
+ALLO   = $(NAME)
+INST   = base_install
+OBJS   = $(SRC:%.c=$(BUILDDIR)/%.o)
+MOPO   =
+PO_SRC =
+
+ifndef NO_NLS
+PO_SRC += po/uk.po
+CFLAGS += -DWITH_NLS -DLOCALEDIR='"$(SHRDIR)/locale"'
+MOPO   += $(PO_SRC:%.po=$(BUILDDIR)/%.mo)
+INST   += nls_install
+ALLO   += $(MOPO)
+endif
+
+all: $(ALLO)
 
 $(NAME): config $(OBJS)
-	@echo '  LD $@'
+	@echo '  LD  $@'
 	@$(CC) -o $@ $(OBJS) $(LDFLAGS) $(LIBS)
 
 $(OBJS): $(BUILDDIR)/%.o: %.c common.h
 	@mkdir -p $(@D)
-	@echo '  CC $@'
+	@echo '  CC  $@'
 	@$(CC) -c -o $@ $(CFLAGS) $<
+
+$(MOPO): $(BUILDDIR)/%.mo: %.po
+	@mkdir -p $(@D)
+	@echo '  GEN $@'
+	@msgfmt -o $@ $<
 
 config:
 	@touch config.h
@@ -107,11 +126,16 @@ clean:
 	rm -f -- $(NAME) config.h
 	rm -rf -- $(BUILDDIR)
 
-install: $(NAME)
+install: $(INST)
+
+base_install: $(NAME)
 	install -m 755 -d $(BASEDIR)/bin $(MANDIR) $(SMPLDIR) $(DSCDIR) $(SVGICODIR)
 	install -m 755 -s $(NAME) $(BASEDIR)/bin/
 	install -m 644 $(NAME).1 $(MANDIR)/
 	install -m 644 -T $(CONF_SRC) $(SMPLDIR)/$(CONF_DST)
 	install -m 644 -T $(DESC_SRC) $(DSCDIR)/$(DESC_DST)
 	install -m 644 $(ICONNAME).svg $(SVGICODIR)/
+
+nls_install: $(MOPO)
+	install -m 644 $< $(SHRDIR)/locale/$(basename $(notdir $<))/LC_MESSAGES/$(NAME).mo
 

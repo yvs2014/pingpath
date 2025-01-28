@@ -44,6 +44,7 @@ parts:
       - git
       - build-essential
       - pkgconf
+      - gettext
       - libgl-dev
       - libepoxy-dev
       - libcglm-dev
@@ -53,4 +54,5 @@ parts:
       - usr/share/doc/pingpath/examples/pingpath.conf
       - usr/share/applications/net.tools.pingpath.desktop
       - usr/share/icons/hicolor/scalable/apps/pingpath.svg
+      - usr/share/locale/uk/LC_MESSAGES/pingpath.mo
 

@@ -71,6 +71,21 @@ if(PLOT)
   link_libraries(PkgConfig::EPOXY)
 endif()
 
+set("DATADIR"   "${CMAKE_INSTALL_DATADIR}")
+set("LOCALEDIR" "${CMAKE_INSTALL_DATADIR}/locale")
+
+# optional: NLS (default ON)
+option(NLS "I18n LC_MESSAGES" ON)
+if(NLS)
+  set("WITH_NLS" ON)
+  find_package(Gettext REQUIRED)
+  set(LINGUAS uk)
+  foreach(lang ${LINGUAS})
+    GETTEXT_PROCESS_PO_FILES("${lang}" ALL INSTALL_DESTINATION "${LOCALEDIR}/"
+      PO_FILES "${CMAKE_CURRENT_SOURCE_DIR}/po/${lang}.po")
+  endforeach()
+endif()
+
 option(pingdir "Path to ping" OFF)
 if(pingdir)
   set("PINGDIR" "${pingdir}")
@@ -103,5 +118,6 @@ message(STATUS "Options:")
 message(STATUS "  DND  ${DND}\t: DND support")
 message(STATUS "  JSON ${JSON}\t: JSON support")
 message(STATUS "  PLOT ${PLOT}\t: 3D plots")
+message(STATUS "  NLS  ${NLS}\t: LC_MESSAGES")
 message("")
 

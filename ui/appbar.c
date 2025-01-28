@@ -2,8 +2,8 @@
 #include <stdlib.h>
 #include <time.h>
 
-#include <common.h>
-
+#include "text.h"
+#include "common.h"
 #include "appbar.h"
 #include "style.h"
 #include "action.h"
@@ -11,8 +11,6 @@
 #include "pinger.h"
 #include "parser.h"
 #include "notifier.h"
-
-#define ENTER_HINT "Enter hostname or IP address ..."
 
 unsigned datetime_id;
 
@@ -34,7 +32,7 @@ static gboolean start_datetime(GtkWidget *bar) {
   if (datetime_id) { g_source_remove(datetime_id); datetime_id = 0; }
   GtkWidget *datetime = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
   g_return_val_if_fail(GTK_IS_BOX(datetime), false);
-  if (style_loaded) gtk_widget_set_name(datetime, CSS_ID_DATETIME);
+  if (style_loaded) gtk_widget_add_css_class(datetime, CSS_ID_DATETIME);
   gtk_header_bar_set_title_widget(GTK_HEADER_BAR(bar), datetime);
   GtkWidget *label = gtk_label_new(NULL);
   g_return_val_if_fail(GTK_IS_LABEL(label), false);
@@ -50,7 +48,7 @@ static void on_target(GtkEntry *entry G_GNUC_UNUSED, gpointer user_data G_GNUC_U
   if (target) {
     g_free(opts.target); opts.target = target;
     action_update();
-    notifier_inform(ENT_TARGET_HDR " %s", target);
+    notifier_inform("%s %s", ENT_TARGET_HDR, target);
   }
 }
 
@@ -59,11 +57,13 @@ static gboolean add_target_input(GtkWidget *bar) {
   GtkWidget *entry = gtk_entry_new();
   g_return_val_if_fail(GTK_IS_ENTRY(entry), false);
   gtk_entry_set_max_length(GTK_ENTRY(entry), MAXHOSTNAME);
-  char *hint = ENTER_HINT;
-  gtk_entry_set_placeholder_text(GTK_ENTRY(entry), hint);
+  gtk_entry_set_placeholder_text(GTK_ENTRY(entry), TARGET_HINT);
   gtk_editable_set_editable(GTK_EDITABLE(entry), true);
-  gtk_editable_set_max_width_chars(GTK_EDITABLE(entry), g_utf8_strlen(hint, MAXHOSTNAME) - 5);
-  if (opts.target) gtk_editable_set_text(GTK_EDITABLE(entry), opts.target);
+  gtk_editable_set_max_width_chars(
+    GTK_EDITABLE(entry),
+    g_utf8_strlen(TARGET_HINT, MAXHOSTNAME) - 5);
+  if (opts.target)
+    gtk_editable_set_text(GTK_EDITABLE(entry), opts.target);
   g_signal_connect(entry, EV_ACTIVE, G_CALLBACK(on_target), NULL);
   gtk_header_bar_pack_start(GTK_HEADER_BAR(bar), entry);
   return true;

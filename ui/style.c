@@ -5,7 +5,7 @@
 #include "common.h"
 #include "style.h"
 
-#define LEGEND_BORDER "#515151"
+#define FONT_BOLD "font-weight:500;"
 
 #define PAD   "8px"
 #define PAD4  "4px"
@@ -18,6 +18,7 @@
 #define SFFX_DIV1   "-"
 #define SFFX_DIV2   ":"
 
+#define LEGEND_BORDER     "#515151"
 #define BG_CONTRAST_DARK  "#2c2c2c"
 #define BG_CONTRAST_LIGHT "#f5f5f5"
 
@@ -47,20 +48,24 @@ entry {background:transparent; border:none;}\n\
 button.toggle {background:transparent;}\n\
 vertical {padding:" PAD16 ";}\n\
 .flat {padding:" PAD4 ";}\n\
-." CSS_PAD " {padding:" PAD ";}\n\
-." CSS_NOPAD " {min-height:0;}\n\
-." CSS_CHPAD " {padding-right:" PAD ";}\n\
-." CSS_PAD6  " {padding-right:" PAD6 ";}\n\
-." CSS_NOFRAME " {border:none;}\n\
-." CSS_ROUNDED " {border-radius:5px; padding:" PAD16 ";}\n\
-." CSS_ROUNDG " {border-radius:7px; padding:" PAD ";}\n\
-." CSS_INVERT " {filter:invert(100%);}\n\
-." CSS_LEGEND " {border: 1px outset " LEGEND_BORDER "; padding: " PAD4 " " PAD6 " " PAD4 " " PAD4 ";}\n\
-." CSS_LEGEND_TEXT " {padding:0;}\n\
-." CSS_ROTOR  " {border: 0; padding: " PAD4 " " PAD6 " " PAD4 " " PAD4 ";}\n\
-." CSS_BGONDARK  " {background:" BG_CONTRAST_DARK  ";color:" BG_CONTRAST_DARK  ";}\n\
-." CSS_BGONLIGHT " {background:" BG_CONTRAST_LIGHT ";color:" BG_CONTRAST_LIGHT ";}\n\
-#" CSS_ID_DATETIME " {font-weight:500;}\n";
+." CSS_NOPAD     "{min-height:0;}\n\
+." CSS_PAD       "{padding:"       PAD   ";}\n\
+." CSS_PAD4      "{padding:"       PAD4  ";}\n\
+." CSS_LPAD      "{padding-left:"  PAD   ";}\n\
+." CSS_LPAD_BOLD "{padding-left:"  PAD16 "; " FONT_BOLD "}\n\
+." CSS_TPAD      "{padding-top:"   PAD16   ";}\n\
+." CSS_RPAD      "{padding-right:" PAD   ";}\n\
+." CSS_RPAD_BOLD "{padding-right:" PAD16 "; " FONT_BOLD "}\n\
+." CSS_NOFRAME   "{border:none;}\n\
+." CSS_ROUNDED   "{border-radius:5px; padding:" PAD16 ";}\n\
+." CSS_ROUNDG    "{border-radius:7px; padding:" PAD ";}\n\
+." CSS_INVERT    "{filter:invert(100%);}\n\
+." CSS_LEGEND    "{border: 1px outset " LEGEND_BORDER "; padding: " PAD4 " " PAD6 " " PAD4 " " PAD4 ";}\n\
+." CSS_LEGEND_TEXT "{padding:0;}\n\
+." CSS_ROTOR     "{border: 0; padding: " PAD4 " " PAD6 " " PAD4 " " PAD4 ";}\n\
+." CSS_BGONDARK  "{background:" BG_CONTRAST_DARK  ";color:" BG_CONTRAST_DARK  ";}\n\
+." CSS_BGONLIGHT "{background:" BG_CONTRAST_LIGHT ";color:" BG_CONTRAST_LIGHT ";}\n\
+." CSS_ID_DATETIME "{" FONT_BOLD "}";
 
 static void style_css_load(GtkCssProvider *prov, const char *str) {
 #if GTK_CHECK_VERSION(4, 12, 0)

@@ -400,9 +400,11 @@ static GtkWidget* nt_init(GtkWidget *base, t_notifier *nt) {
 
 static void nt_fill_legend_elem(GtkWidget* label, const char *f1, const char *f2, const char *delim) {
   if (!GTK_IS_LABEL(label)) return;
-  char *str =((f1) && (f1)[0])
-    ? g_strdup_printf("%s%s%s", (f2) ? (f2) : "", delim ? delim : "", f1)
-    : ((f2) ? g_strdup_printf("%s", f2) : NULL);
+  char *str = NULL;
+  if (f1 && *f1)
+    str = g_strdup_printf("%s%s%s", f2 ? f2 : "", delim ? delim : "", f1);
+  else if (f2)
+    str = g_strdup(f2);
   UPDATE_LABEL(label, str);
   g_free(str);
 }

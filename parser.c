@@ -20,10 +20,9 @@
 #define REN_TS_U "tsu"
 #define REN_REASON "reason"
 #define REN_INFO "info"
-#define REN_SKIP "skip"
 
 #define PATT_TS   "^\\[(?<" REN_TS_S ">\\d+)(.(?<" REN_TS_U ">\\d+))*\\]"
-#define PATT_FROM "rom (((?<" REN_NAME ">.*) \\((?<" REN_ADDR ">.*)\\))|(?<" REN_IP ">.*))"
+#define PATT_FROM "[fF]rom (((?<" REN_NAME ">.*) \\((?<" REN_ADDR ">.*)\\))|(?<" REN_IP ">[^:]*))"
 #define PATT_SEQ  "icmp_seq=(?<" REN_SEQ ">\\d+)"
 
 #define DIGIT_OR_LETTER "\\d\\pLu\\pLl"
@@ -60,13 +59,13 @@ static const GRegex *hostname_chars_regex;
 
 static t_response_regex regexes[] = {
   { .cb = parse_success_match, .rx = { .pattern =
-    PATT_TS " \\d+ bytes f" PATT_FROM ": " PATT_SEQ " ttl=(?<" REN_TTL ">\\d+) time=(?<" REN_TIME ">\\d+.?\\d+)" }},
+    PATT_TS " \\d+ bytes " PATT_FROM ": " PATT_SEQ " ttl=(?<" REN_TTL ">\\d+) time=(?<" REN_TIME ">\\d+.?\\d+)" }},
   { .cb = parse_discard_match, .rx = { .pattern =
-    PATT_TS " F" PATT_FROM " " PATT_SEQ " (?<" REN_REASON ">.*)" }},
+    PATT_TS " " PATT_FROM ":? " PATT_SEQ " (?<" REN_REASON ">.*)" }},
   { .cb = parse_timeout_match, .rx = { .pattern =
-    PATT_TS " no answer yet for " PATT_SEQ }},
+    PATT_TS " [nN]o answer yet(: | for )+" PATT_SEQ }},
   { .cb = parse_info_match,    .rx = { .pattern =
-    PATT_TS " \\d+ bytes f" PATT_FROM ": " PATT_SEQ " ttl=(?<" REN_TTL ">\\d+) (?<" REN_SKIP ">time=.* ms )(?<" REN_INFO ">.*)" }},
+    PATT_TS " \\d+ bytes " PATT_FROM ": " PATT_SEQ " ttl=(?<" REN_TTL ">\\d+) (time=.* ms )(?<" REN_INFO ">.*)" }},
 };
 
 #define NODUPCHARS "(?!.*(.).*\\1)"
@@ -185,21 +184,23 @@ static gboolean parse_info_match(int at, GMatchInfo* match, const char *line) {
 }
 
 static gboolean parse_match_wrap(int at, GRegex *re, const char *line, parser_cb parser) {
-  GMatchInfo *match = NULL;
-  if (!parser) return false;
-  gboolean gowith = g_regex_match(re, line, 0, &match);
-  if (match) {
-    gboolean valid = gowith ? parser(at, match, line) : false;
-    g_match_info_free(match);
-    return valid;
+  if (parser) {
+    GMatchInfo *match = NULL;
+    gboolean gowith = g_regex_match(re, line, 0, &match);
+    if (match) {
+      gboolean valid = gowith ? parser(at, match, line) : false;
+      g_match_info_free(match);
+      return valid;
+    }
   }
   return false;
 }
 
 static void analyze_line(int at, const char *line) {
-  static int n_regexes = G_N_ELEMENTS(regexes);
-  for (int i = 0; i < n_regexes; i++)
-    if (parse_match_wrap(at, regexes[i].rx.regex, line, regexes[i].cb)) return;
+  int n = G_N_ELEMENTS(regexes);
+  for (int i = 0; i < n; i++)
+    if (parse_match_wrap(at, regexes[i].rx.regex, line, regexes[i].cb))
+      return;
   DEBUG("UNKNOWN[at=%d]: %s", at, line);
 }
 

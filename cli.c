@@ -3,9 +3,9 @@
 #include <string.h>
 #include <limits.h>
 
-#include "common.h"
-
 #include "cli.h"
+#include "text.h"
+#include "common.h"
 #include "pinger.h"
 #include "parser.h"
 #include "ui/option.h"
@@ -432,14 +432,15 @@ static gboolean config_opt_not_found(GError *opterr, const char *section, const 
    const char *value, GError **error) {
   if (g_error_matches(opterr, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_KEY_NOT_FOUND) ||
       g_error_matches(opterr, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_GROUP_NOT_FOUND)) return true;
-  g_warning("%s:%s: %s", section, name, opterr ? opterr->message : unkn_error);
+  g_warning("%s:%s: %s", section, name, opterr ? opterr->message : UNKN_ERROR);
   CLI_SET_ERR; return false;
 }
 
-static void cli_set_opt_dns(gboolean numeric, t_opts *opts) {
-  if (!opts) return;
-  gboolean dns = !numeric; if (opts->dns == dns) return;
-  opts->dns = dns; g_message(OPT_DNS_HDR " %s", onoff(dns));
+static void cli_set_opt_dns(gboolean dns, t_opts *opts) {
+  if (opts && (opts->dns != dns)) {
+    opts->dns = dns;
+    g_message("%s %s", OPT_DNS_HDR, onoff(dns));
+  }
 }
 
 static gboolean cli_opt_f(const char *name, const char *value, t_opts *opts, GError **error) {
@@ -476,8 +477,9 @@ static gboolean cli_opt_f(const char *name, const char *value, t_opts *opts, GEr
   g_autoptr(GKeyFile) file = g_key_file_new();
   g_autoptr(GError) ferr = NULL;
   if (!g_key_file_load_from_file(file, value, G_KEY_FILE_NONE, &ferr)) {
-    g_warning("%s: \"%s\"", ferr ? ferr->message : unkn_error, value);
-    CLI_SET_ERR; return false;
+    g_warning("%s: %s", ferr ? ferr->message : UNKN_ERROR, value);
+    CLI_SET_ERR;
+    return false;
   }
   for (const t_config_section *cfg_section = config_sections; cfg_section; cfg_section++) {
     const char *section = cfg_section->name; if (!section) break;
@@ -518,8 +520,8 @@ static gboolean cli_opt_f(const char *name, const char *value, t_opts *opts, GEr
           }
         } break;
         case CNF_OPT_NODNS: {
-          gboolean val = g_key_file_get_boolean(file, section, optname, &opterr);
-          if (!opterr) cli_set_opt_dns(val, opts);
+          gboolean numerical = g_key_file_get_boolean(file, section, optname, &opterr);
+          if (!opterr) cli_set_opt_dns(!numerical, opts);
         } break;
         case CNF_OPT_CYCLES:
         case CNF_OPT_IVAL:
@@ -559,14 +561,16 @@ static gboolean cli_opt_f(const char *name, const char *value, t_opts *opts, GEr
 #define RECAP_TYPE_MESG "text, csv"
 #endif
 
-#define CLI_OPT_NONE(sname, lname, adata, mdesc) { .short_name = (sname), .long_name = (lname), \
-  .description = (mdesc), .arg = G_OPTION_ARG_NONE, .arg_data = (adata) }
-#define CLI_OPT_SMTH(sname, lname, adata, mdesc, adesc, type) { .short_name = (sname), .long_name = (lname), \
-  .description = (mdesc), .arg = (type), .arg_data = (adata), .arg_description = (adesc) }
-#define CLI_OPT_CALL(sname, lname, adata, mdesc, adesc) \
-  CLI_OPT_SMTH(sname, lname, adata, mdesc, adesc, G_OPTION_ARG_CALLBACK)
-#define CLI_OPT_INTC(sname, lname, adata, mdesc, adesc) \
-  CLI_OPT_SMTH(sname, lname, adata, mdesc, adesc, G_OPTION_ARG_INT)
+#define CLI_OPT_NONE(ch, name, data) {                              \
+  .short_name = (ch), .long_name = (name), .description = desc[ch], \
+  .arg = G_OPTION_ARG_NONE, .arg_data = (data) }
+#define CLI_OPT_SMTH(ch, name, type, data, arg_desc) {              \
+  .short_name = (ch), .long_name = (name), .description = desc[ch], \
+  .arg = (type), .arg_data = (data), .arg_description = (arg_desc) }
+#define CLI_OPT_CALL(ch, name, data, arg_desc) \
+  CLI_OPT_SMTH(ch, name, G_OPTION_ARG_CALLBACK, data, arg_desc)
+#define CLI_OPT_INTC(ch, name, data, arg_desc) \
+  CLI_OPT_SMTH(ch, name, G_OPTION_ARG_INT,      data, arg_desc)
 
 gboolean autostart;
 
@@ -582,49 +586,53 @@ static inline gboolean cli_tab_opt(const gboolean off[2], t_opts *opts) {
 }
 
 static inline void print_libver(const char *pre, char *ver) {
-  if (ver) { g_print(" +%s-%s", pre, ver); g_free(ver); }}
+  if (ver) { g_print(" %s-%s", pre, ver); g_free(ver); }}
 
-int cli_init(int *pargc, char ***pargv) {
-#define CLI_FAIL(fmt, arg) { g_message(fmt, arg); g_option_context_free(context); return EXIT_FAILURE; }
-  if (!pargc || !pargv) return EXIT_FAILURE;
+static int cli_init_proc(int *pargc, char ***pargv, char* desc[CHAR_MAX]) {
+#define CLI_FAIL(fmt, arg) {      \
+  g_message(fmt, arg);            \
+  g_option_context_free(context); \
+  return EXIT_FAILURE;            \
+}
   char** target = NULL;
-  int num = -1; gboolean onoff[ONOFF_MAX + 1] = {false};
+  int num = -1;
+  gboolean onoff[ONOFF_MAX + 1] = {0};
   const GOptionEntry options[] = {
-    CLI_OPT_CALL('f', "file",         cli_opt_f, "Read options from file", "<filename>"),
-    CLI_OPT_NONE('n', CNF_STR_NODNS,  &num, "Numeric output (i.e. disable " OPT_DNS_HDR " resolv)"),
-    CLI_OPT_CALL('c', CNF_STR_CYCLES, cli_opt_c, OPT_CYCLES_HDR " per target", "<number>"),
-    CLI_OPT_CALL('i', CNF_STR_IVAL,   cli_opt_i, OPT_IVAL_HDR " between pings", "<seconds>"),
-    CLI_OPT_CALL('t', CNF_STR_TTL,    cli_opt_t, OPT_TTL_HDR " range", "[min][,max]"),
-    CLI_OPT_CALL('q', CNF_STR_QOS,    cli_opt_q, OPT_QOS_HDR "/ToS byte", "<bits>"),
-    CLI_OPT_CALL('s', CNF_STR_SIZE,   cli_opt_s, OPT_PLOAD_HDR " size", "<in-bytes>"),
-    CLI_OPT_CALL('p', CNF_STR_PLOAD,  cli_opt_p, OPT_PLOAD_HDR " in hex notation", "<upto-16-bytes>"),
-    CLI_OPT_CALL('I', CNF_STR_INFO,   cli_opt_I, OPT_INFO_HDR " to display", "[" INFO_PATT "]"),
-    CLI_OPT_CALL('S', CNF_STR_STAT,   cli_opt_S, OPT_STAT_HDR " to display", "[" STAT_PATT "]"),
-    CLI_OPT_CALL('T', CNF_STR_THEME,  cli_opt_T, "Toggle dark/light themes", "<bits>"),
-    CLI_OPT_CALL('g', CNF_STR_GRAPH,  cli_opt_g, OPT_GRAPH_HDR " to draw", "[123]"),
-    CLI_OPT_CALL('G', CNF_STR_EXTRA,  cli_opt_G, OPT_GREX_HDR, "[" GREX_PATT "]"),
-    CLI_OPT_CALL('L', CNF_STR_LGND,   cli_opt_L, OPT_GRLG_HDR, "[" GRLG_PATT "]"),
+    CLI_OPT_CALL('f', "file",         cli_opt_f, "<filename>"),
+    CLI_OPT_NONE('n', CNF_STR_NODNS,  &num),
+    CLI_OPT_CALL('c', CNF_STR_CYCLES, cli_opt_c, "<number>"),
+    CLI_OPT_CALL('i', CNF_STR_IVAL,   cli_opt_i, "<seconds>"),
+    CLI_OPT_CALL('t', CNF_STR_TTL,    cli_opt_t, "[min][,max]"),
+    CLI_OPT_CALL('q', CNF_STR_QOS,    cli_opt_q, "<bits>"),
+    CLI_OPT_CALL('s', CNF_STR_SIZE,   cli_opt_s, "<in-bytes>"),
+    CLI_OPT_CALL('p', CNF_STR_PLOAD,  cli_opt_p, "<upto-16-bytes>"),
+    CLI_OPT_CALL('I', CNF_STR_INFO,   cli_opt_I, "[" INFO_PATT "]"),
+    CLI_OPT_CALL('S', CNF_STR_STAT,   cli_opt_S, "[" STAT_PATT "]"),
+    CLI_OPT_CALL('T', CNF_STR_THEME,  cli_opt_T, "<bits>"),
+    CLI_OPT_CALL('g', CNF_STR_GRAPH,  cli_opt_g, "[123]"),
+    CLI_OPT_CALL('G', CNF_STR_EXTRA,  cli_opt_G, "[" GREX_PATT "]"),
+    CLI_OPT_CALL('L', CNF_STR_LGND,   cli_opt_L, "[" GRLG_PATT "]"),
 #ifdef WITH_PLOT
-    CLI_OPT_CALL('P', CNF_STR_PLEL,   cli_opt_P, OPT_PLOT_HDR, "[" PLEL_PATT "]"),
-    CLI_OPT_CALL('X', CNF_STR_PLEX,   cli_opt_X, OPT_PLEX_HDR, "<tag:values>"),
+    CLI_OPT_CALL('P', CNF_STR_PLEL,   cli_opt_P, "[" PLEL_PATT "]"),
+    CLI_OPT_CALL('X', CNF_STR_PLEX,   cli_opt_X, "<tag:values>"),
 #endif
-    CLI_OPT_CALL('r', CNF_STR_RECAP,  cli_opt_r, OPT_RECAP_HDR " at exit (" RECAP_TYPE_MESG ")", "[" RECAP_PATT "]"),
-    CLI_OPT_NONE('R', "run",          &autostart, "Autostart from CLI (if target is set)"),
-    CLI_OPT_CALL('A', CNF_STR_ATAB,   cli_opt_A, OPT_ATAB_HDR, "[12"
+    CLI_OPT_CALL('r', CNF_STR_RECAP,  cli_opt_r, "[" RECAP_PATT "]"),
+    CLI_OPT_NONE('R', "run",          &autostart),
+    CLI_OPT_CALL('A', CNF_STR_ATAB,   cli_opt_A, "[12"
 #ifdef WITH_PLOT
       "3"
 #endif
     "]"),
-    CLI_OPT_INTC('v', "verbose",      &verbose, "Debug messages to stdout", "<6bit-level>"),
-    CLI_OPT_NONE('V', "version",      &onoff[ONOFF_VERSION], "Runtime versions"),
-    CLI_OPT_NONE('1', "pingtab-only", &onoff[ONOFF_1D], TAB1D),
+    CLI_OPT_INTC('v', "verbose",      &verbose, "<6bit-level>"),
+    CLI_OPT_NONE('V', "version",      &onoff[ONOFF_VERSION]),
+    CLI_OPT_NONE('1', "pingtab-only", &onoff[ONOFF_1D]),
 #ifdef WITH_PLOT
-    CLI_OPT_NONE('2', "without-plot", &onoff[ONOFF_2D], TAB2D),
+    CLI_OPT_NONE('2', "without-plot", &onoff[ONOFF_2D]),
 #endif
-    CLI_OPT_NONE('4', "ipv4",         &onoff[ONOFF_IPV4], OPT_IPV4_HDR " only"),
-    CLI_OPT_NONE('6', "ipv6",         &onoff[ONOFF_IPV6], OPT_IPV6_HDR " only"),
-    { .long_name = G_OPTION_REMAINING,
-      .arg = G_OPTION_ARG_STRING_ARRAY, .arg_data = (void*)&target, .arg_description = "TARGET" },
+    CLI_OPT_NONE('4', "ipv4",         &onoff[ONOFF_IPV4]),
+    CLI_OPT_NONE('6', "ipv6",         &onoff[ONOFF_IPV6]),
+    { .long_name = G_OPTION_REMAINING, .arg = G_OPTION_ARG_STRING_ARRAY,
+      .arg_data = (void*)&target, .arg_description = "TARGET" },
     {} // trailing 0
   };
   // options
@@ -635,12 +643,40 @@ int cli_init(int *pargc, char ***pargv) {
   if (!context) return EXIT_FAILURE;
   g_option_context_set_main_group(context, group);
   { GError *error = NULL;
-    cli = true; gboolean okay = g_option_context_parse(context, pargc, pargv, &error); cli = false;
+    cli = true;
+    gboolean okay = g_option_context_parse(context, pargc, pargv, &error);
+    cli = false;
     if (!okay) {
-      g_warning("%s", error ? error->message : unkn_error); g_error_free(error);
-      g_option_context_free(context); return EXIT_FAILURE; }
+      g_warning("%s", error ? error->message : UNKN_ERROR);
+      g_error_free(error);
+      g_option_context_free(context);
+      return EXIT_FAILURE;
+    }
     if (onoff[ONOFF_VERSION]) {
-      g_print("%s", appver);
+      g_print("%s\n", APPVER);
+      g_print("%s: %cDND %cJSON %cPLOT %cNLS\n", "Build features",
+#ifdef WITH_DND
+      '+',
+#else
+      '-',
+#endif
+#ifdef WITH_JSON
+      '+',
+#else
+      '-',
+#endif
+#ifdef WITH_PLOT
+      '+',
+#else
+      '-',
+#endif
+#ifdef WITH_NLS
+      '+'
+#else
+      '-'
+#endif
+      );
+      g_print("%s:", "Runtime lib versions");
       print_libver("gtk",   rtver(GTK_STRV));
       print_libver("glib",  rtver(GLIB_STRV));
       print_libver("cairo", rtver(CAIRO_STRV));
@@ -650,23 +686,36 @@ int cli_init(int *pargc, char ***pargv) {
       return -1;
     }
   }
-  if (!cli_tab_opt(&onoff[ONOFF_1D], &opts)) return EXIT_FAILURE;
-  if (onoff[ONOFF_IPV4] && onoff[ONOFF_IPV6]) CLI_FAIL("options %s are mutually exclusive", "-4/-6");
-  if (onoff[ONOFF_IPV4] && (opts.ipv != 4)) { opts.ipv = 4; g_message(OPT_IPV4_HDR " only " TOGGLE_ON_HDR); }
-  if (onoff[ONOFF_IPV6] && (opts.ipv != 6)) { opts.ipv = 6; g_message(OPT_IPV6_HDR " only " TOGGLE_ON_HDR); }
-  if (num >= 0) cli_set_opt_dns(num, &opts);
+  if (!cli_tab_opt(&onoff[ONOFF_1D], &opts))
+    return EXIT_FAILURE;
+  if (onoff[ONOFF_IPV4] && onoff[ONOFF_IPV6])
+    CLI_FAIL("options %s are mutually exclusive", "-4/-6");
+  if (onoff[ONOFF_IPV4] && (opts.ipv != 4)) {
+    opts.ipv = 4;
+    g_message("%s only %s", OPT_IPV4_HDR, TOGGLE_ON_HDR);
+  }
+  if (onoff[ONOFF_IPV6] && (opts.ipv != 6)) {
+    opts.ipv = 6;
+    g_message("%s only %s", OPT_IPV6_HDR, TOGGLE_ON_HDR);
+  }
+  if (num >= 0)
+    cli_set_opt_dns(!num, &opts);
   // arguments
   if (target) {
     for (char **ptr = target; *ptr; ptr++) {
+      if (!ptr || !ptr[0])
+        continue;
       const char *arg = *ptr;
-      if (!arg || !arg[0]) continue;
-      if (arg[0] == '-') CLI_FAIL("Unknown option: '%s'", arg);
-      if (opts.target) g_message(ENT_TARGET_HDR " is already set, skip '%s'", arg);
+      if (arg[0] == '-')
+        CLI_FAIL("Unknown option: %s", arg);
+      if (opts.target)
+        g_message("%s is already set, skip %s", ENT_TARGET_HDR, arg);
       else {
         cli = true; char *pinghost = parser_valid_target(arg); cli = false;
-        if (pinghost) g_message(ENT_TARGET_HDR " %s", pinghost);
+        if (pinghost)
+          g_message("%s %s", ENT_TARGET_HDR, pinghost);
         else {
-          g_message("Invalid " ENT_TARGET_HDR ": '%s'", arg);
+          g_message("Invalid %s: %s", ENT_TARGET_HDR, arg);
           g_strfreev(target); g_option_context_free(context); return EXIT_FAILURE;
         }
         g_free(opts.target); opts.target = pinghost;
@@ -686,5 +735,44 @@ int cli_init(int *pargc, char ***pargv) {
   g_option_context_free(context);
   return EXIT_SUCCESS;
 #undef CLI_FAIL
+}
+
+int cli_init(int *pargc, char ***pargv) {
+  if (!pargc || !pargv) return EXIT_FAILURE;
+  char* desc[CHAR_MAX] = {
+    ['f'] = g_strdup("Read options from file"),
+    ['n'] = g_strdup_printf("Numeric output (i.e. disable %s resolv)", OPT_DNS_HDR),
+    ['c'] = g_strdup_printf("%s %s", OPT_CYCLES_HDR, "per target"),
+    ['i'] = g_strdup_printf("%s %s", OPT_IVAL_HDR, "between pings"),
+    ['t'] = g_strdup_printf("%s %s", OPT_TTL_HDR, "range"),
+    ['q'] = g_strdup_printf("%s %s", OPT_QOS_HDR, "byte"),
+    ['s'] = g_strdup_printf("%s %s", OPT_PLOAD_HDR, "size"),
+    ['p'] = g_strdup_printf("%s %s", OPT_PLOAD_HDR, "in hex notation"),
+    ['I'] = g_strdup_printf("%s %s", OPT_INFO_HDR, "to display"),
+    ['S'] = g_strdup_printf("%s %s", OPT_STAT_HDR, "to display"),
+    ['T'] = g_strdup("Toggle dark/light themes"),
+    ['g'] = g_strdup(OPT_GRAPH_HDR),
+    ['G'] = g_strdup(OPT_GREX_HDR),
+    ['L'] = g_strdup(OPT_GRLG_HDR),
+#ifdef WITH_PLOT
+    ['P'] = g_strdup(OPT_PLOT_HDR),
+    ['X'] = g_strdup(OPT_PLEX_HDR),
+#endif
+    ['r'] = g_strdup_printf("%s %s", OPT_RECAP_HDR, "at exit (" RECAP_TYPE_MESG ")"),
+    ['R'] = g_strdup("Autostart from CLI (if target is set)"),
+    ['A'] = g_strdup(OPT_ATAB_HDR),
+    ['v'] = g_strdup("Debug messages to stdout"),
+    ['V'] = g_strdup("Build features and runtime lib versions"),
+    ['1'] = g_strdup(TAB1D),
+#ifdef WITH_PLOT
+    ['2'] = g_strdup(TAB2D),
+#endif
+    ['4'] = g_strdup(OPT_IPV4_HDR),
+    ['6'] = g_strdup(OPT_IPV6_HDR),
+  };
+  int rc = cli_init_proc(pargc, pargv, desc);
+  for (unsigned i = 0; i < G_N_ELEMENTS(desc); i++)
+    g_free(desc[i]);
+  return rc;
 }
 

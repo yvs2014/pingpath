@@ -21,7 +21,7 @@ enum { ENT_RAD_IPV, ENT_RAD_GRAPH };
 
 typedef struct ent_ndx {
   int type;
-  const char *name;
+  const char *name, *unit;
 } t_ent_ndx;
 
 typedef struct ent_str {

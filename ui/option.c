@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "text.h"
 #include "common.h"
 #include "option.h"
 #include "parser.h"
@@ -51,92 +52,67 @@ enum { ENT_SPN_ROT0, ENT_SPN_ROT1, ENT_SPN_ROT2, ENT_SPN_ANGS, ENT_SPN_ROT_MAX }
 #endif
 
 t_ent_bool ent_bool[] = {
-  [ENT_BOOL_DNS]  = { .en = { .type = ENT_BOOL_DNS,  .name = OPT_DNS_HDR }, .pval = &opts.dns },
-  [ENT_BOOL_HOST] = { .en = { .type = ENT_BOOL_HOST, .name = ELEM_HOST_HDR },
-    .valfn = pingelem_enabler, .valtype = PE_HOST, .prefix = OPT_INFO_HDR },
-  [ENT_BOOL_AS]   = { .en = { .type = ENT_BOOL_AS,   .name = ELEM_AS_HDR },
-    .valfn = pingelem_enabler, .valtype = PE_AS,   .prefix = OPT_INFO_HDR },
-  [ENT_BOOL_CC]   = { .en = { .type = ENT_BOOL_CC,   .name = ELEM_CC_HDR },
-    .valfn = pingelem_enabler, .valtype = PE_CC,   .prefix = OPT_INFO_HDR },
-  [ENT_BOOL_DESC] = { .en = { .type = ENT_BOOL_DESC, .name = ELEM_DESC_HDR },
-    .valfn = pingelem_enabler, .valtype = PE_DESC, .prefix = OPT_INFO_HDR },
-  [ENT_BOOL_RT]   = { .en = { .type = ENT_BOOL_RT,   .name = ELEM_RT_HDR },
-    .valfn = pingelem_enabler, .valtype = PE_RT,   .prefix = OPT_INFO_HDR },
-  [ENT_BOOL_LOSS] = { .en = { .type = ENT_BOOL_LOSS, .name = ELEM_LOSS_HDR},
-    .valfn = pingelem_enabler, .valtype = PE_LOSS, .prefix = OPT_STAT_HDR },
-  [ENT_BOOL_SENT] = { .en = { .type = ENT_BOOL_SENT, .name = ELEM_SENT_HDR },
-    .valfn = pingelem_enabler, .valtype = PE_SENT, .prefix = OPT_STAT_HDR },
-  [ENT_BOOL_RECV] = { .en = { .type = ENT_BOOL_RECV, .name = ELEM_RECV_HDR },
-    .valfn = pingelem_enabler, .valtype = PE_RECV, .prefix = OPT_STAT_HDR },
-  [ENT_BOOL_LAST] = { .en = { .type = ENT_BOOL_LAST, .name = ELEM_LAST_HDR },
-    .valfn = pingelem_enabler, .valtype = PE_LAST, .prefix = OPT_STAT_HDR },
-  [ENT_BOOL_BEST] = { .en = { .type = ENT_BOOL_BEST, .name = ELEM_BEST_HDR },
-    .valfn = pingelem_enabler, .valtype = PE_BEST, .prefix = OPT_STAT_HDR },
-  [ENT_BOOL_WRST] = { .en = { .type = ENT_BOOL_WRST, .name = ELEM_WRST_HEADER },
-    .valfn = pingelem_enabler, .valtype = PE_WRST, .prefix = OPT_STAT_HDR },
-  [ENT_BOOL_AVRG] = { .en = { .type = ENT_BOOL_AVRG, .name = ELEM_AVRG_HEADER },
-    .valfn = pingelem_enabler, .valtype = PE_AVRG, .prefix = OPT_STAT_HDR },
-  [ENT_BOOL_JTTR] = { .en = { .type = ENT_BOOL_JTTR, .name = ELEM_JTTR_HEADER },
-    .valfn = pingelem_enabler, .valtype = PE_JTTR, .prefix = OPT_STAT_HDR },
-  [ENT_BOOL_MN_DARK] = { .en = { .type = ENT_BOOL_MN_DARK, .name = OPT_MN_DARK_HDR }, .pval = &opts.darktheme },
-  [ENT_BOOL_GR_DARK] = { .en = { .type = ENT_BOOL_GR_DARK, .name = OPT_GR_DARK_HDR }, .pval = &opts.darkgraph },
+  [ENT_BOOL_DNS]  = { .en.type = ENT_BOOL_DNS,  .pval = &opts.dns },
+  [ENT_BOOL_HOST] = { .en.type = ENT_BOOL_HOST, .valfn = pingelem_enabler, .valtype = PE_HOST },
+  [ENT_BOOL_AS]   = { .en.type = ENT_BOOL_AS,   .valfn = pingelem_enabler, .valtype = PE_AS   },
+  [ENT_BOOL_CC]   = { .en.type = ENT_BOOL_CC,   .valfn = pingelem_enabler, .valtype = PE_CC   },
+  [ENT_BOOL_DESC] = { .en.type = ENT_BOOL_DESC, .valfn = pingelem_enabler, .valtype = PE_DESC },
+  [ENT_BOOL_RT]   = { .en.type = ENT_BOOL_RT,   .valfn = pingelem_enabler, .valtype = PE_RT   },
+  [ENT_BOOL_LOSS] = { .en.type = ENT_BOOL_LOSS, .valfn = pingelem_enabler, .valtype = PE_LOSS },
+  [ENT_BOOL_SENT] = { .en.type = ENT_BOOL_SENT, .valfn = pingelem_enabler, .valtype = PE_SENT },
+  [ENT_BOOL_RECV] = { .en.type = ENT_BOOL_RECV, .valfn = pingelem_enabler, .valtype = PE_RECV },
+  [ENT_BOOL_LAST] = { .en.type = ENT_BOOL_LAST, .valfn = pingelem_enabler, .valtype = PE_LAST },
+  [ENT_BOOL_BEST] = { .en.type = ENT_BOOL_BEST, .valfn = pingelem_enabler, .valtype = PE_BEST },
+  [ENT_BOOL_WRST] = { .en.type = ENT_BOOL_WRST, .valfn = pingelem_enabler, .valtype = PE_WRST },
+  [ENT_BOOL_AVRG] = { .en.type = ENT_BOOL_AVRG, .valfn = pingelem_enabler, .valtype = PE_AVRG },
+  [ENT_BOOL_JTTR] = { .en.type = ENT_BOOL_JTTR, .valfn = pingelem_enabler, .valtype = PE_JTTR },
+  [ENT_BOOL_MN_DARK] = { .en.type = ENT_BOOL_MN_DARK, .pval = &opts.darktheme },
+  [ENT_BOOL_GR_DARK] = { .en.type = ENT_BOOL_GR_DARK, .pval = &opts.darkgraph },
 #ifdef WITH_PLOT
-  [ENT_BOOL_PL_DARK] = { .en = { .type = ENT_BOOL_PL_DARK, .name = OPT_PL_DARK_HDR }, .pval = &opts.darkplot },
+  [ENT_BOOL_PL_DARK] = { .en.type = ENT_BOOL_PL_DARK, .pval = &opts.darkplot },
 #endif
-  [ENT_BOOL_LGND] = { .en = { .type = ENT_BOOL_LGND, .name = OPT_LGND_HDR }, .pval = &opts.legend },
-  [ENT_BOOL_AVJT] = { .en = { .type = ENT_BOOL_AVJT, .name = GRLG_AVJT_HEADER },
-    .valfn = graphelem_enabler, .valtype = GE_AVJT, .prefix = OPT_GRLG_HDR },
-  [ENT_BOOL_CCAS] = { .en = { .type = ENT_BOOL_CCAS, .name = GRLG_CCAS_HEADER },
-    .valfn = graphelem_enabler, .valtype = GE_CCAS, .prefix = OPT_GRLG_HDR },
-  [ENT_BOOL_LGHN] = { .en = { .type = ENT_BOOL_LGHN, .name = GRLG_LGHN_HDR },
-    .valfn = graphelem_enabler, .valtype = GE_LGHN, .prefix = OPT_GRLG_HDR },
-  [ENT_BOOL_MEAN] = { .en = { .type = ENT_BOOL_MEAN, .name = GREX_MEAN_HEADER },
-    .valfn = graphelem_enabler, .valtype = GX_MEAN, .prefix = OPT_GREX_HDR },
-  [ENT_BOOL_JRNG] = { .en = { .type = ENT_BOOL_JRNG, .name = GREX_JRNG_HEADER },
-    .valfn = graphelem_enabler, .valtype = GX_JRNG, .prefix = OPT_GREX_HDR },
-  [ENT_BOOL_AREA] = { .en = { .type = ENT_BOOL_AREA, .name = GREX_AREA_HEADER },
-    .valfn = graphelem_enabler, .valtype = GX_AREA, .prefix = OPT_GREX_HDR },
+  [ENT_BOOL_LGND] = { .en.type = ENT_BOOL_LGND, .pval = &opts.legend },
+  [ENT_BOOL_AVJT] = { .en.type = ENT_BOOL_AVJT, .valfn = graphelem_enabler, .valtype = GE_AVJT },
+  [ENT_BOOL_CCAS] = { .en.type = ENT_BOOL_CCAS, .valfn = graphelem_enabler, .valtype = GE_CCAS },
+  [ENT_BOOL_LGHN] = { .en.type = ENT_BOOL_LGHN, .valfn = graphelem_enabler, .valtype = GE_LGHN },
+  [ENT_BOOL_MEAN] = { .en.type = ENT_BOOL_MEAN, .valfn = graphelem_enabler, .valtype = GX_MEAN },
+  [ENT_BOOL_JRNG] = { .en.type = ENT_BOOL_JRNG, .valfn = graphelem_enabler, .valtype = GX_JRNG },
+  [ENT_BOOL_AREA] = { .en.type = ENT_BOOL_AREA, .valfn = graphelem_enabler, .valtype = GX_AREA },
 #ifdef WITH_PLOT
-  [ENT_BOOL_PLBK] = { .en = { .type = ENT_BOOL_PLBK, .name = PLEL_BACK_HDR },
-    .valfn = plotelem_enabler, .valtype = D3_BACK, .prefix = OPT_PLOT_HDR },
-  [ENT_BOOL_PLAX] = { .en = { .type = ENT_BOOL_PLAX, .name = PLEL_AXIS_HDR },
-    .valfn = plotelem_enabler, .valtype = D3_AXIS, .prefix = OPT_PLOT_HDR },
-  [ENT_BOOL_PLGR] = { .en = { .type = ENT_BOOL_PLGR, .name = PLEL_GRID_HDR },
-    .valfn = plotelem_enabler, .valtype = D3_GRID, .prefix = OPT_PLOT_HDR },
-  [ENT_BOOL_PLRR] = { .en = { .type = ENT_BOOL_PLRR, .name = PLEL_ROTR_HDR },
-    .valfn = plotelem_enabler, .valtype = D3_ROTR, .prefix = OPT_PLOT_HDR },
-  [ENT_BOOL_GLOB] = { .en = { .type = ENT_BOOL_GLOB, .name = OPT_GLOB_HDR }, .pval = &opts.rglob },
+  [ENT_BOOL_PLBK] = { .en.type = ENT_BOOL_PLBK, .valfn = plotelem_enabler, .valtype = D3_BACK },
+  [ENT_BOOL_PLAX] = { .en.type = ENT_BOOL_PLAX, .valfn = plotelem_enabler, .valtype = D3_AXIS },
+  [ENT_BOOL_PLGR] = { .en.type = ENT_BOOL_PLGR, .valfn = plotelem_enabler, .valtype = D3_GRID },
+  [ENT_BOOL_PLRR] = { .en.type = ENT_BOOL_PLRR, .valfn = plotelem_enabler, .valtype = D3_ROTR },
+  [ENT_BOOL_GLOB] = { .en.type = ENT_BOOL_GLOB, .pval = &opts.rglob },
 #endif
 };
 
 t_ent_str ent_str[] = {
-  [ENT_STR_CYCLES] = { .len = 6,  .width = 6, .range = { .min = CYCLES_MIN, .max = CYCLES_MAX },
-    .en = { .type = ENT_STR_CYCLES, .name = OPT_CYCLES_HDR },
-    .pint = &opts.cycles,  .idef = DEF_CYCLES },
-  [ENT_STR_IVAL]   = { .len = 4,  .width = 6, .range = { .min = IVAL_MIN,   .max = IVAL_MAX },
-    .en = { .type = ENT_STR_IVAL,   .name = OPT_IVAL_HEADER },
-    .pint = &opts.timeout, .idef = DEF_TOUT },
+  [ENT_STR_CYCLES] = { .len = 6,  .width = 6,
+    .range = { .min = CYCLES_MIN, .max = CYCLES_MAX },
+    .en.type = ENT_STR_CYCLES, .pint = &opts.cycles,  .idef = DEF_CYCLES },
+  [ENT_STR_IVAL]   = { .len = 4,  .width = 6,
+    .range = { .min = IVAL_MIN,   .max = IVAL_MAX },
+    .en.type = ENT_STR_IVAL,   .pint = &opts.timeout, .idef = DEF_TOUT },
   [ENT_STR_QOS]    = { .len = 3,  .width = 6, .range = { .max = QOS_MAX },
-    .en = { .type = ENT_STR_QOS,    .name = OPT_QOS_HDR },
-    .pint = &opts.qos,     .idef = DEF_QOS },
+    .en.type = ENT_STR_QOS,    .pint = &opts.qos,     .idef = DEF_QOS },
   [ENT_STR_PLOAD]  = { .len = 48, .width = 6,
-    .en = { .type = ENT_STR_PLOAD,  .name = OPT_PLOAD_HEADER },
-    .pstr = opts.pad,      .sdef = DEF_PPAD, .slen = sizeof(opts.pad) },
-  [ENT_STR_PSIZE]  = { .len = 4,  .width = 6, .range = { .min = PSIZE_MIN,  .max = PSIZE_MAX },
-    .en = { .type = ENT_STR_PSIZE,  .name = OPT_PSIZE_HDR },
-    .pint = &opts.size,    .idef = DEF_PSIZE },
+    .en.type = ENT_STR_PLOAD,  .pstr = opts.pad,      .sdef = DEF_PPAD,
+    .slen = sizeof(opts.pad) },
+  [ENT_STR_PSIZE]  = { .len = 4,  .width = 6,
+    .range = { .min = PSIZE_MIN,  .max = PSIZE_MAX },
+    .en.type = ENT_STR_PSIZE,  .pint = &opts.size,    .idef = DEF_PSIZE },
   [ENT_STR_LOGMAX] = { .len = 3,  .width = 6, .range = { .max = LOGMAX_MAX },
-    .en = { .type = ENT_STR_LOGMAX, .name = OPT_LOGMAX_HDR },
-    .pint = &opts.logmax,  .idef = DEF_LOGMAX },
+    .en.type = ENT_STR_LOGMAX, .pint = &opts.logmax,  .idef = DEF_LOGMAX },
 };
 
 static t_ent_exp ent_exp[] = {
-  [ENT_EXP_INFO] = { .c = {.en = {.type = ENT_EXP_INFO, .name = OPT_INFO_HDR }}},
-  [ENT_EXP_STAT] = { .c = {.en = {.type = ENT_EXP_STAT, .name = OPT_STAT_HDR }}},
-  [ENT_EXP_LGFL] = { .c = {.en = {.type = ENT_EXP_LGFL, .name = OPT_GRLG_HDR }}},
-  [ENT_EXP_GREX] = { .c = {.en = {.type = ENT_EXP_GREX, .name = OPT_GREX_HDR }}},
+  [ENT_EXP_INFO] = { .c.en.type = ENT_EXP_INFO },
+  [ENT_EXP_STAT] = { .c.en.type = ENT_EXP_STAT },
+  [ENT_EXP_LGFL] = { .c.en.type = ENT_EXP_LGFL },
+  [ENT_EXP_GREX] = { .c.en.type = ENT_EXP_GREX },
 #ifdef WITH_PLOT
-  [ENT_EXP_PLEL] = { .c = {.en = {.type = ENT_EXP_PLEL, .name = OPT_PLOT_HDR }}},
+  [ENT_EXP_PLEL] = { .c.en.type = ENT_EXP_PLEL },
 #endif
 };
 
@@ -173,33 +149,33 @@ t_minmax opt_mm_fov = {DEF_FOV * 2 / 3, DEF_FOV * 2};
 #endif
 
 t_ent_spn ent_spn[] = {
-  [ENT_SPN_TTL] = { .c = {.en = {.type = ENT_SPN_TTL, .name = OPT_TTL_HDR }}, .list = {
-    { .title = OPT_TTL_HDR, .delim = SPN_TTL_DELIM, .bond = true, .kind = MINIMAX_SPIN, .aux = {
+  [ENT_SPN_TTL] = { .c.en.type = ENT_SPN_TTL, .list = {
+    { .delim = SPN_TTL_DELIM, .bond = true, .kind = MINIMAX_SPIN, .aux = {
       { .cb = G_CALLBACK(minttl_cb), .pval = &opts.min, .def = MINTTL, .mm = &opt_mm_ttl },
       { .cb = G_CALLBACK(maxttl_cb), .pval = &opts.lim, .def = MAXTTL, .mm = &opt_mm_ttl }
   }}}},
 #ifdef WITH_PLOT
-  [ENT_SPN_COLOR] = { .c = {.en = {.type = ENT_SPN_COLOR, .name = OPT_GRAD_HDR }, .atrun = true},
+  [ENT_SPN_COLOR] = { .c = { .en.type = ENT_SPN_COLOR, .atrun = true },
     .list = {
-      { .title = GRAD_COLR, .delim = SPN_RCOL_DELIM, .kind = MINIMAX_SPIN, .aux = {
+      { .delim = SPN_RCOL_DELIM, .kind = MINIMAX_SPIN, .aux = {
         { .cb = G_CALLBACK(colgrad_cb), .pval = &opts.rcol.min, .def = DEF_RCOL_FROM,
           .mm = &opt_mm_col, .prfx = GRAD_COLR, .sfx = STR_FROM },
         { .cb = G_CALLBACK(colgrad_cb), .pval = &opts.rcol.max, .def = DEF_RCOL_TO,
           .mm = &opt_mm_col, .prfx = GRAD_COLR, .sfx = STR_TO }}},
-      { .title = GRAD_COLG, .delim = SPN_GCOL_DELIM, .kind = MINIMAX_SPIN, .aux = {
+      { .delim = SPN_GCOL_DELIM, .kind = MINIMAX_SPIN, .aux = {
         { .cb = G_CALLBACK(colgrad_cb), .pval = &opts.gcol.min, .def = DEF_GCOL_FROM,
           .mm = &opt_mm_col, .prfx = GRAD_COLG, .sfx = STR_FROM },
         { .cb = G_CALLBACK(colgrad_cb), .pval = &opts.gcol.max, .def = DEF_GCOL_TO,
           .mm = &opt_mm_col, .prfx = GRAD_COLG, .sfx = STR_TO }}},
-      { .title = GRAD_COLB, .delim = SPN_BCOL_DELIM, .kind = MINIMAX_SPIN, .aux = {
+      { .delim = SPN_BCOL_DELIM, .kind = MINIMAX_SPIN, .aux = {
         { .cb = G_CALLBACK(colgrad_cb), .pval = &opts.bcol.min, .def = DEF_BCOL_FROM,
           .mm = &opt_mm_col, .prfx = GRAD_COLB, .sfx = STR_FROM },
         { .cb = G_CALLBACK(colgrad_cb), .pval = &opts.bcol.max, .def = DEF_BCOL_TO,
           .mm = &opt_mm_col, .prfx = GRAD_COLB, .sfx = STR_TO }}},
   }},
-  [ENT_SPN_GLOBAL] = { .c = {.en = {.type = ENT_SPN_GLOBAL, .name = OPT_ROTOR_HDR }, .atrun = true},
+  [ENT_SPN_GLOBAL] = { .c = { .en.type = ENT_SPN_GLOBAL, .atrun = true },
     .list = {
-      { .title = ROT_AXES, .kind = ROTOR_COLUMN, .aux = {
+      { .kind = ROTOR_COLUMN, .aux = {
         [ENT_SPN_ROT0] = { .cb = G_CALLBACK(rotation_cb), .pval = opts.orient, .pn = 0, .wrap = 360,
           .mm = &opt_mm_rot, .sfx = ROT_ANGLE_X, .step = &opts.angstep },
         [ENT_SPN_ROT1] = { .cb = G_CALLBACK(rotation_cb), .pval = opts.orient, .pn = 1, .wrap = 360,
@@ -209,9 +185,9 @@ t_ent_spn ent_spn[] = {
         [ENT_SPN_ANGS] = { .cb = G_CALLBACK(rotation_cb), .pval = &opts.angstep, .def = DEF_ANGSTEP,
           .sn = ENT_SPN_GLOBAL, .mm = &opt_mm_ang, .sfx = ROT_STEP },
   }}}},
-  [ENT_SPN_LOCAL] = { .c = {.en = {.type = ENT_SPN_LOCAL, .name = OPT_ROTOR_HDR }, .atrun = true},
+  [ENT_SPN_LOCAL] = { .c = { .en.type = ENT_SPN_LOCAL, .atrun = true },
     .list = {
-      { .title = ROT_ATTITUDE, .kind = ROTOR_COLUMN, .aux = {
+      { .kind = ROTOR_COLUMN, .aux = {
         [ENT_SPN_ROT0] = { .cb = G_CALLBACK(rotation_cb), .pval = opts.orient, .pn = 1, .wrap = 360,
           .mm = &opt_mm_rot, .sfx = ROT_YAW,   .step = &opts.angstep, .rev = true },
         [ENT_SPN_ROT1] = { .cb = G_CALLBACK(rotation_cb), .pval = opts.orient, .pn = 2, .wrap = 360,
@@ -221,11 +197,11 @@ t_ent_spn ent_spn[] = {
         [ENT_SPN_ANGS] = { .cb = G_CALLBACK(rotation_cb), .pval = &opts.angstep, .def = DEF_ANGSTEP,
           .sn = ENT_SPN_LOCAL, .mm = &opt_mm_ang, .sfx = ROT_STEP },
   }}}},
-  [ENT_SPN_FOV] = { .c = {.en = {.type = ENT_SPN_FOV, .name = OPT_SCALE_HDR }, .atrun = true},
+  [ENT_SPN_FOV] = { .c = { .en.type = ENT_SPN_FOV, .atrun = true },
     .list = {
-      { .title = OPT_FOV_HDR, .kind = SCALE_SPIN, .aux = {
-        { .cb = G_CALLBACK(scalefov_cb), .pval = &opts.fov, .def = DEF_FOV,
-          .mm = &opt_mm_fov, .prfx = OPT_SCALE_HDR, .sfx = OPT_FOV_HDR }}},
+      { .kind = SCALE_SPIN, .aux = {
+        { .cb = G_CALLBACK(scalefov_cb), .pval = &opts.fov,
+          .def = DEF_FOV, .mm = &opt_mm_fov }}},
   }},
 #endif
 };
@@ -233,19 +209,19 @@ t_ent_spn ent_spn[] = {
 static void graph_type_cb(void);
 
 static t_ent_rad ent_rad[] = {
-  [ENT_RAD_IPV] = { .pval = &opts.ipv,
-    .c = {.en = {.type = ENT_RAD_IPV, .name = OPT_IPV_HDR }},
+  [ENT_RAD_IPV] = { .c.en.type = ENT_RAD_IPV,
+    .pval = &opts.ipv,
     .map = {
-      {.ndx = ENT_RAD_IPV, .str = OPT_IPVA_HDR},
-      {.ndx = ENT_RAD_IPV, .val = 4, .str = OPT_IPV4_HDR},
-      {.ndx = ENT_RAD_IPV, .val = 6, .str = OPT_IPV6_HDR},
+      { .ndx = ENT_RAD_IPV },
+      { .ndx = ENT_RAD_IPV, .val = 4 },
+      { .ndx = ENT_RAD_IPV, .val = 6 },
     }},
-  [ENT_RAD_GRAPH] = { .pval = &opts.graph, .cb = graph_type_cb,
-    .c = {.en = {.type = ENT_RAD_GRAPH, .name = OPT_GRAPH_HDR }, .atrun = true },
+  [ENT_RAD_GRAPH] = { .c = {.en.type = ENT_RAD_GRAPH, .atrun = true },
+    .pval = &opts.graph, .cb = graph_type_cb,
     .map = {
-      {.ndx = ENT_RAD_GRAPH, .val = GRAPH_TYPE_DOT,   .str = OPT_GR_DOT_HDR},
-      {.ndx = ENT_RAD_GRAPH, .val = GRAPH_TYPE_LINE,  .str = OPT_GR_LINE_HDR},
-      {.ndx = ENT_RAD_GRAPH, .val = GRAPH_TYPE_CURVE, .str = OPT_GR_CURVE_HDR},
+      { .ndx = ENT_RAD_GRAPH, .val = GRAPH_TYPE_DOT   },
+      { .ndx = ENT_RAD_GRAPH, .val = GRAPH_TYPE_LINE  },
+      { .ndx = ENT_RAD_GRAPH, .val = GRAPH_TYPE_CURVE },
     }},
 };
 
@@ -271,7 +247,7 @@ static gboolean check_bool_val(GtkCheckButton *check, t_ent_bool *en, void (*upd
 static void set_ed_texthint(t_ent_str *en) {
   if (!en) return;
   g_return_if_fail(GTK_IS_EDITABLE(en->input));
-  int *pint = en->pint;
+  int  *pint = en->pint;
   char *pstr = en->pstr;
   gtk_editable_delete_text(GTK_EDITABLE(en->input), 0, -1);
   if (pint && (*pint != en->idef)) {
@@ -521,10 +497,14 @@ static void graph_type_cb(void) {
   graphtab_refresh();
 }
 
-static GtkWidget* label_box(const char *name) {
+static GtkWidget* label_box(const char *name, const char *unit) {
   GtkWidget *box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, MARGIN * 2);
   g_return_val_if_fail(GTK_IS_BOX(box), NULL);
-  GtkWidget *label = gtk_label_new(name);
+  char *name_u = unit ?
+    g_strdup_printf("%s, %s", name, unit):
+    g_strdup(name);
+  GtkWidget *label = gtk_label_new(name_u);
+  g_free(name_u);
   g_return_val_if_fail(GTK_IS_LABEL(label), box);
   gtk_box_append(GTK_BOX(box), label);
   if (style_loaded) gtk_widget_add_css_class(label, CSS_PAD);
@@ -533,8 +513,8 @@ static GtkWidget* label_box(const char *name) {
   return box;
 }
 
-static GtkWidget* add_labelbox(GtkWidget* list, const char *name) {
-  GtkWidget *box = label_box(name);
+static GtkWidget* add_labelbox(GtkWidget* list, const char *name, const char *unit) {
+  GtkWidget *box = label_box(name, unit);
   if (box) {
     if (GTK_IS_LIST_BOX(list)) gtk_list_box_append(GTK_LIST_BOX(list), box);
     else if (GTK_IS_BOX(list)) gtk_box_append(GTK_BOX(list), box);
@@ -544,12 +524,12 @@ static GtkWidget* add_labelbox(GtkWidget* list, const char *name) {
 
 static GtkWidget* add_opt_check(GtkWidget* list, t_ent_bool *en) {
   if (!en) return NULL;
-  GtkWidget *box = add_labelbox(list, en->en.name);
+  GtkWidget *box = add_labelbox(list, en->en.name, en->en.unit);
   if (box) {
     GtkWidget *check = gtk_check_button_new();
     g_return_val_if_fail(GTK_IS_CHECK_BUTTON(check), box);
     gtk_box_append(GTK_BOX(box), check);
-    if (style_loaded) gtk_widget_add_css_class(check, CSS_CHPAD);
+    if (style_loaded) gtk_widget_add_css_class(check, CSS_RPAD);
     gtk_widget_set_halign(check, GTK_ALIGN_END);
     g_signal_connect(check, EV_TOGGLE, G_CALLBACK(toggle_cb), en);
     en->check = GTK_CHECK_BUTTON(check);
@@ -561,7 +541,7 @@ static GtkWidget* add_opt_check(GtkWidget* list, t_ent_bool *en) {
 
 static GtkWidget* add_opt_enter(GtkWidget* list, t_ent_str *en) {
   if (!en) return NULL;
-  GtkWidget *box = add_labelbox(list, en->en.name);
+  GtkWidget *box = add_labelbox(list, en->en.name, en->en.unit);
   if (box) {
     en->box = box;
     en->input = gtk_entry_new();
@@ -585,7 +565,7 @@ static GtkWidget* add_expand_common(GtkWidget* list, t_ent_exp_common *en) {
   g_return_val_if_fail(GTK_IS_BOX(box), NULL);
   en->box = box;
   gtk_list_box_append(GTK_LIST_BOX(list), box);
-  GtkWidget *title = label_box(en->en.name);
+  GtkWidget *title = label_box(en->en.name, en->en.unit);
   if (GTK_IS_BOX(title)) {
     gtk_box_append(GTK_BOX(box), title);
     // arrow into title
@@ -820,14 +800,112 @@ static gboolean create_ext_optmenu(GtkWidget *list) {
   return okay;
 }
 
-static inline void ent_link_to_desc(void) {
-  ent_exp[ENT_EXP_INFO].desc = &info_desc;
-  ent_exp[ENT_EXP_STAT].desc = &stat_desc;
-  ent_exp[ENT_EXP_LGFL].desc = &grlg_desc;
-  ent_exp[ENT_EXP_GREX].desc = &grex_desc;
+static inline void init_entry_links(void) {
+  //
+  ent_str[ENT_STR_CYCLES].en.name = OPT_CYCLES_HDR;
+  ent_str[ENT_STR_IVAL  ].en.name = OPT_IVAL_HDR;
+  ent_str[ENT_STR_IVAL  ].en.unit = UNIT_SEC;
+  ent_str[ENT_STR_QOS   ].en.name = OPT_QOS_HDR;
+  ent_str[ENT_STR_PLOAD ].en.name = OPT_PLOAD_HDR;
+  ent_str[ENT_STR_PLOAD ].en.unit = UNIT_HEX;
+  ent_str[ENT_STR_PSIZE ].en.name = OPT_PSIZE_HDR;
+  ent_str[ENT_STR_LOGMAX].en.name = OPT_LOGMAX_HDR;
+  //
+  ent_bool[ENT_BOOL_DNS    ].en.name = OPT_DNS_HDR;
+  ent_bool[ENT_BOOL_HOST   ].en.name = ELEM_HOST_HDR;
+  ent_bool[ENT_BOOL_HOST   ].prefix  = OPT_INFO_HDR;
+  ent_bool[ENT_BOOL_AS     ].en.name = ELEM_AS_HDR;
+  ent_bool[ENT_BOOL_AS     ].prefix  = OPT_INFO_HDR;
+  ent_bool[ENT_BOOL_CC     ].en.name = ELEM_CC_HDR;
+  ent_bool[ENT_BOOL_CC     ].prefix  = OPT_INFO_HDR;
+  ent_bool[ENT_BOOL_DESC   ].en.name = ELEM_DESC_HDR;
+  ent_bool[ENT_BOOL_DESC   ].prefix  = OPT_INFO_HDR;
+  ent_bool[ENT_BOOL_RT     ].en.name = ELEM_RT_HDR;
+  ent_bool[ENT_BOOL_RT     ].prefix  = OPT_INFO_HDR;
+  ent_bool[ENT_BOOL_LOSS   ].en.name = ELEM_LOSS_HDR;
+  ent_bool[ENT_BOOL_LOSS   ].prefix  = OPT_STAT_HDR;
+  ent_bool[ENT_BOOL_SENT   ].en.name = ELEM_SENT_HDR;
+  ent_bool[ENT_BOOL_SENT   ].prefix  = OPT_STAT_HDR;
+  ent_bool[ENT_BOOL_RECV   ].en.name = ELEM_RECV_HDR;
+  ent_bool[ENT_BOOL_RECV   ].prefix  = OPT_STAT_HDR;
+  ent_bool[ENT_BOOL_LAST   ].en.name = ELEM_LAST_HDR;
+  ent_bool[ENT_BOOL_LAST   ].prefix  = OPT_STAT_HDR;
+  ent_bool[ENT_BOOL_BEST   ].en.name = ELEM_BEST_HDR;
+  ent_bool[ENT_BOOL_BEST   ].prefix  = OPT_STAT_HDR;
+  ent_bool[ENT_BOOL_WRST   ].en.name = ELEM_WRST_HEADER;
+  ent_bool[ENT_BOOL_WRST   ].prefix  = OPT_STAT_HDR;
+  ent_bool[ENT_BOOL_AVRG   ].en.name = ELEM_AVRG_HEADER;
+  ent_bool[ENT_BOOL_AVRG   ].prefix  = OPT_STAT_HDR;
+  ent_bool[ENT_BOOL_JTTR   ].en.name = ELEM_JTTR_HEADER;
+  ent_bool[ENT_BOOL_JTTR   ].prefix  = OPT_STAT_HDR;
+  ent_bool[ENT_BOOL_MN_DARK].en.name = OPT_MN_DARK_HDR;
+  ent_bool[ENT_BOOL_GR_DARK].en.name = OPT_GR_DARK_HDR;
 #ifdef WITH_PLOT
-  ent_exp[ENT_EXP_PLEL].desc = &plot_desc;
+  ent_bool[ENT_BOOL_PL_DARK].en.name = OPT_PL_DARK_HDR;
 #endif
+  ent_bool[ENT_BOOL_LGND   ].en.name = OPT_LGND_HDR;
+  ent_bool[ENT_BOOL_AVJT   ].en.name = GRLG_AVJT_HEADER;
+  ent_bool[ENT_BOOL_AVJT   ].prefix  = OPT_GRLG_HDR;
+  ent_bool[ENT_BOOL_CCAS   ].en.name = GRLG_CCAS_HEADER;
+  ent_bool[ENT_BOOL_CCAS   ].prefix  = OPT_GRLG_HDR;
+  ent_bool[ENT_BOOL_LGHN   ].en.name = GRLG_LGHN_HDR;
+  ent_bool[ENT_BOOL_LGHN   ].prefix  = OPT_GRLG_HDR;
+  ent_bool[ENT_BOOL_MEAN   ].en.name = GREX_MEAN_HEADER;
+  ent_bool[ENT_BOOL_MEAN   ].prefix  = OPT_GREX_HDR;
+  ent_bool[ENT_BOOL_JRNG   ].en.name = GREX_JRNG_HEADER;
+  ent_bool[ENT_BOOL_JRNG   ].prefix  = OPT_GREX_HDR;
+  ent_bool[ENT_BOOL_AREA   ].en.name = GREX_AREA_HEADER;
+  ent_bool[ENT_BOOL_AREA   ].prefix  = OPT_GREX_HDR;
+#ifdef WITH_PLOT
+  ent_bool[ENT_BOOL_PLBK   ].en.name = PLEL_BACK_HDR;
+  ent_bool[ENT_BOOL_PLBK   ].prefix  = OPT_PLOT_HDR;
+  ent_bool[ENT_BOOL_PLAX   ].en.name = PLEL_AXIS_HDR;
+  ent_bool[ENT_BOOL_PLAX   ].prefix  = OPT_PLOT_HDR;
+  ent_bool[ENT_BOOL_PLGR   ].en.name = PLEL_GRID_HDR;
+  ent_bool[ENT_BOOL_PLGR   ].prefix  = OPT_PLOT_HDR;
+  ent_bool[ENT_BOOL_PLRR   ].en.name = PLEL_ROTR_HDR;
+  ent_bool[ENT_BOOL_PLRR   ].prefix  = OPT_PLOT_HDR;
+  ent_bool[ENT_BOOL_GLOB   ].en.name = OPT_GLOB_HDR;
+#endif
+  //
+  ent_exp[ENT_EXP_INFO].c.en.name = OPT_INFO_HDR;
+  ent_exp[ENT_EXP_INFO].desc      = &info_desc;
+  ent_exp[ENT_EXP_STAT].c.en.name = OPT_STAT_HDR;
+  ent_exp[ENT_EXP_STAT].desc      = &stat_desc;
+  ent_exp[ENT_EXP_LGFL].c.en.name = OPT_GRLG_HDR;
+  ent_exp[ENT_EXP_LGFL].desc      = &grlg_desc;
+  ent_exp[ENT_EXP_GREX].c.en.name = OPT_GREX_HDR;
+  ent_exp[ENT_EXP_GREX].desc      = &grex_desc;
+#ifdef WITH_PLOT
+  ent_exp[ENT_EXP_PLEL].c.en.name = OPT_PLOT_HDR;
+  ent_exp[ENT_EXP_PLEL].desc      = &plot_desc;
+#endif
+  //
+  ent_spn[ENT_SPN_TTL   ].c.en.name     = OPT_TTL_HDR;
+  ent_spn[ENT_SPN_TTL   ].list[0].title = OPT_TTL_HDR;
+#ifdef WITH_PLOT
+  ent_spn[ENT_SPN_COLOR ].c.en.name     = OPT_GRAD_HDR;
+  ent_spn[ENT_SPN_COLOR ].list[0].title = GRAD_COLR;
+  ent_spn[ENT_SPN_COLOR ].list[1].title = GRAD_COLG;
+  ent_spn[ENT_SPN_COLOR ].list[2].title = GRAD_COLB;
+  ent_spn[ENT_SPN_GLOBAL].c.en.name     = OPT_ROTOR_HDR;
+  ent_spn[ENT_SPN_GLOBAL].list[0].title = ROT_AXES;
+  ent_spn[ENT_SPN_LOCAL ].c.en.name     = OPT_ROTOR_HDR;
+  ent_spn[ENT_SPN_LOCAL ].list[0].title = ROT_ATTITUDE;
+  ent_spn[ENT_SPN_FOV   ].c.en.name     = OPT_SCALE_HDR;
+  ent_spn[ENT_SPN_FOV   ].list[0].title = OPT_FOV_HDR;
+  ent_spn[ENT_SPN_FOV   ].list[0].aux[0].prfx = OPT_SCALE_HDR;
+  ent_spn[ENT_SPN_FOV   ].list[0].aux[0].sfx  = OPT_FOV_HDR;
+#endif
+  //
+  ent_rad[ENT_RAD_IPV  ].c.en.name  = OPT_IPV_HDR;
+  ent_rad[ENT_RAD_IPV  ].map[0].str = OPT_IPVA_HDR;
+  ent_rad[ENT_RAD_IPV  ].map[1].str = OPT_IPV4_HDR;
+  ent_rad[ENT_RAD_IPV  ].map[2].str = OPT_IPV6_HDR;
+  ent_rad[ENT_RAD_GRAPH].c.en.name  = OPT_GRAPH_HDR;
+  ent_rad[ENT_RAD_GRAPH].map[0].str = OPT_GR_DOT_HDR;
+  ent_rad[ENT_RAD_GRAPH].map[1].str = OPT_GR_LINE_HDR;
+  ent_rad[ENT_RAD_GRAPH].map[2].str = OPT_GR_CURVE_HDR;
 }
 
 
@@ -835,11 +913,11 @@ static inline void ent_link_to_desc(void) {
 //
 
 gboolean option_init(GtkWidget* bar) {
-  ent_link_to_desc();
+  init_entry_links();
   { const char *icons[] = { ub_theme ? OPT_MAIN_MENU_ICOA : OPT_MAIN_MENU_ICON, OPT_MAIN_MENU_ICOA, NULL};
-    g_return_val_if_fail(create_optmenu(bar, icons, OPT_MAIN_MENU_TIP, create_main_optmenu), false); }
+    g_return_val_if_fail(create_optmenu(bar, icons, OPT_MAINMENU_TIP, create_main_optmenu), false); }
   { const char *icons[] = { OPT_EXT_MENU_ICON, OPT_EXT_MENU_ICOA, NULL};
-    g_return_val_if_fail(create_optmenu(bar, icons, OPT_EXT_MENU_TIP,  create_ext_optmenu),  false); }
+    g_return_val_if_fail(create_optmenu(bar, icons, OPT_AUXMENU_TIP,  create_ext_optmenu),  false); }
   return true;
 }
 

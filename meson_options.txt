@@ -1,5 +1,6 @@
 option('DND',  type: 'boolean', value: true, description: 'Dran-n-Drop')
 option('JSON', type: 'boolean', value: true, description: 'Json for recap mode')
 option('PLOT', type: 'boolean', value: true, description: '3D plots')
+option('NLS',  type: 'boolean', value: true, description: 'I18n LC_MESSAGES')
 option('docdir',  type : 'string', description : 'Path to docs')
 option('pingdir', type : 'string', description : 'Path to ping')

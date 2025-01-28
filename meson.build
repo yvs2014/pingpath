@@ -15,9 +15,10 @@ name = meson.project_name()
 dnd  = get_option('DND')
 json = get_option('JSON')
 plot = get_option('PLOT')
+nls  = get_option('NLS')
 docdir  = get_option('docdir')
 pingdir = get_option('pingdir')
-summary({'DND': dnd, 'JSON': json, 'PLOT': plot}, bool_yn: true)
+summary({'DND': dnd, 'JSON': json, 'PLOT': plot, 'NLS': nls}, bool_yn: true)
 config = configuration_data()
 
 # sources
@@ -84,17 +85,28 @@ if plot
   deps += dependency('epoxy', required: true)
 endif
 
+# optional: NLS (default ON)
+if nls
+  config.set('WITH_NLS', 1)
+  subdir('po')
+endif
+
 if pingdir != ''
   config.set_quoted('PINGDIR', pingdir)
 endif
 
+prefix    = get_option('prefix')
+datadir   = get_option('datadir')
+localedir = get_option('localedir')
+config.set_quoted('DATADIR',   prefix / datadir)
+config.set_quoted('LOCALEDIR', prefix / localedir)
+
 config_h = 'config.h'
-configure_file(input: config_h + '.meson', output: config_h, configuration: config)
+configure_file(output: config_h, configuration: config)
 add_project_arguments('-include', config_h, language: 'c')
 
 pp = executable(name, srcs, dependencies: deps, install: true)
 
-datadir = get_option('datadir')
 asst = 'assets'
 
 desk = name + '.desktop'

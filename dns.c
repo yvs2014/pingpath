@@ -43,12 +43,16 @@ static void _pr_dns_clist(GSList *clist) {
 #endif
 
 static void dns_query_free(t_dns_elem *elem) {
-  if (elem) { host_free(&elem->host); g_slist_free_full(elem->refs, g_free); }
+  if (elem) {
+    host_free(&elem->host);
+    g_slist_free_full(elem->refs, g_free);
+  }
 }
 
 static int dns_query_cmp(const void *a, const void *b) {
-  if (!a || !b) return -1;
-  return g_strcmp0(((t_dns_elem*)a)->host.addr, ((t_dns_elem*)b)->host.addr);
+  return (a && b) ?
+    g_strcmp0(((t_dns_elem*)a)->host.addr, ((t_dns_elem*)b)->host.addr) :
+    -1;
 }
 
 static t_host* dns_cache_find(char* addr) {
@@ -83,7 +87,11 @@ static void dns_query_complete(t_ref *ref, t_dns_elem *elem) {
 static void dns_cache_update(char *addr, char *name) {
   if (!addr) return;
   t_host *host = dns_cache_find(addr);
-  if (host) { UPD_NSTR(host->name, name, MAXHOSTNAME); PR_DNS_C; return; }
+  if (host) {
+    UPD_NSTR(host->name, name, MAXHOSTNAME);
+    PR_DNS_C;
+    return;
+  }
   host = g_malloc0(sizeof(t_host));
   if (host) {
     host->addr = g_strndup(addr, MAXHOSTNAME);
@@ -162,7 +170,7 @@ void dns_lookup(t_hop *hop, int ndx) {
   t_host *cached = dns_cache_find(addr);
   if (cached) { // update with cached data and return
     UPD_NSTR(hop->host[ndx].name, cached->name, MAXHOSTNAME);
-    if (hop->cached) hop->cached = false;
+    if (hop->cached)    hop->cached    = false;
     if (hop->cached_nl) hop->cached_nl = false;
     DNS_DEBUG("cache hit[%d,%d]: addr=%s -> name=%s", hop->at, ndx, addr, cached->name);
     return;

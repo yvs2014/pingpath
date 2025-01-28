@@ -3,11 +3,9 @@
 #include <string.h>
 #include <time.h>
 
+#include "text.h"
 #include "common.h"
 
-const char *appver = APPNAME "-" VERSION;
-
-const char *unkn_error = "unknown error";
 const char *unkn_field = ""; // "?" "???"
 const char *unkn_whois = "";
 

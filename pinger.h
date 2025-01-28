@@ -18,7 +18,6 @@ void pinger_stop(const char* reason);
 void pinger_nth_stop(int nth, const char* reason);
 void pinger_nth_free_error(int nth);
 void pinger_clear_data(gboolean clean);
-void pinger_set_error(const char *error);
 gboolean pinger_within_range(int min, int max, int got);
 int pinger_update_tabs(int *pseq);
 void pinger_vis_rows(int upto);

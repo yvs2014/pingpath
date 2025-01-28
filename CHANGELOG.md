@@ -1,3 +1,7 @@
+## 0.3.46
+- work-in-progress: prepare NLS infra
+- wip: NLS menu
+
 ## 0.3.45
 - define _GNU_SOURCE via project arguments
 
