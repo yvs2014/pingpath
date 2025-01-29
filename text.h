@@ -12,6 +12,18 @@
 #define UNIT_SEC         _("sec")
 #define UNIT_HEX         _("0x")
 
+// tab names-n-tips
+#define PING_TAB_TAG  _("Trace")
+#define PING_TAB_TIP  _("Ping path with stats")
+#define LOG_TAB_TAG   _("Log")
+#define LOG_TAB_TIP   _("Auxiliary logs")
+#define GRAPH_TAB_TAG _("Graphs")
+#define GRAPH_TAB_TIP _("2D graphs")
+#ifdef WITH_PLOT
+#define PLOT_TAB_TAG  _("3D")
+#define PLOT_TAB_TIP  _("3D graphics")
+#endif
+
 // help window
 #define HELP_ACT_TITLE   _("Actions")
 #define HELP_CLI_TITLE   _("CLI")
@@ -137,27 +149,28 @@
 #define ELEM_JTTR_TIP    _("Jitter (variation in delay)")
 
 // graphs elements
-#define GRLG_DASH_HDR    "Color"
-#define GRLG_DASH_HEADER "Color dash"
-#define GRLG_AVJT_HDR    "RTT±Jitter"
-#define GRLG_AVJT_HEADER "Average RTT ± Jitter"
-#define GRLG_CCAS_HDR    "CC:ASN"
-#define GRLG_CCAS_HEADER "Country Code : AS Number"
-#define GRLG_LGHN_HDR    "Hopname"
+#define GRLG_DASH_HDR    _("Color")
+#define GRLG_DASH_HEADER _("Color dash")
+#define GRLG_AVJT_HDR    _("RTT±Jitter")
+#define GRLG_AVJT_HEADER _("Average RTT ± Jitter")
+#define GRLG_CCAS_HDR    _("CC:ASN")
+#define GRLG_CCAS_HEADER _("Country Code : AS Number")
+#define GRLG_LGHN_HDR    _("Hopname")
+#define GRLG_LGHN_HEADER _("_Hopname")
 //
-#define GREX_MEAN_HDR    "Midline"
-#define GREX_MEAN_HEADER "Average line"
-#define GREX_JRNG_HDR    "Scopes"
-#define GREX_JRNG_HEADER "Jitter range"
-#define GREX_AREA_HDR    "JArea"
-#define GREX_AREA_HEADER "Jitter area"
+#define GREX_MEAN_HDR    _("Midline")
+#define GREX_MEAN_HEADER _("Average line")
+#define GREX_JRNG_HDR    _("Scopes")
+#define GREX_JRNG_HEADER _("Jitter range")
+#define GREX_AREA_HDR    _("JArea")
+#define GREX_AREA_HEADER _("Jitter area")
 
 #ifdef WITH_PLOT
 // 3D-plot elements
-#define PLEL_BACK_HDR    "Backside"
-#define PLEL_AXIS_HDR    "Axis"
-#define PLEL_GRID_HDR    "Grid"
-#define PLEL_ROTR_HDR    "Rotator"
+#define PLEL_BACK_HDR    _("Backside")
+#define PLEL_AXIS_HDR    _("Axis")
+#define PLEL_GRID_HDR    _("Grid")
+#define PLEL_ROTR_HDR    _("Rotator")
 #endif
 
 // toggle tips
@@ -173,5 +186,16 @@
 #define PLOT_GRAD_COLR _("Plot red gradient")
 #define PLOT_GRAD_COLG _("Plot green gradient")
 #define PLOT_GRAD_COLB _("Plot blue gradient")
+
+// 3D-rotation parameters
+#define ROT_ATTITUDE  _("Attitude")
+#define ROT_ROLL      _("Roll")
+#define ROT_PITCH     _("Pitch")
+#define ROT_YAW       _("Yaw")
+#define ROT_AXES      _("Rotation")
+#define ROT_ANGLE_X   _("Axis X")
+#define ROT_ANGLE_Y   _("Axis Y")
+#define ROT_ANGLE_Z   _("Axis Z")
+#define ROT_STEP      _("Angular step")
 
 #endif

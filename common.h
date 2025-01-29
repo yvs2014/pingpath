@@ -10,7 +10,7 @@
 #define MIN_GTK_RUNTIME(major, minor, micro) (!gtk_check_version(major, minor, micro))
 
 #define APPNAME "pingpath"
-#define VERSION "0.3.46"
+#define VERSION "0.3.48"
 #define APPVER  APPNAME "-" VERSION
 
 extern locale_t locale, localeC;
@@ -112,17 +112,6 @@ enum { MAX_ICONS = 5 };
 #endif
 #define LOG_TAB_ICON   "system-search-symbolic"
 #define LOG_TAB_ICOA   "edit-find-symbolic"
-
-#define PING_TAB_TAG  "Trace"
-#define PING_TAB_TIP  "Ping path with stats"
-#define LOG_TAB_TAG   "Log"
-#define LOG_TAB_TIP   "Auxiliary logs"
-#define GRAPH_TAB_TAG "Graph"
-#define GRAPH_TAB_TIP "Line graph"
-#ifdef WITH_PLOT
-#define PLOT_TAB_TAG  "3D"
-#define PLOT_TAB_TIP  "3D view"
-#endif
 
 #define PP_FONT_FAMILY "monospace"
 enum { PP_RTT0 = 1000 };   // 1msec

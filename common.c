@@ -32,21 +32,21 @@ t_type_elem pingelem[PE_MAX] = {
 
 t_type_elem graphelem[GX_MAX] = {
   [GE_NO]   = { .type = GE_NO,   .enable = true, .name = "" },
-  [GE_DASH] = { .type = GE_DASH, .enable = true, .name = GRLG_DASH_HEADER },
-  [GE_AVJT] = { .type = GE_AVJT, .enable = true, .name = GRLG_AVJT_HEADER },
-  [GE_CCAS] = { .type = GE_CCAS, .enable = true, .name = GRLG_CCAS_HEADER },
-  [GE_LGHN] = { .type = GE_LGHN, .enable = true, .name = GRLG_LGHN_HDR    },
-  [GX_MEAN] = { .type = GX_MEAN,                 .name = GREX_MEAN_HDR    },
-  [GX_JRNG] = { .type = GX_JRNG,                 .name = GREX_JRNG_HDR    },
-  [GX_AREA] = { .type = GX_AREA,                 .name = GREX_AREA_HDR    },
+  [GE_DASH] = { .type = GE_DASH, .enable = true },
+  [GE_AVJT] = { .type = GE_AVJT, .enable = true },
+  [GE_CCAS] = { .type = GE_CCAS, .enable = true },
+  [GE_LGHN] = { .type = GE_LGHN, .enable = true },
+  [GX_MEAN] = { .type = GX_MEAN,                },
+  [GX_JRNG] = { .type = GX_JRNG,                },
+  [GX_AREA] = { .type = GX_AREA,                },
 };
 
 #ifdef WITH_PLOT
 t_type_elem plotelem[D3_MAX] = {
-  [D3_BACK] = { .type = D3_BACK, .enable = true, .name = PLEL_BACK_HDR },
-  [D3_AXIS] = { .type = D3_AXIS, .enable = true, .name = PLEL_AXIS_HDR },
-  [D3_GRID] = { .type = D3_GRID, .enable = true, .name = PLEL_GRID_HDR },
-  [D3_ROTR] = { .type = D3_ROTR, .enable = true, .name = PLEL_ROTR_HDR },
+  [D3_BACK] = { .type = D3_BACK, .enable = true },
+  [D3_AXIS] = { .type = D3_AXIS, .enable = true },
+  [D3_GRID] = { .type = D3_GRID, .enable = true },
+  [D3_ROTR] = { .type = D3_ROTR, .enable = true },
 };
 #endif
 
@@ -214,11 +214,13 @@ char* get_nth_color(int nth) {
 }
 
 //
+
 void init_elem_links(void) {
 #define INIT_PE_NT(ndx, ename, etip) do { \
   pingelem[ndx].name = (ename);           \
   pingelem[ndx].tip  = (etip);            \
 } while (0)
+  //
   INIT_PE_NT(PE_HOST, ELEM_HOST_HDR, ELEM_HOST_TIP);
   INIT_PE_NT(PE_HOST, ELEM_HOST_HDR, ELEM_HOST_TIP);
   INIT_PE_NT(PE_AS,   ELEM_AS_HDR,   ELEM_AS_TIP);
@@ -233,6 +235,24 @@ void init_elem_links(void) {
   INIT_PE_NT(PE_WRST, ELEM_WRST_HDR, ELEM_WRST_TIP);
   INIT_PE_NT(PE_AVRG, ELEM_AVRG_HDR, ELEM_AVRG_TIP);
   INIT_PE_NT(PE_JTTR, ELEM_JTTR_HDR, ELEM_JTTR_TIP);
+  //
+  graphelem[GE_DASH].name = GRLG_DASH_HEADER;
+  graphelem[GE_AVJT].name = GRLG_AVJT_HEADER;
+  graphelem[GE_CCAS].name = GRLG_CCAS_HEADER;
+  graphelem[GE_LGHN].name = GRLG_LGHN_HEADER;
+  graphelem[GX_MEAN].name = GREX_MEAN_HDR;
+  graphelem[GX_JRNG].name = GREX_JRNG_HDR;
+  graphelem[GX_AREA].name = GREX_AREA_HDR;
+  //
+#ifdef WITH_PLOT
+  plotelem[D3_BACK].name = PLEL_BACK_HDR;
+  plotelem[D3_AXIS].name = PLEL_AXIS_HDR;
+  plotelem[D3_GRID].name = PLEL_GRID_HDR;
+  plotelem[D3_ROTR].name = PLEL_ROTR_HDR;
+  //
+#endif
+
+
 #undef INIT_PE_NT
 };
 //

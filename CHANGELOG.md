@@ -1,3 +1,7 @@
+## 0.3.48
+- NLS wip: add remained menu text
+- NLS wip: tab names-n-tips
+
 ## 0.3.46
 - work-in-progress: prepare NLS infra
 - wip: NLS menu

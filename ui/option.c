@@ -128,15 +128,6 @@ t_minmax opt_mm_ttl = {MINTTL, MAXTTL};
 static void colgrad_cb(GtkSpinButton*, t_ent_spn_aux*);
 t_minmax opt_mm_col = {MIN_COL_VAL, MAX_COL_VAL};
 //
-#define ROT_ATTITUDE  "Attitude"
-#define ROT_ROLL      "Roll"
-#define ROT_PITCH     "Pitch"
-#define ROT_YAW       "Yaw"
-#define ROT_AXES      "Rotation"
-#define ROT_ANGLE_X   "Axis X"
-#define ROT_ANGLE_Y   "Axis Y"
-#define ROT_ANGLE_Z   "Axis Z"
-#define ROT_STEP      "Angular step"
 static void rotation_cb(GtkSpinButton*, t_ent_spn_aux*);
 t_minmax opt_mm_rot = {MIN_VIEW_ANGLE, MAX_VIEW_ANGLE};
 t_minmax opt_mm_ang = {1, MAX_VIEW_ANGLE};
@@ -173,26 +164,26 @@ t_ent_spn ent_spn[] = {
   [ENT_SPN_GLOBAL] = { .c = { .en.type = ENT_SPN_GLOBAL, .atrun = true },
     .list = {
       { .kind = ROTOR_COLUMN, .aux = {
-        [ENT_SPN_ROT0] = { .cb = G_CALLBACK(rotation_cb), .pval = opts.orient, .pn = 0, .wrap = 360,
-          .mm = &opt_mm_rot, .sfx = ROT_ANGLE_X, .step = &opts.angstep },
-        [ENT_SPN_ROT1] = { .cb = G_CALLBACK(rotation_cb), .pval = opts.orient, .pn = 1, .wrap = 360,
-          .mm = &opt_mm_rot, .sfx = ROT_ANGLE_Y, .step = &opts.angstep },
-        [ENT_SPN_ROT2] = { .cb = G_CALLBACK(rotation_cb), .pval = opts.orient, .pn = 2, .wrap = 360,
-          .mm = &opt_mm_rot, .sfx = ROT_ANGLE_Z, .step = &opts.angstep },
-        [ENT_SPN_ANGS] = { .cb = G_CALLBACK(rotation_cb), .pval = &opts.angstep, .def = DEF_ANGSTEP,
-          .sn = ENT_SPN_GLOBAL, .mm = &opt_mm_ang, .sfx = ROT_STEP },
+        [ENT_SPN_ROT0] = { .cb = G_CALLBACK(rotation_cb), .pval = opts.orient,
+          .pn = 0, .wrap = 360, .mm = &opt_mm_rot, .step = &opts.angstep },
+        [ENT_SPN_ROT1] = { .cb = G_CALLBACK(rotation_cb), .pval = opts.orient,
+          .pn = 1, .wrap = 360, .mm = &opt_mm_rot, .step = &opts.angstep },
+        [ENT_SPN_ROT2] = { .cb = G_CALLBACK(rotation_cb), .pval = opts.orient,
+          .pn = 2, .wrap = 360, .mm = &opt_mm_rot, .step = &opts.angstep },
+        [ENT_SPN_ANGS] = { .cb = G_CALLBACK(rotation_cb), .pval = &opts.angstep,
+          .def = DEF_ANGSTEP, .sn = ENT_SPN_GLOBAL, .mm = &opt_mm_ang },
   }}}},
   [ENT_SPN_LOCAL] = { .c = { .en.type = ENT_SPN_LOCAL, .atrun = true },
     .list = {
       { .kind = ROTOR_COLUMN, .aux = {
-        [ENT_SPN_ROT0] = { .cb = G_CALLBACK(rotation_cb), .pval = opts.orient, .pn = 1, .wrap = 360,
-          .mm = &opt_mm_rot, .sfx = ROT_YAW,   .step = &opts.angstep, .rev = true },
-        [ENT_SPN_ROT1] = { .cb = G_CALLBACK(rotation_cb), .pval = opts.orient, .pn = 2, .wrap = 360,
-          .mm = &opt_mm_rot, .sfx = ROT_PITCH, .step = &opts.angstep },
-        [ENT_SPN_ROT2] = { .cb = G_CALLBACK(rotation_cb), .pval = opts.orient, .pn = 0, .wrap = 360,
-          .mm = &opt_mm_rot, .sfx = ROT_ROLL,  .step = &opts.angstep, .rev = true },
-        [ENT_SPN_ANGS] = { .cb = G_CALLBACK(rotation_cb), .pval = &opts.angstep, .def = DEF_ANGSTEP,
-          .sn = ENT_SPN_LOCAL, .mm = &opt_mm_ang, .sfx = ROT_STEP },
+        [ENT_SPN_ROT0] = { .cb = G_CALLBACK(rotation_cb), .pval = opts.orient,
+          .pn = 1, .wrap = 360, .mm = &opt_mm_rot, .step = &opts.angstep, .rev = true },
+        [ENT_SPN_ROT1] = { .cb = G_CALLBACK(rotation_cb), .pval = opts.orient,
+          .pn = 2, .wrap = 360, .mm = &opt_mm_rot, .step = &opts.angstep },
+        [ENT_SPN_ROT2] = { .cb = G_CALLBACK(rotation_cb), .pval = opts.orient,
+          .pn = 0, .wrap = 360, .mm = &opt_mm_rot, .step = &opts.angstep, .rev = true },
+        [ENT_SPN_ANGS] = { .cb = G_CALLBACK(rotation_cb), .pval = &opts.angstep,
+          .def = DEF_ANGSTEP, .sn = ENT_SPN_LOCAL, .mm = &opt_mm_ang },
   }}}},
   [ENT_SPN_FOV] = { .c = { .en.type = ENT_SPN_FOV, .atrun = true },
     .list = {
@@ -821,6 +812,12 @@ static inline void init_entry_links(void) {
   ent_spn[ENT_SPN_COLOR].list[ndx].aux[0].prfx = (stitle); \
   ent_spn[ENT_SPN_COLOR].list[ndx].aux[1].prfx = (stitle); \
 } while (0)
+#define INIT_SE_SF(ndx, r1, r2, r3, r4, s1, s2, s3, s4) do { \
+  ent_spn[ndx].list[0].aux[r1].sfx = s1; \
+  ent_spn[ndx].list[0].aux[r2].sfx = s2; \
+  ent_spn[ndx].list[0].aux[r3].sfx = s3; \
+  ent_spn[ndx].list[0].aux[r4].sfx = s4; \
+} while (0)
   //
   ent_str[ENT_STR_CYCLES].en.name = OPT_CYCLES_HDR;
   ent_str[ENT_STR_IVAL  ].en.name = OPT_IVAL_HDR;
@@ -853,7 +850,7 @@ static inline void init_entry_links(void) {
   ent_bool[ENT_BOOL_LGND].en.name = OPT_LGND_HDR;
   INIT_BE_GRLG(ENT_BOOL_AVJT, GRLG_AVJT_HEADER);
   INIT_BE_GRLG(ENT_BOOL_CCAS, GRLG_CCAS_HEADER);
-  INIT_BE_GRLG(ENT_BOOL_LGHN, GRLG_LGHN_HDR   );
+  INIT_BE_GRLG(ENT_BOOL_LGHN, GRLG_LGHN_HEADER);
   INIT_BE_GREX(ENT_BOOL_MEAN, GREX_MEAN_HEADER);
   INIT_BE_GREX(ENT_BOOL_JRNG, GREX_JRNG_HEADER);
   INIT_BE_GREX(ENT_BOOL_AREA, GREX_AREA_HEADER);
@@ -883,8 +880,14 @@ static inline void init_entry_links(void) {
   INIT_SE_TD(2, SPN_BCOL_DELIM, PLOT_GRAD_COLB);
   ent_spn[ENT_SPN_GLOBAL].c.en.name     = OPT_ROTOR_HDR;
   ent_spn[ENT_SPN_GLOBAL].list[0].title = ROT_AXES;
+  INIT_SE_SF(ENT_SPN_GLOBAL,
+    ENT_SPN_ROT0, ENT_SPN_ROT1, ENT_SPN_ROT2, ENT_SPN_ANGS,
+    ROT_ANGLE_X,  ROT_ANGLE_Y,  ROT_ANGLE_Z,  ROT_STEP);
   ent_spn[ENT_SPN_LOCAL ].c.en.name     = OPT_ROTOR_HDR;
   ent_spn[ENT_SPN_LOCAL ].list[0].title = ROT_ATTITUDE;
+  INIT_SE_SF(ENT_SPN_LOCAL,
+    ENT_SPN_ROT0, ENT_SPN_ROT1, ENT_SPN_ROT2, ENT_SPN_ANGS,
+    ROT_YAW,      ROT_PITCH,    ROT_ROLL,     ROT_STEP);
   ent_spn[ENT_SPN_FOV   ].c.en.name     = OPT_SCALE_HDR;
   ent_spn[ENT_SPN_FOV   ].list[0].title = OPT_FOV_HDR;
   ent_spn[ENT_SPN_FOV   ].list[0].aux[0].prfx = OPT_SCALE_HDR;
@@ -907,7 +910,8 @@ static inline void init_entry_links(void) {
 #undef INIT_BE_GREX
 #undef INIT_BE_PLOT
 #undef INIT_EE_ND
-#undef INIT_SE_DP
+#undef INIT_SE_TD
+#undef INIT_SE_SF
 }
 
 

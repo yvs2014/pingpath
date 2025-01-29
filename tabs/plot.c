@@ -6,6 +6,7 @@
 #include <cglm/cglm.h>
 
 #include "common.h"
+#include "text.h"
 #include "aux.h"
 
 #include "plot.h"
@@ -173,8 +174,7 @@ static const GLchar *text_glsl[] = {
 };
 
 static t_tab plottab = { .self = &plottab, .name = "plot-tab",
-  .tag = PLOT_TAB_TAG, .tip = PLOT_TAB_TIP, .ico = {PLOT_TAB_ICON, PLOT_TAB_ICOA, PLOT_TAB_ICOB, PLOT_TAB_ICOC},
-};
+  .ico = {PLOT_TAB_ICON, PLOT_TAB_ICOA, PLOT_TAB_ICOB, PLOT_TAB_ICOC} };
 
 static GtkWidget *plot_base_area, *plot_dyn_area;
 static t_plot_res plot_base_res = { .base = true }, plot_dyna_res;
@@ -822,12 +822,9 @@ static void plottab_on_opts(unsigned flags) {
 // pub
 //
 
-void plottab_redraw(void) {
-  if (GTK_IS_WIDGET(plot_base_area)) gtk_gl_area_queue_render(GTK_GL_AREA(plot_base_area));
-  if (GTK_IS_WIDGET(plot_dyn_area))  gtk_gl_area_queue_render(GTK_GL_AREA(plot_dyn_area));
-}
-
 t_tab* plottab_init(void) {
+  plottab.tag = PLOT_TAB_TAG;
+  plottab.tip = PLOT_TAB_TIP;
 #define PL_INIT_LAYER(widget, descr) { (widget) = plot_init_glarea(descr); \
     g_return_val_if_fail(widget, NULL); layers = g_slist_append(layers, widget); }
   { int units = 1; glGetIntegerv(GL_MAX_VERTEX_TEXTURE_IMAGE_UNITS, &units);
@@ -852,6 +849,11 @@ void plottab_free(void) { plot_res_free(&plot_dyna_res); plot_res_free(&plot_bas
 void plottab_update(void) {
   plot_aux_update(&plot_dyna_res.vo[VO_SURF]);
   if (GTK_IS_WIDGET(plot_dyn_area)) gtk_gl_area_queue_render(GTK_GL_AREA(plot_dyn_area));
+}
+
+void plottab_redraw(void) {
+  if (GTK_IS_WIDGET(plot_base_area)) gtk_gl_area_queue_render(GTK_GL_AREA(plot_base_area));
+  if (GTK_IS_WIDGET(plot_dyn_area))  gtk_gl_area_queue_render(GTK_GL_AREA(plot_dyn_area));
 }
 
 void plottab_refresh(gboolean flags) { if (flags) plottab_on_opts(flags); plottab_redraw(); }

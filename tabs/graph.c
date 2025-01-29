@@ -4,9 +4,10 @@
 #include <time.h>
 
 #include "common.h"
+#include "text.h"
+#include "aux.h"
 
 #include "graph.h"
-#include "aux.h"
 #include "series.h"
 #include "pinger.h"
 #include "stat.h"
@@ -53,8 +54,7 @@ static const double fs_size = CELL_SIZE * FONT_RATIO;
 static const double dx_step = MAIN_TIMING_SEC * ((double)CELL_SIZE / SUBCELLS);
 
 static t_tab graphtab = { .self = &graphtab, .name = "graph-tab",
-  .tag = GRAPH_TAB_TAG, .tip = GRAPH_TAB_TIP, .ico = {GRAPH_TAB_ICON, GRAPH_TAB_ICOA, GRAPH_TAB_ICOB},
-};
+  .ico = {GRAPH_TAB_ICON, GRAPH_TAB_ICOA, GRAPH_TAB_ICOB} };
 
 static GtkWidget *graph_grid, *graph_marks, *graph_graph;
 static PangoFontDescription *graph_font;
@@ -389,6 +389,8 @@ static void gr_draw_graph(GtkDrawingArea *area, cairo_t* cr,
 //
 
 t_tab* graphtab_init(void) {
+  graphtab.tag = GRAPH_TAB_TAG;
+  graphtab.tip = GRAPH_TAB_TIP;
 #define GR_INIT_LAYER(widget, drawfunc) { (widget) = gtk_drawing_area_new(); g_return_val_if_fail(widget, NULL); \
     gtk_drawing_area_set_draw_func(GTK_DRAWING_AREA(widget), drawfunc, NULL, NULL); \
     layers = g_slist_append(layers, widget); }

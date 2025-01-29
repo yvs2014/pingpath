@@ -3,8 +3,10 @@
 #include <math.h>
 
 #include "common.h"
-#include "ping.h"
+#include "text.h"
 #include "aux.h"
+
+#include "ping.h"
 #include "pinger.h"
 #include "stat.h"
 #include "ui/style.h"
@@ -42,9 +44,13 @@ typedef struct listbox {
 static t_listbox listbox;
 
 static t_tab pingtab = { .self = &pingtab, .name = "ping-tab",
-  .tag = PING_TAB_TAG, .tip = PING_TAB_TIP, .ico = {PING_TAB_ICON, PING_TAB_ICOA, PING_TAB_ICOB},
-  .desc = { [POP_MENU_NDX_COPY] = { .name = "win.ping_menu_copy" }, [POP_MENU_NDX_SALL] = { .name = "win.ping_menu_sall" }},
-  .act = { [POP_MENU_NDX_COPY] = { .activate = cb_on_copy_l2 }, [POP_MENU_NDX_SALL] = { .activate = cb_on_sall }},
+  .ico = {PING_TAB_ICON, PING_TAB_ICOA, PING_TAB_ICOB},
+  .desc = {
+    [POP_MENU_NDX_COPY] = { .name = "win.ping_menu_copy" },
+    [POP_MENU_NDX_SALL] = { .name = "win.ping_menu_sall" }},
+  .act = {
+    [POP_MENU_NDX_COPY] = { .activate = cb_on_copy_l2 },
+    [POP_MENU_NDX_SALL] = { .activate = cb_on_sall    }},
 };
 
 static void pt_align_elem_label(GtkWidget* label, GtkAlign align, gboolean expand) {
@@ -377,6 +383,8 @@ void pingtab_set_error(const char *error) {
 }
 
 t_tab* pingtab_init(GtkWidget* win) {
+  pingtab.tag = PING_TAB_TAG;
+  pingtab.tip = PING_TAB_TIP;
   if (!basetab_init(&pingtab, pt_make_dyn, pt_make_info)) return NULL;
   if (!clipboard_init(win, &pingtab)) LOG("no %s clipboard", pingtab.name);
   return &pingtab;

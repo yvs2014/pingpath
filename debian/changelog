@@ -1,3 +1,11 @@
+pingpath (0.3.48) noble; urgency=low
+
+  * NLS wip: add remained menu text
+
+  * NLS wip: tab names-n-tips
+
+ -- yvs <VSYakovetsky@gmail.com>  Wed, 29 Jan 2025 19:22:55 +0200
+
 pingpath (0.3.46) noble; urgency=low
 
   * work-in-progress: prepare NLS infra

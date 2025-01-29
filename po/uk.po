@@ -7,6 +7,39 @@ msgstr ""
 "Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11) ? 0 : "
 "n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2;\n"
 
+
+# Tab1.1
+msgid "Trace"
+msgstr "Трасування"
+
+# Tab1.2
+msgid "Ping path with stats"
+msgstr "Шлях пінгування зі статистикою"
+
+# Tab2.1
+msgid "Graphs"
+msgstr "Графіки"
+
+# Tab2.2
+msgid "2D graphs"
+msgstr "2D графіки"
+
+# Tab3.1
+msgid "3D"
+msgstr "3D"
+
+# Tab3.2
+msgid "3D graphics"
+msgstr "3D графіка"
+
+# Tab4.1
+msgid "Log"
+msgstr "Журнал"
+
+# Tab4.2
+msgid "Auxiliary logs"
+msgstr "Логування"
+
 # target hint
 msgid "Enter hostname or IP address ..."
 msgstr "Введіть назву або IP адресу ..."
@@ -229,7 +262,7 @@ msgstr "Назва вузла або IP адреса"
 
 # trace-info: 1.2.0
 msgid "AS"
-msgstr "АC"
+msgstr "АС"
 
 # trace-info: 1.2.1
 msgid "AS Number"
@@ -277,7 +310,7 @@ msgstr "Мережевий префікс"
 
 # trace-stat: 1.1.0
 msgid "Loss"
-msgstr "Втрата"
+msgstr "Втрат"
 
 # trace-stat: 1.1.1
 msgid "Lost"
@@ -317,7 +350,7 @@ msgstr "Остан"
 
 # trace-stat: 1.4.1
 msgid "_Last"
-msgstr "Остання"
+msgstr "Останнє"
 
 # trace-stat: 1.4.2
 msgid "Last delay in milliseconds"
@@ -329,7 +362,7 @@ msgstr "Кращ"
 
 # trace-stat: 1.5.1
 msgid "_Best"
-msgstr "Найкраща"
+msgstr "Найкраще"
 
 # trace-stat: 1.5.2
 msgid "Best delay in milliseconds"
@@ -341,7 +374,7 @@ msgstr "Гірш"
 
 # trace-stat: 1.6.1
 msgid "Worst"
-msgstr "Найгірша"
+msgstr "Найгірше"
 
 # trace-stat: 1.6.2
 msgid "Worst delay in milliseconds"
@@ -353,7 +386,7 @@ msgstr "Серед"
 
 # trace-stat: 1.7.1
 msgid "Average"
-msgstr "Середня"
+msgstr "Середнє"
 
 # trace-stat: 1.7.2
 msgid "Average delay in milliseconds"
@@ -398,4 +431,113 @@ msgstr "Зелений градієнт 3D-графіки"
 # plot loginfo: color3
 msgid "Plot blue gradient"
 msgstr "Синій градієнт 3D-графіки"
+
+# graphs' legend1.1 [removed from customisation]
+msgid "Color"
+msgstr "Колір"
+
+# graphs' legend1.2 [removed from customisation]
+msgid "Color dash"
+msgstr "Колір риски"
+
+# graphs' legend2.1 (help)
+msgid "RTT±Jitter"
+msgstr "Затримка±Джиттер"
+
+# graphs' legend2.2 (menu)
+msgid "Average RTT ± Jitter"
+msgstr "Середня затримка ± Джиттер"
+
+# graphs' legend3.1 (help)
+msgid "CC:ASN"
+msgstr "Країна:АC"
+
+# graphs' legend3.2 (menu)
+msgid "Country Code : AS Number"
+msgstr "Код країни : Номер АС"
+
+# graphs' legend4.1 (help)
+msgid "Hopname"
+msgstr "Вузел"
+
+# graphs' legend4.1 (menu)
+msgid "_Hopname"
+msgstr "Назва вузла"
+
+# graphs' element1.0 (help)
+msgid "Midline"
+msgstr "Усереднення"
+
+# graphs' element1.1 (menu)
+msgid "Average line"
+msgstr "Лінія усереднення"
+
+# graphs' element2.0 (help)
+msgid "Scopes"
+msgstr "Діапазон змін"
+
+# graphs' element2.1 (menu)
+msgid "Jitter range"
+msgstr "Діапазон змін"
+
+# graphs' element3.0 (help)
+msgid "JArea"
+msgstr "Площа змін"
+
+# graphs' element3.1 (menu)
+msgid "Jitter area"
+msgstr "Площа змін"
+
+# 3d-plot element1
+msgid "Backside"
+msgstr "Стінка"
+
+# 3d-plot element2
+msgid "Axis"
+msgstr "Вісь"
+
+# 3d-plot element3
+msgid "Grid"
+msgstr "Сітка"
+
+# 3d-plot element4
+msgid "Rotator"
+msgstr "Ротатор"
+
+# 3d-rotation parameter1
+msgid "Attitude"
+msgstr "Навігація"
+
+# 3d-rotation parameter2
+msgid "Roll"
+msgstr "Тангаж"
+
+# 3d-rotation parameter3
+msgid "Pitch"
+msgstr "Крен"
+
+#yaw відхилення (рискання)
+# 3d-rotation parameter4
+msgid "Yaw"
+msgstr "Відхилення"
+
+# 3d-rotation parameter5
+msgid "Rotation"
+msgstr "Обертання"
+
+# 3d-rotation parameter6
+msgid "Axis X"
+msgstr "Вісь X"
+
+# 3d-rotation parameter7
+msgid "Axis Y"
+msgstr "Вісь Y"
+
+# 3d-rotation parameter8
+msgid "Axis Z"
+msgstr "Вісь Z"
+
+# 3d-rotation parameter9
+msgid "Angular step"
+msgstr "Кутовий крок"
 
