@@ -23,6 +23,14 @@ msgstr "сек"
 msgid "0x"
 msgstr "0x"
 
+# toggle tip1
+msgid "on"
+msgstr "увімкнено"
+
+# toggle tip2
+msgid "off"
+msgstr "вимкнено"
+
 # help window: actions
 msgid "Actions"
 msgstr "Дії"
@@ -206,4 +214,188 @@ msgstr "Рядків у вкладці логування"
 # cli-opt-X
 msgid "Plot parameters"
 msgstr "Параметри 3D-графіки"
+
+# trace-info: 1.1.0
+msgid "Host"
+msgstr "Хост"
+
+# trace-info: 1.1.1
+msgid "_Host"
+msgstr "Хост"
+
+# trace-info: 1.1.2
+msgid "Hostname or IP-address"
+msgstr "Назва вузла або IP адреса"
+
+# trace-info: 1.2.0
+msgid "AS"
+msgstr "АC"
+
+# trace-info: 1.2.1
+msgid "AS Number"
+msgstr "Номер АС"
+
+# trace-info: 1.2.2
+msgid "Autonomous System"
+msgstr "Автономна система"
+
+# trace-info: 1.3.0
+msgid "CC"
+msgstr "Країна"
+
+# trace-info: 1.3.1
+msgid "Country Code"
+msgstr "Код країни"
+
+# trace-info: 1.3.2
+msgid "Registrant Country Code"
+msgstr "Код країни реєстрації"
+
+# trace-info: 1.4.0
+msgid "Desc"
+msgstr "Опис"
+
+# trace-info: 1.4.1
+msgid "Description"
+msgstr "Опис"
+
+# trace-info: 1.4.2
+msgid "Short description in free form"
+msgstr "Стислий опис у вільній формі"
+
+# trace-info: 1.5.0
+msgid "Route"
+msgstr "Шлях"
+
+# trace-info: 1.5.1
+msgid "Network Route"
+msgstr "Мережевий шлях"
+
+# trace-info: 1.5.2
+msgid "Network prefix"
+msgstr "Мережевий префікс"
+
+# trace-stat: 1.1.0
+msgid "Loss"
+msgstr "Втрата"
+
+# trace-stat: 1.1.1
+msgid "Lost"
+msgstr "Втрачено"
+
+# trace-stat: 1.1.2
+msgid "Loss in percentage"
+msgstr "Втрати в процентах"
+
+# trace-stat: 1.2.0
+msgid "Sent"
+msgstr "Відпр"
+
+# trace-stat: 1.2.1
+msgid "_Sent"
+msgstr "Надіслано"
+
+# trace-stat: 1.2.2
+msgid "Number of pings sent"
+msgstr "Кількість надісланих пінгів"
+
+# trace-stat: 1.3.0
+msgid "Recv"
+msgstr "Отрим"
+
+# trace-stat: 1.3.1
+msgid "Received"
+msgstr "Отримано"
+
+# trace-stat: 1.3.2
+msgid "Number of pongs received"
+msgstr "Кількість отриманих відповідей"
+
+# trace-stat: 1.4.0
+msgid "Last"
+msgstr "Остан"
+
+# trace-stat: 1.4.1
+msgid "_Last"
+msgstr "Остання"
+
+# trace-stat: 1.4.2
+msgid "Last delay in milliseconds"
+msgstr "Остання затримка в мілісекундах"
+
+# trace-stat: 1.5.0
+msgid "Best"
+msgstr "Кращ"
+
+# trace-stat: 1.5.1
+msgid "_Best"
+msgstr "Найкраща"
+
+# trace-stat: 1.5.2
+msgid "Best delay in milliseconds"
+msgstr "Найкраща затримка в мілісекундах"
+
+# trace-stat: 1.6.0
+msgid "Wrst"
+msgstr "Гірш"
+
+# trace-stat: 1.6.1
+msgid "Worst"
+msgstr "Найгірша"
+
+# trace-stat: 1.6.2
+msgid "Worst delay in milliseconds"
+msgstr "Найгірша затримка в мілісекундах"
+
+# trace-stat: 1.7.0
+msgid "Avrg"
+msgstr "Серед"
+
+# trace-stat: 1.7.1
+msgid "Average"
+msgstr "Середня"
+
+# trace-stat: 1.7.2
+msgid "Average delay in milliseconds"
+msgstr "Середня затримка в мілісекундах"
+
+# trace-stat: 1.8.0
+msgid "Jttr"
+msgstr "Джитр"
+
+# trace-stat: 1.8.1
+msgid "Jitter"
+msgstr "Джиттер"
+
+# trace-stat: 1.8.2
+msgid "Jitter (variation in delay)"
+msgstr "Джиттер (варіація затримки)"
+
+# spinner: TTL
+msgid "range"
+msgstr "діапазон"
+
+# spinner: color1
+msgid "red"
+msgstr "червоний"
+
+# spinner: color2
+msgid "green"
+msgstr "зелений"
+
+# spinner: color3
+msgid "blue"
+msgstr "синій"
+
+# plot loginfo: color1
+msgid "Plot red gradient"
+msgstr "Червоний градієнт 3D-графіки"
+
+# plot loginfo: color2
+msgid "Plot green gradient"
+msgstr "Зелений градієнт 3D-графіки"
+
+# plot loginfo: color3
+msgid "Plot blue gradient"
+msgstr "Синій градієнт 3D-графіки"
 

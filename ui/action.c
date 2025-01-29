@@ -245,7 +245,7 @@ static inline GtkWidget* get_help_content(void) {
     { .l = g_strdup(OPT_TTL_HDR),
       .r = g_strdup_printf("%s [%d - %d]", _("TTL range"), 0, MAXTTL) },
     { .l = g_strdup(OPT_QOS_HDR),
-      .r = g_strdup_printf("%s [%d]", _("QoS/ToS bits"), DEF_QOS) },
+      .r = g_strdup_printf("%s [%d]", _("QoS/ToS byte"), DEF_QOS) },
     { .l = g_strdup(OPT_PLOAD_HDR),
       .r = g_strdup_printf("%s [%s]", _("Up to 16 bytes in hex format"), DEF_PPAD) },
     { .l = g_strdup(OPT_PSIZE_HDR),

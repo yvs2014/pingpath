@@ -412,6 +412,8 @@ extern const int n_colors;
 const char* onoff(gboolean on);
 char* get_nth_color(int nth);
 
+void init_elem_links(void);
+
 int char2ndx(int cat, gboolean ent, char ch);
 gboolean*  pingelem_enabler(int type);
 gboolean* graphelem_enabler(int type);

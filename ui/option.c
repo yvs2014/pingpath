@@ -123,9 +123,6 @@ t_minmax opt_mm_ttl = {MINTTL, MAXTTL};
 #ifdef WITH_PLOT
 #define MIN_COL_VAL 0
 #define MAX_COL_VAL 0xff
-#define GRAD_COLR "Plot red gradient"
-#define GRAD_COLG "Plot green gradient"
-#define GRAD_COLB "Plot blue gradient"
 #define STR_FROM  "start with"
 #define STR_TO    "end with"
 static void colgrad_cb(GtkSpinButton*, t_ent_spn_aux*);
@@ -150,28 +147,28 @@ t_minmax opt_mm_fov = {DEF_FOV * 2 / 3, DEF_FOV * 2};
 
 t_ent_spn ent_spn[] = {
   [ENT_SPN_TTL] = { .c.en.type = ENT_SPN_TTL, .list = {
-    { .delim = SPN_TTL_DELIM, .bond = true, .kind = MINIMAX_SPIN, .aux = {
+    { .bond = true, .kind = MINIMAX_SPIN, .aux = {
       { .cb = G_CALLBACK(minttl_cb), .pval = &opts.min, .def = MINTTL, .mm = &opt_mm_ttl },
       { .cb = G_CALLBACK(maxttl_cb), .pval = &opts.lim, .def = MAXTTL, .mm = &opt_mm_ttl }
   }}}},
 #ifdef WITH_PLOT
   [ENT_SPN_COLOR] = { .c = { .en.type = ENT_SPN_COLOR, .atrun = true },
     .list = {
-      { .delim = SPN_RCOL_DELIM, .kind = MINIMAX_SPIN, .aux = {
+      { .kind = MINIMAX_SPIN, .aux = {
         { .cb = G_CALLBACK(colgrad_cb), .pval = &opts.rcol.min, .def = DEF_RCOL_FROM,
-          .mm = &opt_mm_col, .prfx = GRAD_COLR, .sfx = STR_FROM },
+          .mm = &opt_mm_col, .sfx = STR_FROM },
         { .cb = G_CALLBACK(colgrad_cb), .pval = &opts.rcol.max, .def = DEF_RCOL_TO,
-          .mm = &opt_mm_col, .prfx = GRAD_COLR, .sfx = STR_TO }}},
-      { .delim = SPN_GCOL_DELIM, .kind = MINIMAX_SPIN, .aux = {
+          .mm = &opt_mm_col, .sfx = STR_TO }}},
+      { .kind = MINIMAX_SPIN, .aux = {
         { .cb = G_CALLBACK(colgrad_cb), .pval = &opts.gcol.min, .def = DEF_GCOL_FROM,
-          .mm = &opt_mm_col, .prfx = GRAD_COLG, .sfx = STR_FROM },
+          .mm = &opt_mm_col, .sfx = STR_FROM },
         { .cb = G_CALLBACK(colgrad_cb), .pval = &opts.gcol.max, .def = DEF_GCOL_TO,
-          .mm = &opt_mm_col, .prfx = GRAD_COLG, .sfx = STR_TO }}},
-      { .delim = SPN_BCOL_DELIM, .kind = MINIMAX_SPIN, .aux = {
+          .mm = &opt_mm_col, .sfx = STR_TO }}},
+      { .kind = MINIMAX_SPIN, .aux = {
         { .cb = G_CALLBACK(colgrad_cb), .pval = &opts.bcol.min, .def = DEF_BCOL_FROM,
-          .mm = &opt_mm_col, .prfx = GRAD_COLB, .sfx = STR_FROM },
+          .mm = &opt_mm_col, .sfx = STR_FROM },
         { .cb = G_CALLBACK(colgrad_cb), .pval = &opts.bcol.max, .def = DEF_BCOL_TO,
-          .mm = &opt_mm_col, .prfx = GRAD_COLB, .sfx = STR_TO }}},
+          .mm = &opt_mm_col, .sfx = STR_TO }}},
   }},
   [ENT_SPN_GLOBAL] = { .c = { .en.type = ENT_SPN_GLOBAL, .atrun = true },
     .list = {
@@ -238,8 +235,11 @@ static gboolean check_bool_val(GtkCheckButton *check, t_ent_bool *en, void (*upd
       *pbool = state; okay = true;
       if (update) update();
     }
-    if (en->prefix) OPT_NOTIFY("%s: %s %s", en->prefix, en->en.name, onoff(state))
-    else            OPT_NOTIFY("%s: %s",                en->en.name, onoff(state));
+    const char *name = en->en.name;
+    if (name && (*name == '_'))
+      name++;
+    if (en->prefix) OPT_NOTIFY("%s: %s %s", en->prefix, name, onoff(state))
+    else            OPT_NOTIFY("%s: %s",                name, onoff(state));
   }
   return okay;
 }
@@ -506,6 +506,7 @@ static GtkWidget* label_box(const char *name, const char *unit) {
   GtkWidget *label = gtk_label_new(name_u);
   g_free(name_u);
   g_return_val_if_fail(GTK_IS_LABEL(label), box);
+  gtk_label_set_use_underline(GTK_LABEL(label), true);
   gtk_box_append(GTK_BOX(box), label);
   if (style_loaded) gtk_widget_add_css_class(label, CSS_PAD);
   gtk_widget_set_halign(label, GTK_ALIGN_START);
@@ -801,6 +802,25 @@ static gboolean create_ext_optmenu(GtkWidget *list) {
 }
 
 static inline void init_entry_links(void) {
+#define INIT_BE_NP(ndx, bname, bprfx) do { \
+  ent_bool[ndx].en.name = (bname);         \
+  ent_bool[ndx].prefix  = (bprfx);         \
+} while (0)
+#define INIT_BE_INFO(ndx, bname) INIT_BE_NP((ndx), (bname), OPT_INFO_HDR)
+#define INIT_BE_STAT(ndx, bname) INIT_BE_NP((ndx), (bname), OPT_STAT_HDR)
+#define INIT_BE_GRLG(ndx, bname) INIT_BE_NP((ndx), (bname), OPT_GRLG_HDR)
+#define INIT_BE_GREX(ndx, bname) INIT_BE_NP((ndx), (bname), OPT_GREX_HDR)
+#define INIT_BE_PLOT(ndx, bname) INIT_BE_NP((ndx), (bname), OPT_PLOT_HDR)
+#define INIT_EE_ND(ndx, ename, edesc) do { \
+  ent_exp[ndx].c.en.name = (ename);        \
+  ent_exp[ndx].desc      = &(edesc);       \
+} while (0)
+#define INIT_SE_TD(ndx, sdelim, stitle) do {               \
+  ent_spn[ENT_SPN_COLOR].list[ndx].title = (stitle);       \
+  ent_spn[ENT_SPN_COLOR].list[ndx].delim = (sdelim);       \
+  ent_spn[ENT_SPN_COLOR].list[ndx].aux[0].prfx = (stitle); \
+  ent_spn[ENT_SPN_COLOR].list[ndx].aux[1].prfx = (stitle); \
+} while (0)
   //
   ent_str[ENT_STR_CYCLES].en.name = OPT_CYCLES_HDR;
   ent_str[ENT_STR_IVAL  ].en.name = OPT_IVAL_HDR;
@@ -811,83 +831,56 @@ static inline void init_entry_links(void) {
   ent_str[ENT_STR_PSIZE ].en.name = OPT_PSIZE_HDR;
   ent_str[ENT_STR_LOGMAX].en.name = OPT_LOGMAX_HDR;
   //
-  ent_bool[ENT_BOOL_DNS    ].en.name = OPT_DNS_HDR;
-  ent_bool[ENT_BOOL_HOST   ].en.name = ELEM_HOST_HDR;
-  ent_bool[ENT_BOOL_HOST   ].prefix  = OPT_INFO_HDR;
-  ent_bool[ENT_BOOL_AS     ].en.name = ELEM_AS_HDR;
-  ent_bool[ENT_BOOL_AS     ].prefix  = OPT_INFO_HDR;
-  ent_bool[ENT_BOOL_CC     ].en.name = ELEM_CC_HDR;
-  ent_bool[ENT_BOOL_CC     ].prefix  = OPT_INFO_HDR;
-  ent_bool[ENT_BOOL_DESC   ].en.name = ELEM_DESC_HDR;
-  ent_bool[ENT_BOOL_DESC   ].prefix  = OPT_INFO_HDR;
-  ent_bool[ENT_BOOL_RT     ].en.name = ELEM_RT_HDR;
-  ent_bool[ENT_BOOL_RT     ].prefix  = OPT_INFO_HDR;
-  ent_bool[ENT_BOOL_LOSS   ].en.name = ELEM_LOSS_HDR;
-  ent_bool[ENT_BOOL_LOSS   ].prefix  = OPT_STAT_HDR;
-  ent_bool[ENT_BOOL_SENT   ].en.name = ELEM_SENT_HDR;
-  ent_bool[ENT_BOOL_SENT   ].prefix  = OPT_STAT_HDR;
-  ent_bool[ENT_BOOL_RECV   ].en.name = ELEM_RECV_HDR;
-  ent_bool[ENT_BOOL_RECV   ].prefix  = OPT_STAT_HDR;
-  ent_bool[ENT_BOOL_LAST   ].en.name = ELEM_LAST_HDR;
-  ent_bool[ENT_BOOL_LAST   ].prefix  = OPT_STAT_HDR;
-  ent_bool[ENT_BOOL_BEST   ].en.name = ELEM_BEST_HDR;
-  ent_bool[ENT_BOOL_BEST   ].prefix  = OPT_STAT_HDR;
-  ent_bool[ENT_BOOL_WRST   ].en.name = ELEM_WRST_HEADER;
-  ent_bool[ENT_BOOL_WRST   ].prefix  = OPT_STAT_HDR;
-  ent_bool[ENT_BOOL_AVRG   ].en.name = ELEM_AVRG_HEADER;
-  ent_bool[ENT_BOOL_AVRG   ].prefix  = OPT_STAT_HDR;
-  ent_bool[ENT_BOOL_JTTR   ].en.name = ELEM_JTTR_HEADER;
-  ent_bool[ENT_BOOL_JTTR   ].prefix  = OPT_STAT_HDR;
+  ent_bool[ENT_BOOL_DNS].en.name = OPT_DNS_HDR;
+  INIT_BE_INFO(ENT_BOOL_HOST, ELEM_HOST_HEADER);
+  INIT_BE_INFO(ENT_BOOL_AS,   ELEM_AS_HEADER  );
+  INIT_BE_INFO(ENT_BOOL_CC,   ELEM_CC_HEADER  );
+  INIT_BE_INFO(ENT_BOOL_DESC, ELEM_DESC_HEADER);
+  INIT_BE_INFO(ENT_BOOL_RT,   ELEM_RT_HEADER  );
+  INIT_BE_STAT(ENT_BOOL_LOSS, ELEM_LOSS_HEADER);
+  INIT_BE_STAT(ENT_BOOL_SENT, ELEM_SENT_HEADER);
+  INIT_BE_STAT(ENT_BOOL_RECV, ELEM_RECV_HEADER);
+  INIT_BE_STAT(ENT_BOOL_LAST, ELEM_LAST_HEADER);
+  INIT_BE_STAT(ENT_BOOL_BEST, ELEM_BEST_HEADER);
+  INIT_BE_STAT(ENT_BOOL_WRST, ELEM_WRST_HEADER);
+  INIT_BE_STAT(ENT_BOOL_AVRG, ELEM_AVRG_HEADER);
+  INIT_BE_STAT(ENT_BOOL_JTTR, ELEM_JTTR_HEADER);
   ent_bool[ENT_BOOL_MN_DARK].en.name = OPT_MN_DARK_HDR;
   ent_bool[ENT_BOOL_GR_DARK].en.name = OPT_GR_DARK_HDR;
 #ifdef WITH_PLOT
   ent_bool[ENT_BOOL_PL_DARK].en.name = OPT_PL_DARK_HDR;
 #endif
-  ent_bool[ENT_BOOL_LGND   ].en.name = OPT_LGND_HDR;
-  ent_bool[ENT_BOOL_AVJT   ].en.name = GRLG_AVJT_HEADER;
-  ent_bool[ENT_BOOL_AVJT   ].prefix  = OPT_GRLG_HDR;
-  ent_bool[ENT_BOOL_CCAS   ].en.name = GRLG_CCAS_HEADER;
-  ent_bool[ENT_BOOL_CCAS   ].prefix  = OPT_GRLG_HDR;
-  ent_bool[ENT_BOOL_LGHN   ].en.name = GRLG_LGHN_HDR;
-  ent_bool[ENT_BOOL_LGHN   ].prefix  = OPT_GRLG_HDR;
-  ent_bool[ENT_BOOL_MEAN   ].en.name = GREX_MEAN_HEADER;
-  ent_bool[ENT_BOOL_MEAN   ].prefix  = OPT_GREX_HDR;
-  ent_bool[ENT_BOOL_JRNG   ].en.name = GREX_JRNG_HEADER;
-  ent_bool[ENT_BOOL_JRNG   ].prefix  = OPT_GREX_HDR;
-  ent_bool[ENT_BOOL_AREA   ].en.name = GREX_AREA_HEADER;
-  ent_bool[ENT_BOOL_AREA   ].prefix  = OPT_GREX_HDR;
+  ent_bool[ENT_BOOL_LGND].en.name = OPT_LGND_HDR;
+  INIT_BE_GRLG(ENT_BOOL_AVJT, GRLG_AVJT_HEADER);
+  INIT_BE_GRLG(ENT_BOOL_CCAS, GRLG_CCAS_HEADER);
+  INIT_BE_GRLG(ENT_BOOL_LGHN, GRLG_LGHN_HDR   );
+  INIT_BE_GREX(ENT_BOOL_MEAN, GREX_MEAN_HEADER);
+  INIT_BE_GREX(ENT_BOOL_JRNG, GREX_JRNG_HEADER);
+  INIT_BE_GREX(ENT_BOOL_AREA, GREX_AREA_HEADER);
 #ifdef WITH_PLOT
-  ent_bool[ENT_BOOL_PLBK   ].en.name = PLEL_BACK_HDR;
-  ent_bool[ENT_BOOL_PLBK   ].prefix  = OPT_PLOT_HDR;
-  ent_bool[ENT_BOOL_PLAX   ].en.name = PLEL_AXIS_HDR;
-  ent_bool[ENT_BOOL_PLAX   ].prefix  = OPT_PLOT_HDR;
-  ent_bool[ENT_BOOL_PLGR   ].en.name = PLEL_GRID_HDR;
-  ent_bool[ENT_BOOL_PLGR   ].prefix  = OPT_PLOT_HDR;
-  ent_bool[ENT_BOOL_PLRR   ].en.name = PLEL_ROTR_HDR;
-  ent_bool[ENT_BOOL_PLRR   ].prefix  = OPT_PLOT_HDR;
-  ent_bool[ENT_BOOL_GLOB   ].en.name = OPT_GLOB_HDR;
+  INIT_BE_PLOT(ENT_BOOL_PLBK, PLEL_BACK_HDR);
+  INIT_BE_PLOT(ENT_BOOL_PLAX, PLEL_AXIS_HDR);
+  INIT_BE_PLOT(ENT_BOOL_PLGR, PLEL_GRID_HDR);
+  INIT_BE_PLOT(ENT_BOOL_PLRR, PLEL_ROTR_HDR);
+  ent_bool[ENT_BOOL_GLOB].en.name = OPT_GLOB_HDR;
 #endif
   //
-  ent_exp[ENT_EXP_INFO].c.en.name = OPT_INFO_HDR;
-  ent_exp[ENT_EXP_INFO].desc      = &info_desc;
-  ent_exp[ENT_EXP_STAT].c.en.name = OPT_STAT_HDR;
-  ent_exp[ENT_EXP_STAT].desc      = &stat_desc;
-  ent_exp[ENT_EXP_LGFL].c.en.name = OPT_GRLG_HDR;
-  ent_exp[ENT_EXP_LGFL].desc      = &grlg_desc;
-  ent_exp[ENT_EXP_GREX].c.en.name = OPT_GREX_HDR;
-  ent_exp[ENT_EXP_GREX].desc      = &grex_desc;
+  INIT_EE_ND(ENT_EXP_INFO, OPT_INFO_HDR, info_desc);
+  INIT_EE_ND(ENT_EXP_STAT, OPT_STAT_HDR, stat_desc);
+  INIT_EE_ND(ENT_EXP_LGFL, OPT_GRLG_HDR, grlg_desc);
+  INIT_EE_ND(ENT_EXP_GREX, OPT_GREX_HDR, grex_desc);
 #ifdef WITH_PLOT
-  ent_exp[ENT_EXP_PLEL].c.en.name = OPT_PLOT_HDR;
-  ent_exp[ENT_EXP_PLEL].desc      = &plot_desc;
+  INIT_EE_ND(ENT_EXP_PLEL, OPT_PLOT_HDR, plot_desc);
 #endif
   //
   ent_spn[ENT_SPN_TTL   ].c.en.name     = OPT_TTL_HDR;
   ent_spn[ENT_SPN_TTL   ].list[0].title = OPT_TTL_HDR;
+  ent_spn[ENT_SPN_TTL   ].list[0].delim = SPN_TTL_DELIM;
 #ifdef WITH_PLOT
   ent_spn[ENT_SPN_COLOR ].c.en.name     = OPT_GRAD_HDR;
-  ent_spn[ENT_SPN_COLOR ].list[0].title = GRAD_COLR;
-  ent_spn[ENT_SPN_COLOR ].list[1].title = GRAD_COLG;
-  ent_spn[ENT_SPN_COLOR ].list[2].title = GRAD_COLB;
+  INIT_SE_TD(0, SPN_RCOL_DELIM, PLOT_GRAD_COLR);
+  INIT_SE_TD(1, SPN_GCOL_DELIM, PLOT_GRAD_COLG);
+  INIT_SE_TD(2, SPN_BCOL_DELIM, PLOT_GRAD_COLB);
   ent_spn[ENT_SPN_GLOBAL].c.en.name     = OPT_ROTOR_HDR;
   ent_spn[ENT_SPN_GLOBAL].list[0].title = ROT_AXES;
   ent_spn[ENT_SPN_LOCAL ].c.en.name     = OPT_ROTOR_HDR;
@@ -906,6 +899,15 @@ static inline void init_entry_links(void) {
   ent_rad[ENT_RAD_GRAPH].map[0].str = OPT_GR_DOT_HDR;
   ent_rad[ENT_RAD_GRAPH].map[1].str = OPT_GR_LINE_HDR;
   ent_rad[ENT_RAD_GRAPH].map[2].str = OPT_GR_CURVE_HDR;
+  //
+#undef INIT_BE_NP
+#undef INIT_BE_INFO
+#undef INIT_BE_STAT
+#undef INIT_BE_GRLG
+#undef INIT_BE_GREX
+#undef INIT_BE_PLOT
+#undef INIT_EE_ND
+#undef INIT_SE_DP
 }
 
 

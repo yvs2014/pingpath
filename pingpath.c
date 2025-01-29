@@ -202,6 +202,7 @@ int main(int argc, char **argv) {
     }
   }
   //
+  init_elem_links();
   if (!parser_init()) return EX_SOFTWARE;
   { int quit = cli_init(&argc, &argv);
     if (quit) return (quit > 0) ? EX_USAGE : EXIT_SUCCESS; }

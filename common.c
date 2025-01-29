@@ -14,20 +14,20 @@ int verbose, activetab = TAB_PING_NDX;
 
 t_type_elem pingelem[PE_MAX] = {
   [PE_NO]   = { .type = PE_NO,   .enable = true, .name = "" },
-  [PE_HOST] = { .type = PE_HOST, .enable = true, .name = ELEM_HOST_HDR, .tip = ELEM_HOST_TIP },
-  [PE_AS]   = { .type = PE_AS,   .enable = true, .name = ELEM_AS_HDR,   .tip = ELEM_AS_TIP   },
-  [PE_CC]   = { .type = PE_CC,   .enable = true, .name = ELEM_CC_HDR,   .tip = ELEM_CC_TIP   },
-  [PE_DESC] = { .type = PE_DESC,                 .name = ELEM_DESC_HDR, .tip = ELEM_DESC_TIP },
-  [PE_RT]   = { .type = PE_RT,                   .name = ELEM_RT_HDR,   .tip = ELEM_RT_TIP   },
+  [PE_HOST] = { .type = PE_HOST, .enable = true },
+  [PE_AS]   = { .type = PE_AS,   .enable = true },
+  [PE_CC]   = { .type = PE_CC,   .enable = true },
+  [PE_DESC] = { .type = PE_DESC,                },
+  [PE_RT]   = { .type = PE_RT,                  },
   [PE_FILL] = { .type = PE_FILL, .enable = true, .name = "" },
-  [PE_LOSS] = { .type = PE_LOSS, .enable = true, .name = ELEM_LOSS_HDR, .tip = ELEM_LOSS_TIP },
-  [PE_SENT] = { .type = PE_SENT, .enable = true, .name = ELEM_SENT_HDR, .tip = ELEM_SENT_TIP },
-  [PE_RECV] = { .type = PE_RECV,                 .name = ELEM_RECV_HDR, .tip = ELEM_RECV_TIP },
-  [PE_LAST] = { .type = PE_LAST, .enable = true, .name = ELEM_LAST_HDR, .tip = ELEM_LAST_TIP },
-  [PE_BEST] = { .type = PE_BEST, .enable = true, .name = ELEM_BEST_HDR, .tip = ELEM_BEST_TIP },
-  [PE_WRST] = { .type = PE_WRST, .enable = true, .name = ELEM_WRST_HDR, .tip = ELEM_WRST_TIP },
-  [PE_AVRG] = { .type = PE_AVRG, .enable = true, .name = ELEM_AVRG_HDR, .tip = ELEM_AVRG_TIP },
-  [PE_JTTR] = { .type = PE_JTTR, .enable = true, .name = ELEM_JTTR_HDR, .tip = ELEM_JTTR_TIP },
+  [PE_LOSS] = { .type = PE_LOSS, .enable = true },
+  [PE_SENT] = { .type = PE_SENT, .enable = true },
+  [PE_RECV] = { .type = PE_RECV,                },
+  [PE_LAST] = { .type = PE_LAST, .enable = true },
+  [PE_BEST] = { .type = PE_BEST, .enable = true },
+  [PE_WRST] = { .type = PE_WRST, .enable = true },
+  [PE_AVRG] = { .type = PE_AVRG, .enable = true },
+  [PE_JTTR] = { .type = PE_JTTR, .enable = true },
 };
 
 t_type_elem graphelem[GX_MAX] = {
@@ -212,6 +212,30 @@ char* get_nth_color(int nth) {
   int n = nth % n_colors;
   return g_strdup_printf("#%02x%02x%02x", rgb2x(colors[n][0]), rgb2x(colors[n][1]), rgb2x(colors[n][2]));
 }
+
+//
+void init_elem_links(void) {
+#define INIT_PE_NT(ndx, ename, etip) do { \
+  pingelem[ndx].name = (ename);           \
+  pingelem[ndx].tip  = (etip);            \
+} while (0)
+  INIT_PE_NT(PE_HOST, ELEM_HOST_HDR, ELEM_HOST_TIP);
+  INIT_PE_NT(PE_HOST, ELEM_HOST_HDR, ELEM_HOST_TIP);
+  INIT_PE_NT(PE_AS,   ELEM_AS_HDR,   ELEM_AS_TIP);
+  INIT_PE_NT(PE_CC,   ELEM_CC_HDR,   ELEM_CC_TIP);
+  INIT_PE_NT(PE_DESC, ELEM_DESC_HDR, ELEM_DESC_TIP);
+  INIT_PE_NT(PE_RT,   ELEM_RT_HDR,   ELEM_RT_TIP);
+  INIT_PE_NT(PE_LOSS, ELEM_LOSS_HDR, ELEM_LOSS_TIP);
+  INIT_PE_NT(PE_SENT, ELEM_SENT_HDR, ELEM_SENT_TIP);
+  INIT_PE_NT(PE_RECV, ELEM_RECV_HDR, ELEM_RECV_TIP);
+  INIT_PE_NT(PE_LAST, ELEM_LAST_HDR, ELEM_LAST_TIP);
+  INIT_PE_NT(PE_BEST, ELEM_BEST_HDR, ELEM_BEST_TIP);
+  INIT_PE_NT(PE_WRST, ELEM_WRST_HDR, ELEM_WRST_TIP);
+  INIT_PE_NT(PE_AVRG, ELEM_AVRG_HDR, ELEM_AVRG_TIP);
+  INIT_PE_NT(PE_JTTR, ELEM_JTTR_HDR, ELEM_JTTR_TIP);
+#undef INIT_PE_NT
+};
+//
 
 static gboolean* elem_enabler(int type, t_type_elem *elem, int max) {
   for (int i = 0; i < max; i++) if (type == elem[i].type) return &elem[i].enable;

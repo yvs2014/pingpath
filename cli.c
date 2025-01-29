@@ -282,7 +282,10 @@ static char* cli_opt_charelem(char *str, const char *patt, int ch) {
     t_ent_bool *en = strchr(patt, *pchar) ? &ent_bool[ndx] : NULL;
     if (!en) continue;
     gboolean *pbool = EN_BOOLPTR(en);
-    if (pbool) { *pbool = true; g_message("%s: %s: " TOGGLE_ON_HDR, en->prefix, en->en.name); }
+    if (pbool) {
+      *pbool = true;
+      g_message("%s: %s: %s", en->prefix, en->en.name, TOGGLE_ON_HDR);
+    }
   }
   return str;
 }
@@ -514,7 +517,7 @@ static gboolean cli_opt_f(const char *name, const char *value, t_opts *opts, GEr
             if ((val == 4) || (val == 6)) {
               if (opts->ipv != val) {
                 opts->ipv = val;
-                g_message("%s only " TOGGLE_ON_HDR, (val == 4) ? OPT_IPV4_HDR : OPT_IPV6_HDR);
+                g_message("%s: %s", (val == 4) ? OPT_IPV4_HDR : OPT_IPV6_HDR, TOGGLE_ON_HDR);
               }
             } else { g_warning("%s:%s: %s", section, optname, "must be 4 or 6"); CLI_SET_ERR; return false; }
           }
@@ -744,7 +747,7 @@ int cli_init(int *pargc, char ***pargv) {
     ['n'] = g_strdup_printf("Numeric output (i.e. disable %s resolv)", OPT_DNS_HDR),
     ['c'] = g_strdup_printf("%s %s", OPT_CYCLES_HDR, "per target"),
     ['i'] = g_strdup_printf("%s %s", OPT_IVAL_HDR, "between pings"),
-    ['t'] = g_strdup_printf("%s %s", OPT_TTL_HDR, "range"),
+    ['t'] = g_strdup_printf("%s %s", OPT_TTL_HDR, SPN_TTL_DELIM),
     ['q'] = g_strdup_printf("%s %s", OPT_QOS_HDR, "byte"),
     ['s'] = g_strdup_printf("%s %s", OPT_PLOAD_HDR, "size"),
     ['p'] = g_strdup_printf("%s %s", OPT_PLOAD_HDR, "in hex notation"),

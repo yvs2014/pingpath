@@ -96,36 +96,45 @@
 #define OPT_RECAP_HDR    "Summary"
 
 // statistic elements and their tooltips
-#define ELEM_HOST_HDR  "Host"
-#define ELEM_HOST_TIP  "Hostname or IP-address"
-#define ELEM_AS_HDR    "AS"
-#define ELEM_AS_TIP    "Autonomous System"
-#define ELEM_CC_HDR    "CC"
-#define ELEM_CC_TIP    "Registrant Country Code"
-#define ELEM_DESC_HDR  "Description"
-#define ELEM_DESC_TIP  "Short description in free form"
-#define ELEM_RT_HDR    "Route"
-#define ELEM_RT_TIP    "Network prefix"
-#define ELEM_LOSS_HDR  "Loss"
-#define ELEM_LOSS_TIP  "Loss in percentage"
-#define ELEM_LOSS_HEADER ELEM_LOSS_HDR ", %"
-#define ELEM_SENT_HDR  "Sent"
-#define ELEM_SENT_TIP  "Number of pings sent"
-#define ELEM_RECV_HDR  "Recv"
-#define ELEM_RECV_TIP  "Number of pongs received"
-#define ELEM_LAST_HDR  "Last"
-#define ELEM_LAST_TIP  "Last delay in milliseconds"
-#define ELEM_BEST_HDR  "Best"
-#define ELEM_BEST_TIP  "Best known delay in milliseconds"
-#define ELEM_WRST_HDR  "Wrst"
-#define ELEM_WRST_HEADER "Worst"
-#define ELEM_WRST_TIP  "Worst delay in milliseconds"
-#define ELEM_AVRG_HDR  "Avrg"
-#define ELEM_AVRG_HEADER "Average"
-#define ELEM_AVRG_TIP  "Average delay in milliseconds"
-#define ELEM_JTTR_HDR  "Jttr"
-#define ELEM_JTTR_HEADER "Jitter"
-#define ELEM_JTTR_TIP  "Jitter (variation in delay)"
+#define ELEM_HOST_HDR    _("Host")
+#define ELEM_HOST_HEADER _("_Host")
+#define ELEM_HOST_TIP    _("Hostname or IP-address")
+#define ELEM_AS_HDR      _("AS")
+#define ELEM_AS_HEADER   _("AS Number")
+#define ELEM_AS_TIP      _("Autonomous System")
+#define ELEM_CC_HDR      _("CC")
+#define ELEM_CC_HEADER   _("Country Code")
+#define ELEM_CC_TIP      _("Registrant Country Code")
+#define ELEM_DESC_HDR    _("Desc")
+#define ELEM_DESC_HEADER _("Description")
+#define ELEM_DESC_TIP    _("Short description in free form")
+#define ELEM_RT_HDR      _("Route")
+#define ELEM_RT_HEADER   _("Network Route")
+#define ELEM_RT_TIP      _("Network prefix")
+#define ELEM_LOSS_HDR    _("Loss")
+#define ELEM_LOSS_HEADER _("Lost")
+#define ELEM_LOSS_TIP    _("Loss in percentage")
+#define ELEM_SENT_HDR    _("Sent")
+#define ELEM_SENT_HEADER _("_Sent")
+#define ELEM_SENT_TIP    _("Number of pings sent")
+#define ELEM_RECV_HDR    _("Recv")
+#define ELEM_RECV_HEADER _("Received")
+#define ELEM_RECV_TIP    _("Number of pongs received")
+#define ELEM_LAST_HDR    _("Last")
+#define ELEM_LAST_HEADER _("_Last")
+#define ELEM_LAST_TIP    _("Last delay in milliseconds")
+#define ELEM_BEST_HDR    _("Best")
+#define ELEM_BEST_HEADER _("_Best")
+#define ELEM_BEST_TIP    _("Best delay in milliseconds")
+#define ELEM_WRST_HDR    _("Wrst")
+#define ELEM_WRST_HEADER _("Worst")
+#define ELEM_WRST_TIP    _("Worst delay in milliseconds")
+#define ELEM_AVRG_HDR    _("Avrg")
+#define ELEM_AVRG_HEADER _("Average")
+#define ELEM_AVRG_TIP    _("Average delay in milliseconds")
+#define ELEM_JTTR_HDR    _("Jttr")
+#define ELEM_JTTR_HEADER _("Jitter")
+#define ELEM_JTTR_TIP    _("Jitter (variation in delay)")
 
 // graphs elements
 #define GRLG_DASH_HDR    "Color"
@@ -152,13 +161,17 @@
 #endif
 
 // toggle tips
-#define TOGGLE_ON_HDR  "on"
-#define TOGGLE_OFF_HDR "off"
+#define TOGGLE_ON_HDR  _("on")
+#define TOGGLE_OFF_HDR _("off")
 
 // spinner fields
-#define SPN_TTL_DELIM  "range"
-#define SPN_RCOL_DELIM "red"
-#define SPN_GCOL_DELIM "green"
-#define SPN_BCOL_DELIM "blue"
+#define SPN_TTL_DELIM  _("range")
+#define SPN_RCOL_DELIM _("red")
+#define SPN_GCOL_DELIM _("green")
+#define SPN_BCOL_DELIM _("blue")
+//
+#define PLOT_GRAD_COLR _("Plot red gradient")
+#define PLOT_GRAD_COLG _("Plot green gradient")
+#define PLOT_GRAD_COLB _("Plot blue gradient")
 
 #endif
