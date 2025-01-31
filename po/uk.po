@@ -40,9 +40,17 @@ msgstr "Журнал"
 msgid "Auxiliary logs"
 msgstr "Логування"
 
+#
+msgid "Target"
+msgstr "Ціль"
+
 # target hint
 msgid "Enter hostname or IP address ..."
 msgstr "Введіть назву або IP адресу ..."
+
+#
+msgid "Date"
+msgstr "Дата"
 
 # button
 msgid "Okay"
@@ -228,9 +236,13 @@ msgstr "Градієнт 3D-графіки"
 msgid "Plot rotation"
 msgstr "Обертання 3D-графіки"
 
-# aux-menu: 10.1
+# aux-menu: 10.1.0
 msgid "Global space"
 msgstr "Глобальні координати"
+
+# aux-menu: 10.1.1 (used in cli)
+msgid "Local space"
+msgstr "Локальні координати"
 
 # aux-menu: 11
 msgid "Plot scale"
@@ -504,40 +516,247 @@ msgstr "Сітка"
 msgid "Rotator"
 msgstr "Ротатор"
 
-# 3d-rotation parameter1
+# 3d-rotation header1 (used in cli)
+msgid "Orientation"
+msgstr "Орієнтація"
+
+# 3d-rotation header2
 msgid "Attitude"
 msgstr "Навігація"
 
-# 3d-rotation parameter2
+# 3d-rotation header3
 msgid "Roll"
 msgstr "Тангаж"
 
-# 3d-rotation parameter3
+# 3d-rotation header4
 msgid "Pitch"
 msgstr "Крен"
 
-#yaw відхилення (рискання)
-# 3d-rotation parameter4
+# 3d-rotation header5
 msgid "Yaw"
 msgstr "Відхилення"
 
-# 3d-rotation parameter5
+# 3d-rotation header6
 msgid "Rotation"
 msgstr "Обертання"
 
-# 3d-rotation parameter6
+# 3d-rotation header7
 msgid "Axis X"
 msgstr "Вісь X"
 
-# 3d-rotation parameter7
+# 3d-rotation header8
 msgid "Axis Y"
 msgstr "Вісь Y"
 
-# 3d-rotation parameter8
+# 3d-rotation header9
 msgid "Axis Z"
 msgstr "Вісь Z"
 
-# 3d-rotation parameter9
+# 3d-rotation header10
 msgid "Angular step"
 msgstr "Кутовий крок"
+
+# cli option help: message1
+msgid "Get options from file"
+msgstr "Отримати параметри з файлу"
+
+# cli option help: message2
+msgid "IP addresses in numeric form"
+msgstr "IP адреси у числовій формі"
+
+# cli option help: message3
+msgid "Interval between pings"
+msgstr "Інтервал між пінгами"
+
+# cli option help: message4
+msgid "TTL range"
+msgstr "Діапазон TTL"
+
+# cli option help: message5
+msgid "QoS byte"
+msgstr "QoS байт (якість сервісу)"
+
+# cli option help: message6
+msgid "Payload size"
+msgstr "Розмір даних"
+
+# cli option help: message7
+msgid "Payload in hex notation"
+msgstr "Вміст в шістнадцятковому форматі"
+
+# cli option help: message8
+msgid "Statistics fields"
+msgstr "Елементи статистики"
+
+# cli option help: message9
+msgid "Toggle dark/light themes"
+msgstr "Перемикання темний/світлий стиль"
+
+# cli option help: message10.1
+msgid "Summary at exit"
+msgstr "Резюме на виході"
+
+# cli option help: message10.2
+msgid "Text, CSV, or JSON"
+msgstr "Текст, CSV, чи JSON"
+
+# cli option help: message10.3
+msgid "Text, CSV"
+msgstr "Текст, CSV"
+
+# cli option help: message11
+msgid "Autostart"
+msgstr "Автозапуск"
+
+# cli option help: message12
+msgid "Initial active tab"
+msgstr "Початкова активна вкладка"
+
+# cli option help: message13
+msgid "More detailed messaging"
+msgstr "Детальніші повідомлення"
+
+# cli option help: message14
+msgid "Build features and runtime lib versions"
+msgstr "Властивості програми та версіі бібліотек"
+
+# cli option help: message15
+msgid "Without graphics"
+msgstr "Без графіки"
+
+# cli option help: message16
+msgid "Without 3D graphics"
+msgstr "Без 3D графіки"
+
+# cli option hint1
+msgid "<filepath>"
+msgstr "<шлях-до-файлу>"
+
+# cli option hint2
+msgid "<number>"
+msgstr "<число>"
+
+# cli option hint3
+msgid "<seconds>"
+msgstr "<секунди>"
+
+# cli option hint4
+msgid "[min][,max]"
+msgstr "[мін][,макс]"
+
+# cli option hint5
+msgid "<bits>"
+msgstr "<біти>"
+
+# cli option hint6
+msgid "<in-bytes>"
+msgstr "<в-байтах>"
+
+# cli option hint7
+msgid "<upto-16-bytes>"
+msgstr "<до-16ти-байт>"
+
+# cli option hint8
+msgid "<tag:values>"
+msgstr "<тег:значення>"
+
+# cli option hint10
+msgid "<6bit-level>"
+msgstr "<шестибітний-рівень>"
+
+# CLI misc: message1
+msgid "Options"
+msgstr "Опції"
+
+# CLI misc: message2
+msgid "Invalid value"
+msgstr "Некоректне значення"
+
+# CLI misc: message3
+msgid "No value"
+msgstr "Відсутнє значення"
+
+# CLI misc: message4
+msgid "CONFIG"
+msgstr "КОНФІГ"
+
+# CLI misc: message5
+msgid "No match"
+msgstr "Не відповідно до"
+
+# CLI misc: message6
+msgid "Cannot parse"
+msgstr "Неможливо розпарсити"
+
+# CLI misc: message7
+msgid "Wrong tag"
+msgstr "Некоректний тег"
+
+# CLI misc: message8
+msgid "Tag duplicate"
+msgstr "Тег дублікат"
+
+# CLI misc: message9
+msgid "Wrong pair"
+msgstr "Некоректна пара"
+
+# CLI misc: message10
+msgid "Unknown type"
+msgstr "Невідомий тип"
+
+# CLI misc: message11
+msgid "Number of indexes are different"
+msgstr "Кількість індексів різна"
+
+# CLI misc: message12
+msgid "Text"
+msgstr "Текст"
+
+# CLI misc: message13
+msgid "CSV"
+msgstr "CSV"
+
+# CLI misc: message14
+msgid "JSON"
+msgstr "JSON"
+
+# CLI misc: message15
+msgid "Summary"
+msgstr "Резюме"
+
+# CLI misc: message16
+msgid "Theme bits"
+msgstr "Біти теми"
+
+# CLI misc: message17
+msgid "validate"
+msgstr "перевірка"
+
+# CLI misc: message18
+msgid "Mutually exclusive options"
+msgstr "Взаємовиключні опції"
+
+# CLI misc: message19
+msgid "Build features"
+msgstr "Властивості програми"
+
+# CLI misc: message20
+msgid "Runtime lib versions"
+msgstr "Версіі бібліотек"
+
+# CLI misc: message21
+msgid "Skipping argument"
+msgstr "Пропускаємо аргумента"
+
+# CLI misc: message22
+msgid "Unknown option"
+msgstr "Невідома опція"
+
+# CLI misc: message23
+msgid "No goal"
+msgstr "Нема мети"
+
+# CLI misc: message24
+msgid "Non-interactive mode with summary at exit"
+msgstr "Неінтерактивний режим із резюме на виході"
 

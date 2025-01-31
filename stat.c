@@ -490,7 +490,7 @@ void stat_whois_enabler(void) {
 }
 
 void stat_run_whois_resolv(void) {
-  for (int at = opts.min; at < opts.lim; at++) {
+  for (int at = opts.range.min; at < opts.range.max; at++) {
     t_hop *hop = &hops[at];
     for (int i = 0; i < MAXADDR; i++)
       if (hop->host[i].addr) whois_resolv(hop, i);

@@ -19,9 +19,11 @@
 enum { MIN_VIEW_ANGLE = -180, MAX_VIEW_ANGLE = 180 };
 #endif
 
-t_opts opts = { .target = NULL, .dns = DEF_DNS, .whois = DEF_WHOIS, .cycles = DEF_CYCLES, .qos = DEF_QOS, .size = DEF_PSIZE,
-  .min = MINTTL - 1, .lim = MAXTTL, .timeout = DEF_TOUT, .tout_usec = DEF_TOUT * G_USEC_PER_SEC, .logmax = DEF_LOGMAX,
-  .graph = GRAPH_TYPE_CURVE, .legend = DEF_LEGEND, .darktheme = DEF_DARK_MAIN, .darkgraph = DEF_DARK_GRAPH,
+t_opts opts = { .target = NULL, .range = {.min = MINTTL - 1, .max = MAXTTL},
+  .dns = DEF_DNS, .whois = DEF_WHOIS, .cycles = DEF_CYCLES, .qos = DEF_QOS, .size = DEF_PSIZE,
+  .timeout = DEF_TOUT, .tout_usec = DEF_TOUT * G_USEC_PER_SEC, .logmax = DEF_LOGMAX,
+  .graph = GRAPH_TYPE_CURVE, .legend = DEF_LEGEND,
+  .darktheme = DEF_DARK_MAIN, .darkgraph = DEF_DARK_GRAPH,
 #ifdef WITH_PLOT
   .plot = true, .darkplot = DEF_DARK_PLOT,
   .rcol = {DEF_RCOL_FROM, DEF_RCOL_TO},
@@ -123,8 +125,6 @@ t_minmax opt_mm_ttl = {MINTTL, MAXTTL};
 #ifdef WITH_PLOT
 #define MIN_COL_VAL 0
 #define MAX_COL_VAL 0xff
-#define STR_FROM  "start with"
-#define STR_TO    "end with"
 static void colgrad_cb(GtkSpinButton*, t_ent_spn_aux*);
 t_minmax opt_mm_col = {MIN_COL_VAL, MAX_COL_VAL};
 //
@@ -139,27 +139,29 @@ t_minmax opt_mm_fov = {DEF_FOV * 2 / 3, DEF_FOV * 2};
 t_ent_spn ent_spn[] = {
   [ENT_SPN_TTL] = { .c.en.type = ENT_SPN_TTL, .list = {
     { .bond = true, .kind = MINIMAX_SPIN, .aux = {
-      { .cb = G_CALLBACK(minttl_cb), .pval = &opts.min, .def = MINTTL, .mm = &opt_mm_ttl },
-      { .cb = G_CALLBACK(maxttl_cb), .pval = &opts.lim, .def = MAXTTL, .mm = &opt_mm_ttl }
+      { .cb = G_CALLBACK(minttl_cb), .pval = &opts.range.min, .def = MINTTL,
+        .mm = &opt_mm_ttl, .mmval = &opts.range },
+      { .cb = G_CALLBACK(maxttl_cb), .pval = &opts.range.max, .def = MAXTTL,
+        .mm = &opt_mm_ttl, .mmval = &opts.range }
   }}}},
 #ifdef WITH_PLOT
   [ENT_SPN_COLOR] = { .c = { .en.type = ENT_SPN_COLOR, .atrun = true },
     .list = {
       { .kind = MINIMAX_SPIN, .aux = {
         { .cb = G_CALLBACK(colgrad_cb), .pval = &opts.rcol.min, .def = DEF_RCOL_FROM,
-          .mm = &opt_mm_col, .sfx = STR_FROM },
+          .mm = &opt_mm_col, .mmval = &opts.rcol },
         { .cb = G_CALLBACK(colgrad_cb), .pval = &opts.rcol.max, .def = DEF_RCOL_TO,
-          .mm = &opt_mm_col, .sfx = STR_TO }}},
+          .mm = &opt_mm_col, .mmval = &opts.rcol }}},
       { .kind = MINIMAX_SPIN, .aux = {
         { .cb = G_CALLBACK(colgrad_cb), .pval = &opts.gcol.min, .def = DEF_GCOL_FROM,
-          .mm = &opt_mm_col, .sfx = STR_FROM },
+          .mm = &opt_mm_col, .mmval = &opts.gcol },
         { .cb = G_CALLBACK(colgrad_cb), .pval = &opts.gcol.max, .def = DEF_GCOL_TO,
-          .mm = &opt_mm_col, .sfx = STR_TO }}},
+          .mm = &opt_mm_col, .mmval = &opts.gcol }}},
       { .kind = MINIMAX_SPIN, .aux = {
         { .cb = G_CALLBACK(colgrad_cb), .pval = &opts.bcol.min, .def = DEF_BCOL_FROM,
-          .mm = &opt_mm_col, .sfx = STR_FROM },
+          .mm = &opt_mm_col, .mmval = &opts.bcol },
         { .cb = G_CALLBACK(colgrad_cb), .pval = &opts.bcol.max, .def = DEF_BCOL_TO,
-          .mm = &opt_mm_col, .sfx = STR_TO }}},
+          .mm = &opt_mm_col, .mmval = &opts.bcol }}},
   }},
   [ENT_SPN_GLOBAL] = { .c = { .en.type = ENT_SPN_GLOBAL, .atrun = true },
     .list = {
@@ -214,7 +216,8 @@ static t_ent_rad ent_rad[] = {
 };
 
 static gboolean opt_silent;
-#define OPT_NOTIFY(...) { if (!opt_silent) notifier_inform(__VA_ARGS__); }
+#define OPT_NOTIFY(...) do { if (!opt_silent) notifier_inform(__VA_ARGS__); } \
+  while (0)
 
 //
 
@@ -229,7 +232,7 @@ static gboolean check_bool_val(GtkCheckButton *check, t_ent_bool *en, void (*upd
     const char *name = en->en.name;
     if (name && (*name == '_'))
       name++;
-    if (en->prefix) OPT_NOTIFY("%s: %s %s", en->prefix, name, onoff(state))
+    if (en->prefix) OPT_NOTIFY("%s: %s %s", en->prefix, name, onoff(state));
     else            OPT_NOTIFY("%s: %s",                name, onoff(state));
   }
   return okay;
@@ -337,7 +340,7 @@ static void radio_cb(GtkCheckButton *check, t_ent_rad_map *map) {
     if (selected && (map->val != *pval)) {
       *(en->pval) = map->val;
       if (en->cb) en->cb();
-      if (map->str) OPT_NOTIFY("%s: %s", en->c.en.name, map->str)
+      if (map->str) OPT_NOTIFY("%s: %s", en->c.en.name, map->str);
       else          OPT_NOTIFY("%s: %d", en->c.en.name, map->val);
     }
   }
@@ -393,7 +396,7 @@ static void minttl_cb(GtkSpinButton *spin, t_ent_spn_elem *en) {
   if (*pmin == val) return;
   t_ent_spn_aux *aux = &en->aux[1];
   int *plim = aux->pval;
-  t_minmax *minmax = aux->mm ? aux->mm : &opt_mm_ttl;
+  const t_minmax *minmax = aux->mm ? aux->mm : &opt_mm_ttl;
   int max = plim ? *plim : minmax->max;
   if (pinger_within_range(minmax->min, max, got)) {
     OPT_NOTIFY("%s: %d <=> %d", en->title, got, max);
@@ -417,7 +420,7 @@ static void maxttl_cb(GtkSpinButton *spin, t_ent_spn_elem *en) {
   t_ent_spn_aux *aux = &en->aux[0];
   int *pmin = aux->pval;
   int min = (pmin ? *pmin : 0) + 1;
-  t_minmax *minmax = aux->mm ? aux->mm : &opt_mm_ttl;
+  const t_minmax *minmax = aux->mm ? aux->mm : &opt_mm_ttl;
   if (pinger_within_range(min, minmax->max, got)) {
     OPT_NOTIFY("%s: %d <=> %d", en->title, min, got);
     *plim = got;
@@ -438,10 +441,14 @@ static void colgrad_cb(GtkSpinButton *spin, t_ent_spn_aux *aux) {
   int *pval = aux->pval; if (!pval) return;
   int got = gtk_spin_button_get_value_as_int(spin);
   if (*pval == got) return;
-  t_minmax *minmax = aux->mm ? aux->mm : &opt_mm_col;
+  const t_minmax *minmax = aux->mm ? aux->mm : &opt_mm_col;
   if ((minmax->min <= got) && (got <= minmax->max)) {
     *pval = got;
-    OPT_NOTIFY("%s: %s %d (0x%02x)", aux->prfx, aux->sfx, got, got);
+    if (aux->mmval)
+      OPT_NOTIFY("%s: %d(0x%02x) <=> %d(0x%02x)", aux->prfx,
+        aux->mmval->min, aux->mmval->min, aux->mmval->max, aux->mmval->max);
+    else
+      OPT_NOTIFY("%s: %d (0x%02x)", aux->prfx, got, got);
     plottab_refresh(PL_PARAM_COLOR);
   } else WARN("out-of-range[%d,%d]: %d", minmax->min, minmax->max, got);
 }
@@ -459,9 +466,9 @@ static void rotation_cb(GtkSpinButton *spin, t_ent_spn_aux *aux) {
   int want = gtk_spin_button_get_value_as_int(spin);
   int step = want - *pval; if (aux->wrap) step %= aux->wrap;
   if (!step) return;
-  t_minmax *minmax = aux->mm ? aux->mm : &opt_mm_rot;
+  const t_minmax *minmax = aux->mm ? aux->mm : &opt_mm_rot;
   if ((minmax->min <= want) && (want <= minmax->max)) {
-    OPT_NOTIFY("%s: %d", aux->sfx, want)
+    OPT_NOTIFY("%s: %d", aux->prfx, want);
     if (aux->sn) {
       *pval = want; t_ent_spn_elem *list = ent_spn[aux->sn].list;
       if (list) for (int i = 0; i < ENT_SPN_ANGS; i++) { // adjust angle entries' step
@@ -475,10 +482,10 @@ static void scalefov_cb(GtkSpinButton *spin, t_ent_spn_aux *aux) {
   if (!GTK_IS_SPIN_BUTTON(spin) || !aux) return;
   int *pval = aux->pval; if (!pval) return;
   int got = gtk_spin_button_get_value_as_int(spin);
-  t_minmax *minmax = aux->mm ? aux->mm : &opt_mm_fov;
+  const t_minmax *minmax = aux->mm ? aux->mm : &opt_mm_fov;
   if ((*pval == got) || (got < minmax->min) || (got > minmax->max)) return;
   *pval = got;
-  OPT_NOTIFY("%s (%s): %d°", aux->prfx, aux->sfx, got);
+  OPT_NOTIFY("%s: %d°", aux->prfx, got);
   plottab_refresh(PL_PARAM_FOV);
 }
 #endif
@@ -598,8 +605,8 @@ static GtkWidget* add_opt_expand(GtkWidget* list, t_ent_exp *en) {
 static gboolean add_minmax(GtkWidget *box, t_ent_spn_elem *en, int ndx, const int *step, gboolean wrap) {
   gboolean okay = false;
   if (GTK_IS_BOX(box) && en) {
-    t_minmax *mm0 = en->aux[en->bond ? 0 : ndx].mm;
-    t_minmax *mm1 = en->aux[en->bond ? 1 : ndx].mm;
+    const t_minmax *mm0 = en->aux[en->bond ? 0 : ndx].mm;
+    const t_minmax *mm1 = en->aux[en->bond ? 1 : ndx].mm;
     if (mm0 && mm1) {
       int min = en->bond ? SPN_MM_NDX(0, 1) : mm0->min;
       int max = en->bond ? SPN_MM_NDX(1, 0) : mm1->max;
@@ -657,10 +664,10 @@ static GtkWidget* add_opt_range(GtkWidget* listbox, t_ent_spn *en) {
 #ifdef WITH_PLOT
         case ROTOR_COLUMN:
           add_opt_check(subbox, &ent_bool[ENT_BOOL_GLOB]);
-          for (unsigned i = 0; i < ENT_SPN_ROT_MAX; i++) if (elem->aux[i].sfx) {
+          for (unsigned i = 0; i < ENT_SPN_ROT_MAX; i++) if (elem->aux[i].prfx) {
             GtkWidget *row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, MARGIN);
             if (!row) continue;
-            grey_into_box(row, gtk_label_new(elem->aux[i].sfx), true, true);
+            grey_into_box(row, gtk_label_new(elem->aux[i].prfx), true, true);
             add_minmax(row, elem, i, elem->aux[i].step, elem->aux[i].wrap);
             gtk_box_append(GTK_BOX(subbox), row);
             if (/*(i >= ENT_SPN_ROT0) &&*/ i <= ENT_SPN_ROT2) // leave only buttons for rotation spins
@@ -670,7 +677,7 @@ static GtkWidget* add_opt_range(GtkWidget* listbox, t_ent_spn *en) {
           }
           break;
         case SCALE_SPIN:
-          grey_into_box(subbox, gtk_label_new(elem->aux->sfx), true, true);
+          grey_into_box(subbox, gtk_label_new(elem->aux->prfx), true, true);
           add_minmax(subbox, elem, 0, NULL, false);
           break;
 #endif
@@ -792,7 +799,7 @@ static gboolean create_ext_optmenu(GtkWidget *list) {
   return okay;
 }
 
-static inline void init_entry_links(void) {
+void init_option_links(void) {
 #define INIT_BE_NP(ndx, bname, bprfx) do { \
   ent_bool[ndx].en.name = (bname);         \
   ent_bool[ndx].prefix  = (bprfx);         \
@@ -813,10 +820,10 @@ static inline void init_entry_links(void) {
   ent_spn[ENT_SPN_COLOR].list[ndx].aux[1].prfx = (stitle); \
 } while (0)
 #define INIT_SE_SF(ndx, r1, r2, r3, r4, s1, s2, s3, s4) do { \
-  ent_spn[ndx].list[0].aux[r1].sfx = s1; \
-  ent_spn[ndx].list[0].aux[r2].sfx = s2; \
-  ent_spn[ndx].list[0].aux[r3].sfx = s3; \
-  ent_spn[ndx].list[0].aux[r4].sfx = s4; \
+  ent_spn[ndx].list[0].aux[r1].prfx = s1; \
+  ent_spn[ndx].list[0].aux[r2].prfx = s2; \
+  ent_spn[ndx].list[0].aux[r3].prfx = s3; \
+  ent_spn[ndx].list[0].aux[r4].prfx = s4; \
 } while (0)
   //
   ent_str[ENT_STR_CYCLES].en.name = OPT_CYCLES_HDR;
@@ -890,8 +897,7 @@ static inline void init_entry_links(void) {
     ROT_YAW,      ROT_PITCH,    ROT_ROLL,     ROT_STEP);
   ent_spn[ENT_SPN_FOV   ].c.en.name     = OPT_SCALE_HDR;
   ent_spn[ENT_SPN_FOV   ].list[0].title = OPT_FOV_HDR;
-  ent_spn[ENT_SPN_FOV   ].list[0].aux[0].prfx = OPT_SCALE_HDR;
-  ent_spn[ENT_SPN_FOV   ].list[0].aux[0].sfx  = OPT_FOV_HDR;
+  ent_spn[ENT_SPN_FOV   ].list[0].aux[0].prfx  = OPT_FOV_HDR;
 #endif
   //
   ent_rad[ENT_RAD_IPV  ].c.en.name  = OPT_IPV_HDR;
@@ -919,7 +925,6 @@ static inline void init_entry_links(void) {
 //
 
 gboolean option_init(GtkWidget* bar) {
-  init_entry_links();
   { const char *icons[] = { ub_theme ? OPT_MAIN_MENU_ICOA : OPT_MAIN_MENU_ICON, OPT_MAIN_MENU_ICOA, NULL};
     g_return_val_if_fail(create_optmenu(bar, icons, OPT_MAINMENU_TIP, create_main_optmenu), false); }
   { const char *icons[] = { OPT_EXT_MENU_ICON, OPT_EXT_MENU_ICOA, NULL};

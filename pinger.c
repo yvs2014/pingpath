@@ -33,17 +33,24 @@
     G_PRIORITY_DEFAULT, NULL, (GAsyncReadyCallback)(cb), (data))
 
 #define CLEAR_G_OBJECT(obj) g_clear_object(obj) // NOLINT(bugprone-sizeof-expression)
-#define PINGER_MESG(fmt, ...) { if (opts.recap) g_message(fmt, __VA_ARGS__); else notifier_inform(fmt, __VA_ARGS__); }
+
+#define PINGER_MESG(fmt, ...) do {             \
+  if (opts.recap) g_message(fmt, __VA_ARGS__); \
+  else notifier_inform(fmt, __VA_ARGS__);      \
+} while (0)
 
 enum { CSV_DEL = ';' };
+#define PRINT_CSV_DIV do { if (csv) g_print("%c\n", CSV_DEL); } while (0)
 #define HOP_INDENT g_print("%3s", "")
-#define PRINT_CSV_DIV { if (csv) g_print("%c\n", CSV_DEL); }
-#define PRINT_TEXT_ELEM(str, len) { const char *var = (str); \
-  if (csv) print_csv_elem(var); else g_print(" %-*s", len, var); }
 
-static void print_csv_elem(const char *str) {
-  char *delim = strchr(str, CSV_DEL);
-  g_print(delim ? "%c\"%s\"" : "%c%s", CSV_DEL, str);
+static void print_text_elem(gboolean csv, const char *str, int len) {
+  if (csv) {
+    char *delim = strchr(str, CSV_DEL);
+    g_print(delim ? "%c\"%s\"" : "%c%s", CSV_DEL, str);
+  } else {
+    int w = len - g_utf8_strlen(str, -1);
+    g_print(" %s%-*s", (str), (w > 0) ? w : 0, "");
+  }
 }
 
 typedef struct proc {
@@ -70,7 +77,7 @@ static const char *info_mesg;
 
 static char* last_error(void) {
   static char last_error_buff[BUFF_SIZE];
-  for (int i = opts.lim; i > opts.min; i--) {
+  for (int i = opts.range.max; i > opts.range.min; i--) {
     char *err = ping_errors[i - 1];
     if (err) {
       g_strlcpy(last_error_buff, err, sizeof(last_error_buff));
@@ -91,19 +98,21 @@ static void pinger_print_text(gboolean csv) {
   PRINT_CSV_DIV;
   if (pinger_state.gotdata) {
     if (csv) g_print("%s", OPT_TTL_HDR); else HOP_INDENT;
-    int lim = (tgtat > visibles) ? (visibles + 1) : tgtat;
     //
     int maxes[PE_MAX] = {0};
-    for (int j = 0; j < PE_MAX; j++) PN_PRMAX(pingelem[j].name);
-    for (int i = opts.min; i < lim; i++) for (int j = 0; j < PE_MAX; j++) PN_PRMAX(stat_str_elem(i, pingelem[j].type));
+    for (int j = 0; j < PE_MAX; j++)
+      PN_PRMAX(pingelem[j].name);
+    int lim = (tgtat > visibles) ? (visibles + 1) : tgtat;
+    for (int i = opts.range.min; i < lim; i++)
+      for (int j = 0; j < PE_MAX; j++)
+        PN_PRMAX(stat_str_elem(i, pingelem[j].type));
     //
-    for (int j = PE_NO + 1; j < PE_MAX; j++) { // header
-      int type = pingelem[j].type;
-      if (pingelem[j].enable && (type != PE_FILL)) PRINT_TEXT_ELEM(pingelem[j].name, maxes[j]);
-    }
+    for (int j = PE_NO + 1; j < PE_MAX; j++) // header
+      if (pingelem[j].enable && (pingelem[j].type != PE_FILL))
+        print_text_elem(csv, pingelem[j].name, maxes[j]);
     g_print("\n");
     PRINT_CSV_DIV;
-    for (int i = opts.min; i < lim; i++) { // data per hop
+    for (int i = opts.range.min; i < lim; i++) { // data per hop
       t_ping_column column[G_N_ELEMENTS(pingelem)] = {0};
       int lines = 0;
       for (unsigned j = 0; j < G_N_ELEMENTS(pingelem); j++) if (pingelem[j].enable) {
@@ -118,7 +127,7 @@ static void pinger_print_text(gboolean csv) {
           case PE_RT: {
             int max = stat_ping_column(i, type, &column[j]);
             if (lines < max) lines = max;
-            PRINT_TEXT_ELEM(column[j].cell[0] ? column[j].cell[0] : "", maxes[j]);
+            print_text_elem(csv, column[j].cell[0] ? column[j].cell[0] : "", maxes[j]);
           } break;
           case PE_LOSS:
           case PE_SENT:
@@ -128,7 +137,7 @@ static void pinger_print_text(gboolean csv) {
           case PE_WRST:
           case PE_AVRG:
           case PE_JTTR:
-            PRINT_TEXT_ELEM(stat_str_elem(i, type), maxes[j]); break;
+            print_text_elem(csv, stat_str_elem(i, type), maxes[j]); break;
           default: break;
         }
       }
@@ -136,7 +145,8 @@ static void pinger_print_text(gboolean csv) {
       for (int k = 1; k < lines; k++) { // multihop
         if (!csv) HOP_INDENT;
         for (int j = PE_HOST; j <= PE_RT; j++)
-          if (pingelem[j].enable) PRINT_TEXT_ELEM(column[j].cell[k] ? column[j].cell[k] : "", maxes[j]);
+          if (pingelem[j].enable)
+            print_text_elem(csv, column[j].cell[k] ? column[j].cell[k] : "", maxes[j]);
         g_print("\n");
       }
     }
@@ -274,7 +284,7 @@ static gboolean pinger_json_mainbody(JsonObject *obj, gboolean pretty) {
   gboolean hop_info = false; // marker of hop part of info
   for (int ndx = PE_HOST; ndx <= PE_RT; ndx++) if (pingelem[ndx].enable) { hop_info = true; break; }
   int lim = (tgtat > visibles) ? (visibles + 1) : tgtat;
-  for (int i = opts.min; i < lim; i++) { // data per hop
+  for (int i = opts.range.min; i < lim; i++) { // data per hop
     JsonObject *line = json_object_new();
     if (!line) { FAIL("json_object_new()"); return false; }
     json_array_add_object_element(arr, line);
@@ -296,9 +306,9 @@ static void pinger_print_json(gboolean pretty) {
     JsonObject *obj = json_object_new();
     if (obj) {
       json_node_take_object(node, obj);
-      pinger_json_prop_str(obj, ENT_TARGET_HDR, opts.target, pretty);
+      pinger_json_prop_str(obj, TARGET_HDR, opts.target, pretty);
       { char ts[32];
-        pinger_json_prop_str(obj, ENT_TSTAMP_HDR, timestamp(ts, sizeof(ts)), pretty); }
+        pinger_json_prop_str(obj, DATE_HDR, timestamp(ts, sizeof(ts)), pretty); }
       char *info = NULL;
       gboolean okay = true;
       if (pinger_state.gotdata) {
@@ -372,7 +382,8 @@ static void pinger_update(void) {
 }
 
 static gboolean pinger_is_active(void) {
-  for (int i = opts.min; i < opts.lim; i++) if (pings[i].active) return true;
+  for (int i = opts.range.min; i < opts.range.max; i++)
+    if (pings[i].active) return true;
   return false;
 }
 
@@ -577,7 +588,8 @@ void pinger_init(void) {
 
 void pinger_start(void) {
   if (!opts.target) return;
-  for (int i = opts.min; i < opts.lim; i++) if (!create_ping(i, &pings[i])) break;
+  for (int i = opts.range.min; i < opts.range.max; i++)
+    if (!create_ping(i, &pings[i])) break;
   gboolean active = pinger_update_status();
   if (!active) return;
   pinger_clear_data(true);
@@ -616,7 +628,7 @@ void pinger_nth_stop(int nth, const char* reason) {
 }
 
 void pinger_stop(const char* reason) {
-  for (int i = opts.min; i < opts.lim; i++)
+  for (int i = opts.range.min; i < opts.range.max; i++)
     pinger_nth_stop(i, reason);
   if (!atquit)
     pinger_update_status();
@@ -628,7 +640,7 @@ void pinger_clear_data(gboolean clean) {
   stat_clear(clean);
   pinger_error_free();
   pinger_set_error(NULL);
-  tgtat = opts.lim;
+  tgtat = opts.range.max;
   if (!opts.recap) { pingtab_clear(); series_free(false); }
 }
 

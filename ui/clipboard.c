@@ -102,20 +102,6 @@ static char* cb_collect_level1(GList *list) {
   return (ndx > 0) ? c_strjoinv('\n', lines) : NULL;
 }
 
-#define MAXT2 (MAXTTL * 2)
-
-#define C_NULL2SP(list, n) for (int i = 0; i < MAXT2; i++) { \
-  gboolean empty = true; \
-  for (int j = 0; j < (PE_MAX + 1); j++) if ((list)[i][j]) { empty = false; break; } \
-  if (empty) break; \
-  for (int j = 0; j < (PE_MAX + 1); j++) if ((list)[i][j]) break; else (list)[i][j] = g_strdup_printf("%-*s", (n), ""); \
-}
-
-#define C_FREE_T2LIST(list) \
-  for (int i = 0; i < MAXT2; i++) \
-    for (int j = 0; j < (PE_MAX + 1); j++) \
-      if ((list)[i][j]) g_free((list)[i][j]);
-
 static void cb_calc_lengths(GList *list, int *maxes) {
   for (GList *item = list; item; item = item->next) {
     GtkListBoxRow *row = item->data; if (!GTK_IS_LIST_BOX_ROW(row)) continue;
@@ -141,14 +127,25 @@ static void cb_collect_maxes(GtkWidget *box, int *maxes) {
   if (list) cb_calc_lengths(list, maxes);
 }
 
+static inline char* ustr_dup(int len, const char *str) {
+  int w = (len > 0) ? (len - g_utf8_strlen(str, -1)) : 0;
+  if (w > 0) return g_strdup_printf("%s%-*s", str, w, "");
+  return g_strdup(str);
+}
+
 static char* cb_collect_level2(GList *list, const int *maxes) {
-  char* elems[MAXT2][PE_MAX + 1] = {0}; // *2: supposedly it's enough for multihop lines
+#define I_CL2 (MAXTTL * 2) /* x2: supposedly enough for multihop lines */
+#define J_CL2 (PE_MAX + 1)
+  char* elems[I_CL2][J_CL2] = {0};
   int i = 0;
-  for (GList *item = list; item && (i < MAXT2); item = item->next) {
-    GtkListBoxRow *row = item->data; if (!GTK_IS_LIST_BOX_ROW(row)) continue;
-    GtkWidget *box = gtk_list_box_row_get_child(row); if (!GTK_IS_BOX(box) || !gtk_widget_get_visible(box)) continue;
+  for (GList *item = list; item && (i < I_CL2); item = item->next) {
+    GtkListBoxRow *row = item->data;
+    if (!GTK_IS_LIST_BOX_ROW(row)) continue;
+    GtkWidget *box = gtk_list_box_row_get_child(row);
+    if (!GTK_IS_BOX(box) || !gtk_widget_get_visible(box)) continue;
     int j = 0, di = 0;
-    for (GtkWidget *lab = gtk_widget_get_first_child(box); GTK_IS_LABEL(lab) && (j < PE_MAX);
+    for (GtkWidget *lab = gtk_widget_get_first_child(box);
+         GTK_IS_LABEL(lab) && (j < (J_CL2 - 1/*last one is NULL*/));
          lab = gtk_widget_get_next_sibling(lab)) {
       if (!gtk_widget_get_visible(lab)) continue;
       const char *str = gtk_label_get_text(GTK_LABEL(lab));
@@ -158,25 +155,40 @@ static char* cb_collect_level2(GList *list, const int *maxes) {
         char **multi = g_strsplit(str, "\n", MAXADDR);
         if (multi) {
           int ii = i;
-          for (char **pstr = multi; *pstr && (ii < MAXT2); pstr++) // put '\n'-elems ahead
-            elems[ii++][j] = (len > 0) ? g_strdup_printf("%-*s", len, *pstr) : g_strdup(*pstr);
+          for (char **pstr = multi; *pstr && (ii < I_CL2); pstr++)
+            elems[ii++][j] = ustr_dup(len, *pstr); // put '\n'-elems ahead
           g_strfreev(multi);
           if ((ii - i) > di) di = ii - i;
         }
-      } else elems[i][j] = (len > 0) ? g_strdup_printf("%-*s", len, str) : g_strdup(str);
+      } else elems[i][j] = (len > 0) ? g_strdup_printf("%-*s", len, "") : g_strdup("");
       j++;
     }
     i += di;
   }
-  C_NULL2SP(elems, 3); // if there are multihop lines
-  char *lines[MAXT2 + 1] = {0};
-  for (int i = 0; i < MAXT2; i++) // combine collected elems into lines
-    if (elems[i][0]) lines[i] = g_strjoinv(" ", elems[i]);
-  C_FREE_T2LIST(elems); // free elems
-  char *text = g_strjoinv("\n", lines); // combines lines into table
-  for (int i = 0; i < (MAXT2 + 1); i++) // free lines
+  // align multihop lines
+  for (int i = 0; i < I_CL2; i++) {
+    gboolean empty = true;
+    for (int j = 0; j < J_CL2; j++)
+      if (elems[i][j]) { empty = false; break; }
+    if (!empty && !elems[i][0])
+      elems[i][0] = g_strdup_printf("%*s", 3/*NN.*/, "");
+  }
+  // combine collected elems into lines
+  char *lines[I_CL2 + 1] = {0};
+  for (int i = 0; i < I_CL2; i++)
+    if (elems[i][0] && !elems[i][J_CL2 - 1]/*to be sure*/)
+      lines[i] = g_strjoinv(" ", elems[i]);
+  // free elems
+  for (int i = 0; i < I_CL2; i++)
+    for (int j = 0; j < J_CL2; j++)
+      if (elems[i][j]) g_free(elems[i][j]);
+  //
+  char *text = g_strjoinv("\n", lines); // combine lines
+  for (int i = 0; i < I_CL2; i++)       // free lines
     g_free(lines[i]);
   return text;
+#undef I_CL2
+#undef J_CL2
 }
 
 enum { DATA_AT_LEVEL1, DATA_AT_LEVEL2 };

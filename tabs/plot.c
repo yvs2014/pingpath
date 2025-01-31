@@ -552,14 +552,15 @@ static void plot_tim_marks(t_mark_text mark[], int max) {
 }
 
 static void plot_ttl_marks(t_mark_text mark[], int max) {
-  float val = opts.min + 1;
+  float val = opts.range.min + 1;
   float step = (max > 1) ? ((tgtat - val) / (max - 1)) : 0;
   for (int i = 0, printed = -1; i < max; i++) {
     if ((i != (max - 1)) && ((int)val == printed)) mark[i].len = 0;
     else {
       printed = val;
       float r = fmodf(val, 1);
-      mark[i].len = snprintf(mark[i].text, sizeof(mark[i].text), "%.0f%s", val, r ? ((r < 0.5) ? "-" : "+") : ""); // BUFFNOLINT
+      mark[i].len = snprintf(mark[i].text, sizeof(mark[i].text),
+        "%.0f%s", val, r ? ((r < 0.5) ? "-" : "+") : ""); // BUFFNOLINT
     }
     val += step;
   }

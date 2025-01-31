@@ -1,3 +1,7 @@
+## 0.3.49
+- NLS wip: all cli.c messages
+- common TTL range in structure
+
 ## 0.3.48
 - NLS wip: add remained menu text
 - NLS wip: tab names-n-tips

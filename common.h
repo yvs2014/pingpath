@@ -10,7 +10,7 @@
 #define MIN_GTK_RUNTIME(major, minor, micro) (!gtk_check_version(major, minor, micro))
 
 #define APPNAME "pingpath"
-#define VERSION "0.3.48"
+#define VERSION "0.3.49"
 #define APPVER  APPNAME "-" VERSION
 
 extern locale_t locale, localeC;
@@ -296,9 +296,9 @@ typedef struct minmax { int min, max; } t_minmax;
 
 typedef struct opts {
   char *target;
+  t_minmax range;     // TTL range
   gboolean dns, whois, legend, darktheme, darkgraph;
   int cycles, timeout, qos, size, ipv, graph;
-  int min, lim;       // TTL range
   char pad[PAD_SIZE]; // 16 x "00."
   char recap;         // type of summary at exit
   int tout_usec;      // internal: timeout in usecs

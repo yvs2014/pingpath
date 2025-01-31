@@ -45,9 +45,9 @@ static void plot_surf_vertex(vec3 *vertex, int xn, int yn) {
   float x0 = NAN, y0 = NAN, x1 = NAN, y1 = NAN, dx = NAN, dy = NAN;
   grid_params(xn, yn, &x0, &x1, &y0, &y1, &dx, &dy);
   float dxs = dx / 2 * (float)xn;
-  { int range = tgtat - opts.min; dxs /= (range > 0) ? range : tgtat; }
+  { int range = tgtat - opts.range.min; dxs /= (range > 0) ? range : tgtat; }
   int xn1 = xn + 1, yn1 = yn + 1; // note: xn,yn are mandatory even numbers
-  int imin = opts.min * 2, imax = SERIES_LIM * 2;
+  int imin = opts.range.min * 2, imax = SERIES_LIM * 2;
   float x = x0 - imin * dxs;
   for (int i = 0, n = 0; i < xn1; i++) {
     GSList *item = SERIES(i / 2);
@@ -140,7 +140,7 @@ static void plot_fill_ndx_grid(GLushort *p, t_plot_idc *idc) {
     for (int n = 0; n < lim; n += 2) { *p++ = n; *p++ = n + 1; cnt++; }
   } else {    // surface grid
    { int lim = tgtat * 2; if (lim > xn1) lim = xn1;
-     for (int x = opts.min * 2 + 1; x < lim; x++) {
+     for (int x = opts.range.min * 2 + 1; x < lim; x++) {
        int xx = x * yn1; for (int y = 0; y < yn; y++) FILL_SURF_LINE(xx + y, 1);
      }
    }

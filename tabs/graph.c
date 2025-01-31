@@ -205,7 +205,7 @@ static void gr_draw_smth(cairo_t *cr, double width, double alpha,
   cairo_set_line_cap(cr, CAIRO_LINE_CAP_ROUND);
   if (width >= 0) cairo_set_line_width(cr, width);
   int lim = SERIES_LIM;
-  for (int i = opts.min; i < lim; i++) {
+  for (int i = opts.range.min; i < lim; i++) {
     unsigned n = i % n_colors;
     SKIP_EXCLUDED;
     if (alpha < 0) cairo_set_source_rgb(cr, colors[n][0], colors[n][1], colors[n][2]);
@@ -305,7 +305,7 @@ static void gr_draw_marks(GtkDrawingArea *area, cairo_t *cr,
 static void gr_draw_mean(cairo_t *cr, gboolean mean, gboolean area) {
   if (!cr) return;
   int lim = SERIES_LIM;
-  for (int i = opts.min; i < lim; i++) {
+  for (int i = opts.range.min; i < lim; i++) {
     unsigned n = i % n_colors;
     SKIP_EXCLUDED;
     double y = stat_dbl_elem(i, PE_AVRG); if (y <= 0) continue;

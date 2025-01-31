@@ -48,7 +48,7 @@ static void on_target(GtkEntry *entry G_GNUC_UNUSED, gpointer user_data G_GNUC_U
   if (target) {
     g_free(opts.target); opts.target = target;
     action_update();
-    notifier_inform("%s %s", ENT_TARGET_HDR, target);
+    notifier_inform("%s: %s", TARGET_HDR, target);
   }
 }
 

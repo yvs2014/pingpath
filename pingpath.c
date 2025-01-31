@@ -12,6 +12,7 @@
 #include "stat.h"
 #include "ui/style.h"
 #include "ui/appbar.h"
+#include "ui/option.h"
 #include "ui/notifier.h"
 #include "ui/clipboard.h"
 #include "tabs/aux.h"
@@ -203,6 +204,7 @@ int main(int argc, char **argv) {
   }
   //
   init_elem_links();
+  init_option_links();
   if (!parser_init()) return EX_SOFTWARE;
   { int quit = cli_init(&argc, &argv);
     if (quit) return (quit > 0) ? EX_USAGE : EXIT_SUCCESS; }

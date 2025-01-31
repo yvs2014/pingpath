@@ -440,12 +440,12 @@ void on_rotation(GSimpleAction *action G_GNUC_UNUSED,
   if (!lg.aux || !lg.pval) return;
   int step = lg.sign * (data->step ? *data->step : 1);
   int want = *lg.pval + step;
-  t_minmax *mm = lg.aux->mm ? lg.aux->mm : &opt_mm_rot;
+  const t_minmax *mm = lg.aux->mm ? lg.aux->mm : &opt_mm_rot;
   if (want < mm->min) want += lg.aux->wrap;
   if (want > mm->max) want -= lg.aux->wrap;
   if (*lg.pval == want) return;
   MA_LOG(data->label, accl_sa_label);
-  notifier_inform("%s: %d", lg.aux->sfx, want);
+  notifier_inform("%s: %d", lg.aux->prfx, want);
   *lg.pval = want; option_up_menu_ext();
   set_rotor_n_redraw(step, lg.rev, lg.aux->pn);
 }
@@ -458,11 +458,11 @@ void on_scale(GSimpleAction *action G_GNUC_UNUSED,
   const t_ent_spn_aux *aux = data->global.aux;
   int *pval = aux->pval;
   if (!pval || !step) return;
-  t_minmax *mm = aux->mm ? aux->mm : &opt_mm_fov;
+  const t_minmax *mm = aux->mm ? aux->mm : &opt_mm_fov;
   int want = *pval + step;
   if ((want < mm->min) || (want > mm->max)) return;
   *pval = want;
-  notifier_inform("%s (%s): %d°", aux->prfx, aux->sfx, want);
+  notifier_inform("%s: %d°", aux->prfx, want);
   plottab_refresh(PL_PARAM_FOV);
 }
 #endif

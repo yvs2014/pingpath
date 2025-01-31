@@ -79,7 +79,7 @@ void series_update(void) {
   t_series_list* series = pinger_state.pause ? stat_series_kept : stat_series;
   t_rseq skip = { .rtt = -1, .seq = 0 };
   for (int i = 0; i < series_count; i++) {
-    if ((opts.min <= i) && (i < tgtat)) {
+    if ((opts.range.min <= i) && (i < tgtat)) {
       int seq = CURR_SERIES_LAST_SEQ(i) + 1;
       t_rseq data = { .seq = seq };
       stat_rseq(i, &data);

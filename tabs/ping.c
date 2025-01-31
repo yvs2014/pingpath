@@ -359,7 +359,7 @@ void pingtab_vis_rows(int upto) {
   LOG("set upto %d visible rows", upto);
   t_listline *line = listbox.bodylines;
   for (int i = 0; line && (i < MAXTTL); i++, line++) {
-    gboolean vis = (i >= opts.min) && (i < upto);
+    gboolean vis = (i >= opts.range.min) && (i < upto);
     if (GTK_IS_WIDGET(line->row)) gtk_widget_set_visible(GTK_WIDGET(line->row), vis);
     if (GTK_IS_WIDGET(line->box)) gtk_widget_set_visible(line->box, vis);
     GtkWidget **lab = line->labs;

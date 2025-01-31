@@ -64,8 +64,8 @@ typedef struct ent_spn_aux {
   int def;     // not-indexed default: 1 .. lim
   int *step;
   int sn;      // ref to parent's ndx
-  t_minmax *mm;
-  const char *prfx, *sfx;
+  const t_minmax *mm, *mmval;
+  const char *prfx;
   GtkSpinButton *spin;
 } t_ent_spn_aux;
 
@@ -81,6 +81,7 @@ typedef struct ent_spn {
   t_ent_spn_elem list[SUBLIST_MAX];
 } t_ent_spn;
 
+void init_option_links(void);
 gboolean option_init(GtkWidget* bar);
 void option_update(void);
 void option_legend(void);

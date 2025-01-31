@@ -165,7 +165,7 @@ static void nt_lgnd_row_cb(GtkListBox *self G_GNUC_UNUSED,
         const char *txt = gtk_label_get_text(GTK_LABEL(lab));
         if (txt) {
           int nth = atoi(txt); nth--;
-          if ((nth >= opts.min) && (nth < opts.lim)) {
+          if ((nth >= opts.range.min) && (nth < opts.range.max)) {
             gboolean sel = !gtk_list_box_row_get_selectable(row);
             if (sel) lgnd_excl_mask &= ~(sel << nth); else lgnd_excl_mask |= (!sel << nth);
             gtk_label_set_text(GTK_LABEL(lab), nb_lgnd_nth_state(nth, sel));
@@ -434,7 +434,7 @@ void notifier_legend_vis_rows(int upto) {
   if (upto < 0) upto = nt_lgnd_vis_rows; else nt_lgnd_vis_rows = upto;
   t_nt_leg *leg = notifier[NT_LEGEND_NDX].content;
   if (leg) for (int i = 0; i < MAXTTL; i++, leg++) {
-    gboolean vis = (i >= opts.min) && (i < upto);
+    gboolean vis = (i >= opts.range.min) && (i < upto);
     if (GTK_IS_WIDGET(leg->row)) gtk_widget_set_visible(GTK_WIDGET(leg->row), vis);
     if (GTK_IS_WIDGET(leg->box)) gtk_widget_set_visible(leg->box, vis);
     for (int j = GE_MIN; j < GE_MAX; j++) if (GTK_IS_WIDGET(leg->elem[j]))

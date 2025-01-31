@@ -19,19 +19,15 @@
 #define LOG_TAB_TIP   _("Auxiliary logs")
 #define GRAPH_TAB_TAG _("Graphs")
 #define GRAPH_TAB_TIP _("2D graphs")
-#ifdef WITH_PLOT
 #define PLOT_TAB_TAG  _("3D")
 #define PLOT_TAB_TIP  _("3D graphics")
-#endif
 
 // help window
 #define HELP_ACT_TITLE   _("Actions")
 #define HELP_CLI_TITLE   _("CLI")
 #define HELP_THEME_MAIN  _("Main theme")
 #define HELP_THEME_GRAPH _("Graph theme")
-#ifdef WITH_PLOT
 #define HELP_THEME_3D    _("3D-plot theme")
-#endif
 
 // menu tooltips
 #define OPT_ACTIONS_TIP  _("Command Menu")
@@ -50,7 +46,6 @@
 #define ACT_COPY_HDR    "Copy"
 #define ACT_SALL_HDR    "Select all"
 #define ACT_UNSALL_HDR  "Unselect all"
-#ifdef WITH_PLOT
 #define ACT_LEFT_K_HDR   "Rotate Left"
 #define ACT_RIGHT_K_HDR  "Rotate Right"
 #define ACT_UP_K_HDR     "Rotate Up"
@@ -59,12 +54,11 @@
 #define ACT_PGDN_K_HDR   "Rotate AntiClockwise"
 #define ACT_IN_K_HDR     "Scale Up"
 #define ACT_OUT_K_HDR    "Scale Down"
-#endif
 
-// title fields
-#define ENT_TARGET_HDR   "Target"
+// general headers
+#define TARGET_HDR       _("Target")
 #define TARGET_HINT      _("Enter hostname or IP address ...")
-#define ENT_TSTAMP_HDR   "Timestamp"
+#define DATE_HDR         _("Date")
 
 // options
 #define OPT_CYCLES_HDR   _("Cycles")
@@ -83,9 +77,7 @@
 
 #define OPT_MN_DARK_HDR  _("Main dark theme")
 #define OPT_GR_DARK_HDR  _("Graph dark theme")
-#ifdef WITH_PLOT
 #define OPT_PL_DARK_HDR  _("3D-plot dark theme")
-#endif
 #define OPT_GRAPH_HDR    _("Graph type")
 #define OPT_GR_DOT_HDR   _("Dots")
 #define OPT_GR_LINE_HDR  _("Lines")
@@ -93,19 +85,15 @@
 #define OPT_LGND_HDR     _("Graph legend")
 #define OPT_GRLG_HDR     _("Legend fields")
 #define OPT_GREX_HDR     _("Extra graph elements")
-#ifdef WITH_PLOT
 #define OPT_PLOT_HDR     _("Plot elements")
 #define OPT_PLEX_HDR     _("Plot parameters")
 #define OPT_GRAD_HDR     _("Plot gradient")
 #define OPT_GLOB_HDR     _("Global space")
+#define OPT_LOCAL_HDR    _("Local space")
 #define OPT_ROTOR_HDR    _("Plot rotation")
 #define OPT_SCALE_HDR    _("Plot scale")
 #define OPT_FOV_HDR      _("Field of view")
-#endif
 #define OPT_LOGMAX_HDR   _("LogTab rows")
-
-#define OPT_ATAB_HDR     "Active tab at start"
-#define OPT_RECAP_HDR    "Summary"
 
 // statistic elements and their tooltips
 #define ELEM_HOST_HDR    _("Host")
@@ -148,7 +136,7 @@
 #define ELEM_JTTR_HEADER _("Jitter")
 #define ELEM_JTTR_TIP    _("Jitter (variation in delay)")
 
-// graphs elements
+// 2D-graphs elements
 #define GRLG_DASH_HDR    _("Color")
 #define GRLG_DASH_HEADER _("Color dash")
 #define GRLG_AVJT_HDR    _("RTT±Jitter")
@@ -165,13 +153,11 @@
 #define GREX_AREA_HDR    _("JArea")
 #define GREX_AREA_HEADER _("Jitter area")
 
-#ifdef WITH_PLOT
-// 3D-plot elements
+// 3D-graphics elements
 #define PLEL_BACK_HDR    _("Backside")
 #define PLEL_AXIS_HDR    _("Axis")
 #define PLEL_GRID_HDR    _("Grid")
 #define PLEL_ROTR_HDR    _("Rotator")
-#endif
 
 // toggle tips
 #define TOGGLE_ON_HDR  _("on")
@@ -188,6 +174,7 @@
 #define PLOT_GRAD_COLB _("Plot blue gradient")
 
 // 3D-rotation parameters
+#define ORIENT_HDR    _("Orientation")
 #define ROT_ATTITUDE  _("Attitude")
 #define ROT_ROLL      _("Roll")
 #define ROT_PITCH     _("Pitch")
@@ -197,5 +184,61 @@
 #define ROT_ANGLE_Y   _("Axis Y")
 #define ROT_ANGLE_Z   _("Axis Z")
 #define ROT_STEP      _("Angular step")
+
+// CLI option help
+#define CLI_FOPT_DESC _("Get options from file")
+#define CLI_NOPT_DESC _("IP addresses in numeric form")
+#define CLI_IOPT_DESC _("Interval between pings")
+#define CLI_TTL_DESC  _("TTL range")
+#define CLI_QOS_DESC  _("QoS byte")
+#define CLI_SIZE_DESC _("Payload size")
+#define CLI_POPT_DESC _("Payload in hex notation")
+#define CLI_STAT_DESC _("Statistics fields")
+#define CLI_TOPT_DESC _("Toggle dark/light themes")
+#define CLI_SUMM_DESC _("Summary at exit")
+#define CLI_SUMM_TCJ  _("Text, CSV, or JSON")
+#define CLI_SUMM_TC   _("Text, CSV")
+#define CLI_ROPT_DESC _("Autostart")
+#define CLI_AOPT_DESC _("Initial active tab")
+#define CLI_VERB_DESC _("More detailed messaging")
+#define CLI_VERS_DESC _("Build features and runtime lib versions")
+#define CLI_1D_DESC   _("Without graphics")
+#define CLI_2D_DESC   _("Without 3D graphics")
+
+// CLI option hints
+#define CLI_FOPT_HINT _("<filepath>")
+#define CLI_COPT_HINT _("<number>")
+#define CLI_IOPT_HINT _("<seconds>")
+#define CLI_TTL_HINT  _("[min][,max]")
+#define CLI_BITS_HINT _("<bits>")
+#define CLI_SIZE_HINT _("<in-bytes>")
+#define CLI_POPT_HINT _("<upto-16-bytes>")
+#define CLI_XOPT_HINT _("<tag:values>")
+#define CLI_VOPT_HINT _("<6bit-level>")
+
+// CLI misc messages
+#define CLI_OPTS_HDR    _("Options")
+#define CLI_INVAL_HDR   _("Invalid value")
+#define CLI_NOVAL_HDR   _("No value")
+#define CLI_CONF_HDR    _("CONFIG")
+#define CLI_NOMATCH_HDR _("No match")
+#define CLI_NOPARSE_HDR _("Cannot parse")
+#define CLI_BADTAG_HDR  _("Wrong tag")
+#define CLI_DUPTAG_HDR  _("Tag duplicate")
+#define CLI_NOPAIR_HDR  _("Wrong pair")
+#define CLI_BADTYPE_HDR _("Unknown type")
+#define CLI_NDXDIFF_HDR _("Number of indexes are different")
+#define CLI_ROPT_T_HDR  _("Text")
+#define CLI_ROPT_C_HDR  _("CSV")
+#define CLI_ROPT_J_HDR  _("JSON")
+#define CLI_TOPT_HDR    _("Theme bits")
+#define CLI_TOVAL_HDR   _("validate")
+#define CLI_MUT_EXC_HDR _("Mutually exclusive options")
+#define CLI_APPFEAT_HDR _("Build features")
+#define CLI_LIBVER_HDR  _("Runtime lib versions")
+#define CLI_SKIPARG_HDR _("Skipping argument")
+#define CLI_BADOPT_HDR  _("Unknown option")
+#define CLI_NOGOAL_HDR  _("No goal")
+#define CLI_RECAP_HDR   _("Non-interactive mode with summary at exit")
 
 #endif
