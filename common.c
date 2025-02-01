@@ -3,7 +3,6 @@
 #include <string.h>
 #include <time.h>
 
-#include "text.h"
 #include "common.h"
 
 const char *unkn_field = ""; // "?" "???"

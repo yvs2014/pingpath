@@ -2,11 +2,9 @@
 #include <stdlib.h>
 #include <math.h>
 
-#include "common.h"
-#include "text.h"
-#include "aux.h"
-
 #include "ping.h"
+#include "common.h"
+#include "aux.h"
 #include "pinger.h"
 #include "stat.h"
 #include "ui/style.h"

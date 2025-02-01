@@ -60,9 +60,49 @@ msgstr "Гаразд"
 msgid "sec"
 msgstr "сек"
 
+# unit: milliseconds
+msgid "ms"
+msgstr "мсек"
+
 # hexadecinal
 msgid "0x"
 msgstr "0x"
+
+# ping name
+msgid "ping"
+msgstr "пінг"
+
+# hop#N header
+msgid "hop"
+msgstr "перехід"
+
+# extra info
+msgid "Info"
+msgstr "Інфо"
+
+# done message1
+msgid "Pings completed"
+msgstr "Пінги завершено"
+
+# done message2
+msgid "completed"
+msgstr "завершено"
+
+# aux message1
+msgid "No data"
+msgstr "Немає даних"
+
+# aux message2
+msgid "No data yet"
+msgstr "Даних ще немає"
+
+# aux message3
+msgid "Not reached"
+msgstr "Не досягнуто"
+
+# aux message4
+msgid "Not reached yet"
+msgstr "Ще не досягнуто"
 
 # toggle tip1
 msgid "on"
@@ -759,4 +799,116 @@ msgstr "Нема мети"
 # CLI misc: message24
 msgid "Non-interactive mode with summary at exit"
 msgstr "Неінтерактивний режим із резюме на виході"
+
+# clipboard prefix
+msgid "Clipboard"
+msgstr "Буфер обміну"
+
+# clipboard menu: message1
+msgid "Copy"
+msgstr "Скопіювати"
+
+# clipboard menu: message2
+msgid "Select all"
+msgstr "Вибрати все"
+
+# clipboard menu: message3
+msgid "Unselect all"
+msgstr "Скасувати вибір"
+
+# action shortcut header
+msgid "Action"
+msgstr "Дія"
+
+# action shortcut1.1
+msgid "Legend"
+msgstr "Опис"
+
+# action shortcut2.1
+msgid "Rotate Left"
+msgstr "Обертати ліворуч"
+
+# action shortcut2.2
+msgid "Rotate Right"
+msgstr "Обернути праворуч"
+
+# action shortcut2.3
+msgid "Rotate Up"
+msgstr "Обертати догори"
+
+# action shortcut2.4
+msgid "Rotate Down"
+msgstr "Обертати донизу"
+
+# action shortcut2.5
+msgid "Rotate Clockwise"
+msgstr "Обертати за годинниковою стрілкою"
+
+# action shortcut2.6
+msgid "Rotate AntiClockwise"
+msgstr "Обертати проти годинникової стрілки"
+
+# action shortcut2.7
+msgid "Scale Up"
+msgstr "Наблизити"
+
+# action shortcut2.8
+msgid "Scale Down"
+msgstr "Віддалити"
+
+# message: unknown
+msgid "unknown"
+msgstr "невідомо"
+
+# error: unknown
+msgid "Unknown error"
+msgstr "Невідома помилка"
+
+# error: prefix
+msgid "ERROR"
+msgstr "ПОМИЛКА"
+
+# error: proc expired
+msgid "Process is still active after expire time, stopping ..."
+msgstr "Процес вичерпав свій час, зупиняємо ..."
+
+# error: cannot stop proc
+msgid "Subprocess has not stopped"
+msgstr "Підпроцес не зупинився"
+
+# message: expiration time
+msgid "expiration time"
+msgstr "час для роботи"
+
+# error: runtime expired
+msgid "runtime expired"
+msgstr "час вичерпано"
+
+# error: input
+msgid "stdin failed"
+msgstr "помилка stdin"
+
+# misc: free(resources)
+msgid "release resources"
+msgstr "вивільнення ресурсів"
+
+# misc: at exit log message
+msgid "at exit"
+msgstr "на виході"
+
+# misc: stop pid=N
+msgid "stop"
+msgstr "зупиняємо"
+
+# misc: snap sandnox hint
+msgid ""
+"Snap container related:\n"
+"if minimal ping's slot (network-observe) is not autoconnected (permission denied),\n"
+"it can be connected with the following command:\n"
+"  snap connect pingpath:network-observe :network-observe"
+msgstr ""
+"Відносно запуску в snap контейнері:\n"
+"якщо мінімально необхідний слот (network-observe) не підключено автоматично (permission denied),\n"
+"його можна підключити наступною командою:\n"
+"  snap connect pingpath:network-observe :network-observe"
 

@@ -4,7 +4,6 @@
 #include <limits.h>
 
 #include "cli.h"
-#include "text.h"
 #include "common.h"
 #include "pinger.h"
 #include "parser.h"
@@ -459,7 +458,7 @@ static gboolean config_opt_not_found(GError *opterr, const char *section, const 
    const char *value, GError **error) {
   if (g_error_matches(opterr, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_KEY_NOT_FOUND) ||
       g_error_matches(opterr, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_GROUP_NOT_FOUND)) return true;
-  g_warning("%s:%s: %s", section, name, opterr ? opterr->message : UNKN_ERROR);
+  g_warning("%s:%s: %s", section, name, opterr ? opterr->message : UNKN_ERR);
   CLI_SET_ERR; return false;
 }
 
@@ -504,7 +503,7 @@ static gboolean cli_opt_f(const char *name, const char *value, t_opts *opts, GEr
   g_autoptr(GKeyFile) file = g_key_file_new();
   g_autoptr(GError) ferr = NULL;
   if (!g_key_file_load_from_file(file, value, G_KEY_FILE_NONE, &ferr)) {
-    g_warning("%s: %s", ferr ? ferr->message : UNKN_ERROR, value);
+    g_warning("%s: %s", ferr ? ferr->message : UNKN_ERR, value);
     CLI_SET_ERR;
     return false;
   }
@@ -683,7 +682,7 @@ static int cli_init_proc(int *pargc, char ***pargv,
     gboolean okay = g_option_context_parse(context, pargc, pargv, &error);
     cli = false;
     if (!okay) {
-      g_warning("%s", error ? error->message : UNKN_ERROR);
+      g_warning("%s", error ? error->message : UNKN_ERR);
       g_error_free(error);
       g_option_context_free(context);
       return EXIT_FAILURE;
@@ -759,12 +758,10 @@ static int cli_init_proc(int *pargc, char ***pargv,
     }
     g_strfreev(target);
   }
-  if (!opts.target) CLI_FAIL("%s", CLI_NOGOAL_HDR);
-  if (autostart) g_message("%s", CLI_ROPT_DESC);
-  if (opts.recap) {
-    autostart = true;
-    g_message("%s", CLI_RECAP_HDR);
-  }
+  if (opts.recap) autostart = true;
+  if (autostart && !opts.target) CLI_FAIL("%s", CLI_NOGOAL_HDR);
+  if (opts.recap) g_message("%s", CLI_RECAP_HDR);
+  else if (autostart) g_message("%s", CLI_ROPT_DESC);
   g_option_context_free(context);
   return EXIT_SUCCESS;
 #undef CLI_FAIL

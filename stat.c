@@ -111,8 +111,8 @@ static void update_stat(int at, int rtt, t_tseq *mark, int rxtx) {
       hops[at].rseq[CURR].rtt = rtt; hops[at].rseq[CURR].seq = mark->seq;
     }
   }
-  if (!pinger_state.gotdata) pinger_state.gotdata = true;
-  { if (rxtx == TX) hops[at].tout = true; else if (rxtx != NONE) hops[at].tout = false; }
+  if (!pinger_state.gotdata) pinger_state.gotdata = (hops[at].recv > 0);
+  if (rxtx == TX) hops[at].tout = true; else if (rxtx != NONE) hops[at].tout = false;
   if (!hops[at].tout && (visibles < at) && (at < tgtat)) { visibles = at; pinger_vis_rows(at + 1); }
 }
 

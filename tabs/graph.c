@@ -3,11 +3,9 @@
 #include <math.h>
 #include <time.h>
 
-#include "common.h"
-#include "text.h"
-#include "aux.h"
-
 #include "graph.h"
+#include "common.h"
+#include "aux.h"
 #include "series.h"
 #include "pinger.h"
 #include "stat.h"

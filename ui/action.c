@@ -1,9 +1,8 @@
 
 #include <stdlib.h>
 
-#include "text.h"
-#include "common.h"
 #include "action.h"
+#include "common.h"
 #include "appbar.h"
 #include "option.h"
 #include "notifier.h"
@@ -23,8 +22,8 @@
 #endif
 #endif
 
-#define MA_LOG(ndx, lab) LOG("Action %s", lab(ndx))
-#define MI_LOG(ndx, lab) notifier_inform("Action %s", lab(ndx))
+#define MA_LOG(ndx, lab) LOG("%s: %s", ACT_ACTION_HDR, lab(ndx))
+#define MI_LOG(ndx, lab) notifier_inform("%s: %s", ACT_ACTION_HDR, lab(ndx))
 
 typedef struct help_dialog_in {
   GtkWidget *win, *box, *hdr, *scroll, *body, *btn;

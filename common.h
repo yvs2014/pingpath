@@ -4,13 +4,15 @@
 #include <gtk/gtk.h>
 #include <locale.h>
 
+#include "text.h"
+
 #if GTK_MAJOR_VERSION < 4
 #error GTK4 is required
 #endif
 #define MIN_GTK_RUNTIME(major, minor, micro) (!gtk_check_version(major, minor, micro))
 
 #define APPNAME "pingpath"
-#define VERSION "0.3.49"
+#define VERSION "0.3.50"
 #define APPVER  APPNAME "-" VERSION
 
 extern locale_t locale, localeC;
@@ -180,20 +182,19 @@ enum { ACT_DOT = 4 }; // beyond of "app." or "win."
 #define WARN(fmt, ...) g_warning("%s: " fmt, __func__, ##__VA_ARGS__)
 #endif
 
-#define UNKN_ERROR "unknown error"
 #define ERROR(what) do {                                      \
   if (error) {                                                \
     WARN("%s: rc=%d, %s", what, error->code, error->message); \
     g_error_free(error);                                      \
   } else                                                      \
-    WARN("%s: %s", what, UNKN_ERROR);                         \
+    WARN("%s: %s", what, UNKN_ERR);                           \
 } while (0)
 #define ERRLOG(what) do {                                                    \
   if (error) {                                                               \
     LOG("%s: %s: rc=%d, %s\n", __func__, what, error->code, error->message); \
     g_error_free(error);                                                     \
   } else                                                                     \
-    LOG("%s: %s", what, UNKN_ERROR);                                         \
+    LOG("%s: %s", what, UNKN_ERR);                                           \
 } while (0)
 #define FAIL(what) WARN("%s failed", what)
 #define FAILX(what, extra) WARN("%s: %s failed", what, extra)

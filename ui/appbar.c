@@ -2,9 +2,8 @@
 #include <stdlib.h>
 #include <time.h>
 
-#include "text.h"
-#include "common.h"
 #include "appbar.h"
+#include "common.h"
 #include "style.h"
 #include "action.h"
 #include "option.h"

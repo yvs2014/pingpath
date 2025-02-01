@@ -3,11 +3,9 @@
 #include <string.h>
 #include <stdarg.h>
 
-#include "common.h"
-#include "text.h"
-#include "aux.h"
-
 #include "log.h"
+#include "common.h"
+#include "aux.h"
 #include "pinger.h"
 #include "ui/clipboard.h"
 

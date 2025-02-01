@@ -2,9 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "text.h"
-#include "common.h"
 #include "clipboard.h"
+#include "common.h"
 #include "tabs/aux.h"
 
 static const char* cb_menu_label(int sel) {
@@ -234,7 +233,7 @@ void cb_on_copy_l1(GSimpleAction *self G_GNUC_UNUSED, GVariant *parameter G_GNUC
   if (!tab || !GTK_IS_LIST_BOX(tab->dyn.w)) return;
   GdkClipboard *clipboard = gtk_widget_get_clipboard(GTK_WIDGET(tab->tab.w));
   if (GDK_IS_CLIPBOARD(clipboard)) {
-    VERBOSE("clipoard action %s", ACT_COPY_HDR);
+    VERBOSE("%s: %s", ACT_CLPBRD_HDR, ACT_COPY_HDR);
     char *text = cb_get_text(tab->dyn.w, clipboard, DATA_AT_LEVEL1, NULL);
     if (text) { gdk_clipboard_set_text(clipboard, text); g_free(text); }
   }
@@ -245,7 +244,7 @@ void cb_on_copy_l2(GSimpleAction *self G_GNUC_UNUSED, GVariant *parameter G_GNUC
   if (!tab || !GTK_IS_LIST_BOX(tab->dyn.w)) return;
   GdkClipboard *clipboard = gtk_widget_get_clipboard(GTK_WIDGET(tab->tab.w));
   if (GDK_IS_CLIPBOARD(clipboard)) {
-    VERBOSE("clipoard action %s", ACT_COPY_HDR);
+    VERBOSE("%s: %s", ACT_CLPBRD_HDR, ACT_COPY_HDR);
     char* arr[4] = {0};
     int maxes[PE_MAX] = {0};
     cb_collect_maxes(tab->hdr.w, maxes);
@@ -276,7 +275,7 @@ void cb_tab_unsel(t_tab *tab) {
 void cb_on_sall(GSimpleAction *self G_GNUC_UNUSED, GVariant *parameter G_GNUC_UNUSED, gpointer data) {
   t_tab *tab = data;
   if (!tab || !GTK_IS_LIST_BOX(tab->dyn.w)) return;
-  VERBOSE("%s action %s", tab->name, cb_menu_label(tab->sel));
+  VERBOSE("%s (%s): %s", ACT_ACTION_HDR, tab->name, cb_menu_label(tab->sel));
   GtkWidget* list[] = {tab->hdr.w, tab->dyn.w, tab->info.w};
   tab->sel = any_list_sel(tab);
   cb_selfn_all(list, G_N_ELEMENTS(list),

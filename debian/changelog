@@ -1,3 +1,13 @@
+pingpath (0.3.50) noble; urgency=low
+
+  * NLS wip: almost all of pinger.c messages
+
+  * a bit clearer logic of extra info
+
+  * json-print: rm redundant "timing" prop
+
+ -- yvs <VSYakovetsky@gmail.com>  Sat, 01 Feb 2025 19:23:17 +0200
+
 pingpath (0.3.49) noble; urgency=low
 
   * NLS wip: all cli.c messages

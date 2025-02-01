@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "text.h"
 #include "common.h"
 #include "option.h"
 #include "parser.h"

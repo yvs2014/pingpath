@@ -5,13 +5,11 @@
 #include <math.h>
 #include <cglm/cglm.h>
 
-#include "common.h"
-#include "text.h"
-#include "aux.h"
-
 #include "plot.h"
 #include "plot_aux.h"
 #include "plot_pango.h"
+#include "common.h"
+#include "aux.h"
 #include "series.h"
 #include "pinger.h"
 #include "stat.h"

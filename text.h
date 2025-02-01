@@ -8,9 +8,13 @@
 #endif
 
 // common
-#define BUTTON_OKAY      _("Okay")
-#define UNIT_SEC         _("sec")
-#define UNIT_HEX         _("0x")
+#define BUTTON_OKAY    _("Okay")
+#define UNIT_SEC       _("sec")
+#define UNIT_HEX       _("0x")
+#define NODATA_MSG     _("No data")
+#define NODATAYET_MSG  _("No data yet")
+#define NOREACH_MSG    _("Not reached")
+#define NOREACHYET_MSG _("Not reached yet")
 
 // tab names-n-tips
 #define PING_TAB_TAG  _("Trace")
@@ -35,25 +39,27 @@
 #define OPT_AUXMENU_TIP  _("Auxiliary")
 
 // actions
-#define ACT_START_HDR   _("Start")
-#define ACT_STOP_HDR    _("Stop")
-#define ACT_PAUSE_HDR   _("Pause")
-#define ACT_RESUME_HDR  _("Resume")
-#define ACT_RESET_HDR   _("Reset")
-#define ACT_HELP_HDR    _("Help")
-#define ACT_QUIT_HDR    _("Exit")
-#define ACT_LGND_HDR    "Legend"
-#define ACT_COPY_HDR    "Copy"
-#define ACT_SALL_HDR    "Select all"
-#define ACT_UNSALL_HDR  "Unselect all"
-#define ACT_LEFT_K_HDR   "Rotate Left"
-#define ACT_RIGHT_K_HDR  "Rotate Right"
-#define ACT_UP_K_HDR     "Rotate Up"
-#define ACT_DOWN_K_HDR   "Rotate Down"
-#define ACT_PGUP_K_HDR   "Rotate Clockwise"
-#define ACT_PGDN_K_HDR   "Rotate AntiClockwise"
-#define ACT_IN_K_HDR     "Scale Up"
-#define ACT_OUT_K_HDR    "Scale Down"
+#define ACT_START_HDR    _("Start")
+#define ACT_STOP_HDR     _("Stop")
+#define ACT_PAUSE_HDR    _("Pause")
+#define ACT_RESUME_HDR   _("Resume")
+#define ACT_RESET_HDR    _("Reset")
+#define ACT_HELP_HDR     _("Help")
+#define ACT_QUIT_HDR     _("Exit")
+#define ACT_CLPBRD_HDR   _("Clipoard")
+#define ACT_COPY_HDR     _("Copy")
+#define ACT_SALL_HDR     _("Select all")
+#define ACT_UNSALL_HDR   _("Unselect all")
+#define ACT_ACTION_HDR   _("Action")
+#define ACT_LGND_HDR     _("Legend")
+#define ACT_LEFT_K_HDR   _("Rotate Left")
+#define ACT_RIGHT_K_HDR  _("Rotate Right")
+#define ACT_UP_K_HDR     _("Rotate Up")
+#define ACT_DOWN_K_HDR   _("Rotate Down")
+#define ACT_PGUP_K_HDR   _("Rotate Clockwise")
+#define ACT_PGDN_K_HDR   _("Rotate AntiClockwise")
+#define ACT_IN_K_HDR     _("Scale Up")
+#define ACT_OUT_K_HDR    _("Scale Down")
 
 // general headers
 #define TARGET_HDR       _("Target")
@@ -240,5 +246,29 @@
 #define CLI_BADOPT_HDR  _("Unknown option")
 #define CLI_NOGOAL_HDR  _("No goal")
 #define CLI_RECAP_HDR   _("Non-interactive mode with summary at exit")
+
+// misc
+#define PING_HDR        _("ping")
+#define HOP_HDR         _("hop")
+#define MS_UNIT         _("ms")
+#define UNKN_HDR        _("unknown")
+#define INFO_HDR        _("Info")
+#define PINGS_DONE_HDR  _("Pings completed")
+#define DONE_HDR        _("completed")
+#define ATEXIT_HDR      _("at exit")
+#define UNKN_ERR        _("Unknown error")
+#define ERROR_HDR       _("ERROR")
+#define PROC_EXP_HDR    _("Process is still active after expire time, stopping ...")
+#define PROC_NOSTOP_HDR _("Subprocess has not stopped")
+#define EXPTIME_HDR     _("expiration time")
+#define RUNTIME_EXP     _("runtime expired")
+#define INP_FAILED      _("stdin failed")
+#define RELRES_HDR      _("release resources")
+#define STOP_HDR        _("stop")
+
+#define SNAPBOX_HINT _("Snap container related:\n" \
+  "if minimal ping's slot (network-observe) is not autoconnected (permission denied),\n" \
+  "it can be connected with the following command:\n" \
+  "  snap connect pingpath:network-observe :network-observe")
 
 #endif

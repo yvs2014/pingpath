@@ -1,3 +1,8 @@
+## 0.3.50
+- NLS wip: almost all of pinger.c messages
+- a bit clearer logic of extra info
+- json-print: rm redundant "timing" prop
+
 ## 0.3.49
 - NLS wip: all cli.c messages
 - common TTL range in structure
