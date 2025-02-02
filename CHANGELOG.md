@@ -1,3 +1,7 @@
+## 0.3.51
+- a bit more readable logging
+- NLS wip: almost all <level1> .c files
+
 ## 0.3.50
 - NLS wip: almost all of pinger.c messages
 - a bit clearer logic of extra info

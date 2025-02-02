@@ -519,7 +519,7 @@ static gboolean cli_opt_f(const char *name, const char *value, t_opts *opts, GEr
           if (config_opt_not_found(strerr, section, optname, optval, error)) continue;
           return false;
         }
-        CONF_DEBUG("%s %s:%s=%s", CLI_TOVAL_HDR, section, optname, optval);
+        CONF_DEBUG("validate %s:%s=%s", section, optname, optval);
       }
       switch (option->type) {
         case CNF_OPT_TABS: {

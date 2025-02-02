@@ -37,14 +37,14 @@ static void update_addrname(int at, t_host *b) { // addr is mandatory, name not
         if (b->name) { // add first resolved hostname to not change it back-n-forth
           UPD_STR(a->name, b->name);
           hops[at].cached = hops[at].cached_nl = false;
-          LOG("set hostname[%d]: %s", at, b->name);
+          LOG("%s[%d]: %s=%s", HOSTNAME_HDR, at + 1, NAME_HDR, b->name);
         } else if (opts.dns) dns_lookup(hop, i); // otherwise run dns lookup
       }
       break;
     }
   }
   if (!done) { // add addrname
-    if (vacant < 0) LOG("no free slots for hop#%d address(%s)", at, b->addr);
+    if (vacant < 0) LOG("%s: %s=%d %s=%s", NOSLOTS_ERR, HOP_HDR, at, ADDR_HDR, b->addr);
     else {
       t_host *a = &hop->host[vacant];
       UPD_STR(a->addr, b->addr);
@@ -54,7 +54,8 @@ static void update_addrname(int at, t_host *b) { // addr is mandatory, name not
         CLR_STR(hop->whois[vacant].elem[j]);
         hops[at].wcached[j] = hops[at].wcached_nl[j] = false;
       }
-      LOG("set addrname[%d]: %s %s", at, b->addr, b->name ? b->name : "");
+      LOG("%s[%d]: %s=%s %s=%s", HOSTNAME_HDR, at + 1,
+        ADDR_HDR, b->addr, NAME_HDR, mnemo(b->name));
       if (!b->name && opts.dns)
         dns_lookup(hop, vacant);   // make dns query
       if (opts.whois)
@@ -84,7 +85,7 @@ static void uniq_unreach(int at) {
     if (hops[last - 1].reach) break;
     if (STR_NEQ(addr, hops[last - 1].host[0].addr)) break;
   }
-  if (tgtat != (last + 1)) set_target_at(last + 1, "unreachable duplicates");
+  if (tgtat != (last + 1)) set_target_at(last + 1, SKIPDUP_HDR);
 }
 
 #define STAT_AVERAGE(count, avrg, val) { (count)++; \
@@ -123,9 +124,9 @@ static int calc_rtt(int at, t_tseq *mark) {
   return rtt;
 }
 
-// Note: name[0] is shortcut for "" test instead of STR_NEQ(name, unkn_field)
+// Note: name[0] is shortcut for "" test instead of STR_NEQ(name, UNKN_FIELD)
 #define ADDRNAME(addr, name) (((name) && (name)[0]) ? (name) : ADDRONLY(addr))
-#define ADDRONLY(addr) ((addr) ? (addr) : unkn_field)
+#define ADDRONLY(addr) ((addr) ? (addr) : UNKN_FIELD)
 static inline const char* addrname(int ndx, t_host *host) {
   return opts.dns ? ADDRNAME(host[ndx].addr, host[ndx].name) : ADDRONLY(host[ndx].addr);
 }
@@ -147,7 +148,7 @@ static const char *info_host(int at) {
     }
     if (hop->info && (len < BUFF_SIZE)) g_snprintf(str + len, BUFF_SIZE - len, "\n%s", hop->info);
     hop->cached = true;
-    LOG("hostinfo cache[%d] updated with %s", at, (str && str[0]) ? str : log_empty);
+    LOG("%s: #%d %s", HOST_CUP_HDR, at + 1, mnemo(str));
     return str;
   }
   return NULL;
@@ -162,7 +163,7 @@ static const char *info_host_nl(int at) {
     char *str = hostinfo_nl_cache[at];
     g_snprintf(str, BUFF_SIZE, "%s", addrname(0, host));
     hop->cached_nl = true;
-    LOG("hostinfo_nl cache[%d] updated with %s", at, (str && str[0]) ? str : log_empty);
+    LOG("%s: #%d %s", HOST_CUP_HDR, at + 1, mnemo(str));
     return str;
   }
   return NULL;
@@ -196,7 +197,7 @@ static const char *info_whois(int at, int type) {
         len += g_snprintf(str + len, BUFF_SIZE - len, "\n%s", elem);
       }
       hops[at].wcached[type] = true;
-      LOG("whois cache[%d,%d] updated with %s", at, type, (str && str[0]) ? str : log_empty);
+      LOG("%s: [%d,%d] %s", WHOIS_CUP_HDR, at, type, mnemo(str));
     }
     return str;
   }
@@ -212,7 +213,7 @@ static const char *info_whois_nl(int at, int type) {
     if (!hops[at].wcached_nl[type]) {
       g_snprintf(str, MAXHOSTNAME, "%s", elem);
       hops[at].wcached_nl[type] = true;
-      LOG("whois_nl cache[%d,%d] updated with %s", at, type, (str && str[0]) ? str : log_empty);
+      LOG("%s: [%d,%d] %s", WHOIS_CUP_HDR, at, type, mnemo(str));
     }
     return str;
   }
@@ -326,7 +327,7 @@ static void stat_up_info(int at, const char *info) {
   if (STR_EQ(hops[at].info, info)) return;
   UPD_STR(hops[at].info, info);
   hops[at].cached = false;
-  LOG("set info[%d]: %s", at, info);
+  LOG("%s: #%d %s", INFO_HDR, at + 1, info);
 }
 
 void stat_save_success(int at, t_ping_success *data) {
@@ -336,8 +337,8 @@ void stat_save_success(int at, t_ping_success *data) {
   // management
   int ttl = at + 1;
   if (tgtat > ttl) {
-    LOG("target is reached at ttl=%d", ttl);
-    set_target_at(ttl, "behind target");
+    LOG("%s: %s=%d", REACHED_HDR, OPT_TTL_HDR, ttl);
+    set_target_at(ttl, AFTER_TGT_HDR);
   }
   pinger_nth_free_error(at);
   if (hops[at].info) stat_up_info(at, NULL);
@@ -353,7 +354,7 @@ void stat_save_discard(int at, t_ping_discard *data) {
     int ttl = at + 1;
     gboolean reach = !g_strrstr(data->reason, "nreachable");
     if (hops[at].reach != reach) hops[at].reach = reach;
-    if (reach) { if (tgtat < ttl) set_target_at(ttl, "unreachable"); }
+    if (reach) { if (tgtat < ttl) set_target_at(ttl, UNREACH_HDR); }
     else {
       if (tgtat > ttl) uniq_unreach(at);
       stat_up_info(at, data->reason);
@@ -485,8 +486,12 @@ void stat_legend(int at, t_legend *data) {
 void stat_whois_enabler(void) {
   gboolean enable = false;
   for (unsigned i = 0; i < G_N_ELEMENTS(pingelem); i++)
-    if (IS_WHOIS_NDX(pingelem[i].type) && pingelem[i].enable) { enable = true; break; }
-  if (enable != opts.whois) { opts.whois = enable; LOG("whois %sabled", enable ? "en" : "dis"); }
+    if (IS_WHOIS_NDX(pingelem[i].type) && pingelem[i].enable) {
+      enable = true; break; }
+  if (enable != opts.whois) {
+    opts.whois = enable;
+    LOG("whois %s", enable ? TOGGLE_ON_HDR : TOGGLE_OFF_HDR);
+  }
 }
 
 void stat_run_whois_resolv(void) {

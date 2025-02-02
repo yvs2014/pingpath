@@ -1,3 +1,11 @@
+pingpath (0.3.51) noble; urgency=low
+
+  * a bit more readable logging
+
+  * NLS wip: almost all <level1> .c files
+
+ -- yvs <VSYakovetsky@gmail.com>  Sun, 02 Feb 2025 03:44:21 +0200
+
 pingpath (0.3.50) noble; urgency=low
 
   * NLS wip: almost all of pinger.c messages

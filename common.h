@@ -12,7 +12,7 @@
 #define MIN_GTK_RUNTIME(major, minor, micro) (!gtk_check_version(major, minor, micro))
 
 #define APPNAME "pingpath"
-#define VERSION "0.3.50"
+#define VERSION "0.3.51"
 #define APPVER  APPNAME "-" VERSION
 
 extern locale_t locale, localeC;
@@ -36,6 +36,8 @@ enum { MAXHOSTNAME   =   63 }; // in chars: must 63, should 255
 enum { NET_BUFF_SIZE = 4096 };  // suppose it's enough (dns or whois data is usually 200-300 bytes)
 enum { BUFF_SIZE     = 1024 };
 enum { PAD_SIZE      =   48 };
+
+#define UNKN_FIELD "" /* "?" "???" */
 
 #define INFO_PATT    "hacdr"
 #define STAT_PATT    "lsrmbwaj"
@@ -186,15 +188,7 @@ enum { ACT_DOT = 4 }; // beyond of "app." or "win."
   if (error) {                                                \
     WARN("%s: rc=%d, %s", what, error->code, error->message); \
     g_error_free(error);                                      \
-  } else                                                      \
-    WARN("%s: %s", what, UNKN_ERR);                           \
-} while (0)
-#define ERRLOG(what) do {                                                    \
-  if (error) {                                                               \
-    LOG("%s: %s: rc=%d, %s\n", __func__, what, error->code, error->message); \
-    g_error_free(error);                                                     \
-  } else                                                                     \
-    LOG("%s: %s", what, UNKN_ERR);                                           \
+  } else WARN("%s: %s", what, UNKN_ERR);                      \
 } while (0)
 #define FAIL(what) WARN("%s failed", what)
 #define FAILX(what, extra) WARN("%s: %s failed", what, extra)
@@ -379,10 +373,6 @@ typedef struct elem_desc {
 
 typedef struct th_color { double ondark, onlight; } t_th_color;
 
-extern const char *unkn_field;
-extern const char *unkn_whois;
-extern const char *log_empty;
-
 extern gboolean cli;
 extern int verbose, activetab;
 
@@ -419,6 +409,7 @@ gboolean is_plelem_enabled(int type);
 
 char* rtver(int ndx);
 const char *timestamp(char *ts, size_t size);
+const char *mnemo(const char *str);
 GtkListBoxRow* line_row_new(GtkWidget *child, gboolean visible);
 
 void host_free(t_host *host);
@@ -429,6 +420,7 @@ void print_refs(GSList *refs, const char *prefix);
 GSList* list_add_nodup(GSList **list, void *data, GCompareFunc cmp, unsigned max);
 GSList* list_add_ref(GSList **list, t_hop *hop, int ndx);
 extern void log_add(const char *fmt, ...);
+
 
 #define UPDATE_LABEL(label, str) { const char *txt = gtk_label_get_text(GTK_LABEL(label)); \
   if (STR_NEQ(txt, str)) gtk_label_set_text(GTK_LABEL(label), str); }

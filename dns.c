@@ -20,21 +20,21 @@ static GSList *dns_cache;
 #endif
 
 #if DNS_DEBUGGING && DNS_DEBUGGING > 1
-#define PR_DNS_Q do { LOG("DNS: %s: q=%p", __func__, dns_query); _pr_dns_qlist(dns_query); } while (0)
-#define PR_DNS_C do { LOG("DNS: %s: c=%p", __func__, dns_cache); _pr_dns_clist(dns_cache); } while (0)
+#define PR_DNS_Q do { LOG("DNS: %s %c", __func__, 'q'); _pr_dns_qlist(dns_query); } while (0)
+#define PR_DNS_C do { LOG("DNS: %s %c", __func__, 'c'); _pr_dns_clist(dns_cache); } while (0)
 static void _pr_dns_qlist(GSList *qlist) {
   int i = 0;
   for (GSList *p = qlist; p; p = p->next, i++) {
     t_dns_elem *data = p->data; if (!data) continue;
-    DNS_DEBUG("q[%d]: addr=%s name=%s refs=%p", i, data->host.addr, data->host.name, data->refs);
-    print_refs(data->refs, "DNS:  ");
+    DNS_DEBUG("%c[%d]: addr=%s name=%s", 'q', i, data->host.addr, data->host.name);
+    print_refs(data->refs, "DNS: ");
   }
 }
 static void _pr_dns_clist(GSList *clist) {
   int i = 0;
   for (GSList *p = clist; p; p = p->next, i++) {
     t_host *c = p->data; if (!c) continue;
-    DNS_DEBUG("c[%d]: addr=%s name=%s", i, c->addr, c->name);
+    DNS_DEBUG("%c[%d]: addr=%s name=%s", 'c', i, c->addr, c->name);
   }
 }
 #else
@@ -95,10 +95,11 @@ static void dns_cache_update(char *addr, char *name) {
   host = g_malloc0(sizeof(t_host));
   if (host) {
     host->addr = g_strndup(addr, MAXHOSTNAME);
-    host->name = g_strndup(name ? name : unkn_field, MAXHOSTNAME);
+    host->name = g_strndup(name ? name : UNKN_FIELD, MAXHOSTNAME);
     if (host->addr && host->name) {
       if (list_add_nodup(&dns_cache, host, host_cmp, DNS_CACHE_MAX)) {
-        LOG("dns cache updated with addr=%s name=%s", host->addr, host->name);
+        LOG("%s: %s=%s %s=%s", DNS_CUP_HDR,
+          ADDR_HDR, host->addr, NAME_HDR, mnemo(host->name));
         PR_DNS_C;
         return;
       }
@@ -118,7 +119,7 @@ static t_dns_elem* dns_query_save(const char *addr, t_hop *hop, int ndx) {
     if (list_add_ref(&elem->refs, hop, ndx)) {
       GSList *added = list_add_nodup(&dns_query, elem, dns_query_cmp, DNS_QUERY_MAX);
       if (added) {
-        DNS_DEBUG("%s(%s) hop[%d] host[%d]=%s", __func__, addr, hop->at, ndx, hop->host[ndx].addr);
+        DNS_DEBUG("%s(%s) hop=%d addr[%d]=%s", __func__, addr, hop->at, ndx, hop->host[ndx].addr);
         PR_DNS_Q;
         return added->data;
       }
@@ -137,7 +138,7 @@ static t_dns_elem* dns_query_fill(char *addr, t_hop *hop, int ndx) {
     if (!list_add_ref(&found->refs, hop, ndx)) FAILX(addr, "add ref");
     return NULL;
   }
-  DNS_DEBUG("%s(%s) hop[%d] host[%d]=%s", __func__, addr, hop->at, ndx, hop->host[ndx].addr);
+  DNS_DEBUG("%s(%s) hop=%d addr[%d]=%s", __func__, addr, hop->at, ndx, hop->host[ndx].addr);
   return dns_query_save(addr, hop, ndx);
 }
 
@@ -172,7 +173,7 @@ void dns_lookup(t_hop *hop, int ndx) {
     UPD_NSTR(hop->host[ndx].name, cached->name, MAXHOSTNAME);
     if (hop->cached)    hop->cached    = false;
     if (hop->cached_nl) hop->cached_nl = false;
-    DNS_DEBUG("cache hit[%d,%d]: addr=%s -> name=%s", hop->at, ndx, addr, cached->name);
+    DNS_DEBUG("cache hit[%d,%d]: %s -> %s", hop->at, ndx, addr, cached->name);
     return;
   }
   PR_DNS_Q;

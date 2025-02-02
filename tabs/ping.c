@@ -354,7 +354,7 @@ void pingtab_update(void) {
 }
 
 void pingtab_vis_rows(int upto) {
-  LOG("set upto %d visible rows", upto);
+//  LOG("%s: %s %d", VISROWS_HDR, UPTO_HDR, upto);
   t_listline *line = listbox.bodylines;
   for (int i = 0; line && (i < MAXTTL); i++, line++) {
     gboolean vis = (i >= opts.range.min) && (i < upto);

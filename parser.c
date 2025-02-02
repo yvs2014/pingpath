@@ -87,8 +87,8 @@ static GRegex* compile_regex(const char *pattern, GRegexCompileFlags flags) {
   GError *err = NULL;
   GRegex *regex = g_regex_new(pattern, flags, 0, &err);
   if (err) {
-    WARN("regex PATTERN: %s", pattern);
-    WARN("regex ERROR: %s", err->message);
+    WARN("%s: %s: %s", REGEX_HDR, PATT_HDR,  pattern);
+    WARN("%s: %s: %s", REGEX_HDR, ERROR_HDR, err->message);
     g_error_free(err);
   }
   return regex;
@@ -219,15 +219,18 @@ static char* split_pair(char **pstr, int ch, gboolean lazy) {
 static inline gboolean parser_valid_char0(char *str) { return g_regex_match(hostname_char0_regex, str, 0, NULL); }
 static inline gboolean parser_valid_host(char *host) { return g_regex_match(hostname_chars_regex, host, 0, NULL); }
 
-#define HNAME_ERROR(cause) PARSER_MESG("Hostname %s", cause)
-
 static gboolean target_meet_all_conditions(char *str, int len, int max) {
+#define HOSTNAME_ERROR(fmt, ...) do {                 \
+  PARSER_MESG("%s: " fmt, HOSTNAME_HDR, __VA_ARGS__); \
+  return false;                                       \
+} while (0)
   // rfc1123,rfc952 restrictions
-  if (len > max) { PARSER_MESG("Hostname: out of length limit (%d > %d)", len, max); return false; }
-  if (str[len - 1] == '-') { HNAME_ERROR("cannot end with hyphen"); return false; }
-  if (!parser_valid_char0(str)) { HNAME_ERROR("must start with a letter or a digit"); return false; }
-  if (!parser_valid_host(str)) { HNAME_ERROR("contains not allowed characters"); return false; }
+  if (len > max)                HOSTNAME_ERROR("%s (%d)", OVERLEN_HDR, max);
+  if (str[len - 1] == '-')      HOSTNAME_ERROR("%s", ENDHYPEN_ERR);
+  if (!parser_valid_char0(str)) HOSTNAME_ERROR("%s", STARTCHAR_ERR);
+  if (!parser_valid_host(str))  HOSTNAME_ERROR("%s", INVALCHAR_ERR);
   return true;
+#undef HOSTNAME_ERROR
 }
 
 static char* parser_valid_int(const char *option, const char *str) {
@@ -235,8 +238,11 @@ static char* parser_valid_int(const char *option, const char *str) {
   if (!cpy) return NULL;
   char *val = g_strstrip(cpy);
   gboolean valid = g_regex_match(str_rx[OPT_TYPE_INT].regex, val, 0, NULL);
-  if (valid) { val = (val && val[0]) ? g_strdup(val) : NULL; }
-  else { PARSER_MESG("%s: no match %s regex", option, str_rx[OPT_TYPE_INT].pattern); val = NULL; }
+  if (valid) val = (val && val[0]) ? g_strdup(val) : NULL;
+  else {
+    PARSER_MESG("%s: %s: %s", option, RENOMATCH_ERR, str_rx[OPT_TYPE_INT].pattern);
+    val = NULL;
+  }
   g_free(cpy);
   return val;
 }
@@ -245,7 +251,7 @@ static char* parser_valid_int(const char *option, const char *str) {
 // pub
 //
 gboolean parser_init(void) {
-  multiline_regex = compile_regex("\\n", G_REGEX_MULTILINE);
+  multiline_regex      = compile_regex("\\n", G_REGEX_MULTILINE);
   hostname_char0_regex = compile_regex("^[" DIGIT_OR_LETTER ":]", 0);
   hostname_chars_regex = compile_regex("^[" DIGIT_OR_LETTER ":.-]+$", 0);
   gboolean okay = multiline_regex && hostname_char0_regex && hostname_chars_regex;
@@ -279,7 +285,7 @@ gboolean parser_mmint(const char *str, const char *option, t_minmax minmax, int 
       okay = !errno && MM_OKAY(minmax, len);
       errno = 0; g_free(val);
       if (okay) { if (value) *value = len; }
-      else PARSER_MESG("%s: out of range[%d,%d]", option, minmax.min, minmax.max)
+      else PARSER_MESG("%s: %s: %d <=> %d", option, OUTRANGE_ERR, minmax.min, minmax.max)
   }}
   return okay;
 }
@@ -294,9 +300,9 @@ char* parser_str(const char *str, const char *option, unsigned cat) {
         gboolean valid = g_regex_match(str_rx[cat].regex, val, 0, NULL);
         if (valid) return val;
       } else WARN("g_strdup()");
-      PARSER_MESG("%s: no match %s regex", option, str_rx[cat].pattern);
+      PARSER_MESG("%s: %s: %s", option, RENOMATCH_ERR, str_rx[cat].pattern);
     } else WARN("g_strndup()");
-  } else WARN("wrong string category: %d", cat);
+  } else WARN("%s: %d", WRONGCAT_ERR, cat);
   return NULL;
 }
 
@@ -310,14 +316,17 @@ char* parser_valid_target(const char *target) {
   return hostname;
 }
 
-#define DUP_WITH_MARK(dst, val) { \
-  if (dst) { CLR_STR(dst); (dst) = g_strdup_printf("%s*", val); } \
-  else (dst) = g_strndup(val, MAXHOSTNAME); }
 
 void parser_whois(char *buff, t_whois *welem) {
+#define DUP_WITH_MARK(dst, val) do {          \
+  if (dst) {                                  \
+    CLR_STR(dst);                             \
+    (dst) = g_strdup_printf("%s*", val);      \
+  } else (dst) = g_strndup(val, MAXHOSTNAME); \
+} while (0)
+#define SKIP_PREFIX "AS" /* included by server */
   // if there are multiple sources (despite -m query), take the last tag and mark it with '*'
-  static const char skip_as_prfx[] = "AS";
-  static unsigned as_prfx_len = sizeof(skip_as_prfx) - 1;
+  int skip_len = sizeof(SKIP_PREFIX) - 1;
   if (!buff || !welem) return;
   memset(welem, 0, sizeof(*welem)); // BUFFNOLINT
   char *str = NULL;
@@ -330,9 +339,9 @@ void parser_whois(char *buff, t_whois *welem) {
       if (STR_EQ(str, WHOIS_RT_TAG)) ndx = WHOIS_RT_NDX;
       else if (STR_EQ(str, WHOIS_AS_TAG)) {
         ndx = WHOIS_AS_NDX;
-        size_t len = strnlen(val, MAXHOSTNAME);
-        if ((len > as_prfx_len) && !g_ascii_strncasecmp(val, skip_as_prfx, as_prfx_len))
-          val += as_prfx_len;
+        int len = strnlen(val, MAXHOSTNAME);
+        if ((len > skip_len) && !g_ascii_strncasecmp(val, SKIP_PREFIX, skip_len))
+          val += skip_len;
       } else if (STR_EQ(str, WHOIS_DESC_TAG)) {
         ndx = WHOIS_DESC_NDX;
         char *cc = split_pair(&val, WHOIS_CCDEL, GREEDY);
@@ -341,7 +350,11 @@ void parser_whois(char *buff, t_whois *welem) {
       if (ndx >= 0) DUP_WITH_MARK(welem->elem[ndx], val);
     }
   }
-  for (int i = 0; i < WHOIS_NDX_MAX; i++) if (!welem->elem[i]) welem->elem[i] = g_strdup(unkn_whois);
+  for (int i = 0; i < WHOIS_NDX_MAX; i++)
+    if (!welem->elem[i])
+      welem->elem[i] = g_strdup(UNKN_FIELD);
+#undef DUP_WITH_MARK
+#undef SKIP_PREFIX
 }
 
 static gboolean parser_valint(const char* inp, int* outp, const char *option) {

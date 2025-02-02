@@ -39,8 +39,8 @@
 #define OPT_AUXMENU_TIP  _("Auxiliary")
 
 // actions
-#define ACT_START_HDR    _("Start")
-#define ACT_STOP_HDR     _("Stop")
+#define ACT_START_HDR    _("_Start")
+#define ACT_STOP_HDR     _("_Stop")
 #define ACT_PAUSE_HDR    _("Pause")
 #define ACT_RESUME_HDR   _("Resume")
 #define ACT_RESET_HDR    _("Reset")
@@ -114,8 +114,7 @@
 #define ELEM_DESC_HDR    _("Desc")
 #define ELEM_DESC_HEADER _("Description")
 #define ELEM_DESC_TIP    _("Short description in free form")
-#define ELEM_RT_HDR      _("Route")
-#define ELEM_RT_HEADER   _("Network Route")
+#define ELEM_RT_HDR      _("Network")
 #define ELEM_RT_TIP      _("Network prefix")
 #define ELEM_LOSS_HDR    _("Loss")
 #define ELEM_LOSS_HEADER _("Lost")
@@ -238,7 +237,6 @@
 #define CLI_ROPT_C_HDR  _("CSV")
 #define CLI_ROPT_J_HDR  _("JSON")
 #define CLI_TOPT_HDR    _("Theme bits")
-#define CLI_TOVAL_HDR   _("validate")
 #define CLI_MUT_EXC_HDR _("Mutually exclusive options")
 #define CLI_APPFEAT_HDR _("Build features")
 #define CLI_LIBVER_HDR  _("Runtime lib versions")
@@ -248,7 +246,7 @@
 #define CLI_RECAP_HDR   _("Non-interactive mode with summary at exit")
 
 // misc
-#define PING_HDR        _("ping")
+#define PING_HDR        _("Ping")
 #define HOP_HDR         _("hop")
 #define MS_UNIT         _("ms")
 #define UNKN_HDR        _("unknown")
@@ -264,11 +262,44 @@
 #define RUNTIME_EXP     _("runtime expired")
 #define INP_FAILED      _("stdin failed")
 #define RELRES_HDR      _("release resources")
-#define STOP_HDR        _("stop")
+#define STOP_HDR        _("Stop")
+#define EOF_HDR         _("finish")
+#define BYREQ_HDR       _("by request")
+#define VISROWS_HDR     _("Visible rows")
+#define UPTO_HDR        _("upto")
 
 #define SNAPBOX_HINT _("Snap container related:\n" \
   "if minimal ping's slot (network-observe) is not autoconnected (permission denied),\n" \
   "it can be connected with the following command:\n" \
   "  snap connect pingpath:network-observe :network-observe")
+
+// logging, warnings
+#define NDX_HDR       _("ndx")  /* index */
+#define ADDR_HDR      _("addr") /* address */
+#define NAME_HDR      _("name") /* hostname */
+#define REGEX_HDR     _("regex")
+#define PATT_HDR      _("PATTERN")
+#define HOSTNAME_HDR  _("Hostname")
+#define OVERLEN_HDR   _("Out of length limit")
+#define ENDHYPEN_ERR  _("Cannot end with hyphen")
+#define STARTCHAR_ERR _("Must start with a letter or a digit")
+#define INVALCHAR_ERR _("Contains not allowed characters")
+#define RENOMATCH_ERR _("No regex match")
+#define WRONGCAT_ERR  _("Wrong category")
+#define OUTRANGE_ERR  _("Out of range")
+#define INITFAIL_ERR  _("Init failed")
+#define NOICON_ERR    _("No icon")
+#define NOSLOTS_ERR   _("No free slots")
+#define SKIPDUP_HDR   _("skip duplicates")
+#define DNS_CUP_HDR   _("DNS cache update")
+#define HOST_CUP_HDR  _("Host cache update")
+#define WHOIS_CUP_HDR _("Whois cache update")
+#define EMPTY_HDR     _("<empty>")
+#define REACHED_HDR   _("Target is reached")
+#define AFTER_TGT_HDR _("behind the target")
+#define UNREACH_HDR   _("unreachable")
+#define ORIG_CHNG_HDR _("origin changed")
+#define NOBUFF_ERR    _("No space in buffer")
+#define NOCONN_ERR    _("Connection failed")
 
 #endif

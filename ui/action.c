@@ -169,7 +169,7 @@ static void on_startstop(GSimpleAction *action G_GNUC_UNUSED,
 {
   if (!opts.target) return;
   MI_LOG(MENU_SA_START, menu_sa_label);
-  if (stat_timer) pinger_stop("by request"); else pinger_start();
+  if (stat_timer) pinger_stop(BYREQ_HDR); else pinger_start();
   appbar_update();
 }
 

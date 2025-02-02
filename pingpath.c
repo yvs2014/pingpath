@@ -25,7 +25,7 @@
 
 #define APPFLAGS G_APPLICATION_NON_UNIQUE
 
-#define APPQUIT(fmt, ...) { WARN("init " fmt " failed", __VA_ARGS__); \
+#define APPQUIT(fmt, ...) { WARN(fmt ": %s", __VA_ARGS__, INITFAIL_ERR); \
   g_application_quit(G_APPLICATION(app)); exit_code = EXIT_FAILURE; return; }
 
 static int exit_code = EXIT_SUCCESS;
@@ -78,7 +78,7 @@ static void on_app_activate(GtkApplication* app, gpointer user_data G_GNUC_UNUSE
   { const char *icons[] = {APPNAME, NULL};
     const char *ico = is_sysicon(icons);
     if (ico) gtk_window_set_icon_name(GTK_WINDOW(win), ico);
-    else VERBOSE("no '%s' icon", APPNAME);
+    else VERBOSE("%s: %s", NOICON_ERR, APPNAME);
   }
   if (!appbar_init(app, win)) APPQUIT("%s", "appbar");
   GtkWidget *nb = gtk_notebook_new();

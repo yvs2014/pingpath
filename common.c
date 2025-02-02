@@ -5,9 +5,6 @@
 
 #include "common.h"
 
-const char *unkn_field = ""; // "?" "???"
-const char *unkn_whois = "";
-
 gboolean cli;
 int verbose, activetab = TAB_PING_NDX;
 
@@ -310,6 +307,8 @@ const char *timestamp(char *ts, size_t size) {
   return ts;
 }
 
+inline const char *mnemo(const char *str) { return (str && str[0]) ? str : EMPTY_HDR; }
+
 char* rtver(int ndx) {
   int ver = 0;
   switch (ndx) {
@@ -359,8 +358,8 @@ void print_refs(GSList *refs, const char *prefix) {
   for (GSList* list = refs; list; list = list->next, i++) {
     t_ref *ref = list->data; if (!ref) continue;
     t_host *host = &ref->hop->host[ref->ndx];
-    LOG("%sref[%d]: hop=%p: ndx=%d: addr=%s name=%s", prefix ? prefix : "", i,
-      ref->hop, ref->ndx, host->addr, host->name);
+    LOG("%s #%d: %s=%d %s=%s %s=%s", prefix ? prefix : "", i,
+      NDX_HDR, ref->ndx, ADDR_HDR, host->addr, NAME_HDR, host->name);
   }
 }
 #endif

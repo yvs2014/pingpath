@@ -419,7 +419,7 @@ static void process_stopped(GObject *process, GAsyncResult *result, t_proc *proc
   }
   if (proc) {
     if (G_IS_OBJECT(proc->proc)) {
-      LOG("%s[%d]: %s", PING_HDR, proc->ndx, RELRES_HDR);
+      LOG("%s[%d]: %s", PING_HDR, proc->ndx + 1, RELRES_HDR);
       CLEAR_G_OBJECT(&proc->proc);
     }
     proc->proc = NULL;
@@ -455,7 +455,7 @@ static void on_stdout(GObject *stream, GAsyncResult *result, t_proc *proc) {
     parser_parse(proc->ndx, proc->out);
     RESET_ISTREAM(stream, proc->out, on_stdout, proc);
   } else {           // EOF
-    pinger_nth_stop(proc->ndx, "EOF");
+    pinger_nth_stop(proc->ndx, EOF_HDR);
     stat_last_tx(proc->ndx);
   }
 }
@@ -490,7 +490,7 @@ static gboolean create_ping(int at, t_proc *proc) {
   if (!proc->out) proc->out = g_malloc0(BUFF_SIZE);
   if (!proc->err) proc->err = g_malloc0(BUFF_SIZE);
   if (!proc->out || !proc->err) {
-    WARN("%s: %s[%d]: g_malloc0()", ERROR_HDR, HOP_HDR, at);
+    WARN("%s: #%d: g_malloc0()", ERROR_HDR, at + 1);
     return false;
   }
   const char* argv[MAX_ARGC] = {0}; int argc = 0;
@@ -548,12 +548,11 @@ static gboolean create_ping(int at, t_proc *proc) {
       char* deb_argv[MAX_ARGC];
       memcpy(deb_argv, argv, sizeof(deb_argv)); // BUFFNOLINT
       char *deb_argv_s = g_strjoinv(", ", deb_argv);
-      DEBUG("%s[%s=%d]: argv[%s]", PING_HDR, HOP_HDR, at + 1, deb_argv_s);
+      DEBUG("%s[%d]: argv[%s]", PING_HDR, at + 1, deb_argv_s);
       g_free(deb_argv_s);
     }
 #endif
-    LOG("%s[%s=%d]: pid=%s", PING_HDR, HOP_HDR, at + 1,
-      g_subprocess_get_identifier(proc->proc));
+    LOG("%s[%d]: pid=%s", PING_HDR, at + 1, g_subprocess_get_identifier(proc->proc));
   } else {
     pinger_nth_stop(at, INP_FAILED);
     proc->active = false;
@@ -566,7 +565,7 @@ static gboolean create_ping(int at, t_proc *proc) {
 
 static gboolean pinger_on_expired(gpointer user_data G_GNUC_UNUSED) {
   if (!atquit) for (int i = 0; i < MAXTTL; i++) if (pings[i].active) {
-    LOG("%s[%d]: %s", HOP_HDR, i, PROC_EXP_HDR);
+    LOG("%s[%d]: %s", HOP_HDR, i + 1, PROC_EXP_HDR);
     pinger_nth_stop(i, RUNTIME_EXP);
   }
   exp_timer = 0; return G_SOURCE_REMOVE;
@@ -619,7 +618,7 @@ void pinger_nth_stop(int nth, const char* reason) {
       if (error) {
         WARN("%s(%d): pid=%s: %s", __func__, nth, id, error->message);
         g_error_free(error);
-      } else LOG("%s[%s=%d] %s (rc=%d)", PING_HDR, HOP_HDR,
+      } else LOG("%s[%d] %s (rc=%d)", PING_HDR,
         proc->ndx + 1, DONE_HDR, g_subprocess_get_status(proc->proc));
     }
     if (!id) process_stopped(NULL, NULL, proc);

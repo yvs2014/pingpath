@@ -69,8 +69,8 @@ msgid "0x"
 msgstr "0x"
 
 # ping name
-msgid "ping"
-msgstr "пінг"
+msgid "Ping"
+msgstr "Пінг"
 
 # hop#N header
 msgid "hop"
@@ -145,11 +145,11 @@ msgid "Auxiliary"
 msgstr "Додатково"
 
 # action-menu: 1
-msgid "Start"
+msgid "_Start"
 msgstr "Розпочати"
 
 # action-menu: 2
-msgid "Stop"
+msgid "_Stop"
 msgstr "Зупинити"
 
 # action-menu: 3
@@ -349,14 +349,10 @@ msgid "Short description in free form"
 msgstr "Стислий опис у вільній формі"
 
 # trace-info: 1.5.0
-msgid "Route"
-msgstr "Шлях"
+msgid "Network"
+msgstr "Мережа"
 
 # trace-info: 1.5.1
-msgid "Network Route"
-msgstr "Мережевий шлях"
-
-# trace-info: 1.5.2
 msgid "Network prefix"
 msgstr "Мережевий префікс"
 
@@ -769,34 +765,30 @@ msgid "Theme bits"
 msgstr "Біти теми"
 
 # CLI misc: message17
-msgid "validate"
-msgstr "перевірка"
-
-# CLI misc: message18
 msgid "Mutually exclusive options"
 msgstr "Взаємовиключні опції"
 
-# CLI misc: message19
+# CLI misc: message18
 msgid "Build features"
 msgstr "Властивості програми"
 
-# CLI misc: message20
+# CLI misc: message19
 msgid "Runtime lib versions"
 msgstr "Версіі бібліотек"
 
-# CLI misc: message21
+# CLI misc: message20
 msgid "Skipping argument"
 msgstr "Пропускаємо аргумента"
 
-# CLI misc: message22
+# CLI misc: message21
 msgid "Unknown option"
 msgstr "Невідома опція"
 
-# CLI misc: message23
+# CLI misc: message22
 msgid "No goal"
 msgstr "Нема мети"
 
-# CLI misc: message24
+# CLI misc: message23
 msgid "Non-interactive mode with summary at exit"
 msgstr "Неінтерактивний режим із резюме на виході"
 
@@ -897,8 +889,24 @@ msgid "at exit"
 msgstr "на виході"
 
 # misc: stop pid=N
-msgid "stop"
-msgstr "зупиняємо"
+msgid "Stop"
+msgstr "Зупиняємо"
+
+# misc: stop with EOF
+msgid "finish"
+msgstr "фініш"
+
+# misc: stop by request
+msgid "by request"
+msgstr "по запиту"
+
+# misc: set visible rows
+msgid "Visible rows"
+msgstr "Видимі рядки"
+
+# misc: upto
+msgid "upto"
+msgstr "до"
 
 # misc: snap sandnox hint
 msgid ""
@@ -911,4 +919,112 @@ msgstr ""
 "якщо мінімально необхідний слот (network-observe) не підключено автоматично (permission denied),\n"
 "його можна підключити наступною командою:\n"
 "  snap connect pingpath:network-observe :network-observe"
+
+# log: index=
+msgid "ndx"
+msgstr "індекс"
+
+# log: address=
+msgid "addr"
+msgstr "адреса"
+
+# log: hostame=
+msgid "name"
+msgstr "ім'я"
+
+# warn: regex
+msgid "regex"
+msgstr "регулярний вираз"
+
+# warn: pattern
+msgid "PATTERN"
+msgstr "ШАБЛОН"
+
+# logging: hostname
+msgid "Hostname"
+msgstr "Хост"
+
+# warn: overlen
+msgid "Out of length limit"
+msgstr "Перебільшує обмеження по довжині"
+
+# warn: endhyphen char
+msgid "Cannot end with hyphen"
+msgstr "Не може закінчуватися дефісом"
+
+# warn: invalid start char
+msgid "Must start with a letter or a digit"
+msgstr "Має починатися з букви чи цифри"
+
+# warn: not allowed chars
+msgid "Contains not allowed characters"
+msgstr "Містить недозволенні символи"
+
+# warn: no re match
+msgid "No regex match"
+msgstr "Не відповідає шаблону"
+
+# warn: wrong string category
+msgid "Wrong category"
+msgstr "Некоректна категорія"
+
+# warn: out of range
+msgid "Out of range"
+msgstr "Поза діапазоном"
+
+# warn: init error
+msgid "Init failed"
+msgstr "Помилка ініціалізації"
+
+# warn: no icon found
+msgid "No icon"
+msgstr "Відсутня іконка"
+
+# warn: no free slots
+msgid "No free slots"
+msgstr "Немає вільних слотів"
+
+# log: reason to limit visible rows
+msgid "skip duplicates"
+msgstr "пропуск дублікатів"
+
+# log: dns cache update
+msgid "DNS cache update"
+msgstr "Оновлення DNS кешу"
+
+# log: host cache update
+msgid "Host cache update"
+msgstr "Оновлення кешу хоста"
+
+# log: whois cache update
+msgid "Whois cache update"
+msgstr "Оновлення кешу whois"
+
+# log: smth empty
+msgid "<empty>"
+msgstr "<нема>"
+
+# log: goal is achieved
+msgid "Target is reached"
+msgstr "Ціль досягнута"
+
+# log: behind the target
+msgid "behind the target"
+msgstr "поза цілю"
+
+# log: behind the target
+msgid "unreachable"
+msgstr "недосяжно"
+
+# log: whois origin changed
+msgid "origin changed"
+msgstr "зміна походження"
+
+# log: no buffer
+msgid "No space in buffer"
+msgstr "Немає місця в буфері"
+
+# log: no connection
+msgid "Connection failed"
+msgstr "Помилка з'єднання"
 

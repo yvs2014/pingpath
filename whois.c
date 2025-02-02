@@ -35,25 +35,26 @@ static GSList *whois_cache;
 #endif
 
 #if WHOIS_DEBUGGING && WHOIS_DEBUGGING > 1
-#define PR_WHOIS_Q do { LOG("WHOIS: %s: q=%p", __func__, whois_query); _pr_whois_qlist(whois_query); } while (0)
-#define PR_WHOIS_C do { LOG("WHOIS: %s: c=%p", __func__, whois_cache); _pr_whois_clist(whois_cache); } while (0)
+#define PR_WHOIS_Q do { LOG("WHOIS: %s %c", __func__, 'q'); _pr_whois_qlist(whois_query); } while (0)
+#define PR_WHOIS_C do { LOG("WHOIS: %s %c", __func__, 'c'); _pr_whois_clist(whois_cache); } while (0)
 void _pr_whois_qlist(GSList *qlist) {
   int i = 0;
   for (GSList *p = qlist; p; p = p->next, i++) {
     t_wq_elem *q = p->data; if (!q) continue;
     t_whois *w = &q->data.whois;
-    WHOIS_DEBUG("c[%d]: refs=%p addr=%s as=%s cc=%s rt=%s desc=%s", i, q->refs, q->data.addr,
+    WHOIS_DEBUG("%c[%d]: addr=%s as=%s cc=%s net=%s desc=%s", 'q', i, q->data.addr,
       w->elem[WHOIS_AS_NDX], w->elem[WHOIS_CC_NDX],
       w->elem[WHOIS_RT_NDX], w->elem[WHOIS_DESC_NDX]);
-    print_refs(q->refs, "WHOIS:  ");
+    print_refs(q->refs, "WHOIS: ");
   }
 }
 void _pr_whois_clist(GSList *clist) {
   int i = 0;
   for (GSList *p = clist; p; p = p->next, i++) {
     t_wc_elem *c = p->data; if (!c) continue;
-    WHOIS_DEBUG("c[%d]: addr=%s as=%s cc=%s rt=%s desc=%s", i, c->addr, c->whois.elem[WHOIS_AS_NDX],
-      c->whois.elem[WHOIS_CC_NDX], c->whois.elem[WHOIS_RT_NDX], c->whois.elem[WHOIS_DESC_NDX]);
+    WHOIS_DEBUG("%c[%d]: addr=%s as=%s cc=%s net=%s desc=%s", 'c', i, c->addr,
+      c->whois.elem[WHOIS_AS_NDX], c->whois.elem[WHOIS_CC_NDX],
+      c->whois.elem[WHOIS_RT_NDX], c->whois.elem[WHOIS_DESC_NDX]);
   }
 }
 #else
@@ -129,7 +130,7 @@ static void whois_query_complete(t_ref *ref, t_wq_elem *elem) {
     if (STR_EQ(orig, addr))
       whois_copy_elems(&elem->data.whois, &hop->whois[ndx], hop->wcached, hop->wcached_nl);
     else
-      LOG("whois(%s) origin is changed: %s", addr, orig);
+      LOG("whois(%s): %s: %s", addr, ORIG_CHNG_HDR, orig);
   }
 }
 
@@ -163,9 +164,12 @@ static void whois_cache_update(char *addr, t_whois *whois) {
     for (int i = 0; i < WHOIS_NDX_MAX; i++) UPD_NSTR(cached->elem[i], whois->elem[i], MAXHOSTNAME);
     if (cache->addr && whois_elems_not_null(cached)) {
       if (list_add_wc(&whois_cache, cache)) {
-        LOG("whois cache updated with addr=%s as=%s cc=%s rt=%s desc=%s", cache->addr,
-          cached->elem[WHOIS_AS_NDX], cached->elem[WHOIS_CC_NDX],
-          cached->elem[WHOIS_RT_NDX], cached->elem[WHOIS_DESC_NDX]);
+        LOG("%s: %s=%s %s=%s %s=%s %s=%s %s=%s", WHOIS_CUP_HDR,
+          ADDR_HDR,      cache->addr,
+          ELEM_AS_HDR,   mnemo(cached->elem[WHOIS_AS_NDX]),
+          ELEM_CC_HDR,   mnemo(cached->elem[WHOIS_CC_NDX]),
+          ELEM_RT_HDR,   mnemo(cached->elem[WHOIS_RT_NDX]),
+          ELEM_DESC_HDR, mnemo(cached->elem[WHOIS_DESC_NDX]));
         PR_WHOIS_C;
         return;
       }
@@ -223,7 +227,7 @@ static gboolean whois_reset_read(GObject *stream, ssize_t size, t_wq_elem *elem)
     g_input_stream_read_async(G_INPUT_STREAM(stream), off, left, G_PRIORITY_DEFAULT, NULL,
       (GAsyncReadyCallback)on_whois_read, elem);
   } else {
-    WARN("buffer[%d]: no space left", NET_BUFF_SIZE);
+    WARN("%s: %d", NOBUFF_ERR, NET_BUFF_SIZE);
     elem->buff[NET_BUFF_SIZE - 1] = 0;
   }
   return reset_read;
@@ -279,7 +283,11 @@ static void on_whois_connect(GObject* source, GAsyncResult *result, t_wq_elem *e
         return;
       }
     } else FAILX(elem->input ? "output" : "input", "get stream");
-  } else ERRLOG("whois connection failed");
+  } else {
+    if (error) LOG("whois %s" ": rc=%d, %s", NOCONN_ERR, error->code, error->message);
+    else       LOG("whois %s" ": %s", NOCONN_ERR, UNKN_ERR);
+  }
+  g_error_free(error);
   whois_query_close(elem);
 }
 

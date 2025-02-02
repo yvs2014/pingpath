@@ -9,7 +9,6 @@
 #include "pinger.h"
 #include "ui/clipboard.h"
 
-const char *log_empty  = "<empty>";
 static int loglines;
 
 static t_tab logtab = { .self = &logtab, .name = "log-tab",
