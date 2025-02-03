@@ -20,8 +20,8 @@ static void _pr_dns_qlist(GSList *qlist) {
   int i = 0;
   for (GSList *p = qlist; p; p = p->next, i++) {
     t_dns_elem *data = p->data; if (!data) continue;
-    DNS_DEBUG("%c[%d]: addr=%s name=%s", 'q', i,
-      data->host.addr, data->host.name ? data->host.name : "");
+    DNS_DEBUG("%c[%d]: %s=%s %s=%s", 'q', i,
+      ADDR_HDR, data->host.addr, NAME_HDR, mnemo(data->host.name));
     print_refs(data->refs, LOG_DNS_HDR);
   }
 }
@@ -29,8 +29,8 @@ static void _pr_dns_clist(GSList *clist) {
   int i = 0;
   for (GSList *p = clist; p; p = p->next, i++) {
     t_host *c = p->data; if (!c) continue;
-    DNS_DEBUG("%c[%d]: addr=%s name=%s", 'c', i,
-      c->addr, c->name ? c->name : "");
+    DNS_DEBUG("%c[%d]: %s=%s %s=%s", 'c', i,
+      ADDR_HDR, c->addr, NAME_HDR, mnemo(c->name));
   }
 }
 #else
@@ -74,9 +74,10 @@ static void dns_query_complete(t_ref *ref, t_dns_elem *elem) {
         UPD_NSTR(orig->name, elem->host.name, MAXHOSTNAME);
         if (hop->cached) hop->cached = false;
         if (hop->cached_nl) hop->cached_nl = false;
-        DNS_DEBUG("%s(%d,%d) addr=%s name=%s", __func__, hop->at, ndx,
-          orig->addr, orig->name ? orig->name : "");
-      } else LOG("dns(%s) origin is changed: %s", elem->host.addr, orig->addr);
+        DNS_DEBUG("%s [%d,%d]: %s=%s %s=%s", DONE_HDR, hop->at, ndx,
+          ADDR_HDR, orig->addr, NAME_HDR, mnemo(orig->name));
+      } else LOG("%s: %s: %s -> %s", LOG_DNS_HDR, ORIG_CHNG_HDR,
+        orig->addr, elem->host.addr);
     }
   }
 }
@@ -116,7 +117,8 @@ static t_dns_elem* dns_query_save(const char *addr, t_hop *hop, int ndx) {
     if (list_add_ref(&elem->refs, hop, ndx)) {
       GSList *added = list_add_nodup(&dns_query, elem, dns_query_cmp, DNS_QUERY_MAX);
       if (added) {
-        DNS_DEBUG("%s(%s) hop=%d addr[%d]=%s", __func__, addr, hop->at, ndx, hop->host[ndx].addr);
+        DNS_DEBUG("%s: %s %s=%d %s[%d]=%s", SAVEQ_HDR, addr,
+          HOP_HDR, hop->at, ADDR_HDR, ndx, hop->host[ndx].addr);
         PR_DNS_Q;
         return added->data;
       }
@@ -135,7 +137,8 @@ static t_dns_elem* dns_query_fill(char *addr, t_hop *hop, int ndx) {
     if (!list_add_ref(&found->refs, hop, ndx)) FAILX(addr, "add ref");
     return NULL;
   }
-  DNS_DEBUG("%s(%s) hop=%d addr[%d]=%s", __func__, addr, hop->at, ndx, hop->host[ndx].addr);
+  DNS_DEBUG("%s %s: %s=%d %s[%d]=%s", LOOKUP_HDR, addr, HOP_HDR, hop->at + 1,
+   ADDR_HDR, ndx, hop->host[ndx].addr);
   return dns_query_save(addr, hop, ndx);
 }
 
@@ -143,9 +146,9 @@ static void on_dns_lookup(GObject* src, GAsyncResult *result, t_dns_elem *elem) 
   GError *error = NULL;
   char *name = g_resolver_lookup_by_address_finish(G_RESOLVER(src), result, &error);
   if (elem) {
-    if (!name) DNS_DEBUG("%s unresolved", elem->host.addr);
+    if (!name) DNS_DEBUG("%s: %s", UNRES_HDR, elem->host.addr);
     elem->host.name = name;
-    DNS_DEBUG("%s(%s) name=%s", __func__, elem->host.addr, name ? name : "");
+    DNS_DEBUG("%s=%s: %s=%s", ADDR_HDR, elem->host.addr, NAME_HDR, mnemo(name));
     PR_DNS_Q;
     dns_cache_update(elem->host.addr, name);
     g_slist_foreach(elem->refs, (GFunc)dns_query_complete, elem);
@@ -170,8 +173,8 @@ void dns_lookup(t_hop *hop, int ndx) {
     UPD_NSTR(hop->host[ndx].name, cached->name, MAXHOSTNAME);
     if (hop->cached)    hop->cached    = false;
     if (hop->cached_nl) hop->cached_nl = false;
-    DNS_DEBUG("cache hit[%d,%d]: addr=%s -> name=%s", hop->at, ndx,
-      addr, cached->name ? cached->name : "");
+    DNS_DEBUG("%s [%d,%d]: %s -> %s=%s", CACHE_HIT_HDR, hop->at, ndx, addr,
+      NAME_HDR, mnemo(cached->name));
     return;
   }
   PR_DNS_Q;
@@ -181,7 +184,7 @@ void dns_lookup(t_hop *hop, int ndx) {
   if (res) {
     GInetAddress *inet_addr = g_inet_address_new_from_string(addr);
     if (inet_addr) {
-      DNS_DEBUG("send query=%s", addr);
+      DNS_DEBUG("%s %s", SENDQ_HDR, addr);
       g_resolver_lookup_by_address_async(res, inet_addr, NULL, (GAsyncReadyCallback)on_dns_lookup, query);
       g_object_unref(inet_addr);
     } else FAIL("g_inet_address_new_from_string()");

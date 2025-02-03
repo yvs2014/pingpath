@@ -11,7 +11,7 @@
 
 #define CLI_SET_ERR do { if (error) { (value && value[0])  \
   ? g_set_error(error, g_quark_from_static_string(""), -1, \
-    "%s: %s: %s", name, CLI_INVAL_HDR, value)              \
+    "%s: %s: %s", name, INVAL_HDR, value)                  \
   : g_set_error(error, g_quark_from_static_string(""), -1, \
     "%s: %s",     name, CLI_NOVAL_HDR); }                  \
 } while (0)
@@ -240,7 +240,7 @@ static gboolean cli_opt_X_pair(const char *value, char tag, const char *name, t_
         okay = cli_opt_X_o(dup, ENT_SPN_GLOBAL, 0, pval);
       } break;
       case F_TAG: if (xnth_nodup(&xpairbits, 5)) okay = cli_opt_X_f(dup, ENT_SPN_FOV, 0); break;
-      default: g_warning("%s: %s: '%c'", name, CLI_BADTAG_HDR, tag);
+      default: g_warning("%s: %s: '%c'", name, BADTAG_HDR, tag);
     }
     g_free(dup);
     if (xpairbits & 1U) {
@@ -259,7 +259,7 @@ static gboolean cli_opt_X(const char *name, const char *value, t_opts *opts, GEr
       okay = false;
       char **pair = g_strsplit(*tagval, "=", 2); // tag=pair
       if ((pair[0] && pair[0][0]) && (pair[1] && pair[1][0])) {
-        if (pair[0][1]) g_warning("%s: %s: %s", name, CLI_BADTAG_HDR, pair[0]);
+        if (pair[0][1]) g_warning("%s: %s: %s", name, BADTAG_HDR, pair[0]);
         else okay = cli_opt_X_pair(pair[1], pair[0][0], name, opts);
       } else g_warning("%s: %s: %s", name, CLI_NOPAIR_HDR, *tagval);
       g_strfreev(pair);
@@ -313,7 +313,7 @@ static void reorder_elems(const char *str, t_elem_desc *desc) {
       int ndx = char2ndx(desc->cat, true, *p);
       int type = char2ndx(desc->cat, false, *p);
       if ((type < 0) || (ndx < 0))
-        WARN("%s: ent=%d elem=%d", CLI_INVAL_HDR, ndx, type);
+        WARN("%s: ent=%d elem=%d", INVAL_HDR, ndx, type);
       else {
         ndx = type2ndx(type);
         if (ndx < 0) WARN("%s: %d", CLI_BADTYPE_HDR, type);
@@ -521,7 +521,7 @@ static gboolean cli_opt_f(const char *name, const char *value, t_opts *opts, GEr
               if (opts) TABON(CLI_2D_DESC);
 #endif
             } else {
-              g_warning("%s:%s: %s: %d", section, optname, CLI_INVAL_HDR, val);
+              g_warning("%s:%s: %s: %d", section, optname, INVAL_HDR, val);
               CLI_SET_ERR;
               return false;
             }
@@ -536,7 +536,7 @@ static gboolean cli_opt_f(const char *name, const char *value, t_opts *opts, GEr
                 g_message("%s: %s", (val == 4) ? OPT_IPV4_HDR : OPT_IPV6_HDR, TOGGLE_ON_HDR);
               }
             } else {
-              g_warning("%s:%s: %s: %d", section, optname, CLI_INVAL_HDR, val);
+              g_warning("%s:%s: %s: %d", section, optname, INVAL_HDR, val);
               CLI_SET_ERR;
               return false;
             }
@@ -739,7 +739,7 @@ static int cli_init_proc(int *pargc, char ***pargv,
         if (pinghost)
           g_message("%s: %s", TARGET_HDR, pinghost);
         else {
-          g_message("%s: %s: %s", TARGET_HDR, CLI_INVAL_HDR, arg);
+          g_message("%s: %s: %s", TARGET_HDR, INVAL_HDR, arg);
           g_strfreev(target); g_option_context_free(context); return EXIT_FAILURE;
         }
         g_free(opts.target); opts.target = pinghost;

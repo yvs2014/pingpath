@@ -86,10 +86,10 @@ void series_update(void) {
       if (data.seq > 0) series_save_rseq(i, &data);
       else /* sync seq */ if (data.seq < 0) { // rarely
         data.seq = -data.seq;
-        if (data.seq < seq) DEBUG("sync back: req#%d got#%d", seq, data.seq);
+        if (data.seq < seq) DEBUG("%s: #%d -> #%d", SYNC_BACK_HDR, seq, data.seq);
         else { // unlikely, just in case
           series_save_rseq(i, &data);
-          DEBUG("sync forward: req#%d got#%d", seq, data.seq);
+          DEBUG("%s: #%d -> #%d", SYNC_FRWD_HDR, seq, data.seq);
         }
       }
     } else series_save_rseq(i, &skip);

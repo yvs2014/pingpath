@@ -191,7 +191,7 @@ static void pinger_json_add_dbl(JsonObject *obj, int nth, int type, const char *
 static void pinger_json_msec(JsonObject *obj, const char *name, int nth, int type) {
   const char *elem = stat_str_elem(nth, type);
   if (name && elem && elem[0]) {
-    char *val = g_strdup_printf("%s %s", elem, MS_UNIT);
+    char *val = g_strdup_printf("%s %s", elem, UNIT_MSEC);
     if (val) { json_object_set_string_member(obj, name, val); g_free(val); }
   }
 }
@@ -549,8 +549,8 @@ static gboolean create_ping(int at, t_proc *proc) {
     if (verbose.debug) {
       char* deb_argv[MAX_ARGC];
       memcpy(deb_argv, argv, sizeof(deb_argv)); // BUFFNOLINT
-      char *deb_argv_s = g_strjoinv(", ", deb_argv);
-      DEBUG("%s[%d]: argv[%s]", PING_HDR, at + 1, deb_argv_s);
+      char *deb_argv_s = g_strjoinv(" ", deb_argv);
+      DEBUG("%s[%d]: %s", PING_HDR, at + 1, deb_argv_s);
       g_free(deb_argv_s);
     }
     LOG("%s[%d]: pid=%s", PING_HDR, at + 1, g_subprocess_get_identifier(proc->proc));

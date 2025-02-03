@@ -1,3 +1,6 @@
+## 0.3.53
+- NLS wip: debug messages in level1 files
+
 ## 0.3.52
 - notifier: take into account overlapping timeouts
 - logging: multiline messages

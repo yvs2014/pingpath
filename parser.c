@@ -130,12 +130,12 @@ static gboolean valid_mark(GMatchInfo* match, t_tseq *mark) {
   return true;
 }
 
-static gboolean valid_markhost(GMatchInfo* match, t_tseq* mark, t_host* host, const char *type, const char *line) {
-  if (!valid_mark(match, mark)) { DEBUG("wrong MARK in %s message: %s", type, line); return false; }
+static gboolean valid_markhost(GMatchInfo* match, t_tseq* mark, t_host* host, const char *line) {
+  if (!valid_mark(match, mark)) { DEBUG("%s: %s", BADTAG_HDR, line); return false; }
   host->addr = fetch_named_str(match, REN_ADDR);
   if (!host->addr) {
     host->addr = fetch_named_str(match, REN_IP);
-    if (!host->addr) { DEBUG("wrong HOST in %s message: %s", type, line); return false; }
+    if (!host->addr) { DEBUG("%s: %s: %s", ADDR_HDR, INVAL_HDR, line); return false; }
   }
   host->name = fetch_named_str(match, REN_NAME);
   return true;
@@ -146,32 +146,35 @@ static gboolean parse_success_match(int at, GMatchInfo* match, const char *line)
   //
   res.ttl = fetch_named_int(match, REN_TTL);
   if (res.ttl < 0) {
-    DEBUG("wrong TTL in SUCCESS message: %s", line);
+    DEBUG("%s: %s: %s", TTL_HDR, INVAL_HDR, line);
     return false;
   }
   //
   res.time = fetch_named_rtt(match, REN_TIME);
   if (res.time < 0) {
-    DEBUG("wrong TIME in SUCCESS message: %s", line);
+    DEBUG("%s: %s: %s", DELAY_HDR, INVAL_HDR, line);
     return false;
   }
   // not to free() after other mandatory fields unless it's failed
-  if (!valid_markhost(match, &res.mark, &res.host, "SUCCESS", line))
+  if (!valid_markhost(match, &res.mark, &res.host, line))
     return false;
   //
-  DEBUG("SUCCESS[%d] seq=%d addr=%s name=%s ttl=%d time=%dusec", at, res.mark.seq,
-    res.host.addr, res.host.name ? res.host.name : "", res.ttl, res.time);
+  DEBUG("%s[%d] %s=%d %s=%s %s=%s %s=%d %s=%d%s", PARSE_SUCCESS, at,
+    SEQ_HDR, res.mark.seq, ADDR_HDR, res.host.addr,
+    NAME_HDR, mnemo(res.host.name), TTL_HDR, res.ttl,
+    DELAY_HDR, res.time, UNIT_USEC);
   stat_save_success(at, &res);
   return true;
 }
 
 static gboolean parse_discard_match(int at, GMatchInfo* match, const char *line) {
   t_ping_discard res = {0};
-  if (!valid_markhost(match, &res.mark, &res.host, "DISCARD", line))
+  if (!valid_markhost(match, &res.mark, &res.host, line))
     return false;
   res.reason = fetch_named_str(match, REN_REASON);
-  DEBUG("DISCARD[%d] seq=%d addr=%s name=%s reason=\"%s\"", at, res.mark.seq,
-    res.host.addr, res.host.name ? res.host.name : "", res.reason);
+  DEBUG("%s[%d] %s=%d %s=%s %s=%s %s=\"%s\"", PARSE_DISCARD, at,
+    SEQ_HDR, res.mark.seq, ADDR_HDR, res.host.addr,
+    NAME_HDR, mnemo(res.host.name), REASON_HDR, res.reason);
   stat_save_discard(at, &res);
   return true;
 }
@@ -179,11 +182,11 @@ static gboolean parse_discard_match(int at, GMatchInfo* match, const char *line)
 static gboolean parse_timeout_match(int at, GMatchInfo* match, const char *line) {
   t_ping_timeout res = {0};
   if (!valid_mark(match, &res.mark)) {
-    DEBUG("wrong MARK in TIMEOUT message: %s", line);
+    DEBUG("%s: %s", BADTAG_HDR, line);
     return false;
   }
-  DEBUG("TIMEOUT[%d] seq=%d ts=%lld.%06d", at, res.mark.seq,
-    res.mark.sec, res.mark.usec);
+  DEBUG("%s[%d] %s=%d %s=%lld.%06d", PARSE_TIMEOUT, at,
+    SEQ_HDR, res.mark.seq, TIMESTAMP_HDR, res.mark.sec, res.mark.usec);
   stat_save_timeout(at, &res);
   return true;
 }
@@ -193,16 +196,17 @@ static gboolean parse_info_match(int at, GMatchInfo* match, const char *line) {
   //
   res.ttl = fetch_named_int(match, REN_TTL);
   if (res.ttl < 0) {
-    DEBUG("wrong TTL in INFO message: %s", line);
+    DEBUG("%s: %s: %s", TTL_HDR, INVAL_HDR, line);
     return false;
   }
   // not to free() after other mandatory fields unless it's failed
-  if (!valid_markhost(match, &res.mark, &res.host, "INFO", line))
+  if (!valid_markhost(match, &res.mark, &res.host, line))
     return false;
   res.info = fetch_named_str(match, REN_INFO);
   //
-  DEBUG("INFO[%d] seq=%d addr=%s name=%s ttl=%d info=\"%s\"", at, res.mark.seq,
-    res.host.addr, res.host.name ? res.host.name : "", res.ttl, res.info);
+  DEBUG("%s[%d] %s=%d %s=%s %s=%s %s=%d %s=\"%s\"", PARSE_INFO, at,
+    SEQ_HDR, res.mark.seq, ADDR_HDR, res.host.addr,
+    NAME_HDR, mnemo(res.host.name), TTL_HDR, res.ttl, INFOSTAMP_HDR, res.info);
   stat_save_info(at, &res);
   return true;
 }
@@ -225,7 +229,7 @@ static void analyze_line(int at, const char *line) {
   for (int i = 0; i < n; i++)
     if (parse_match_wrap(at, regexes[i].rx.regex, line, regexes[i].cb))
       return;
-  DEBUG("UNKNOWN[%d] %s", at, line);
+  DEBUG("%s[%d] %s", PARSE_UNKN, at, line);
 }
 
 #define GREEDY false

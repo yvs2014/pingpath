@@ -61,8 +61,12 @@ msgid "sec"
 msgstr "сек"
 
 # unit: milliseconds
-msgid "ms"
+msgid "msec"
 msgstr "мсек"
+
+# unit: microseconds
+msgid "usec"
+msgstr "мксек"
 
 # hexadecinal
 msgid "0x"
@@ -700,91 +704,83 @@ msgstr "<тег:значення>"
 msgid "<6bit-level>"
 msgstr "<шестибітний-рівень>"
 
-# CLI misc: message1
+# cli misc: message1
 msgid "Options"
 msgstr "Опції"
 
-# CLI misc: message2
-msgid "Invalid value"
-msgstr "Некоректне значення"
-
-# CLI misc: message3
+# cli misc: message2
 msgid "No value"
 msgstr "Відсутнє значення"
 
-# CLI misc: message4
+# cli misc: message3
 msgid "No match"
 msgstr "Не відповідно до"
 
-# CLI misc: message5
+# cli misc: message4
 msgid "Cannot parse"
 msgstr "Неможливо розпарсити"
 
-# CLI misc: message6
-msgid "Wrong tag"
-msgstr "Некоректний тег"
-
-# CLI misc: message7
+# cli misc: message5
 msgid "Tag duplicate"
 msgstr "Тег дублікат"
 
-# CLI misc: message8
+# cli misc: message6
 msgid "Wrong pair"
 msgstr "Некоректна пара"
 
-# CLI misc: message9
+# cli misc: message7
 msgid "Unknown type"
 msgstr "Невідомий тип"
 
-# CLI misc: message10
+# cli misc: message8
 msgid "Number of indexes are different"
 msgstr "Кількість індексів різна"
 
-# CLI misc: message11
+# cli misc: message9
 msgid "Text"
 msgstr "Текст"
 
-# CLI misc: message12
+# cli misc: message10
 msgid "CSV"
 msgstr "CSV"
 
-# CLI misc: message13
+# cli misc: message11
 msgid "JSON"
 msgstr "JSON"
 
-# CLI misc: message14
+# cli misc: message12
 msgid "Summary"
 msgstr "Резюме"
 
-# CLI misc: message15
+# cli misc: message13
 msgid "Theme bits"
 msgstr "Біти теми"
 
-# CLI misc: message16
+# cli misc: message14
 msgid "Mutually exclusive options"
 msgstr "Взаємовиключні опції"
 
-# CLI misc: message17
+# cli misc: message15
 msgid "Build features"
 msgstr "Властивості програми"
 
-# CLI misc: message18
+# cli misc: message16
 msgid "Runtime lib versions"
 msgstr "Версіі бібліотек"
 
-# CLI misc: message19
+# cli misc: message17
 msgid "Skipping argument"
 msgstr "Пропускаємо аргумента"
 
-# CLI misc: message20
+# cli misc: message18
 msgid "Unknown option"
 msgstr "Невідома опція"
 
-# CLI misc: message21
+# cli misc: message19
 msgid "No goal"
 msgstr "Нема мети"
 
-# CLI misc: message22
+# cli misc: message20
 msgid "Non-interactive mode with summary at exit"
 msgstr "Неінтерактивний режим із резюме на виході"
 
@@ -856,6 +852,14 @@ msgstr "Невідома помилка"
 msgid "ERROR"
 msgstr "ПОМИЛКА"
 
+# error: wrong tag
+msgid "Wrong tag"
+msgstr "Некоректний тег"
+
+# error: invalid value
+msgid "Invalid value"
+msgstr "Некоректне значення"
+
 # error: proc expired
 msgid "Process is still active after expire time, stopping ..."
 msgstr "Процес вичерпав свій час, зупиняємо ..."
@@ -904,6 +908,14 @@ msgstr "Видимі рядки"
 msgid "upto"
 msgstr "до"
 
+# misc: sync-forward
+msgid "Sync forward"
+msgstr "Cинхронізація вперед"
+
+# misc: sync-backward
+msgid "Sync backward"
+msgstr "Cинхронізація назад"
+
 # misc: snap sandnox hint
 msgid ""
 "Snap container related:\n"
@@ -928,6 +940,26 @@ msgstr "ХТО:"
 msgid "CONFIG:"
 msgstr "КОНФІГ:"
 
+# parse message1
+msgid "SUCCESS"
+msgstr "ВДАЛО"
+
+# parse message2
+msgid "DISCARD"
+msgstr "ВІДКИНУТО"
+
+# parse message3
+msgid "TIMEOUT"
+msgstr "ТАЙМАУТ"
+
+# parse message4
+msgid "INFO"
+msgstr "ІНФО"
+
+# parse message5
+msgid "UNKNOWN"
+msgstr "НЕВІДОМО"
+
 # log: index=
 msgid "ndx"
 msgstr "індекс"
@@ -939,6 +971,30 @@ msgstr "адреса"
 # log: hostame=
 msgid "name"
 msgstr "ім'я"
+
+# log: seq=
+msgid "seq"
+msgstr "номер"
+
+# log: ttl=
+msgid "ttl"
+msgstr "ттл"
+
+# log: delay=
+msgid "delay"
+msgstr "затримка"
+
+# log: reason=
+msgid "reason"
+msgstr "причина"
+
+# log: timestamp=
+msgid "timestamp"
+msgstr "відмітка"
+
+# log: info=
+msgid "info"
+msgstr "інфо"
 
 # warn: regex
 msgid "regex"
@@ -1025,8 +1081,28 @@ msgid "unreachable"
 msgstr "недосяжно"
 
 # log: whois origin changed
-msgid "origin changed"
-msgstr "зміна походження"
+msgid "Origin changed"
+msgstr "Зміна походження"
+
+# log: cache hit
+msgid "Cache hit"
+msgstr "Попадання в кеш"
+
+# log: send query
+msgid "Send query"
+msgstr "Надсилаємо запит"
+
+# log: save query
+msgid "Save query"
+msgstr "Зберегти запит"
+
+# deb: lookup
+msgid "Lookup"
+msgstr "Запит"
+
+# deb: unresolved
+msgid "Unresolved"
+msgstr "Не знайдено"
 
 # log: no buffer
 msgid "No space in buffer"

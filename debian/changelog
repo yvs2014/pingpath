@@ -1,3 +1,9 @@
+pingpath (0.3.53) noble; urgency=low
+
+  * NLS wip: debug messages in level1 files
+
+ -- yvs <VSYakovetsky@gmail.com>  Mon, 03 Feb 2025 23:47:27 +0200
+
 pingpath (0.3.52) noble; urgency=low
 
   * notifier: take into account overlapping timeouts

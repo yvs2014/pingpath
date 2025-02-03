@@ -10,6 +10,8 @@
 // common
 #define BUTTON_OKAY    _("Okay")
 #define UNIT_SEC       _("sec")
+#define UNIT_MSEC      _("msec")
+#define UNIT_USEC      _("usec")
 #define UNIT_HEX       _("0x")
 #define NODATA_MSG     _("No data")
 #define NODATAYET_MSG  _("No data yet")
@@ -223,11 +225,9 @@
 
 // CLI misc messages
 #define CLI_OPTS_HDR    _("Options")
-#define CLI_INVAL_HDR   _("Invalid value")
 #define CLI_NOVAL_HDR   _("No value")
 #define CLI_NOMATCH_HDR _("No match")
 #define CLI_NOPARSE_HDR _("Cannot parse")
-#define CLI_BADTAG_HDR  _("Wrong tag")
 #define CLI_DUPTAG_HDR  _("Tag duplicate")
 #define CLI_NOPAIR_HDR  _("Wrong pair")
 #define CLI_BADTYPE_HDR _("Unknown type")
@@ -247,7 +247,6 @@
 // misc
 #define PING_HDR        _("Ping")
 #define HOP_HDR         _("hop")
-#define MS_UNIT         _("ms")
 #define UNKN_HDR        _("unknown")
 #define INFO_HDR        _("Info")
 #define PINGS_DONE_HDR  _("Pings completed")
@@ -255,6 +254,8 @@
 #define ATEXIT_HDR      _("at exit")
 #define UNKN_ERR        _("Unknown error")
 #define ERROR_HDR       _("ERROR")
+#define BADTAG_HDR      _("Wrong tag")
+#define INVAL_HDR       _("Invalid value")
 #define PROC_EXP_HDR    _("Process is still active after expire time, stopping ...")
 #define PROC_NOSTOP_HDR _("Subprocess has not stopped")
 #define EXPTIME_HDR     _("expiration time")
@@ -266,6 +267,8 @@
 #define BYREQ_HDR       _("by request")
 #define VISROWS_HDR     _("Visible rows")
 #define UPTO_HDR        _("upto")
+#define SYNC_FRWD_HDR   _("Sync forward")
+#define SYNC_BACK_HDR   _("Sync backward")
 
 #define SNAPBOX_HINT _("Snap container related:\n" \
   "if minimal ping's slot (network-observe) is not autoconnected (permission denied),\n" \
@@ -276,9 +279,20 @@
 #define LOG_DNS_HDR   _("DNS:")
 #define LOG_WHOIS_HDR _("WHOIS:")
 #define LOG_CONF_HDR  _("CONFIG:")
+#define PARSE_SUCCESS _("SUCCESS")
+#define PARSE_DISCARD _("DISCARD")
+#define PARSE_TIMEOUT _("TIMEOUT")
+#define PARSE_INFO    _("INFO")
+#define PARSE_UNKN    _("UNKNOWN")
 #define NDX_HDR       _("ndx")  /* index */
 #define ADDR_HDR      _("addr") /* address */
 #define NAME_HDR      _("name") /* hostname */
+#define SEQ_HDR       _("seq")  /* icmp seq */
+#define TTL_HDR       _("ttl")
+#define DELAY_HDR     _("delay")
+#define TIMESTAMP_HDR _("timestamp")
+#define INFOSTAMP_HDR _("info")
+#define REASON_HDR    _("reason")
 #define REGEX_HDR     _("regex")
 #define PATT_HDR      _("PATTERN")
 #define HOSTNAME_HDR  _("Hostname")
@@ -300,7 +314,12 @@
 #define REACHED_HDR   _("Target is reached")
 #define AFTER_TGT_HDR _("behind the target")
 #define UNREACH_HDR   _("unreachable")
-#define ORIG_CHNG_HDR _("origin changed")
+#define ORIG_CHNG_HDR _("Origin changed")
+#define CACHE_HIT_HDR _("Cache hit")
+#define SENDQ_HDR     _("Send query")
+#define SAVEQ_HDR     _("Save query")
+#define LOOKUP_HDR    _("Lookup")
+#define UNRES_HDR     _("Unresolved")
 #define NOBUFF_ERR    _("No space in buffer")
 #define NOCONN_ERR    _("Connection failed")
 
