@@ -143,42 +143,66 @@ static gboolean valid_markhost(GMatchInfo* match, t_tseq* mark, t_host* host, co
 
 static gboolean parse_success_match(int at, GMatchInfo* match, const char *line) {
   t_ping_success res = {0};
+  //
   res.ttl = fetch_named_int(match, REN_TTL);
-  if (res.ttl < 0) { DEBUG("wrong TTL in SUCCESS message: %s", line); return false; }
+  if (res.ttl < 0) {
+    DEBUG("wrong TTL in SUCCESS message: %s", line);
+    return false;
+  }
+  //
   res.time = fetch_named_rtt(match, REN_TIME);
-  if (res.time < 0) { DEBUG("wrong TIME in SUCCESS message: %s", line); return false; }
-  // to not free() after other mandatory fields unless it's failed
-  if (!valid_markhost(match, &res.mark, &res.host, "SUCCESS", line)) return false;
-  DEBUG("SUCCESS[at=%d seq=%d]: host=%s,%s ttl=%d time=%dusec", at, res.mark.seq, res.host.addr, res.host.name, res.ttl, res.time);
+  if (res.time < 0) {
+    DEBUG("wrong TIME in SUCCESS message: %s", line);
+    return false;
+  }
+  // not to free() after other mandatory fields unless it's failed
+  if (!valid_markhost(match, &res.mark, &res.host, "SUCCESS", line))
+    return false;
+  //
+  DEBUG("SUCCESS[%d] seq=%d addr=%s name=%s ttl=%d time=%dusec", at, res.mark.seq,
+    res.host.addr, res.host.name ? res.host.name : "", res.ttl, res.time);
   stat_save_success(at, &res);
   return true;
 }
 
 static gboolean parse_discard_match(int at, GMatchInfo* match, const char *line) {
   t_ping_discard res = {0};
-  if (!valid_markhost(match, &res.mark, &res.host, "DISCARD", line)) return false;
+  if (!valid_markhost(match, &res.mark, &res.host, "DISCARD", line))
+    return false;
   res.reason = fetch_named_str(match, REN_REASON);
-  DEBUG("DISCARD[at=%d seq=%d]: host=%s,%s reason=\"%s\"", at, res.mark.seq, res.host.addr, res.host.name, res.reason);
+  DEBUG("DISCARD[%d] seq=%d addr=%s name=%s reason=\"%s\"", at, res.mark.seq,
+    res.host.addr, res.host.name ? res.host.name : "", res.reason);
   stat_save_discard(at, &res);
   return true;
 }
 
 static gboolean parse_timeout_match(int at, GMatchInfo* match, const char *line) {
   t_ping_timeout res = {0};
-  if (!valid_mark(match, &res.mark)) { DEBUG("wrong MARK in TIMEOUT message: %s", line); return false; }
-  DEBUG("TIMEOUT[at=%d seq=%d]: seq=%d ts=%lld.%06d", at, res.mark.seq, res.mark.seq, res.mark.sec, res.mark.usec);
+  if (!valid_mark(match, &res.mark)) {
+    DEBUG("wrong MARK in TIMEOUT message: %s", line);
+    return false;
+  }
+  DEBUG("TIMEOUT[%d] seq=%d ts=%lld.%06d", at, res.mark.seq,
+    res.mark.sec, res.mark.usec);
   stat_save_timeout(at, &res);
   return true;
 }
 
 static gboolean parse_info_match(int at, GMatchInfo* match, const char *line) {
   t_ping_info res = {0};
+  //
   res.ttl = fetch_named_int(match, REN_TTL);
-  if (res.ttl < 0) { DEBUG("wrong TTL in INFO message: %s", line); return false; }
-  // after other mandatory fields to not free() if their fetch failed
-  if (!valid_markhost(match, &res.mark, &res.host, "INFO", line)) return false;
+  if (res.ttl < 0) {
+    DEBUG("wrong TTL in INFO message: %s", line);
+    return false;
+  }
+  // not to free() after other mandatory fields unless it's failed
+  if (!valid_markhost(match, &res.mark, &res.host, "INFO", line))
+    return false;
   res.info = fetch_named_str(match, REN_INFO);
-  DEBUG("INFO[at=%d seq=%d]: host=%s,%s ttl=%d info=\"%s\"", at, res.mark.seq, res.host.addr, res.host.name, res.ttl, res.info);
+  //
+  DEBUG("INFO[%d] seq=%d addr=%s name=%s ttl=%d info=\"%s\"", at, res.mark.seq,
+    res.host.addr, res.host.name ? res.host.name : "", res.ttl, res.info);
   stat_save_info(at, &res);
   return true;
 }
@@ -201,7 +225,7 @@ static void analyze_line(int at, const char *line) {
   for (int i = 0; i < n; i++)
     if (parse_match_wrap(at, regexes[i].rx.regex, line, regexes[i].cb))
       return;
-  DEBUG("UNKNOWN[at=%d]: %s", at, line);
+  DEBUG("UNKNOWN[%d] %s", at, line);
 }
 
 #define GREEDY false

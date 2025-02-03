@@ -28,12 +28,19 @@ typedef struct nt_leg {
 
 typedef struct ntcss { const char *def, *col; } t_ntcss;
 
+typedef struct autohide {
+  unsigned timer; // timer id
+  unsigned sec;   // seconds before auto-hiding
+                  //   0 corresponds to AUTOHIDE_IN
+} t_autohide;
+
 typedef struct notifier {
   GtkWidget *box, *inbox, *reveal; t_ntcss css;
   void* const content; int content_n;
   const int type;
-  const gboolean autohide, dyncss;
+  const gboolean dyncss;
   gboolean visible;
+  t_autohide *autohide;
   int x, y;
 #ifdef WITH_DND
   int dx, dy;
@@ -45,15 +52,18 @@ typedef struct notifier {
 typedef struct rotor_arrow { const char *alt; const char *ico[MAX_ICONS]; } t_rotor_arrow;
 #endif
 
-unsigned lgnd_excl_mask; // enough for MAXTTL(30) bitmask
 gboolean nt_dark;
+unsigned lgnd_excl_mask; // enough for MAXTTL(30) bitmask
 
 //
 
 static t_nt_leg nt_leg[MAXTTL];
 
+static t_autohide nt_main_autohide;
+
 static t_notifier notifier[] = {
-  { .type = NT_MAIN_NDX, .autohide = true, .dyncss = true, .css.def = CSS_ROUNDED },
+  { .type = NT_MAIN_NDX, .autohide = &nt_main_autohide,
+    .dyncss = true, .css.def = CSS_ROUNDED },
   { .type = NT_LEGEND_NDX, .css = { .def = CSS_LEGEND, .col = CSS_LEGEND_COL },
     .x = GRAPH_LEFT + MARGIN * 2, .y = GRAPH_TOP + MARGIN * 2,
     .content = nt_leg, .content_n = G_N_ELEMENTS(nt_leg) },
@@ -73,21 +83,31 @@ static void nt_reload_css(GtkWidget *widget, const char *css) {
   }
 }
 
-static gboolean nt_set_visible(t_notifier *nt, gboolean visible) {
-  if (!atquit && nt && (nt->visible != visible)) {
-    if (GTK_IS_REVEALER(nt->reveal)) gtk_revealer_set_reveal_child(GTK_REVEALER(nt->reveal), visible);
+static void nt_set_visible(t_notifier *nt, gboolean visible) {
+  if (!atquit && nt && GTK_IS_REVEALER(nt->reveal)) {
+    gtk_revealer_set_reveal_child(GTK_REVEALER(nt->reveal), visible);
     nt->visible = visible;
   }
-  return G_SOURCE_REMOVE;
 }
 
-static gboolean nt_hide(t_notifier *nt) { return nt_set_visible(nt, false); }
+#define NT_SHOW(inst) nt_set_visible((inst), true)
+#define NT_HIDE(inst) nt_set_visible((inst), false)
+
+static void nt_hide(t_notifier *nt) {
+  if (nt->autohide) nt->autohide->timer = 0;
+  NT_HIDE(nt);
+}
 
 static void nt_inform(t_notifier *nt, char *mesg) {
   static int nt_curr_dark;
   if (!nt || !mesg) return;
   if (!GTK_IS_WIDGET(nt->inbox) || !GTK_IS_REVEALER(nt->reveal)) return;
-  if (nt->autohide && nt->visible) nt_hide(nt);
+  // hide previous one if it's still visible
+  if (nt->autohide && nt->autohide->timer) {
+    g_source_remove(nt->autohide->timer);
+    nt_hide(nt);
+  }
+  //
   if (GTK_IS_LABEL(nt->inbox)) {
     LOG("%s", mesg);
     gtk_label_set_text(GTK_LABEL(nt->inbox), mesg);
@@ -98,17 +118,11 @@ static void nt_inform(t_notifier *nt, char *mesg) {
     gtk_widget_add_css_class(nt->box,    nt_curr_dark ? CSS_BGONDARK : CSS_BGONLIGHT);
   }
   gtk_revealer_set_reveal_child(GTK_REVEALER(nt->reveal), true);
-  if (nt->autohide) nt->visible = g_timeout_add_seconds(AUTOHIDE_IN, (GSourceFunc)nt_hide, nt);
+  t_autohide *au = nt->autohide;
+  if (au)
+    au->timer = g_timeout_add_seconds_once(au->sec ? au->sec : AUTOHIDE_IN,
+      (GSourceOnceFunc)nt_hide, nt);
 }
-
-#if 0
-static inline void pr_measure(GtkWidget *widget, const char *str) {
-  int w = 0, h = 0;
-  gtk_widget_measure(widget, GTK_ORIENTATION_HORIZONTAL, -1, NULL, &w, NULL, NULL);
-  gtk_widget_measure(widget, GTK_ORIENTATION_VERTICAL,   -1, NULL, &h, NULL, NULL);
-  g_message("DEBUG(%s): w=%d h=%d", str, w, h);
-}
-#endif
 
 static gboolean nt_ext_pos_cb(GtkWidget *over, GtkWidget *widget, GdkRectangle *rect, t_notifier *nt) {
   if (!(GTK_IS_OVERLAY(over) && GTK_IS_WIDGET(widget) && rect && nt)) return false;;
@@ -415,6 +429,11 @@ static void nt_fill_legend_elem(GtkWidget* label, const char *f1, const char *f2
 
 inline GtkWidget* notifier_init(unsigned ndx, GtkWidget *base) {
   return (ndx < G_N_ELEMENTS(notifier)) ? nt_init(base, &notifier[ndx]) : NULL; }
+
+void notifier_set_autohide_sec(unsigned seconds) {
+  t_autohide *au = notifier[NT_MAIN_NDX].autohide;
+  if (au) au->sec = seconds;
+}
 
 void notifier_inform(const char *fmt, ...) {
   va_list ap;

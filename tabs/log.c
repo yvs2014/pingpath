@@ -21,19 +21,27 @@ static t_tab logtab = { .self = &logtab, .name = "log-tab",
     [POP_MENU_NDX_SALL] = { .activate = cb_on_sall    }},
 };
 
-static void logtab_add(const char *str) {
-  if (atquit || !str || !GTK_IS_LIST_BOX(logtab.dyn.w)) return;
-  { char *dup = strchr(str, '\n') ? g_strdup(str) : NULL;
-    GtkWidget *line = gtk_label_new(dup ? g_strdelimit(dup, "\n", ',') : str);
-    g_free(dup); g_return_if_fail(line);
-    gtk_widget_set_halign(line, GTK_ALIGN_START);
-    gtk_list_box_append(GTK_LIST_BOX(logtab.dyn.w), line);
-    loglines++; }
+static void logtab_add_line(const char *str) {
+  GtkWidget *line = gtk_label_new(str);
+  g_return_if_fail(line);
+  gtk_widget_set_halign(line, GTK_ALIGN_START);
+  gtk_list_box_append(GTK_LIST_BOX(logtab.dyn.w), line);
+  loglines++;
   while (loglines > opts.logmax) {
     GtkWidget *line = gtk_widget_get_first_child(logtab.dyn.w);
     if (GTK_IS_LABEL(line)) gtk_label_set_text(GTK_LABEL(line), NULL);
     if (GTK_IS_WIDGET(line)) { gtk_list_box_remove(GTK_LIST_BOX(logtab.dyn.w), line); loglines--; } else break;
   }
+}
+
+static inline void logtab_add_text(const char *str) {
+  if (atquit || !str || !GTK_IS_LIST_BOX(logtab.dyn.w)) return;
+  if (strchr(str, '\n')) {
+    char** lines = g_strsplit(SNAPBOX_HINT, "\n", opts.logmax);
+    g_return_if_fail(lines);
+    for (char **s = lines; *s; s++) logtab_add_line(*s);
+    g_strfreev(lines);
+  } else logtab_add_line(str);
 }
 
 static inline void logtab_set_dyn_props(GtkWidget *widget) {
@@ -62,7 +70,8 @@ void log_add(const char *fmt, ...) {
   va_list ap;
   va_start(ap, fmt);
   char *str = g_strdup_vprintf(fmt, ap);
-  if (str) { logtab_add(str); g_free(str); }
+  logtab_add_text(str);
+  g_free(str);
   va_end(ap);
 }
 

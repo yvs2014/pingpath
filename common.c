@@ -6,7 +6,9 @@
 #include "common.h"
 
 gboolean cli;
-int verbose, activetab = TAB_PING_NDX;
+int activetab = TAB_PING_NDX;
+
+t_verbose verbose;
 
 t_type_elem pingelem[PE_MAX] = {
   [PE_NO]   = { .type = PE_NO,   .enable = true, .name = "" },
@@ -351,9 +353,9 @@ t_ref* ref_new(t_hop *hop, int ndx) {
   return ref;
 }
 
-#if DNS_DEBUGGING || WHOIS_DEBUGGING
+#if defined(DNS_EXTRA_DEBUG) || defined(WHOIS_EXTRA_DEBUG)
 void print_refs(GSList *refs, const char *prefix) {
-  if (verbose < 3) return;
+  if (!(verbose.dns || verbose.whois)) return;
   int i = 0;
   for (GSList* list = refs; list; list = list->next, i++) {
     t_ref *ref = list->data; if (!ref) continue;

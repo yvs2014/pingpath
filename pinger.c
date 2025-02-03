@@ -530,8 +530,11 @@ static gboolean create_ping(int at, t_proc *proc) {
 #endif
 #endif
   if (!proc->proc) {
-    PINGER_MESG("%s", error ? error->message : UNKN_ERR);
-    if (error->code == 3) PINGER_MESG("%s", SNAPBOX_HINT);
+    if (error && (error->code == 3)) {
+      notifier_set_autohide_sec(10);
+      PINGER_MESG("%s", SNAPBOX_HINT);
+      notifier_set_autohide_sec(0);
+    } else PINGER_MESG("%s", error ? error->message : UNKN_ERR);
     ERROR("g_subprocess_newv()");
     return false;
   }
@@ -543,15 +546,13 @@ static gboolean create_ping(int at, t_proc *proc) {
     RESET_ISTREAM(errput, proc->err, on_stderr, proc);
     proc->active = true;
     proc->ndx = at;
-#ifdef DEBUGGING
-    if (verbose & 2) {
+    if (verbose.debug) {
       char* deb_argv[MAX_ARGC];
       memcpy(deb_argv, argv, sizeof(deb_argv)); // BUFFNOLINT
       char *deb_argv_s = g_strjoinv(", ", deb_argv);
       DEBUG("%s[%d]: argv[%s]", PING_HDR, at + 1, deb_argv_s);
       g_free(deb_argv_s);
     }
-#endif
     LOG("%s[%d]: pid=%s", PING_HDR, at + 1, g_subprocess_get_identifier(proc->proc));
   } else {
     pinger_nth_stop(at, INP_FAILED);

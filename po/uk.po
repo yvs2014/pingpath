@@ -713,82 +713,78 @@ msgid "No value"
 msgstr "Відсутнє значення"
 
 # CLI misc: message4
-msgid "CONFIG"
-msgstr "КОНФІГ"
-
-# CLI misc: message5
 msgid "No match"
 msgstr "Не відповідно до"
 
-# CLI misc: message6
+# CLI misc: message5
 msgid "Cannot parse"
 msgstr "Неможливо розпарсити"
 
-# CLI misc: message7
+# CLI misc: message6
 msgid "Wrong tag"
 msgstr "Некоректний тег"
 
-# CLI misc: message8
+# CLI misc: message7
 msgid "Tag duplicate"
 msgstr "Тег дублікат"
 
-# CLI misc: message9
+# CLI misc: message8
 msgid "Wrong pair"
 msgstr "Некоректна пара"
 
-# CLI misc: message10
+# CLI misc: message9
 msgid "Unknown type"
 msgstr "Невідомий тип"
 
-# CLI misc: message11
+# CLI misc: message10
 msgid "Number of indexes are different"
 msgstr "Кількість індексів різна"
 
-# CLI misc: message12
+# CLI misc: message11
 msgid "Text"
 msgstr "Текст"
 
-# CLI misc: message13
+# CLI misc: message12
 msgid "CSV"
 msgstr "CSV"
 
-# CLI misc: message14
+# CLI misc: message13
 msgid "JSON"
 msgstr "JSON"
 
-# CLI misc: message15
+# CLI misc: message14
 msgid "Summary"
 msgstr "Резюме"
 
-# CLI misc: message16
+# CLI misc: message15
 msgid "Theme bits"
 msgstr "Біти теми"
 
-# CLI misc: message17
+# CLI misc: message16
 msgid "Mutually exclusive options"
 msgstr "Взаємовиключні опції"
 
-# CLI misc: message18
+# CLI misc: message17
 msgid "Build features"
 msgstr "Властивості програми"
 
-# CLI misc: message19
+# CLI misc: message18
 msgid "Runtime lib versions"
 msgstr "Версіі бібліотек"
 
-# CLI misc: message20
+# CLI misc: message19
 msgid "Skipping argument"
 msgstr "Пропускаємо аргумента"
 
-# CLI misc: message21
+# CLI misc: message20
 msgid "Unknown option"
 msgstr "Невідома опція"
 
-# CLI misc: message22
+# CLI misc: message21
 msgid "No goal"
 msgstr "Нема мети"
 
-# CLI misc: message23
+# CLI misc: message22
 msgid "Non-interactive mode with summary at exit"
 msgstr "Неінтерактивний режим із резюме на виході"
 
@@ -919,6 +915,18 @@ msgstr ""
 "якщо мінімально необхідний слот (network-observe) не підключено автоматично (permission denied),\n"
 "його можна підключити наступною командою:\n"
 "  snap connect pingpath:network-observe :network-observe"
+
+# log section1
+msgid "DNS:"
+msgstr "ДНС:"
+
+# log section2
+msgid "WHOIS:"
+msgstr "ХТО:"
+
+# log section3
+msgid "CONFIG:"
+msgstr "КОНФІГ:"
 
 # log: index=
 msgid "ndx"

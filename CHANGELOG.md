@@ -1,6 +1,11 @@
+## 0.3.52
+- notifier: take into account overlapping timeouts
+- logging: multiline messages
+- verbose bits: wrap in structure for readability
+
 ## 0.3.51
 - a bit more readable logging
-- NLS wip: almost all <level1> .c files
+- NLS wip: level1 .c files
 
 ## 0.3.50
 - NLS wip: almost all of pinger.c messages

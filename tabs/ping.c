@@ -86,16 +86,13 @@ static void pt_set_elem_align(int type, GtkWidget *label) {
 }
 
 #ifdef WITH_DND
-#ifdef DNDORD_DEBUGGING
 static void pt_pr_elem_ndxs(const char *pre, const t_type_elem *elems, int len) {
   GString *str = g_string_new(NULL);
   for (int i = 0; i < len; i++) g_string_append_printf(str, " %d", elems[i].type);
   g_message("REORDER %s%s", pre, str->str); g_string_free(str, true);
 }
-#define PT_PRINT_ELEMS(pre, elems, len) do { if (verbose & 32) pt_pr_elem_ndxs(pre, elems, len); } while (0)
-#else
-#define PT_PRINT_ELEMS(...) NOOP
-#endif
+
+#define PT_PRINT_ELEMS(pre, elems, len) do { if (verbose.dnd) pt_pr_elem_ndxs(pre, elems, len); } while (0)
 
 static gboolean pt_reorder_elems(int prev, int next, const t_elem_desc *desc) {
   if ((prev == next) || !desc) return false;

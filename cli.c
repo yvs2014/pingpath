@@ -16,13 +16,6 @@
     "%s: %s",     name, CLI_NOVAL_HDR); }                  \
 } while (0)
 
-#ifdef CONFIG_DEBUGGING
-#define CONF_DEBUG(fmt, ...) do { if (verbose & 16) \
-  g_message("%s: " fmt, CLI_CONF_HDR, __VA_ARGS__); } while (0)
-#else
-#define CONF_DEBUG(...) NOOP
-#endif
-
 #define CNF_SECTION_MAIN "ping"
 #define CNF_STR_IPV    "ip-version"
 #define CNF_STR_NODNS  "numeric"
@@ -71,17 +64,13 @@ typedef struct t_config_section {
   t_config_option options[CNF_OPT_MAX];
 } t_config_section;
 
-#ifdef DNDORD_DEBUGGING
 static void cli_pr_elems(t_type_elem *elems, int max) {
   GString *string = g_string_new(NULL);
   for (int i = 0; i < max; i++)
     g_string_append_printf(string, " %c%d", elems[i].enable ? '+' : '-', elems[i].type);
   g_message("REORDER: elem:%s", string->str); g_string_free(string, true);
 }
-#define CLI_REORDER_PRINT_ELEMS(elems, max) do { if (verbose & 32) cli_pr_elems(elems, max); } while (0)
-#else
-#define CLI_REORDER_PRINT_ELEMS(...) NOOP
-#endif
+#define PRINT_REORDER_ELEMS(elems, max) do { if (verbose.dnd) cli_pr_elems(elems, max); } while (0)
 
 #ifdef WITH_PLOT
 #define TABON(mesg) { opts->plot = false; g_message(mesg); }
@@ -338,14 +327,14 @@ static void reorder_elems(const char *str, t_elem_desc *desc) {
 
 static char* cli_char_opts(int type, const char *value, unsigned cat, t_elem_desc *desc, int max, const char *hdr) {
   if (!desc || !desc->elems) return NULL;
-  CLI_REORDER_PRINT_ELEMS(desc->elems, max);
+  PRINT_REORDER_ELEMS(desc->elems, max);
   clean_elems(type);
   char *str = cli_opt_charelem(parser_str(value, hdr, cat), desc->patt, desc->cat);
   if (str) {
     if (str[0]) reorder_elems(str, desc);
     else g_message("%s: %s", hdr, TOGGLE_OFF_HDR);
   }
-  CLI_REORDER_PRINT_ELEMS(desc->elems, max);
+  PRINT_REORDER_ELEMS(desc->elems, max);
   return str;
 }
 
@@ -519,7 +508,7 @@ static gboolean cli_opt_f(const char *name, const char *value, t_opts *opts, GEr
           if (config_opt_not_found(strerr, section, optname, optval, error)) continue;
           return false;
         }
-        CONF_DEBUG("validate %s:%s=%s", section, optname, optval);
+        CONF_DEBUG("%s: %s=%s", section, optname, optval);
       }
       switch (option->type) {
         case CNF_OPT_TABS: {

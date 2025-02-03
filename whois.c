@@ -8,8 +8,8 @@
 #include "whois.h"
 #include "parser.h"
 
-static const char WHOIS_HOST[]  = "riswhois.ripe.net";
-static const int  WHOIS_PORT    = 43;
+static const char *WHOIS_HOST = "riswhois.ripe.net";
+static const int   WHOIS_PORT = 43;
 
 typedef struct wc_elem { // whois cache element
   char *addr;
@@ -28,15 +28,9 @@ typedef struct wq_data {  // whois query element
 static GSList *whois_query;
 static GSList *whois_cache;
 
-#ifdef WHOIS_DEBUGGING
-#define WHOIS_DEBUG(fmt, ...) do { if (verbose & 8) g_message("WHOIS: " fmt, __VA_ARGS__); } while (0)
-#else
-#define WHOIS_DEBUG(...) NOOP
-#endif
-
-#if WHOIS_DEBUGGING && WHOIS_DEBUGGING > 1
-#define PR_WHOIS_Q do { LOG("WHOIS: %s %c", __func__, 'q'); _pr_whois_qlist(whois_query); } while (0)
-#define PR_WHOIS_C do { LOG("WHOIS: %s %c", __func__, 'c'); _pr_whois_clist(whois_cache); } while (0)
+#if WHOIS_EXTRA_DEBUG
+#define PR_WHOIS_Q do { LOG("%s: %s %c", LOG_WHOIS_HDR, __func__, 'q'); _pr_whois_qlist(whois_query); } while (0)
+#define PR_WHOIS_C do { LOG("%s: %s %c", LOG_WHOIS_HDR, __func__, 'c'); _pr_whois_clist(whois_cache); } while (0)
 void _pr_whois_qlist(GSList *qlist) {
   int i = 0;
   for (GSList *p = qlist; p; p = p->next, i++) {
@@ -45,7 +39,7 @@ void _pr_whois_qlist(GSList *qlist) {
     WHOIS_DEBUG("%c[%d]: addr=%s as=%s cc=%s net=%s desc=%s", 'q', i, q->data.addr,
       w->elem[WHOIS_AS_NDX], w->elem[WHOIS_CC_NDX],
       w->elem[WHOIS_RT_NDX], w->elem[WHOIS_DESC_NDX]);
-    print_refs(q->refs, "WHOIS: ");
+    print_refs(q->refs, LOG_WHOIS_HDR);
   }
 }
 void _pr_whois_clist(GSList *clist) {
@@ -313,7 +307,7 @@ void whois_resolv(t_hop *hop, int ndx) {
   if (!query) return;
   GSocketClient *sock = g_socket_client_new();
   if (sock) {
-    WHOIS_DEBUG("connect with query=%s", addr);
+    WHOIS_DEBUG("connect: %s:%d, query: %s", WHOIS_HOST, WHOIS_PORT, addr);
     g_socket_client_connect_to_host_async(sock, WHOIS_HOST, WHOIS_PORT, NULL,
       (GAsyncReadyCallback)on_whois_connect, query);
     g_object_unref(sock);

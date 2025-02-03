@@ -12,7 +12,7 @@
 #define MIN_GTK_RUNTIME(major, minor, micro) (!gtk_check_version(major, minor, micro))
 
 #define APPNAME "pingpath"
-#define VERSION "0.3.51"
+#define VERSION "0.3.52"
 #define APPVER  APPNAME "-" VERSION
 
 extern locale_t locale, localeC;
@@ -130,18 +130,16 @@ enum { PP_MARK_MAXLEN = 16 };
 enum { MARGIN = 8 };
 enum { ACT_DOT = 4 }; // beyond of "app." or "win."
 
-// verbose & 1:  log to stdout
-// verbose & 2:  common debug
-// verbose & 4:  dns
-// verbose & 8:  whois
-// verbose & 16: config
-// verbose & 32: reorder
-#define LOGGING 1
-#define DEBUGGING 1
-#define DNS_DEBUGGING 1
-#define WHOIS_DEBUGGING 1
-#define CONFIG_DEBUGGING 1
-#define DNDORD_DEBUGGING 1
+typedef struct verbose {
+  unsigned
+    verbose:1,
+    debug  :1,
+    dns    :1,
+    whois  :1,
+    config :1,
+    dnd    :1;
+} t_verbose;
+extern t_verbose verbose;
 
 #define NOOP ((void)0)
 
@@ -151,32 +149,16 @@ enum { ACT_DOT = 4 }; // beyond of "app." or "win."
   log_add("[%s] " fmt, timestamp(ts, sizeof(ts)), __VA_ARGS__); \
 } while (0)
 
-#ifdef LOGGING
-#define VERBOSE(fmt, ...) do {   \
-  if (verbose & 1)               \
-    g_message(fmt, __VA_ARGS__); \
+#define VERB_LEVEL(level, fmt, ...) do {    \
+  if (verbose.level) g_message((fmt), __VA_ARGS__); \
 } while (0)
-#else
-#define VERBOSE(fmt, ...) NOOP
-#endif
 
-#ifdef DEBUGGING
-#define DEBUG(fmt, ...) do {     \
-  if (verbose & 2)               \
-    g_message(fmt, __VA_ARGS__); \
-} while (0)
-#else
-#define DEBUG(fmt, ...) NOOP
-#endif
-
-#ifdef DNDORD_DEBUGGING
-#define DNDORD(fmt, ...) do {    \
-  if (verbose & 32)              \
-    g_message(fmt, __VA_ARGS__); \
-} while (0)
-#else
-#define DNDORD(fmt, ...) NOOP
-#endif
+#define VERBOSE(fmt, ...)     VERB_LEVEL(verbose, (fmt), __VA_ARGS__)
+#define DEBUG(fmt, ...)       VERB_LEVEL(debug,   (fmt), __VA_ARGS__)
+#define DNS_DEBUG(fmt, ...)   VERB_LEVEL(dns,     "%s " fmt, LOG_DNS_HDR, __VA_ARGS__)
+#define WHOIS_DEBUG(fmt, ...) VERB_LEVEL(whois,   "%s " fmt, LOG_WHOIS_HDR, __VA_ARGS__)
+#define CONF_DEBUG(fmt, ...)  VERB_LEVEL(config,  "%s " fmt, LOG_CONF_HDR, __VA_ARGS__)
+#define DNDORD(fmt, ...)      VERB_LEVEL(dnd,     (fmt), __VA_ARGS__)
 
 #if (__GNUC__ >= 8) || (__clang_major__ >= 6) || (__STDC_VERSION__ >= 202311L)
 #define WARN(fmt, ...) g_warning("%s: " fmt, __func__ __VA_OPT__(,) __VA_ARGS__)
@@ -374,7 +356,7 @@ typedef struct elem_desc {
 typedef struct th_color { double ondark, onlight; } t_th_color;
 
 extern gboolean cli;
-extern int verbose, activetab;
+extern int activetab;
 
 extern t_type_elem pingelem[PE_MAX];
 extern t_type_elem graphelem[GX_MAX];
@@ -416,11 +398,12 @@ void host_free(t_host *host);
 int host_cmp(const void *a, const void *b);
 int ref_cmp(const t_ref *a, const t_ref *b);
 t_ref* ref_new(t_hop *hop, int ndx);
+#if defined(DNS_EXTRA_DEBUG) || defined(WHOIS_EXTRA_DEBUG)
 void print_refs(GSList *refs, const char *prefix);
+#endif
 GSList* list_add_nodup(GSList **list, void *data, GCompareFunc cmp, unsigned max);
 GSList* list_add_ref(GSList **list, t_hop *hop, int ndx);
 extern void log_add(const char *fmt, ...);
-
 
 #define UPDATE_LABEL(label, str) { const char *txt = gtk_label_get_text(GTK_LABEL(label)); \
   if (STR_NEQ(txt, str)) gtk_label_set_text(GTK_LABEL(label), str); }
@@ -429,9 +412,5 @@ extern void log_add(const char *fmt, ...);
 #define IS_STAT_NDX(ndx) ((PE_LOSS <= (ndx)) && ((ndx) <= PE_JTTR))
 #define IS_GRLG_NDX(ndx) ((GE_AVJT <= (ndx)) && ((ndx) <= GE_LGHN))
 #define IS_GREX_NDX(ndx) ((GREX_MEAN <= (ndx)) && ((ndx) <= GREX_AREA))
-
-// to use with clang static code analysis
-//   BUFFNOLINT: NOLINT(clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling)
-//   ENUMNOLINT: NOLINT(clang-analyzer-optin.core.EnumCastOutOfRange)
 
 #endif

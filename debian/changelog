@@ -1,8 +1,18 @@
+pingpath (0.3.52) noble; urgency=low
+
+  * notifier: take into account overlapping timeouts
+
+  * logging: multiline messages
+
+  * verbose bits: wrap in structure for readability
+
+ -- yvs <VSYakovetsky@gmail.com>  Mon, 03 Feb 2025 11:28:29 +0200
+
 pingpath (0.3.51) noble; urgency=low
 
   * a bit more readable logging
 
-  * NLS wip: almost all <level1> .c files
+  * NLS wip: level1 .c files
 
  -- yvs <VSYakovetsky@gmail.com>  Sun, 02 Feb 2025 03:44:21 +0200
 

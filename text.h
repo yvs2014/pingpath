@@ -225,7 +225,6 @@
 #define CLI_OPTS_HDR    _("Options")
 #define CLI_INVAL_HDR   _("Invalid value")
 #define CLI_NOVAL_HDR   _("No value")
-#define CLI_CONF_HDR    _("CONFIG")
 #define CLI_NOMATCH_HDR _("No match")
 #define CLI_NOPARSE_HDR _("Cannot parse")
 #define CLI_BADTAG_HDR  _("Wrong tag")
@@ -274,6 +273,9 @@
   "  snap connect pingpath:network-observe :network-observe")
 
 // logging, warnings
+#define LOG_DNS_HDR   _("DNS:")
+#define LOG_WHOIS_HDR _("WHOIS:")
+#define LOG_CONF_HDR  _("CONFIG:")
 #define NDX_HDR       _("ndx")  /* index */
 #define ADDR_HDR      _("addr") /* address */
 #define NAME_HDR      _("name") /* hostname */
