@@ -1,3 +1,6 @@
+## 0.3.54
+- NLS wip: start adding NLS to level2 .c files
+
 ## 0.3.53
 - NLS wip: debug messages in level1 files
 

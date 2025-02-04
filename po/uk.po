@@ -56,6 +56,14 @@ msgstr "Дата"
 msgid "Okay"
 msgstr "Гаразд"
 
+# toggle tip1
+msgid "on"
+msgstr "увімкнено"
+
+# toggle tip2
+msgid "off"
+msgstr "вимкнено"
+
 # unit: seconds
 msgid "sec"
 msgstr "сек"
@@ -108,21 +116,21 @@ msgstr "Не досягнуто"
 msgid "Not reached yet"
 msgstr "Ще не досягнуто"
 
-# toggle tip1
-msgid "on"
-msgstr "увімкнено"
-
-# toggle tip2
-msgid "off"
-msgstr "вимкнено"
-
-# help window: actions
+# actions header
 msgid "Actions"
 msgstr "Дії"
 
-# help window: command line interface
+# options header
+msgid "Options"
+msgstr "Опції"
+
+# command-line-interface header
 msgid "CLI"
 msgstr "Інтерфейс командного рядка"
+
+# message: unknown type
+msgid "Unknown type"
+msgstr "Невідомий тип"
 
 # help window: theme1
 msgid "Main theme"
@@ -135,6 +143,50 @@ msgstr "Тема графіків"
 # help window: theme3
 msgid "3D-plot theme"
 msgstr "Тема 3D-графіки"
+
+# help window: tsart/stop ...
+msgid "pinging"
+msgstr "пінгування"
+
+# help window: pause ...
+msgid "data refreshing"
+msgstr "оновлення даних"
+
+# help window: reset ...
+msgid "statistics data"
+msgstr "статистику"
+
+# help window: exit
+msgid "stop and quit"
+msgstr "зупинити та вийти"
+
+# help window: cycles
+msgid "Tracing cycles"
+msgstr "Цикли трасування"
+
+# help window: dark theme style
+msgid "Dark style"
+msgstr "Темний стиль"
+
+# help window: light theme style
+msgid "Light style"
+msgstr "Світлий стиль"
+
+# help window: 3d-surface colors
+msgid "RGB color pairs:"
+msgstr "RGB кольори попарно:"
+
+# help window: 3d-surface parameters
+msgid "Space, Orientation, and Step"
+msgstr "Координати, орієнтація та крок"
+
+# help window: log-tab max rows
+msgid "Max rows in log-tab"
+msgstr "Максимум рядків у вкладці логування"
+
+# help window: see too
+msgid "Options are given in pingpath(1) manual page"
+msgstr "Параметри наведені у посібнику pingpath(1)"
 
 # action menu tooltip
 msgid "Command Menu"
@@ -149,11 +201,11 @@ msgid "Auxiliary"
 msgstr "Додатково"
 
 # action-menu: 1
-msgid "_Start"
+msgid "Start"
 msgstr "Розпочати"
 
 # action-menu: 2
-msgid "_Stop"
+msgid "Stop"
 msgstr "Зупинити"
 
 # action-menu: 3
@@ -613,12 +665,12 @@ msgid "TTL range"
 msgstr "Діапазон TTL"
 
 # cli option help: message5
-msgid "QoS byte"
-msgstr "QoS байт (якість сервісу)"
+msgid "QoS/ToS byte"
+msgstr "QoS/ToS байт (якість сервісу)"
 
 # cli option help: message6
-msgid "Payload size"
-msgstr "Розмір даних"
+msgid "ICMP payload size"
+msgstr "Розмір ICMP даних"
 
 # cli option help: message7
 msgid "Payload in hex notation"
@@ -705,82 +757,74 @@ msgid "<6bit-level>"
 msgstr "<шестибітний-рівень>"
 
 # cli misc: message1
-msgid "Options"
-msgstr "Опції"
-
-# cli misc: message2
 msgid "No value"
 msgstr "Відсутнє значення"
 
-# cli misc: message3
+# cli misc: message2
 msgid "No match"
 msgstr "Не відповідно до"
 
-# cli misc: message4
+# cli misc: message3
 msgid "Cannot parse"
 msgstr "Неможливо розпарсити"
 
-# cli misc: message5
+# cli misc: message4
 msgid "Tag duplicate"
 msgstr "Тег дублікат"
 
-# cli misc: message6
+# cli misc: message5
 msgid "Wrong pair"
 msgstr "Некоректна пара"
 
-# cli misc: message7
-msgid "Unknown type"
-msgstr "Невідомий тип"
-
-# cli misc: message8
+# cli misc: message6
 msgid "Number of indexes are different"
 msgstr "Кількість індексів різна"
 
-# cli misc: message9
+# cli misc: message7
 msgid "Text"
 msgstr "Текст"
 
-# cli misc: message10
+# cli misc: message8
 msgid "CSV"
 msgstr "CSV"
 
-# cli misc: message11
+# cli misc: message9
 msgid "JSON"
 msgstr "JSON"
 
-# cli misc: message12
+# cli misc: message10
 msgid "Summary"
 msgstr "Резюме"
 
-# cli misc: message13
+# cli misc: message11
 msgid "Theme bits"
 msgstr "Біти теми"
 
-# cli misc: message14
+# cli misc: message12
 msgid "Mutually exclusive options"
 msgstr "Взаємовиключні опції"
 
-# cli misc: message15
+# cli misc: message13
 msgid "Build features"
 msgstr "Властивості програми"
 
-# cli misc: message16
+# cli misc: message14
 msgid "Runtime lib versions"
 msgstr "Версіі бібліотек"
 
-# cli misc: message17
+# cli misc: message15
 msgid "Skipping argument"
 msgstr "Пропускаємо аргумента"
 
-# cli misc: message18
+# cli misc: message16
 msgid "Unknown option"
 msgstr "Невідома опція"
 
-# cli misc: message19
+# cli misc: message17
 msgid "No goal"
 msgstr "Нема мети"
 
-# cli misc: message20
+# cli misc: message18
 msgid "Non-interactive mode with summary at exit"
 msgstr "Неінтерактивний режим із резюме на виході"
 
@@ -889,8 +933,8 @@ msgid "at exit"
 msgstr "на виході"
 
 # misc: stop pid=N
-msgid "Stop"
-msgstr "Зупиняємо"
+msgid "Stop process"
+msgstr "Зупиняємо процес"
 
 # misc: stop with EOF
 msgid "finish"
@@ -1111,4 +1155,20 @@ msgstr "Немає місця в буфері"
 # log: no connection
 msgid "Connection failed"
 msgstr "Помилка з'єднання"
+
+# legend: line toggle
+msgid "show/hide graph"
+msgstr "показати/сховати графік"
+
+# legend: exclusion mask
+msgid "Graph exclusion mask"
+msgstr "Маска виключення графіків"
+
+# debug: drag-n-drop
+msgid "DND"
+msgstr "ПЕРЕТЯГУВАННЯ"
+
+# debug: reorder
+msgid "REORDER"
+msgstr "ЗМІНА-ПОРЯДКУ"
 

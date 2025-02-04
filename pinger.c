@@ -603,7 +603,7 @@ void pinger_nth_stop(int nth, const char* reason) {
   if (proc->proc) {
     const char *id = g_subprocess_get_identifier(proc->proc);
     if (id) {
-      LOG("%s pid=%s: %s", STOP_HDR, id ? id : UNKN_HDR, reason);
+      LOG("%s=%s: %s", STOPPID_HDR, id ? id : UNKN_HDR, reason);
       proc->sig = SIGTERM;
       g_subprocess_send_signal(proc->proc, proc->sig);
       id = g_subprocess_get_identifier(proc->proc);

@@ -12,7 +12,7 @@
 #define MIN_GTK_RUNTIME(major, minor, micro) (!gtk_check_version(major, minor, micro))
 
 #define APPNAME "pingpath"
-#define VERSION "0.3.53"
+#define VERSION "0.3.54"
 #define APPVER  APPNAME "-" VERSION
 
 extern locale_t locale, localeC;
@@ -370,8 +370,6 @@ typedef struct ping_column { const char* cell[MAXADDR]; } t_ping_column;
 
 extern const double colors[][3];
 extern const int n_colors;
-
-const char* onoff(gboolean on);
 char* get_nth_color(int nth);
 
 void init_elem_links(void);

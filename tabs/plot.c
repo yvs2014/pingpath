@@ -267,7 +267,8 @@ static gboolean plot_api_set(GtkGLArea *area, int req) {
   gboolean reqes = req & GDK_GL_API_GLES;
   gtk_gl_area_set_use_es(area, reqes);
   gboolean es = gtk_gl_area_get_use_es(area);
-  DEBUG("GLES API: requested '%s', got '%s'", onoff(reqes), onoff(es));
+  DEBUG("GLES API: requested '%s', got '%s'",
+    reqes ? ON_HDR : OFF_HDR, es ? ON_HDR : OFF_HDR);
   return (es == reqes);
 #endif
 }

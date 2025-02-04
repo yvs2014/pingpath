@@ -68,7 +68,7 @@ void tab_setup(t_tab *tab) {
     if (style_loaded && tab->lab.css) gtk_widget_add_css_class(tab->lab.w, tab->lab.css);
     if (GTK_IS_BOX(tab->lab.w)) {
       const char *ico = is_sysicon(tab->ico);
-      if (!ico) WARN("No icon found for %s", tab->name);
+      if (!ico) WARN("%s: %s", tab->name, NOICON_ERR);
       gtk_box_append(GTK_BOX(tab->lab.w), gtk_image_new_from_icon_name(ico));
       if (tab->tag) gtk_box_append(GTK_BOX(tab->lab.w), gtk_label_new(tab->tag));
       if (tab->tip) gtk_widget_set_tooltip_text(tab->lab.w, tab->tip);

@@ -204,8 +204,6 @@ t_elem_desc plot_desc = { .elems = plotelem, .mm = { .min = D3_BACK, .max = D3_R
 
 static unsigned rgb2x(double c) { int n = c * 255; return n % 256; }
 
-inline const char* onoff(gboolean on) { return on ? TOGGLE_ON_HDR : TOGGLE_OFF_HDR; }
-
 char* get_nth_color(int nth) {
   int n = nth % n_colors;
   return g_strdup_printf("#%02x%02x%02x", rgb2x(colors[n][0]), rgb2x(colors[n][1]), rgb2x(colors[n][2]));

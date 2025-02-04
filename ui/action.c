@@ -212,54 +212,55 @@ static gboolean show_help_dialog(GtkWidget *win) {
 }
 
 static inline GtkWidget* get_help_content(void) {
+#define UNSCORE(item) (((item) && (*(item) == '_')) ? (item + 1) : item)
   GtkWidget *list = gtk_list_box_new();
   g_return_val_if_fail(GTK_IS_LIST_BOX(list), NULL);
   //
   help_line_s actions[] = {
     { .l = g_strdup_printf("%s/%s", ACT_START_HDR, ACT_STOP_HDR),
-      .r = g_strdup(_("pinging")) },
+      .r = g_strdup(H_PINGING_HDR) },
     { .l = g_strdup_printf("%s/%s", ACT_PAUSE_HDR, ACT_RESUME_HDR),
-      .r = g_strdup(_("data refreshing")) },
+      .r = g_strdup(H_DATAUP_HDR) },
     { .l = g_strdup(ACT_RESET_HDR),
-      .r = g_strdup(_("statistics data")) },
+      .r = g_strdup(H_STATDATA_HDR) },
     { .l = g_strdup(ACT_QUIT_HDR),
-      .r = g_strdup(_("stop and quit")) },
+      .r = g_strdup(H_EXIT_HDR) },
   };
   help_line_s main_options[] = {
     { .l = g_strdup(OPT_CYCLES_HDR),
-      .r = g_strdup_printf("%s [%d]", _("Number of ping cycles"), DEF_CYCLES) },
+      .r = g_strdup_printf("%s [%d]", H_CYCLES_HDR, DEF_CYCLES) },
     { .l = g_strdup(OPT_IVAL_HDR),
-      .r = g_strdup_printf("%s [%d]", _("Gap in seconds between pings"), DEF_TOUT) },
+      .r = g_strdup_printf("%s, %s [%d]", CLI_IOPT_DESC, UNIT_SEC, DEF_TOUT) },
     { .l = g_strdup(OPT_DNS_HDR),
-      .r = g_strdup(_("IP address resolving, on | off")) },
+      .r = g_strdup_printf("%s [%s | %s]", CLI_NOPT_DESC, ON_HDR, OFF_HDR) },
     { .l = g_strdup(OPT_INFO_HDR),
-      .r = g_strdup_printf("%s:\n%s, %s, %s, %s, %s",
-            _("Hop elements to display"),
-             ELEM_HOST_HDR, ELEM_AS_HDR, ELEM_CC_HDR, ELEM_DESC_HDR, ELEM_RT_HDR) },
+      .r = g_strdup_printf("%s, %s, %s, %s, %s",
+        ELEM_HOST_HDR, ELEM_AS_HDR, ELEM_CC_HDR, ELEM_DESC_HDR, ELEM_RT_HDR) },
     { .l = g_strdup(OPT_STAT_HDR),
-      .r = g_strdup_printf("%s:\n%s, %s, %s,\n%s, %s, %s, %s,\n%s",
-             _("Stat elements to display"),
-             ELEM_LOSS_HEADER, ELEM_SENT_HEADER, ELEM_RECV_HEADER, ELEM_LAST_HEADER,
-             ELEM_BEST_HEADER, ELEM_WRST_HEADER, ELEM_AVRG_HEADER, ELEM_JTTR_HEADER) },
+      .r = g_strdup_printf("%s, %s, %s, %s,\n%s, %s, %s, %s",
+        UNSCORE(ELEM_LOSS_HEADER), UNSCORE(ELEM_SENT_HEADER),
+        UNSCORE(ELEM_RECV_HEADER), UNSCORE(ELEM_LAST_HEADER),
+        UNSCORE(ELEM_BEST_HEADER), UNSCORE(ELEM_WRST_HEADER),
+        UNSCORE(ELEM_AVRG_HEADER), UNSCORE(ELEM_JTTR_HEADER)) },
     { .l = g_strdup(OPT_TTL_HDR),
-      .r = g_strdup_printf("%s [%d - %d]", _("TTL range"), 0, MAXTTL) },
+      .r = g_strdup_printf("%s [%d - %d]", CLI_TTL_DESC, 0, MAXTTL) },
     { .l = g_strdup(OPT_QOS_HDR),
-      .r = g_strdup_printf("%s [%d]", _("QoS/ToS byte"), DEF_QOS) },
+      .r = g_strdup_printf("%s [%d]", CLI_QOS_DESC, DEF_QOS) },
     { .l = g_strdup(OPT_PLOAD_HDR),
-      .r = g_strdup_printf("%s [%s]", _("Up to 16 bytes in hex format"), DEF_PPAD) },
+      .r = g_strdup_printf("%s [%s]", CLI_POPT_DESC, DEF_PPAD) },
     { .l = g_strdup(OPT_PSIZE_HDR),
-      .r = g_strdup_printf("%s [%d]", _("ICMP data size"), DEF_PSIZE) },
+      .r = g_strdup_printf("%s [%d]", CLI_SIZE_DESC, DEF_PSIZE) },
     { .l = g_strdup(OPT_IPV_HDR),
       .r = g_strdup_printf("%s | %s | %s", OPT_IPVA_HDR, OPT_IPV4_HDR, OPT_IPV6_HDR) },
   };
   help_line_s aux_options[] = {
     { .l = g_strdup(HELP_THEME_MAIN),
-      .r = g_strdup_printf("%s | %s", _("dark"), _("light")) },
+      .r = g_strdup_printf("%s | %s", H_DARK_S_HDR, H_LIGHT_S_HDR) },
     { .l = g_strdup(HELP_THEME_GRAPH),
-      .r = g_strdup_printf("%s | %s", _("light"), _("dark")) },
+      .r = g_strdup_printf("%s | %s", H_LIGHT_S_HDR, H_DARK_S_HDR) },
 #ifdef WITH_PLOT
     { .l = g_strdup(HELP_THEME_3D),
-      .r = g_strdup_printf("%s | %s", _("light"), _("dark")) },
+      .r = g_strdup_printf("%s | %s", H_LIGHT_S_HDR, H_DARK_S_HDR) },
 #endif
     { .l = g_strdup(OPT_GRAPH_HDR),
       .r = g_strdup_printf("%s | %s | %s",
@@ -275,22 +276,22 @@ static inline GtkWidget* get_help_content(void) {
       .r = g_strdup_printf("%s, %s, %s, %s",
              PLEL_BACK_HDR, PLEL_AXIS_HDR, PLEL_GRID_HDR, PLEL_ROTR_HDR) },
     { .l = g_strdup(OPT_GRAD_HDR),
-      .r = g_strdup_printf("%s:\n%s %s", _("3D-surface colors"),
-             _("RGB color pairs like"), "r=80:80,g=230:80,b=80:230") },
+      .r = g_strdup_printf("%s\nr=%d:%d,g=%d:%d,b=%d:%d", H_3DCOLORS_HDR,
+        DEF_RCOL_FROM, DEF_RCOL_TO, DEF_GCOL_FROM, DEF_GCOL_TO, DEF_BCOL_FROM, DEF_BCOL_TO) },
     { .l = g_strdup(OPT_ROTOR_HDR),
-      .r = g_strdup(_("Space, Orientation, and Step")) },
+      .r = g_strdup(H_ROT_PARAMS_HDR) },
     { .l = g_strdup(OPT_SCALE_HDR),
       .r = g_strdup(OPT_FOV_HDR) },
 #endif
     { .l = g_strdup(OPT_LOGMAX_HDR),
-      .r = g_strdup_printf("%s [%d]", _("Max rows in log-tab"), DEF_LOGMAX) },
+      .r = g_strdup_printf("%s [%d]", H_LOG_MAXROW_HDR, DEF_LOGMAX) },
   };
   help_line_s cli_options[] = {
-    { .l = g_strdup(_("for command-line options see " APPNAME "(1) manual page")) }
+    { .l = g_strdup(H_SEE_TOO_HDR) }
   };
   //
   help_section_s sections[] = {
-    { .name  = g_strdup(HELP_ACT_TITLE),
+    { .name  = g_strdup(ACTIONS_HDR),
       .lines = actions,
       .len   = G_N_ELEMENTS(actions) },
     { .name  = g_strdup(OPT_MAINMENU_TIP),
@@ -299,7 +300,7 @@ static inline GtkWidget* get_help_content(void) {
     { .name  = g_strdup(OPT_AUXMENU_TIP),
       .lines = aux_options,
       .len   = G_N_ELEMENTS(aux_options) },
-    { .name  = g_strdup(HELP_CLI_TITLE),
+    { .name  = g_strdup(CLI_HDR),
       .lines = cli_options,
       .len   = G_N_ELEMENTS(cli_options) },
   };
@@ -350,12 +351,13 @@ static inline GtkWidget* get_help_content(void) {
   }
   g_object_unref(g0);
   g_object_unref(g1);
-#undef ADD_H_LABEL
   //
   if (GTK_IS_LIST_BOX(list)) {
     gtk_list_box_set_selection_mode(GTK_LIST_BOX(list), GTK_SELECTION_NONE);
     gtk_list_box_set_show_separators(GTK_LIST_BOX(list), false);
   }
+#undef ADD_H_LABEL
+#undef UNSCORE
   return list;
 }
 
@@ -475,7 +477,7 @@ static GMenu* action_menu_init(GtkWidget *bar) {
   const char *icons[] = {ACT_MENU_ICON, ACT_MENU_ICOA, NULL};
   const char *ico = is_sysicon(icons);
   if (ico) gtk_menu_button_set_icon_name(GTK_MENU_BUTTON(button), ico);
-  else WARN("No icon found for %s", "action menu");
+  else WARN("%s: %s", ACTIONS_HDR, NOICON_ERR);
   gtk_widget_set_tooltip_text(button, OPT_ACTIONS_TIP);
   GMenu *menu = g_menu_new();
   if (G_IS_MENU(menu)) {

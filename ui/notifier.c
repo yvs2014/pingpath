@@ -18,7 +18,6 @@
 #define LGND_DIS_MARK_FMT "<span strikethrough='true' strikethrough_color='#ff0000'>%d</span>"
 #define LGND_DASH_DEF_FMT "<span weight='800'>%s</span>"
 #define LGND_DASH_COL_FMT "<span weight='800' color='%s'>%s</span>"
-#define LGND_LINE_TOGGLE_TIP "show/hide graph #%d"
 
 typedef struct nt_leg {
   GtkListBoxRow *row;      // row
@@ -187,7 +186,7 @@ static void nt_lgnd_row_cb(GtkListBox *self G_GNUC_UNUSED,
             gtk_list_box_row_set_selectable(row, sel);
             gtk_widget_set_opacity(GTK_WIDGET(row), sel ? 1 : 0.5);
             if (pinger_state.gotdata && !pinger_state.run) graphtab_update();
-            LOG("graph exclusion mask: 0x%x", lgnd_excl_mask);
+            LOG("%s: 0x%x", LEGEND_EXCL, lgnd_excl_mask);
           }
         }
       }
@@ -202,7 +201,7 @@ static GdkContentProvider* nt_dnd_drag(GtkDragSource *self G_GNUC_UNUSED,
   GdkContentProvider *prov = NULL;
   if (nt) {
     nt->dx = round(x); nt->dy = round(y);
-    DNDORD("DND-drag: x=%d y=%d, dx=%d dy=%d", nt->x, nt->y, nt->dx, nt->dy);
+    DNDORD("%s: x=%d y=%d, dx=%d dy=%d", DEB_DND, nt->x, nt->y, nt->dx, nt->dy);
     prov = gdk_content_provider_new_typed(G_TYPE_POINTER, nt); }
   return prov;
 }
@@ -213,7 +212,7 @@ static void nt_dnd_icon(GtkDragSource *src, GdkDrag *drag G_GNUC_UNUSED, t_notif
     if (icon) {
       gtk_drag_source_set_icon(src, icon, nt->dx, nt->dy);
       g_object_unref(icon);
-      DNDORD("DND-icon: dx=%d dy=%d", nt->dx, nt->dy); }}
+      DNDORD("%s: dx=%d dy=%d", DEB_DND, nt->dx, nt->dy); }}
 }
 
 static gboolean nt_on_drop(GtkDropTarget *self G_GNUC_UNUSED, const GValue *value,
@@ -225,8 +224,9 @@ static gboolean nt_on_drop(GtkDropTarget *self G_GNUC_UNUSED, const GValue *valu
     okay = sender && (sender == receiver);
     if (okay) {
       int sx = round(x) - sender->dx, sy = round(y) - sender->dy;
-      DNDORD("DND-drop: x=%d y=%d, dx=%d dy=%d, cursor at x=%.0f y=%.0f", sx, sy, sender->dx, sender->dy, x, y);
-      LOG("%s relocation: (%d %d) => (%d %d)", sender->css.def, sender->x, sender->y, sx, sy);
+      DNDORD("%s: x=%d y=%d, dx=%d dy=%d, cursor(%.0f,%.0f)",
+        DEB_DND, sx, sy, sender->dx, sender->dy, x, y);
+      LOG("%s: (%d %d) => (%d %d)", sender->css.def, sender->x, sender->y, sx, sy);
       sender->x = sx; sender->y = sy; }}
   return okay;
 }
@@ -291,7 +291,7 @@ static void nt_init_legend(GtkWidget *inbox, GtkWidget *over, t_notifier *nt) {
   for (int i = 0; leg && (i < n); i++, leg++) {
     leg->box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, MARGIN);
     if (leg->box) { // number, color dash, avrg±jttr, cc:as, hopname
-      char span[100]; g_snprintf(span, sizeof(span), LGND_LINE_TOGGLE_TIP, i + 1);
+      char span[100]; g_snprintf(span, sizeof(span), "%s #%d", LEGEND_TIP, i + 1);
       gtk_widget_set_tooltip_text(leg->box, span);
       leg->row = line_row_new(leg->box, false);
       if (leg->row) nt_make_leg_row(GTK_LIST_BOX(inbox), group, i, leg, nt->css.col);
@@ -310,11 +310,11 @@ static void nt_rotor_cb(GtkButton *self G_GNUC_UNUSED, t_kb_plot_aux *aux) {
 
 static void nt_init_rotor(GtkWidget *inbox, GtkWidget *over, t_notifier *nt) {
   if (!GTK_IS_BOX(inbox)) return;
-  t_rotor_arrow rc01 = {.alt = "UP",    .ico = {RTR_UP_ICON,    RTR_UP_ICOA,    RTR_UP_ICOB   }};
-  t_rotor_arrow rc10 = {.alt = "LEFT",  .ico = {RTR_LEFT_ICON,  RTR_LEFT_ICOA,  RTR_LEFT_ICOB }};
-  t_rotor_arrow rc11 = {.alt = "ROLL",  .ico = {RTR_ROLL_ICON,  RTR_ROLL_ICOA,  RTR_ROLL_ICOB }};
-  t_rotor_arrow rc12 = {.alt = "RIGHT", .ico = {RTR_RIGHT_ICON, RTR_RIGHT_ICOA, RTR_RIGHT_ICOB}};
-  t_rotor_arrow rc21 = {.alt = "DOWN",  .ico = {RTR_DOWN_ICON,  RTR_DOWN_ICOA,  RTR_DOWN_ICOB }};
+  t_rotor_arrow rc01 = {.alt = "↑", .ico = {RTR_UP_ICON,    RTR_UP_ICOA,    RTR_UP_ICOB   }};
+  t_rotor_arrow rc10 = {.alt = "←", .ico = {RTR_LEFT_ICON,  RTR_LEFT_ICOA,  RTR_LEFT_ICOB }};
+  t_rotor_arrow rc11 = {.alt = "↻", .ico = {RTR_ROLL_ICON,  RTR_ROLL_ICOA,  RTR_ROLL_ICOB }};
+  t_rotor_arrow rc12 = {.alt = "→", .ico = {RTR_RIGHT_ICON, RTR_RIGHT_ICOA, RTR_RIGHT_ICOB}};
+  t_rotor_arrow rc21 = {.alt = "↓", .ico = {RTR_DOWN_ICON,  RTR_DOWN_ICOA,  RTR_DOWN_ICOB }};
   t_rotor_arrow* rotor_cntrl[3][3] = {
     {NULL,  &rc01, NULL },
     {&rc10, &rc11, &rc12},
@@ -387,7 +387,7 @@ static GtkWidget* nt_init(GtkWidget *base, t_notifier *nt) {
       }
     } break;
 #endif
-    default: WARN("Unknown notifier type: %d\n", nt->type);
+    default: WARN("%s: %d\n", UNKNTYPE_HDR, nt->type);
   }
   g_return_val_if_fail(inbox, NULL);
   nt->inbox = inbox;

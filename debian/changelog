@@ -1,3 +1,9 @@
+pingpath (0.3.54) noble; urgency=low
+
+  * NLS wip: start adding NLS to level2 .c files
+
+ -- yvs <VSYakovetsky@gmail.com>  Tue, 04 Feb 2025 17:55:12 +0200
+
 pingpath (0.3.53) noble; urgency=low
 
   * NLS wip: debug messages in level1 files

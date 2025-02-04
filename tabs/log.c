@@ -61,7 +61,7 @@ t_tab* logtab_init(GtkWidget* win) {
   logtab.tip = LOG_TAB_TIP;
   if (!basetab_init(&logtab, gtk_list_box_new, NULL)) return NULL;
   logtab_set_dyn_props(logtab.dyn.w);
-  if (!clipboard_init(win, &logtab)) LOG("no %s clipboard", logtab.name);
+  if (!clipboard_init(win, &logtab)) LOG("%s: %s", ERROR_HDR, logtab.name);
   return &logtab;
 }
 

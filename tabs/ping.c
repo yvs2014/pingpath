@@ -89,7 +89,7 @@ static void pt_set_elem_align(int type, GtkWidget *label) {
 static void pt_pr_elem_ndxs(const char *pre, const t_type_elem *elems, int len) {
   GString *str = g_string_new(NULL);
   for (int i = 0; i < len; i++) g_string_append_printf(str, " %d", elems[i].type);
-  g_message("REORDER %s%s", pre, str->str); g_string_free(str, true);
+  g_message("%s: %s%s", DEB_REORDER, pre, str->str); g_string_free(str, true);
 }
 
 #define PT_PRINT_ELEMS(pre, elems, len) do { if (verbose.dnd) pt_pr_elem_ndxs(pre, elems, len); } while (0)
@@ -152,7 +152,7 @@ static gboolean pt_reorder_cells(t_listline *lines, int len, int sn, int dn, gbo
       pt_recache_labels(box, lines[i].labs);
       continue;
     }
-    WARN("missed widgets at line=%d [src=%d,dst=%d]", i, sn, dn);
+    DEBUG("%s: %s: #%d: %d -> %d", ERROR_HDR, DEB_REORDER, i, sn, dn);
     if (okay) okay = false;
   }
   return okay;
@@ -165,7 +165,7 @@ static GdkContentProvider* pt_hdr_dnd_drag(GtkDragSource *self G_GNUC_UNUSED,
 {
   if (!dnd) return NULL;
   dnd->dx = round(x); dnd->dy = round(y);
-  DNDORD("DND-drag[%s]: dx,dy=(%d,%d)", PT_LAB_TEXT(dnd->w), dnd->dx, dnd->dy);
+  DNDORD("%s[%s]: dx,dy=(%d,%d)", DEB_DND, PT_LAB_TEXT(dnd->w), dnd->dx, dnd->dy);
   return gdk_content_provider_new_typed(G_TYPE_POINTER, dnd);
 }
 
@@ -175,7 +175,7 @@ static void pt_hdr_dnd_icon(GtkDragSource *src, GdkDrag *drag G_GNUC_UNUSED, t_p
   if (!GDK_IS_PAINTABLE(icon)) return;
   gtk_drag_source_set_icon(src, icon, dnd->dx, dnd->dy);
   g_object_unref(icon);
-  DNDORD("DND-icon[%s]: dx,dy=(%d,%d)", PT_LAB_TEXT(dnd->w), dnd->dx, dnd->dy);
+  DNDORD("%s: %s: dx,dy=(%d,%d)", DEB_DND, PT_LAB_TEXT(dnd->w), dnd->dx, dnd->dy);
 }
 
 static GdkDragAction pt_hdr_on_move(GtkDropTarget *dst,
@@ -196,19 +196,21 @@ static gboolean pt_hdr_on_drop(GtkDropTarget *self G_GNUC_UNUSED, const GValue *
   int sn = pt_box_wndx(ddnd->b, sdnd->w), dn = pt_box_wndx(ddnd->b, ddnd->w);
   if ((sn < 0) || (dn < 0) || (sn == dn)) return false;
   if (!GTK_IS_WIDGET(sdnd->w) || !GTK_IS_WIDGET(ddnd->w) || (sdnd->w == ddnd->w)) return false;
-  if (sdnd->desc != ddnd->desc) { DNDORD("DND-drop: %s", "different groups"); return false; }
+  if (sdnd->desc != ddnd->desc) { DNDORD("%s: %s", DEB_DND, "different groups"); return false; }
   gboolean before = gtk_widget_contains(ddnd->w, x * 2, y);
   PT_PRINT_ELEMS("array: <<<", ddnd->desc->elems, PE_MAX);
   PT_PRINT_ELEMS("group: <<<", &ddnd->desc->elems[ddnd->desc->mm.min], ddnd->desc->mm.max - ddnd->desc->mm.min + 1);
   if (pt_reorder_elems(sn, before ? dn : dn + 1, ddnd->desc)) { // reorder inplace asserting no further errors
     if (!pt_reorder_cells(ddnd->hdr, HDRLINES, sn, dn, before))
-      g_critical("REORDER header: partial reordering");
+      g_critical("%s: header: partial reordering", DEB_REORDER);
     if (!pt_reorder_cells(ddnd->body, MAXTTL, sn, dn, before))
-      g_critical("REORDER lines: partial reordering");
+      g_critical("%s: lines: partial reordering", DEB_REORDER);
     GString *msg = g_string_new(NULL);
     if (msg) {
       g_string_printf(msg, "\"%s\" %s \"%s\"", PT_LAB_TEXT(sdnd->w), before ? "before" : "after", PT_LAB_TEXT(ddnd->w));
-      DNDORD("DND-drop: put %s", msg->str); LOG("dnd reorder: %s", msg->str); g_string_free(msg, true);
+      DNDORD("%s: put %s", DEB_DND, msg->str);
+      LOG("%s: %s", DEB_REORDER, msg->str);
+      g_string_free(msg, true);
     }
   }
   PT_PRINT_ELEMS("group: >>>", &ddnd->desc->elems[ddnd->desc->mm.min], ddnd->desc->mm.max - ddnd->desc->mm.min + 1);
@@ -364,7 +366,7 @@ void pingtab_vis_rows(int upto) {
 }
 
 void pingtab_vis_cols(void) {
-  DEBUG("set %s", "visible columns");
+//  DEBUG("%s: %s", PING_HDR, VISROWS_HDR);
   for (int i = 0; i < HDRLINES; i++) pt_set_vis_cells(listbox.hdrlines[i].labs);
   for (int i = 0; i < MAXTTL; i++) pt_set_vis_cells(listbox.bodylines[i].labs);
   pingtab_update();

@@ -12,11 +12,11 @@
 #define PAD6  "6px"
 #define PAD16 "16px"
 
-#define PROP_PREFER "gtk-application-prefer-dark-theme"
-#define PROP_THEME  "gtk-theme-name"
-#define DARK_SFFX   "dark"
-#define SFFX_DIV1   "-"
-#define SFFX_DIV2   ":"
+#define PROP_THEME       "gtk-theme-name"
+#define PROP_PREFER_DARK "gtk-application-prefer-dark-theme"
+#define DARK_SFFX "dark"
+#define SFFX_DIV1 "-"
+#define SFFX_DIV2 ":"
 
 #define LEGEND_BORDER     "#515151"
 #define BG_CONTRAST_DARK  "#2c2c2c"
@@ -120,13 +120,14 @@ static char* style_basetheme(const char *theme) {
 
 static char* style_prefer(gboolean dark) {
   GtkSettings *set = gtk_settings_get_default();
-  if (!set) { WARN("no default settings"); return NULL; }
-  g_object_set(G_OBJECT(set), PROP_PREFER, dark, NULL);
+  if (!set) { WARN("%s: %s", ERROR_HDR, "gtk_settings_get_default()"); return NULL; }
+  g_object_set(G_OBJECT(set), PROP_PREFER_DARK, dark, NULL);
   char *theme = NULL; g_object_get(set, PROP_THEME, &theme, NULL);
-  if (!theme) { WARN("no theme"); return NULL; }
+  if (!theme) { WARN("%s: g_object_get(%s)", ERROR_HDR, PROP_THEME); return NULL; }
   char *prefer = style_basetheme(theme); g_free(theme);
   ub_theme = prefer ? (strcasestr(prefer, "Yaru") != NULL) : false; // aux info for icons
-  LOG("theme='%s' prefer-dark=%d", prefer, dark);
+  DEBUG("%s: %s", PROP_THEME, prefer);
+  DEBUG("%s: %s", PROP_PREFER_DARK, dark ? ON_HDR : OFF_HDR);
   return prefer;
 }
 
@@ -147,7 +148,7 @@ static void style_load_extra(GdkDisplay *display) {
   GtkCssProvider *prov = gtk_css_provider_new();
   g_return_if_fail(GTK_IS_CSS_PROVIDER(prov));
   char *data = style_extra_css(css_common);
-  if (!data) { WARN("no CSS data"); g_object_unref(prov); return; }
+  if (!data) { WARN("%s: %s", ERROR_HDR, "style_extra_css()"); g_object_unref(prov); return; }
   style_css_load(prov, data); g_free(data);
   if (prov_extra) gtk_style_context_remove_provider_for_display(display, GTK_STYLE_PROVIDER(prov_extra));
   prov_extra = prov;
@@ -173,7 +174,7 @@ const char* is_sysicon(const char **icon) {
 void style_set(void) {
   STYLE_GET_DISPLAY();
   char *prefer = style_prefer(opts.darktheme);
-  if (prefer) { style_load_theme(display, prefer, opts.darktheme ? "dark" : NULL); g_free(prefer); }
+  if (prefer) { style_load_theme(display, prefer, opts.darktheme ? DARK_SFFX : NULL); g_free(prefer); }
   style_load_extra(display);
 }
 

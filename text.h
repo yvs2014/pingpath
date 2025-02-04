@@ -9,6 +9,8 @@
 
 // common
 #define BUTTON_OKAY    _("Okay")
+#define ON_HDR         _("on")
+#define OFF_HDR        _("off")
 #define UNIT_SEC       _("sec")
 #define UNIT_MSEC      _("msec")
 #define UNIT_USEC      _("usec")
@@ -17,6 +19,10 @@
 #define NODATAYET_MSG  _("No data yet")
 #define NOREACH_MSG    _("Not reached")
 #define NOREACHYET_MSG _("Not reached yet")
+#define ACTIONS_HDR    _("Actions")
+#define OPTIONS_HDR    _("Options")
+#define CLI_HDR        _("CLI")
+#define UNKNTYPE_HDR   _("Unknown type")
 
 // tab names-n-tips
 #define PING_TAB_TAG  _("Trace")
@@ -29,11 +35,20 @@
 #define PLOT_TAB_TIP  _("3D graphics")
 
 // help window
-#define HELP_ACT_TITLE   _("Actions")
-#define HELP_CLI_TITLE   _("CLI")
 #define HELP_THEME_MAIN  _("Main theme")
 #define HELP_THEME_GRAPH _("Graph theme")
 #define HELP_THEME_3D    _("3D-plot theme")
+#define H_PINGING_HDR    _("pinging")
+#define H_DATAUP_HDR     _("data refreshing")
+#define H_STATDATA_HDR   _("statistics data")
+#define H_EXIT_HDR       _("stop and quit")
+#define H_CYCLES_HDR     _("Tracing cycles")
+#define H_DARK_S_HDR     _("Dark style")
+#define H_LIGHT_S_HDR    _("Light style")
+#define H_3DCOLORS_HDR   _("RGB color pairs:")
+#define H_ROT_PARAMS_HDR _("Space, Orientation, and Step")
+#define H_LOG_MAXROW_HDR _("Max rows in log-tab")
+#define H_SEE_TOO_HDR    _("Options are given in " APPNAME "(1) manual page")
 
 // menu tooltips
 #define OPT_ACTIONS_TIP  _("Command Menu")
@@ -41,8 +56,8 @@
 #define OPT_AUXMENU_TIP  _("Auxiliary")
 
 // actions
-#define ACT_START_HDR    _("_Start")
-#define ACT_STOP_HDR     _("_Stop")
+#define ACT_START_HDR    _("Start")
+#define ACT_STOP_HDR     _("Stop")
 #define ACT_PAUSE_HDR    _("Pause")
 #define ACT_RESUME_HDR   _("Resume")
 #define ACT_RESET_HDR    _("Reset")
@@ -166,10 +181,6 @@
 #define PLEL_GRID_HDR    _("Grid")
 #define PLEL_ROTR_HDR    _("Rotator")
 
-// toggle tips
-#define TOGGLE_ON_HDR  _("on")
-#define TOGGLE_OFF_HDR _("off")
-
 // spinner fields
 #define SPN_TTL_DELIM  _("range")
 #define SPN_RCOL_DELIM _("red")
@@ -197,8 +208,8 @@
 #define CLI_NOPT_DESC _("IP addresses in numeric form")
 #define CLI_IOPT_DESC _("Interval between pings")
 #define CLI_TTL_DESC  _("TTL range")
-#define CLI_QOS_DESC  _("QoS byte")
-#define CLI_SIZE_DESC _("Payload size")
+#define CLI_QOS_DESC  _("QoS/ToS byte")
+#define CLI_SIZE_DESC _("ICMP payload size")
 #define CLI_POPT_DESC _("Payload in hex notation")
 #define CLI_STAT_DESC _("Statistics fields")
 #define CLI_TOPT_DESC _("Toggle dark/light themes")
@@ -224,13 +235,11 @@
 #define CLI_VOPT_HINT _("<6bit-level>")
 
 // CLI misc messages
-#define CLI_OPTS_HDR    _("Options")
 #define CLI_NOVAL_HDR   _("No value")
 #define CLI_NOMATCH_HDR _("No match")
 #define CLI_NOPARSE_HDR _("Cannot parse")
 #define CLI_DUPTAG_HDR  _("Tag duplicate")
 #define CLI_NOPAIR_HDR  _("Wrong pair")
-#define CLI_BADTYPE_HDR _("Unknown type")
 #define CLI_NDXDIFF_HDR _("Number of indexes are different")
 #define CLI_ROPT_T_HDR  _("Text")
 #define CLI_ROPT_C_HDR  _("CSV")
@@ -262,7 +271,7 @@
 #define RUNTIME_EXP     _("runtime expired")
 #define INP_FAILED      _("stdin failed")
 #define RELRES_HDR      _("release resources")
-#define STOP_HDR        _("Stop")
+#define STOPPID_HDR     _("Stop process")
 #define EOF_HDR         _("finish")
 #define BYREQ_HDR       _("by request")
 #define VISROWS_HDR     _("Visible rows")
@@ -322,5 +331,9 @@
 #define UNRES_HDR     _("Unresolved")
 #define NOBUFF_ERR    _("No space in buffer")
 #define NOCONN_ERR    _("Connection failed")
+#define LEGEND_TIP    _("show/hide graph")
+#define LEGEND_EXCL   _("Graph exclusion mask")
+#define DEB_DND       _("DND")
+#define DEB_REORDER   _("REORDER")
 
 #endif

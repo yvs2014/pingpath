@@ -240,7 +240,7 @@ static gboolean cli_opt_X_pair(const char *value, char tag, const char *name, t_
         okay = cli_opt_X_o(dup, ENT_SPN_GLOBAL, 0, pval);
       } break;
       case F_TAG: if (xnth_nodup(&xpairbits, 5)) okay = cli_opt_X_f(dup, ENT_SPN_FOV, 0); break;
-      default: g_warning("%s: %s: '%c'", name, BADTAG_HDR, tag);
+      default: g_warning("%s: %s: '%c'", name, UNKNTYPE_HDR, tag);
     }
     g_free(dup);
     if (xpairbits & 1U) {
@@ -281,7 +281,7 @@ static char* cli_opt_charelem(char *str, const char *patt, int ch) {
     gboolean *pbool = EN_BOOLPTR(en);
     if (pbool) {
       *pbool = true;
-      g_message("%s: %s: %s", en->prefix, en->en.name, TOGGLE_ON_HDR);
+      g_message("%s: %s: %s", en->prefix, en->en.name, ON_HDR);
     }
   }
   return str;
@@ -312,11 +312,10 @@ static void reorder_elems(const char *str, t_elem_desc *desc) {
     for (const char *p = order; *p; p++, n++) {
       int ndx = char2ndx(desc->cat, true, *p);
       int type = char2ndx(desc->cat, false, *p);
-      if ((type < 0) || (ndx < 0))
-        WARN("%s: ent=%d elem=%d", INVAL_HDR, ndx, type);
+      if ((type < 0) || (ndx < 0)) WARN("%s: [%d] %d", INVAL_HDR, ndx, type);
       else {
         ndx = type2ndx(type);
-        if (ndx < 0) WARN("%s: %d", CLI_BADTYPE_HDR, type);
+        if (ndx < 0) WARN("%s: %d", UNKNTYPE_HDR, type);
         else newelems[n] = desc->elems[ndx];
       }
     }
@@ -332,7 +331,7 @@ static char* cli_char_opts(int type, const char *value, unsigned cat, t_elem_des
   char *str = cli_opt_charelem(parser_str(value, hdr, cat), desc->patt, desc->cat);
   if (str) {
     if (str[0]) reorder_elems(str, desc);
-    else g_message("%s: %s", hdr, TOGGLE_OFF_HDR);
+    else g_message("%s: %s", hdr, OFF_HDR);
   }
   PRINT_REORDER_ELEMS(desc->elems, max);
   return str;
@@ -374,7 +373,7 @@ static gboolean cli_opt_elem(const char *name, const char *value, GError **error
           case 'j':
           case 'J': type = CLI_ROPT_J_HDR;  break;
 #endif
-          default:  type = CLI_BADTYPE_HDR; break;
+          default:  type = UNKNTYPE_HDR;    break;
         }
         g_message("%s: %s", CLI_SUMM_DESC, type);
       }
@@ -454,7 +453,7 @@ static gboolean config_opt_not_found(GError *opterr, const char *section, const 
 static void cli_set_opt_dns(gboolean dns, t_opts *opts) {
   if (opts && (opts->dns != dns)) {
     opts->dns = dns;
-    g_message("%s %s", OPT_DNS_HDR, onoff(dns));
+    g_message("%s %s", OPT_DNS_HDR, dns ? ON_HDR : OFF_HDR);
   }
 }
 
@@ -533,7 +532,7 @@ static gboolean cli_opt_f(const char *name, const char *value, t_opts *opts, GEr
             if ((val == 4) || (val == 6)) {
               if (opts->ipv != val) {
                 opts->ipv = val;
-                g_message("%s: %s", (val == 4) ? OPT_IPV4_HDR : OPT_IPV6_HDR, TOGGLE_ON_HDR);
+                g_message("%s: %s", (val == 4) ? OPT_IPV4_HDR : OPT_IPV6_HDR, ON_HDR);
               }
             } else {
               g_warning("%s:%s: %s: %d", section, optname, INVAL_HDR, val);
@@ -660,7 +659,7 @@ static int cli_init_proc(int *pargc, char ***pargv,
     {} // trailing 0
   };
   // options
-  GOptionGroup *group = g_option_group_new(APPNAME, APPNAME, CLI_OPTS_HDR, &opts, NULL);
+  GOptionGroup *group = g_option_group_new(APPNAME, APPNAME, OPTIONS_HDR, &opts, NULL);
   if (!group) return EXIT_FAILURE;
   g_option_group_add_entries(group, options);
   GOptionContext *context = g_option_context_new(NULL);
@@ -716,11 +715,11 @@ static int cli_init_proc(int *pargc, char ***pargv,
     CLI_FAIL("%s: -%c -%c", CLI_MUT_EXC_HDR, '4', '6');
   if (onoff[ONOFF_IPV4] && (opts.ipv != 4)) {
     opts.ipv = 4;
-    g_message("%s: %s", OPT_IPV4_HDR, TOGGLE_ON_HDR);
+    g_message("%s: %s", OPT_IPV4_HDR, ON_HDR);
   }
   if (onoff[ONOFF_IPV6] && (opts.ipv != 6)) {
     opts.ipv = 6;
-    g_message("%s: %s", OPT_IPV6_HDR, TOGGLE_ON_HDR);
+    g_message("%s: %s", OPT_IPV6_HDR, ON_HDR);
   }
   if (num >= 0)
     cli_set_opt_dns(!num, &opts);

@@ -231,8 +231,9 @@ static gboolean check_bool_val(GtkCheckButton *check, t_ent_bool *en, void (*upd
     const char *name = en->en.name;
     if (name && (*name == '_'))
       name++;
-    if (en->prefix) OPT_NOTIFY("%s: %s %s", en->prefix, name, onoff(state));
-    else            OPT_NOTIFY("%s: %s",                name, onoff(state));
+    const char *enabled = state ? ON_HDR : OFF_HDR;
+    if (en->prefix) OPT_NOTIFY("%s: %s %s", en->prefix, name, enabled);
+    else            OPT_NOTIFY("%s: %s",                name, enabled);
   }
   return okay;
 }
@@ -408,7 +409,7 @@ static void minttl_cb(GtkSpinButton *spin, t_ent_spn_elem *en) {
       if (cp_val >= got) // avoid callback triggering
         gtk_spin_button_set_range(aux->spin, got, cp_max);
     }
-  } else WARN("out-of-range[%d,%d]: %d", minmax->min, max, got);
+  } else WARN("%s [%d,%d]: %d", OUTRANGE_ERR, minmax->min, max, got);
 }
 
 static void maxttl_cb(GtkSpinButton *spin, t_ent_spn_elem *en) {
@@ -431,7 +432,7 @@ static void maxttl_cb(GtkSpinButton *spin, t_ent_spn_elem *en) {
       if (cp_val <= got) // avoid callback triggering
         gtk_spin_button_set_range(GTK_SPIN_BUTTON(aux->spin), cp_min, got);
     }
-  } else WARN("out-of-range[%d,%d]: %d", min, minmax->max, got);
+  } else WARN("%s [%d,%d]: %d", OUTRANGE_ERR, min, minmax->max, got);
 }
 
 #ifdef WITH_PLOT
@@ -449,7 +450,7 @@ static void colgrad_cb(GtkSpinButton *spin, t_ent_spn_aux *aux) {
     else
       OPT_NOTIFY("%s: %d (0x%02x)", aux->prfx, got, got);
     plottab_refresh(PL_PARAM_COLOR);
-  } else WARN("out-of-range[%d,%d]: %d", minmax->min, minmax->max, got);
+  } else WARN("%s [%d,%d]: %d", OUTRANGE_ERR, minmax->min, minmax->max, got);
 }
 
 void set_rotor_n_redraw(int step, gboolean rev, int n) {
@@ -591,7 +592,7 @@ static GtkWidget* add_opt_expand(GtkWidget* list, t_ent_exp *en) {
     if (type2ent) for (int i = desc->mm.min; i <= desc->mm.max; i++) {
       int type = desc->elems[i].type;
       int ndx = type2ent(type);
-      if (ndx < 0) WARN("Unknown %d type", type);
+      if (ndx < 0) WARN("%s: %d", UNKNTYPE_HDR, type);
       else add_opt_check(en->c.sub, &ent_bool[ndx]);
     }
   }
@@ -625,7 +626,7 @@ static gboolean add_minmax(GtkWidget *box, t_ent_spn_elem *en, int ndx, const in
         if (en->aux[ndx].cb)
           g_signal_connect(spin, EV_VAL_CHANGE, en->aux[ndx].cb, en->bond ? (void*)en : &en->aux[ndx]);
         okay = true;
-     } else WARN("gtk_spin_button_new_with_range()");
+     } else WARN("%s: %s", ERROR_HDR, "gtk_spin_button_new_with_range()");
   }}
   return okay;
 }
@@ -656,7 +657,7 @@ static GtkWidget* add_opt_range(GtkWidget* listbox, t_ent_spn *en) {
         case MINIMAX_SPIN:
           add_minmax(subbox, elem, 0, NULL, false);
           grey_into_box(subbox, gtk_image_new_from_icon_name(GO_LEFT_ICON), false, false);
-          grey_into_box(subbox, gtk_label_new(elem->delim ? elem->delim : "min max"), false, true);
+          grey_into_box(subbox, gtk_label_new(elem->delim ? elem->delim : "<=>"), false, true);
           grey_into_box(subbox, gtk_image_new_from_icon_name(GO_RIGHT_ICON), false, false);
           add_minmax(subbox, elem, 1, NULL, false);
           break;
@@ -723,7 +724,7 @@ static gboolean create_optmenu(GtkWidget *bar, const char **icons, const char *t
   gboolean okay = true;
   gtk_header_bar_pack_start(GTK_HEADER_BAR(bar), menu);
   const char *ico = is_sysicon(icons);
-  if (!ico) WARN("No icon found for %s", "option menu");
+  if (!ico) WARN("%s: %s", OPTIONS_HDR, NOICON_ERR);
   else gtk_menu_button_set_icon_name(GTK_MENU_BUTTON(menu), ico);
   if (tooltip) gtk_widget_set_tooltip_text(menu, tooltip);
   GtkWidget *popover = gtk_popover_new();
