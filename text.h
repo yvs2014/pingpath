@@ -23,6 +23,12 @@
 #define OPTIONS_HDR    _("Options")
 #define CLI_HDR        _("CLI")
 #define UNKNTYPE_HDR   _("Unknown type")
+#define MIN_HDR        _("min")
+#define MAX_HDR        _("max")
+// graphics
+#define TIME_TITLE     _("Time")
+#define DELAY_TITLE    _("Delay")
+#define HOPS_TITLE     _("Hops")
 
 // tab names-n-tips
 #define PING_TAB_TAG  _("Trace")
@@ -335,5 +341,15 @@
 #define LEGEND_EXCL   _("Graph exclusion mask")
 #define DEB_DND       _("DND")
 #define DEB_REORDER   _("REORDER")
+#define ARRAY_HDR     _("array")
+#define GROUP_HDR     _("group")
+#define RDR_PART_ERR  _("partial reordering")
+#define BEFORE_HDR    _("before")
+#define AFTER_HDR     _("after")
+#define CLIPBOARD_HDR _("clipboard")
+#define SHADER_LOOKUP_HDR _("Vertex shader texture lookups")
+#define REQUESTED_HDR _("requested")
+#define RECEIVED_HDR  _("received")
+#define INCOMPATV_HDR _("Incompat version")
 
 #endif

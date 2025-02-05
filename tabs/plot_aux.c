@@ -16,7 +16,7 @@ static GLenum last_known_gl_error = GL_NO_ERROR;
 static void plot_aux_chkerr(void) {
   GLenum err = glGetError();
   if ((err == GL_NO_ERROR) || (err == last_known_gl_error)) return;
-  last_known_gl_error = err; g_warning("GL error: 0x%04x", err);
+  last_known_gl_error = err; g_warning("GL %s: 0x%04x", ERROR_HDR, err);
 }
 
 static const float PLOT_NAN = -1.01F;

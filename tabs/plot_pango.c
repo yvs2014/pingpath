@@ -14,7 +14,7 @@ static cairo_t* plot_create_cairo(void) {
   cairo_t *cairo = NULL;
   int status = cairo_surface_status(surface);
   if (status == CAIRO_STATUS_SUCCESS) cairo = cairo_create(surface);
-  else WARN("Status of creating cairo surface: %d", status);
+  else WARN("%s: %s: %s", ERROR_HDR, "cairo_surface_status()", cairo_status_to_string(status));
   cairo_surface_destroy(surface);
   return cairo;
 }
@@ -28,7 +28,8 @@ static cairo_t* plot_create_cairo_from_buff(int size[2], cairo_format_t format,
   *psurf = cairo_image_surface_create_for_data(*pbuff, CAIRO_FORMAT_ARGB32, size[0], size[1], stride);
   unsigned status = *psurf ? cairo_surface_status(*psurf) : CAIRO_STATUS_NO_MEMORY;
   if (status == CAIRO_STATUS_SUCCESS) return cairo_create(*psurf);
-  WARN("image error(%d): %s", status, cairo_status_to_string(status));
+  WARN("%s: %s: %s", ERROR_HDR, "cairo_image_surface_create_for_data()",
+    cairo_status_to_string(status));
   g_free(*pbuff); *pbuff = NULL;
   return NULL;
 }
@@ -60,7 +61,7 @@ gboolean plot_pango_init(void) {
     if (plot_font) {
       pango_font_description_set_family(plot_font, PP_FONT_FAMILY);
       pango_font_description_set_absolute_size(plot_font, PLOT_FONT_SIZE * PANGO_SCALE);
-    } else WARN("Cannot allocate pango font");
+    } else WARN("%s: %s", ERROR_HDR, "pango_font_description_new()");
   }
   return (plot_font != NULL);
 }
@@ -76,7 +77,7 @@ GLuint plot_pango_text(char ch, int size[2]) {
   if (cairo) {
     PangoLayout *layout = pango_cairo_create_layout(cairo);
     if (layout) {
-      char text[2] = { ch, 0 };
+      char text[] = { ch, 0 };
       pango_layout_set_text(layout, text, -1);
       pango_layout_set_font_description(layout, plot_font);
       pango_layout_get_size(layout, &size[0], &size[1]);

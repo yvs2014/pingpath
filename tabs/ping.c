@@ -86,13 +86,15 @@ static void pt_set_elem_align(int type, GtkWidget *label) {
 }
 
 #ifdef WITH_DND
-static void pt_pr_elem_ndxs(const char *pre, const t_type_elem *elems, int len) {
+static void pt_pr_elem_ndxs(const char *pre, const char *dir, const t_type_elem *elems, int len) {
   GString *str = g_string_new(NULL);
   for (int i = 0; i < len; i++) g_string_append_printf(str, " %d", elems[i].type);
-  g_message("%s: %s%s", DEB_REORDER, pre, str->str); g_string_free(str, true);
+  g_message("%s: %s: %s %s", DEB_REORDER, pre, dir, str->str); g_string_free(str, true);
 }
 
-#define PT_PRINT_ELEMS(pre, elems, len) do { if (verbose.dnd) pt_pr_elem_ndxs(pre, elems, len); } while (0)
+#define PT_PRINT_ELEMS(pre, dir, elems, len) do {         \
+  if (verbose.dnd) pt_pr_elem_ndxs(pre, dir, elems, len); \
+} while (0)
 
 static gboolean pt_reorder_elems(int prev, int next, const t_elem_desc *desc) {
   if ((prev == next) || !desc) return false;
@@ -198,23 +200,23 @@ static gboolean pt_hdr_on_drop(GtkDropTarget *self G_GNUC_UNUSED, const GValue *
   if (!GTK_IS_WIDGET(sdnd->w) || !GTK_IS_WIDGET(ddnd->w) || (sdnd->w == ddnd->w)) return false;
   if (sdnd->desc != ddnd->desc) { DNDORD("%s: %s", DEB_DND, "different groups"); return false; }
   gboolean before = gtk_widget_contains(ddnd->w, x * 2, y);
-  PT_PRINT_ELEMS("array: <<<", ddnd->desc->elems, PE_MAX);
-  PT_PRINT_ELEMS("group: <<<", &ddnd->desc->elems[ddnd->desc->mm.min], ddnd->desc->mm.max - ddnd->desc->mm.min + 1);
+  PT_PRINT_ELEMS(ARRAY_HDR, "<<<", ddnd->desc->elems, PE_MAX);
+  PT_PRINT_ELEMS(GROUP_HDR, "<<<", &ddnd->desc->elems[ddnd->desc->mm.min], ddnd->desc->mm.max - ddnd->desc->mm.min + 1);
   if (pt_reorder_elems(sn, before ? dn : dn + 1, ddnd->desc)) { // reorder inplace asserting no further errors
     if (!pt_reorder_cells(ddnd->hdr, HDRLINES, sn, dn, before))
-      g_critical("%s: header: partial reordering", DEB_REORDER);
+      g_critical("%s: %s", DEB_REORDER, RDR_PART_ERR);
     if (!pt_reorder_cells(ddnd->body, MAXTTL, sn, dn, before))
-      g_critical("%s: lines: partial reordering", DEB_REORDER);
+      g_critical("%s: %s", DEB_REORDER, RDR_PART_ERR);
     GString *msg = g_string_new(NULL);
     if (msg) {
-      g_string_printf(msg, "\"%s\" %s \"%s\"", PT_LAB_TEXT(sdnd->w), before ? "before" : "after", PT_LAB_TEXT(ddnd->w));
-      DNDORD("%s: put %s", DEB_DND, msg->str);
+      g_string_printf(msg, "\"%s\" %s \"%s\"",
+        PT_LAB_TEXT(sdnd->w), before ? BEFORE_HDR : AFTER_HDR, PT_LAB_TEXT(ddnd->w));
       LOG("%s: %s", DEB_REORDER, msg->str);
       g_string_free(msg, true);
     }
   }
-  PT_PRINT_ELEMS("group: >>>", &ddnd->desc->elems[ddnd->desc->mm.min], ddnd->desc->mm.max - ddnd->desc->mm.min + 1);
-  PT_PRINT_ELEMS("array: >>>", ddnd->desc->elems, PE_MAX);
+  PT_PRINT_ELEMS(GROUP_HDR, ">>>", &ddnd->desc->elems[ddnd->desc->mm.min], ddnd->desc->mm.max - ddnd->desc->mm.min + 1);
+  PT_PRINT_ELEMS(ARRAY_HDR, ">>>", ddnd->desc->elems, PE_MAX);
   option_up_menu_main();
   return true;
 }
@@ -383,7 +385,7 @@ t_tab* pingtab_init(GtkWidget* win) {
   pingtab.tag = PING_TAB_TAG;
   pingtab.tip = PING_TAB_TIP;
   if (!basetab_init(&pingtab, pt_make_dyn, pt_make_info)) return NULL;
-  if (!clipboard_init(win, &pingtab)) LOG("no %s clipboard", pingtab.name);
+  if (!clipboard_init(win, &pingtab)) LOG("%s: %s: %s", ERROR_HDR, pingtab.name, CLIPBOARD_HDR);
   return &pingtab;
 }
 

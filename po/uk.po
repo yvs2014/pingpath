@@ -132,6 +132,26 @@ msgstr "Інтерфейс командного рядка"
 msgid "Unknown type"
 msgstr "Невідомий тип"
 
+# message: minimum
+msgid "min"
+msgstr "мін"
+
+# message: maximum
+msgid "max"
+msgstr "макс"
+
+# graphics time-axis
+msgid "Time"
+msgstr "Час"
+
+# graphics delay-axis
+msgid "Delay"
+msgstr "Затримка"
+
+# graphics hops-axis
+msgid "Hops"
+msgstr "Переходи"
+
 # help window: theme1
 msgid "Main theme"
 msgstr "Загальна тема"
@@ -752,7 +772,7 @@ msgstr "<до-16ти-байт>"
 msgid "<tag:values>"
 msgstr "<тег:значення>"
 
-# cli option hint10
+# cli option hint9
 msgid "<6bit-level>"
 msgstr "<шестибітний-рівень>"
 
@@ -1170,5 +1190,45 @@ msgstr "ПЕРЕТЯГУВАННЯ"
 
 # debug: reorder
 msgid "REORDER"
-msgstr "ЗМІНА-ПОРЯДКУ"
+msgstr "ЗМІНА-РОЗТАШУВАННЯ"
+
+# misc: array
+msgid "array"
+msgstr "масив"
+
+# misc: group
+msgid "group"
+msgstr "група"
+
+# misc: DND partial reordering
+msgid "partial reordering"
+msgstr "часткове переупорядкування"
+
+# misc: A before B
+msgid "before"
+msgstr "поперед"
+
+# misc: A after B
+msgid "after"
+msgstr "після"
+
+# misc: clipboard
+msgid "clipboard"
+msgstr "буфер обміну"
+
+# misc: requested A
+msgid "requested"
+msgstr "на запит"
+
+# misc: received B
+msgid "received"
+msgstr "отримано"
+
+# gl: texture lookups
+msgid "Vertex shader texture lookups"
+msgstr "Пошук текстур для шейдера вершин"
+
+# misc: incompat version
+msgid "Incompat version"
+msgstr "Несумісна версія"
 

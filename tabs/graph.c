@@ -12,9 +12,6 @@
 #include "ui/style.h"
 #include "ui/notifier.h"
 
-#define GR_XAXIS_TITLE "Time"
-#define GR_YAXIS_TITLE "Delay [msec]"
-
 enum {
   CELL_SIZE = 50,
   TICK_SIZE =  6,
@@ -68,7 +65,7 @@ static void gr_set_font(void) {
   if (graph_font) {
     pango_font_description_set_family(graph_font, PP_FONT_FAMILY);
     if (fs_size) pango_font_description_set_absolute_size(graph_font, fs_size * PANGO_SCALE);
-  } else WARN("Cannot allocate pango font");
+  } else WARN("pango_font_description_new()");
 }
 
 static inline double rtt2y(double rtt) { return grm.y1 - rtt / series_datamax * grm.h; }
@@ -263,10 +260,12 @@ static void gr_draw_grid(GtkDrawingArea *area, cairo_t *cr,
   if (grid_pango) {
 #define TICK_SIZE2 (TICK_SIZE * 2)
     cairo_move_to(cr, grm.x1 + TICK_SIZE2, grm.y1 - 0.5 * fs_size);
-    pango_layout_set_text(grid_pango, GR_XAXIS_TITLE, -1);
+    pango_layout_set_text(grid_pango, TIME_TITLE, -1);
     pango_cairo_show_layout(cr, grid_pango);
     cairo_move_to(cr, grm.x0 / 4., grm.y0 - (TICK_SIZE2 + 1.5 * fs_size));
-    pango_layout_set_text(grid_pango, GR_YAXIS_TITLE, -1);
+    char *yaxis = g_strdup_printf("%s [%s]", DELAY_TITLE, UNIT_MSEC);
+    pango_layout_set_text(grid_pango, yaxis ? yaxis : DELAY_TITLE, -1);
+    g_free(yaxis);
     pango_cairo_show_layout(cr, grid_pango);
 #undef TICK_SIZE2
   }

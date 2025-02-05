@@ -26,10 +26,6 @@
 
 #define PLOT_SETERR(fmt, ...) g_set_error(err, g_quark_from_static_string(""), -1, fmt, __VA_ARGS__)
 
-#define TIM_AXIS_TITLE "Time"
-#define RTT_AXIS_TITLE "Delay"
-#define TTL_AXIS_TITLE "TTL"
-
 // x - ttl, y - time, z - delay
 enum { PLANE_XN = 8, PLANE_YN = 10, PLANE_ZN = 10 };
 #define SURF_XN MAXTTL
@@ -101,7 +97,7 @@ typedef struct plot_axis_params {
   const vec2 pad;
   vec2 at, shift;
   const int crd_len; vec4 crd[AXIS_MAX_ELEMS];
-  const int title_len; const char *title;
+  int title_len; const char *title;
   void (*fill)(t_mark_text mark[], int n);
   t_axis_mark_overlap overlap;
 } t_plot_axis_params;
@@ -128,7 +124,7 @@ enum { GLSL_VERT, GLSL_FRAG };
 static const GLchar *plot_glsl[] = {
 [GLSL_VERT] =
   PP_GLSL_MEDIUMP ";\n"
-  "uniform mat4 " PLOT_VTR ";\n"
+  "uniform mat4 " PLOT_VTR  ";\n"
   "uniform vec4 " PLOT_COL1 ";\n"
   "uniform vec4 " PLOT_COL2 ";\n"
   "in vec3 " PLOT_CRD ";\n"
@@ -210,12 +206,9 @@ static void plot_ttl_marks(t_mark_text mark[], int max);
 enum { RNO_RTT, RNO_TIM, RNO_TTL, RNO_MAX };
 
 static t_plparam plparam = { .cube = { 90, 90, 0 }, .axes = {
-  .rtt = { .rno = RNO_RTT, .pad = { 7, 9}, .crd_len = AXIS_RTT_ELEMS,
-    .title_len = strlen(RTT_AXIS_TITLE), .title = RTT_AXIS_TITLE, .fill = plot_rtt_marks },
-  .tim = { .rno = RNO_TIM, .pad = {10, 9}, .crd_len = AXIS_TIM_ELEMS,
-    .title_len = strlen(TIM_AXIS_TITLE), .title = TIM_AXIS_TITLE, .fill = plot_tim_marks },
-  .ttl = { .rno = RNO_TTL, .pad = { 7, 9}, .crd_len = AXIS_TTL_ELEMS,
-    .title_len = strlen(TTL_AXIS_TITLE), .title = TTL_AXIS_TITLE, .fill = plot_ttl_marks },
+  .rtt = { .rno = RNO_RTT, .pad = { 7, 9}, .crd_len = AXIS_RTT_ELEMS, .fill = plot_rtt_marks },
+  .tim = { .rno = RNO_TIM, .pad = {10, 9}, .crd_len = AXIS_TIM_ELEMS, .fill = plot_tim_marks },
+  .ttl = { .rno = RNO_TTL, .pad = { 7, 9}, .crd_len = AXIS_TTL_ELEMS, .fill = plot_ttl_marks },
 }};
 
 static gboolean not_cached_yet = true;
@@ -261,33 +254,31 @@ static gboolean plot_api_set(GtkGLArea *area, int req) {
 #if GTK_CHECK_VERSION(4, 12, 0)
   gtk_gl_area_set_allowed_apis(area, req);
   int api = gtk_gl_area_get_allowed_apis(area);
-  DEBUG("GL API: requested %d, got %d", req, api);
+  DEBUG("GL API: %s %d, %s %d", REQUESTED_HDR, req, RECEIVED_HDR, api);
   return (api == req);
 #else
   gboolean reqes = req & GDK_GL_API_GLES;
   gtk_gl_area_set_use_es(area, reqes);
   gboolean es = gtk_gl_area_get_use_es(area);
-  DEBUG("GLES API: requested '%s', got '%s'",
-    reqes ? ON_HDR : OFF_HDR, es ? ON_HDR : OFF_HDR);
+  DEBUG("GLES API: %s '%s', %s '%s'",
+    REQUESTED_HDR, reqes ? ON_HDR : OFF_HDR,
+    RECEIVED_HDR,  es    ? ON_HDR : OFF_HDR);
   return (es == reqes);
 #endif
 }
 
-static void plot_set_shader_err(GLuint obj, GError **err) {
-  if (!glIsShader(obj) || !err) return;
-  GLint len = 0; glGetShaderiv(obj, GL_INFO_LOG_LENGTH, &len); if (len <= 0) return;
-  char *msg = g_malloc0(len); if (!msg) return;
-  glGetShaderInfoLog(obj, len, NULL, msg);
-  PLOT_SETERR("Compilation failed: %s", msg);
-  g_free(msg);
-}
-
-static void plot_set_prog_err(GLuint obj, GError **err, const char *what) {
-  if (!glIsProgram(obj) || !err) return;
-  GLint len = 0; glGetProgramiv(obj, GL_INFO_LOG_LENGTH, &len); if (len <= 0) return;
-  char *msg = g_malloc0(len); if (!msg) return;
-  glGetProgramInfoLog(obj, len, NULL, msg);
-  PLOT_SETERR("%s failed: %s", what, msg);
+static void plot_set_gl_err(GLuint obj, GError **err,
+    void (*getloglen)(GLuint, GLenum, GLint*),
+    void (*getloginfo)(GLuint, GLsizei, GLsizei*, GLchar*))
+{
+  if (!(err && getloglen && getloginfo)) return;
+  char *msg = NULL; GLint len = 0;
+  getloglen(obj, GL_INFO_LOG_LENGTH, &len);
+  if (len > 0) {
+    msg = g_malloc0(len);
+    if (msg) getloginfo(obj, len, NULL, msg);
+  }
+  PLOT_SETERR("%s: %s", ERROR_HDR, msg ? msg : UNKN_ERR);
   g_free(msg);
 }
 
@@ -299,10 +290,11 @@ static GLuint plot_compile_shader(const GLchar* src, GLenum type, GError **err) 
     glCompileShader(shader);
     GLint okay = GL_FALSE; glGetShaderiv(shader, GL_COMPILE_STATUS, &okay);
     if (!okay) {
-      if (err) plot_set_shader_err(shader, err);
+      if (err && glIsShader(shader))
+        plot_set_gl_err(shader, err, glGetShaderiv, glGetShaderInfoLog);
       glDeleteShader(shader); shader = 0;
     }
-  } else WARN("glCreateShader(%d) failed", type);
+  } else WARN("%s: glCreateShader(%d)", ERROR_HDR, type);
   return shader;
 }
 
@@ -344,8 +336,10 @@ static gboolean plot_compile_glsl(t_plot_prog *prog, GError **err) {
     prog->fs = plot_compile_shader(prog->frag, GL_FRAGMENT_SHADER, err);
     if (prog->fs) {
       glAttachShader(prog->exec, prog->fs);
-      glLinkProgram(prog->exec); glGetProgramiv(prog->exec, GL_LINK_STATUS, &okay);
-      if (!okay && err) plot_set_prog_err(prog->exec, err, "Linking");
+      glLinkProgram(prog->exec);
+      glGetProgramiv(prog->exec, GL_LINK_STATUS, &okay);
+      if (!okay && err && glIsProgram(prog->exec))
+        plot_set_gl_err(prog->exec, err, glGetProgramiv, glGetProgramInfoLog);
     }
   }
   if (!okay) plot_del_prog_glsl(prog);
@@ -379,23 +373,36 @@ static void plot_plane_vert_attr(GLuint vao, GLint coord) {
 }
 
 static gboolean plot_res_init(t_plot_res *res, GError **err) {
-#define PLOT_FLAT_VERT(obj, typ) { \
-  (obj).vbo = plot_aux_vert_init_plane(dim[0], dim[1], typ, plot_plane_vert_attr, (obj).vao, res->plot.coord); \
-  (obj).dbo.main = plot_aux_grid_init(dim[0], dim[1], typ); }
-#define PLOT_AXIS_VERT(obj, typ, width) { \
-  (obj).vbo = plot_aux_vert_init_axis(dim[0], dim[1], typ, width, plot_plane_vert_attr, (obj).vao, res->plot.coord); \
-  (obj).dbo.main = plot_aux_grid_init(dim[0], dim[1], typ); }
+#define PLOT_FLAT_VERT(obj, typ) do {                         \
+  (obj).vbo = plot_aux_vert_init_plane(dim[0], dim[1], (typ), \
+    plot_plane_vert_attr, (obj).vao, res->plot.coord);        \
+  (obj).dbo.main = plot_aux_grid_init(dim[0], dim[1], (typ)); \
+} while (0)
+#define PLOT_AXIS_VERT(obj, typ, width) do {                    \
+  (obj).vbo = plot_aux_vert_init_axis(dim[0], dim[1], (typ),    \
+    (width), plot_plane_vert_attr, (obj).vao, res->plot.coord); \
+  (obj).dbo.main = plot_aux_grid_init(dim[0], dim[1], (typ));   \
+} while (0)
 //
-#define PLOT_GET_LOC(id, name, exec, fn, type) { (id) = fn(exec, name); \
-  if ((id) < 0) { PLOT_SETERR("Could not bind %s '%s'", type, name); return false; }}
-#define PLOT_GET_ATTR(prog, loc, name) { PLOT_GET_LOC((prog).loc, name, (prog).exec, glGetAttribLocation, "attribute"); }
-#define PLOT_GET_FORM(prog, loc, name) { PLOT_GET_LOC((prog).loc, name, (prog).exec, glGetUniformLocation, "uniform"); }
+#define PLOT_GET_LOC(id, name, exec, fn) do {       \
+  (id) = fn((exec), (name));                        \
+  if ((id) < 0) {                                   \
+    PLOT_SETERR("%s(%s)", G_STRINGIFY(fn), (name)); \
+    return false;                                   \
+  }                                                 \
+} while (0)
+#define PLOT_GET_ATTR(prog, loc, name) PLOT_GET_LOC((prog).loc, (name), (prog).exec, glGetAttribLocation)
+#define PLOT_GET_FORM(prog, loc, name) PLOT_GET_LOC((prog).loc, (name), (prog).exec, glGetUniformLocation)
 //
-#define PLOT_BASE_ATTR(prog) { \
-  PLOT_GET_ATTR(prog, coord, PLOT_CRD); \
-  PLOT_GET_FORM(prog, vtr,   PLOT_VTR); \
-  PLOT_GET_FORM(prog, colo1, PLOT_COL1); }
-#define PLOT_EXT_ATTR(prog) { PLOT_BASE_ATTR(prog); PLOT_GET_FORM(prog, colo2, PLOT_COL2); }
+#define PLOT_BASE_ATTR(prog) do {        \
+  PLOT_GET_ATTR(prog, coord, PLOT_CRD);  \
+  PLOT_GET_FORM(prog, vtr,   PLOT_VTR);  \
+  PLOT_GET_FORM(prog, colo1, PLOT_COL1); \
+} while (0)
+#define PLOT_EXT_ATTR(prog) do {         \
+  PLOT_BASE_ATTR(prog);                  \
+  PLOT_GET_FORM(prog, colo2, PLOT_COL2); \
+} while (0)
   if (!res) return false;
   if (!plot_compile_res(res, err)) return false;
   for (unsigned i = 0; i < G_N_ELEMENTS(res->vo); i++) {
@@ -469,13 +476,17 @@ static void area_init(GtkGLArea *area, t_plot_res *res) {
     gl_ver = epoxy_gl_version(); gl_named = gl_ver >= 45;
     LOG("GL: %s", glGetString(GL_VERSION));
     if (gl_ver < MIN_GL_VER) {
-      char *mesg = g_strdup_printf("GL: incompat version %d.%d (min %d.%d)",
-        gl_ver / 10, gl_ver % 10, MIN_GL_VER / 10, MIN_GL_VER % 10);
+      char *mesg = g_strdup_printf("GL: %s %d.%d (%s %d.%d)",
+        INCOMPATV_HDR, gl_ver     / 10, gl_ver     % 10,
+        MIN_HDR,       MIN_GL_VER / 10, MIN_GL_VER % 10);
       WARN("%s", mesg); LOG("%s", mesg); g_free(mesg);
     }
   }
-  { GError *error = NULL; if (!plot_res_init(res, &error)) {
-    gtk_gl_area_set_error(area, error); ERROR("init resources"); }}
+  { GError *error = NULL;
+    if (!plot_res_init(res, &error)) {
+      gtk_gl_area_set_error(area, error);
+      ERROR(PLOT_TAB_TIP);
+  }}
   if (!gtk_gl_area_get_has_depth_buffer(area)) gtk_gl_area_set_has_depth_buffer(area, true);
   glEnable(GL_DEPTH_TEST); glEnable(GL_BLEND); glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   plot_init_char_tables();
@@ -589,7 +600,7 @@ static inline gboolean plot_cache_overlapping(int rno, vec4 curr, vec4 prev, vec
 }
 
 static void glsl_draw_axis(t_plot_res *res, vec4 color, gboolean name_only, t_plot_axis_params *axis) {
-#define PLOT_DRAW_MARK(rect)  plot_draw_text(res, mark[i].text, mark[i].len, \
+#define PLOT_DRAW_MARK(rect)  plot_draw_text(res, mark[i].text, mark[i].len,     \
     color, axis->crd[i], axis->shift, plot_mrk_pad, rect)
 #define PLOT_DRAW_TITLE(rect) plot_draw_text(res, axis->title,  axis->title_len, \
     color, axis->at,     axis->shift, axis->pad,    rect)
@@ -690,7 +701,7 @@ static GtkWidget* plot_init_glarea(t_plot_res *res) {
   GtkWidget *area = gtk_gl_area_new();
   g_return_val_if_fail(area, NULL);
   if (!plot_api_set(GTK_GL_AREA(area), plot_api_req)) {
-    WARN("Cannot set reguired GL API: %d", plot_api_req);
+    WARN("%s: GL API(%d)", ERROR_HDR, plot_api_req);
     g_object_ref_sink(area);
     return NULL;
   }
@@ -825,10 +836,18 @@ static void plottab_on_opts(unsigned flags) {
 t_tab* plottab_init(void) {
   plottab.tag = PLOT_TAB_TAG;
   plottab.tip = PLOT_TAB_TIP;
+#define SET_AXIS_TITLE(axis, str) do {                      \
+  plparam.axes.axis.title_len = strlen((str) ? (str) : ""); \
+  plparam.axes.axis.title     = (str) ? (str) : "";         \
+} while (0);
+  SET_AXIS_TITLE(rtt, "Delay"/*DELAY_TITLE*/);
+  SET_AXIS_TITLE(tim, "Time"/*TIME_TITLE*/);
+  SET_AXIS_TITLE(ttl, "Hops"/*HOPS_TITLE*/);
+#undef SET_AXIS_TITLE
 #define PL_INIT_LAYER(widget, descr) { (widget) = plot_init_glarea(descr); \
     g_return_val_if_fail(widget, NULL); layers = g_slist_append(layers, widget); }
   { int units = 1; glGetIntegerv(GL_MAX_VERTEX_TEXTURE_IMAGE_UNITS, &units);
-    if (!units) { WARN("No support for texture lookups in the vertex shader"); return NULL; }}
+    if (!units) { WARN("%s: %s", ERROR_HDR, SHADER_LOOKUP_HDR); return NULL; }}
   { glm_scale(scaled, SCALE3);
     pl_init_orientation();
     plottab_on_opts(PL_PARAM_ALL);
@@ -848,12 +867,12 @@ void plottab_free(void) { plot_res_free(&plot_dyna_res); plot_res_free(&plot_bas
 
 void plottab_update(void) {
   plot_aux_update(&plot_dyna_res.vo[VO_SURF]);
-  if (GTK_IS_WIDGET(plot_dyn_area)) gtk_gl_area_queue_render(GTK_GL_AREA(plot_dyn_area));
+  if (plot_dyn_area) gtk_gl_area_queue_render(GTK_GL_AREA(plot_dyn_area));
 }
 
 void plottab_redraw(void) {
-  if (GTK_IS_WIDGET(plot_base_area)) gtk_gl_area_queue_render(GTK_GL_AREA(plot_base_area));
-  if (GTK_IS_WIDGET(plot_dyn_area))  gtk_gl_area_queue_render(GTK_GL_AREA(plot_dyn_area));
+  if (plot_base_area) gtk_gl_area_queue_render(GTK_GL_AREA(plot_base_area));
+  if (plot_dyn_area)  gtk_gl_area_queue_render(GTK_GL_AREA(plot_dyn_area));
 }
 
 void plottab_refresh(gboolean flags) { if (flags) plottab_on_opts(flags); plottab_redraw(); }
