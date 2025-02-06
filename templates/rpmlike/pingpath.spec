@@ -38,12 +38,14 @@ cd %{srcdir}
 %install
 cd %{srcdir}
 %meson_install
+cd -
+%find_lang %{name}
 
 %check
 cd %{srcdir}
 %meson_test
 
-%files
+%files -f %{name}.lang
 %defattr(-,root,root,-)
 %dir %{docdir}
 %dir %{docdir}/examples

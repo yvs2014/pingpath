@@ -92,9 +92,10 @@ static void nt_set_visible(t_notifier *nt, gboolean visible) {
 #define NT_SHOW(inst) nt_set_visible((inst), true)
 #define NT_HIDE(inst) nt_set_visible((inst), false)
 
-static void nt_hide(t_notifier *nt) {
+static gboolean nt_hide_once(t_notifier *nt) {
   if (nt->autohide) nt->autohide->timer = 0;
   NT_HIDE(nt);
+  return G_SOURCE_REMOVE;
 }
 
 static void nt_inform(t_notifier *nt, char *mesg) {
@@ -104,7 +105,7 @@ static void nt_inform(t_notifier *nt, char *mesg) {
   // hide previous one if it's still visible
   if (nt->autohide && nt->autohide->timer) {
     g_source_remove(nt->autohide->timer);
-    nt_hide(nt);
+    nt_hide_once(nt);
   }
   //
   if (GTK_IS_LABEL(nt->inbox)) {
@@ -119,8 +120,8 @@ static void nt_inform(t_notifier *nt, char *mesg) {
   gtk_revealer_set_reveal_child(GTK_REVEALER(nt->reveal), true);
   t_autohide *au = nt->autohide;
   if (au)
-    au->timer = g_timeout_add_seconds_once(au->sec ? au->sec : AUTOHIDE_IN,
-      (GSourceOnceFunc)nt_hide, nt);
+    au->timer = g_timeout_add_seconds(au->sec ? au->sec : AUTOHIDE_IN,
+      (GSourceFunc)nt_hide_once, nt);
 }
 
 static gboolean nt_ext_pos_cb(GtkWidget *over, GtkWidget *widget, GdkRectangle *rect, t_notifier *nt) {

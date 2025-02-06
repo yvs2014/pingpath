@@ -1,3 +1,11 @@
+pingpath (0.3.57) noble; urgency=low
+
+  * reverse g_timeout_add_seconds*() to compatibility with older glib versions
+
+  * fix some nls packaging issues
+
+ -- yvs <VSYakovetsky@gmail.com>  Thu, 06 Feb 2025 23:36:40 +0200
+
 pingpath (0.3.56) noble; urgency=low
 
   * NLS wip: gl-area: nls axis titles

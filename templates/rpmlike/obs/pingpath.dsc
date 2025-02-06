@@ -8,4 +8,4 @@ Homepage: https://github.com/yvs2014/pingpath
 Architecture: any
 Rules-Requires-Root: no
 Standards-Version: 4.6.2
-Build-Depends: dpkg-dev, debhelper, meson, git, pkgconf | pkg-config, libgtk-4-dev, libjson-glib-dev, libgl-dev, libepoxy-dev, libcglm-dev, libjpeg-dev
+Build-Depends: dpkg-dev, debhelper, meson, git, pkgconf | pkg-config, gettext, libgtk-4-dev, libjson-glib-dev, libgl-dev, libepoxy-dev, libcglm-dev, libjpeg-dev

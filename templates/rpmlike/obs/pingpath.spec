@@ -36,11 +36,12 @@ Written using GTK4 framework.
 
 %install
 %meson_install
+%find_lang %{name}
 
 %check
 %meson_test
 
-%files
+%files -f %{name}.lang
 %defattr(-,root,root,-)
 %dir %{docnam}
 %dir %{smpdir}

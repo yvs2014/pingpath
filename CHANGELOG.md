@@ -1,3 +1,7 @@
+## 0.3.57
+- reverse g_timeout_add_seconds*() to compatibility with older glib versions
+- fix some nls packaging issues
+
 ## 0.3.56
 - NLS wip: gl-area: nls axis titles
 - fix typos in log_add_line()
