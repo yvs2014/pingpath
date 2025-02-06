@@ -1,3 +1,8 @@
+## 0.3.56
+- NLS wip: gl-area: nls axis titles
+- fix typos in log_add_line()
+- less debug text in warn lines
+
 ## 0.3.55
 - NLS wip: level2 .c files
 

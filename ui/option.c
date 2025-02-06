@@ -626,7 +626,7 @@ static gboolean add_minmax(GtkWidget *box, t_ent_spn_elem *en, int ndx, const in
         if (en->aux[ndx].cb)
           g_signal_connect(spin, EV_VAL_CHANGE, en->aux[ndx].cb, en->bond ? (void*)en : &en->aux[ndx]);
         okay = true;
-     } else WARN("%s: %s", ERROR_HDR, "gtk_spin_button_new_with_range()");
+     } else g_warning("%s: %s", ERROR_HDR, "gtk_spin_button_new_with_range()");
   }}
   return okay;
 }
@@ -724,7 +724,7 @@ static gboolean create_optmenu(GtkWidget *bar, const char **icons, const char *t
   gboolean okay = true;
   gtk_header_bar_pack_start(GTK_HEADER_BAR(bar), menu);
   const char *ico = is_sysicon(icons);
-  if (!ico) WARN("%s: %s", OPTIONS_HDR, NOICON_ERR);
+  if (!ico) g_warning("%s: %s", OPTIONS_HDR, NOICON_ERR);
   else gtk_menu_button_set_icon_name(GTK_MENU_BUTTON(menu), ico);
   if (tooltip) gtk_widget_set_tooltip_text(menu, tooltip);
   GtkWidget *popover = gtk_popover_new();

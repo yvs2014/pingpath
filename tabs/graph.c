@@ -65,7 +65,7 @@ static void gr_set_font(void) {
   if (graph_font) {
     pango_font_description_set_family(graph_font, PP_FONT_FAMILY);
     if (fs_size) pango_font_description_set_absolute_size(graph_font, fs_size * PANGO_SCALE);
-  } else WARN("pango_font_description_new()");
+  } else FAIL("pango_font_description_new()");
 }
 
 static inline double rtt2y(double rtt) { return grm.y1 - rtt / series_datamax * grm.h; }

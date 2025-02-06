@@ -1232,3 +1232,11 @@ msgstr "Пошук текстур для шейдера вершин"
 msgid "Incompat version"
 msgstr "Несумісна версія"
 
+# misc: table
+msgid "table"
+msgstr "таблиця"
+
+# 3D-graphics: alphabet for font textures
+msgid "__abetka__"
+msgstr "АБВГҐДЕЄЖЗИІЇЙКЛМНОПРСТУФХЦЧШЩЬЮЯабвгґдеєжзиіїйклмнопрстуфхцчшщьюя"
+

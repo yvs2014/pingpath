@@ -387,7 +387,7 @@ static GtkWidget* nt_init(GtkWidget *base, t_notifier *nt) {
       }
     } break;
 #endif
-    default: WARN("%s: %d\n", UNKNTYPE_HDR, nt->type);
+    default: WARN("%s: %d", UNKNTYPE_HDR, nt->type);
   }
   g_return_val_if_fail(inbox, NULL);
   nt->inbox = inbox;

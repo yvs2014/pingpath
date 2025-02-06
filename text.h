@@ -26,9 +26,13 @@
 #define MIN_HDR        _("min")
 #define MAX_HDR        _("max")
 // graphics
-#define TIME_TITLE     _("Time")
-#define DELAY_TITLE    _("Delay")
-#define HOPS_TITLE     _("Hops")
+#define NONLS_TIME     "Time"
+#define NONLS_DELAY    "Delay"
+#define NONLS_HOPS     "Hops"
+#define TIME_TITLE     _(NONLS_TIME)
+#define DELAY_TITLE    _(NONLS_DELAY)
+#define HOPS_TITLE     _(NONLS_HOPS)
+
 
 // tab names-n-tips
 #define PING_TAB_TAG  _("Trace")
@@ -272,7 +276,7 @@
 #define BADTAG_HDR      _("Wrong tag")
 #define INVAL_HDR       _("Invalid value")
 #define PROC_EXP_HDR    _("Process is still active after expire time, stopping ...")
-#define PROC_NOSTOP_HDR _("Subprocess has not stopped")
+#define PROC_NOSTOP_ERR _("Subprocess has not stopped")
 #define EXPTIME_HDR     _("expiration time")
 #define RUNTIME_EXP     _("runtime expired")
 #define INP_FAILED      _("stdin failed")
@@ -291,9 +295,9 @@
   "  snap connect pingpath:network-observe :network-observe")
 
 // logging, warnings
-#define LOG_DNS_HDR   _("DNS:")
-#define LOG_WHOIS_HDR _("WHOIS:")
-#define LOG_CONF_HDR  _("CONFIG:")
+#define DNS_HDR       _("DNS:")
+#define WHOIS_HDR     _("WHOIS:")
+#define CONFIG_HDR    _("CONFIG:")
 #define PARSE_SUCCESS _("SUCCESS")
 #define PARSE_DISCARD _("DISCARD")
 #define PARSE_TIMEOUT _("TIMEOUT")
@@ -351,5 +355,9 @@
 #define REQUESTED_HDR _("requested")
 #define RECEIVED_HDR  _("received")
 #define INCOMPATV_HDR _("Incompat version")
+#define TABLE_HDR     _("table")
+
+#define ABETKA    "__abetka__"
+#define ABETKA_NLS _(ABETKA)
 
 #endif

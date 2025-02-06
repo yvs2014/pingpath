@@ -1,3 +1,13 @@
+pingpath (0.3.56) noble; urgency=low
+
+  * NLS wip: gl-area: nls axis titles
+
+  * fix typos in log_add_line()
+
+  * less debug text in warn lines
+
+ -- yvs <VSYakovetsky@gmail.com>  Thu, 06 Feb 2025 10:00:27 +0200
+
 pingpath (0.3.55) noble; urgency=low
 
   * NLS wip: level2 .c files

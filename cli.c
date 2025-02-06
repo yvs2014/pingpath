@@ -312,15 +312,15 @@ static void reorder_elems(const char *str, t_elem_desc *desc) {
     for (const char *p = order; *p; p++, n++) {
       int ndx = char2ndx(desc->cat, true, *p);
       int type = char2ndx(desc->cat, false, *p);
-      if ((type < 0) || (ndx < 0)) WARN("%s: [%d] %d", INVAL_HDR, ndx, type);
+      if ((type < 0) || (ndx < 0)) g_warning("%s: [%d] %d", INVAL_HDR, ndx, type);
       else {
         ndx = type2ndx(type);
-        if (ndx < 0) WARN("%s: %d", UNKNTYPE_HDR, type);
+        if (ndx < 0) g_warning("%s: %d", UNKNTYPE_HDR, type);
         else newelems[n] = desc->elems[ndx];
       }
     }
     memmove(elems, newelems, sizeof(newelems)); // BUFFNOLINT
-  } else WARN("%s", CLI_NDXDIFF_HDR);
+  } else g_warning("%s: %s", ERROR_HDR, CLI_NDXDIFF_HDR);
   g_free(order);
 }
 

@@ -477,7 +477,7 @@ static GMenu* action_menu_init(GtkWidget *bar) {
   const char *icons[] = {ACT_MENU_ICON, ACT_MENU_ICOA, NULL};
   const char *ico = is_sysicon(icons);
   if (ico) gtk_menu_button_set_icon_name(GTK_MENU_BUTTON(button), ico);
-  else WARN("%s: %s", ACTIONS_HDR, NOICON_ERR);
+  else g_warning("%s: %s", ACTIONS_HDR, NOICON_ERR);
   gtk_widget_set_tooltip_text(button, OPT_ACTIONS_TIP);
   GMenu *menu = g_menu_new();
   if (G_IS_MENU(menu)) {

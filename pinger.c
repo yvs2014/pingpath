@@ -612,12 +612,12 @@ void pinger_nth_stop(int nth, const char* reason) {
         g_subprocess_force_exit(proc->proc);
         g_usleep(20 * 1000);
         id = g_subprocess_get_identifier(proc->proc);
-        if (id) { WARN("%s: pid=%s", PROC_NOSTOP_HDR, id); return; }
+        if (id) { g_warning("%s: pid=%s", PROC_NOSTOP_ERR, id); return; }
       }
       GError *error = NULL;
       g_subprocess_wait(proc->proc, NULL, &error);
       if (error) {
-        WARN("%s(%d): pid=%s: %s", __func__, nth, id, error->message);
+        WARN("#%d: pid=%s: %s", nth, id, error->message);
         g_error_free(error);
       } else LOG("%s[%d] %s (rc=%d)", PING_HDR,
         proc->ndx + 1, DONE_HDR, g_subprocess_get_status(proc->proc));

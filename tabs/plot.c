@@ -56,8 +56,7 @@ enum { PLANE_XN = 8, PLANE_YN = 10, PLANE_ZN = 10 };
 #define RTT_GRADIENT "4.0"
 #define TTL_GRADIENT "2.0"
 
-static const unsigned char MIN_ASCII_CCHAR = 0x20;
-static const unsigned char LIM_ASCII_CCHAR = 0x7f;
+enum { MIN_ASCII_CHAR = 0x20, MAX_ASCII_CHAR = 0x7e };
 
 #define FONT_HEIGHT_PERCENT 1.5
 
@@ -84,6 +83,7 @@ typedef struct plot_res {
 } t_plot_res;
 
 typedef struct plot_char {
+  gunichar ch;  // char itself
   unsigned tid; // texture id
   vec2 size;
 } t_plot_char;
@@ -97,7 +97,8 @@ typedef struct plot_axis_params {
   const vec2 pad;
   vec2 at, shift;
   const int crd_len; vec4 crd[AXIS_MAX_ELEMS];
-  int title_len; const char *title;
+  int   title_len;
+  char *title;
   void (*fill)(t_mark_text mark[], int n);
   t_axis_mark_overlap overlap;
 } t_plot_axis_params;
@@ -194,9 +195,8 @@ static const int plot_api_req =
 static vec4 surf_colo1;
 static vec4 surf_colo2;
 
-static t_plot_char char_table[255];
+static t_plot_char char_table[UINT8_MAX];
 
-static gboolean plot_res_ready;
 static int draw_plot_at;
 
 static void plot_rtt_marks(t_mark_text mark[], int max);
@@ -217,35 +217,68 @@ static vec4 axrect1[RNO_MAX], axrectN[RNO_MAX]; // firs-n-last axis marks
 static const vec2 plot_mrk_pad = { 2, 3};
 
 static const float hfontf = 6 * (FONT_HEIGHT_PERCENT / 100.) / (2 * PLOT_FONT_SIZE);
-static vec2 char0sz, char0nm;
+static vec2 char0nm;
 static int area_size[2];
 
 //
 
 static void plot_set_char_norm(float width, float height) {
-  char0nm[0] = char0sz[0] * hfontf * height / width;
-  char0nm[1] = char0sz[1] * hfontf;
+  char0nm[0] = char_table['0'].size[0] * hfontf * height / width;
+  char0nm[1] = char_table['0'].size[1] * hfontf;
 }
 
-static void plot_init_char_tables(void) {
+static gboolean plot_unichars_ready;
+
+static inline void init_char_table(const char *abetka) {
+  if (!plot_pango_init()) return;
+  //
   static gboolean plot_chars_ready;
-  if (!plot_pango_init() || plot_chars_ready) return;;
-  plot_chars_ready = true;
-  t_plot_char ch = {0};
-  glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-  for (unsigned char i = MIN_ASCII_CCHAR; i < LIM_ASCII_CCHAR; i++) {
-    int size[2] = {0};
-    ch.tid = plot_pango_text(i, size);
-    if (!ch.tid) { plot_chars_ready = false; break; }
-    ch.size[0] = size[0]; ch.size[1] = size[1]; char_table[i] = ch;
+  if (!plot_chars_ready) {
+    plot_chars_ready = true;
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    for (uint8_t i = MIN_ASCII_CHAR; i <= MAX_ASCII_CHAR; i++) {
+      int size[2] = {0};
+      const char text[] = {i, 0};
+      unsigned tid = plot_pango_text(text, size);
+      if (!tid) {
+        plot_chars_ready = false;
+        WARNLOG("%s: ASCII %s: '%c'", ERROR_HDR, TABLE_HDR, i);
+        break;
+      }
+      //
+      if (char_table[i].tid) glDeleteTextures(1, &char_table[i].tid);
+      char_table[i] = (t_plot_char){ .ch = i, .tid = tid, .size = {size[0], size[1]}};
+    }
+    plot_set_char_norm(X_RES, Y_RES);
   }
-  char0sz[0] = char_table['0'].size[0];
-  char0sz[1] = char_table['0'].size[1];
-  plot_set_char_norm(X_RES, Y_RES);
+  //
+  if (!plot_unichars_ready && abetka && g_utf8_validate(abetka, -1, 0)) {
+    if (g_utf8_strlen(abetka, -1) > INT8_MAX)
+      WARNLOG("UTF8 %s: %s: %s=%d", TABLE_HDR, NOBUFF_ERR, MAX_HDR, INT8_MAX);
+    else {
+      plot_unichars_ready = true;
+      uint8_t i = INT8_MAX + 1;
+      for (const char *u = abetka; *u && i; u = g_utf8_next_char(u), i++) {
+        gunichar c = g_utf8_get_char(u);
+        char utf8[6] = {0};
+        g_unichar_to_utf8(c, utf8);
+        int size[2] = {0};
+        unsigned tid = plot_pango_text(utf8, size);
+        if (!tid) {
+          plot_unichars_ready = false;
+          WARNLOG("%s: UTF8 %s: '%s'", ERROR_HDR, TABLE_HDR, utf8);
+          break;
+        }
+        //
+        if (char_table[i].tid) glDeleteTextures(1, &char_table[i].tid);
+        char_table[i] = (t_plot_char){ .ch = c, .tid = tid, .size = {size[0], size[1]}};
+      }
+    }
+  }
 }
 
 static void plot_free_char_table(void) {
-  for (unsigned char i = MIN_ASCII_CCHAR; i < LIM_ASCII_CCHAR; i++) if (char_table[i].tid) {
+  for (uint8_t i = 0; i < G_N_ELEMENTS(char_table); i++) if (char_table[i].tid) {
     glDeleteTextures(1, &char_table[i].tid); char_table[i].tid = 0; }
 }
 
@@ -294,7 +327,7 @@ static GLuint plot_compile_shader(const GLchar* src, GLenum type, GError **err) 
         plot_set_gl_err(shader, err, glGetShaderiv, glGetShaderInfoLog);
       glDeleteShader(shader); shader = 0;
     }
-  } else WARN("%s: glCreateShader(%d)", ERROR_HDR, type);
+  } else WARNLOG("%s: glCreateShader(%d)", ERROR_HDR, type);
   return shader;
 }
 
@@ -409,7 +442,7 @@ static gboolean plot_res_init(t_plot_res *res, GError **err) {
     GLuint *pvao = &(res->vo[i].vao);
     glGenVertexArrays(1, pvao);
     if (*pvao) continue;
-    WARN("glGenVertexArrays()");
+    WARNLOG("%s: %s", ERROR_HDR, "glGenVertexArrays()");
     plot_del_prog_glsl(&res->plot);
     plot_del_prog_glsl(&res->text);
     plot_del_res_vao(res);
@@ -462,11 +495,57 @@ static void plot_res_free(t_plot_res *res) {
     plot_glsl_reset(res, false);
   }
   glDisable(GL_DEPTH_TEST); // glDisable(GL_BLEND);
-  if (!plot_res_ready) return;
-  plot_res_ready = false;
-  plot_pango_free();
   plot_free_char_table();
+  plot_pango_free();
 }
+
+
+static uint8_t char_table_lookup(gunichar u) {
+  for (uint8_t i = 0; i < G_N_ELEMENTS(char_table); i++)
+    if (char_table[i].ch == u) return i;
+  return 0;
+}
+
+#define SET_PL_AXIS_TITLE(axis, str) do {     \
+  if ((axis).title) g_free((axis).title);     \
+  (axis).title     = (str) ? (str) : "";      \
+  (axis).title_len = (str) ? strlen(str) : 0; \
+} while (0);
+#define SET_PLAX(axis, str) SET_PL_AXIS_TITLE(plparam.axes.axis, (str))
+
+static char* pl_str2code8(const char *utf8) {
+  char *str8 = NULL;
+  if (g_utf8_validate(utf8, -1, 0)) {
+    int len = g_utf8_strlen(utf8, -1);
+    str8 = g_malloc0((len > 0) ? len : 1);
+    int i = 0;
+    for (const char *u = utf8; *u && (i < len); u = g_utf8_next_char(u)) {
+      gunichar c = g_utf8_get_char(u);
+      uint8_t code8 = char_table_lookup(c);
+      if (code8) str8[i++] = code8;
+      else {
+        char buff[6] = {0};
+        g_unichar_to_utf8(c, buff);
+        WARNLOG("UTF8 %s: %s 0x%04x: '%s'", TABLE_HDR, UNKNTYPE_HDR, c, buff);
+        g_free(str8); str8 = NULL;
+        break;
+      }
+    }
+  }
+  return str8;
+}
+
+static inline void pl_set_nls_titles(void) {
+  static gboolean nls_titles_set;
+  if (plot_unichars_ready && !nls_titles_set) {
+    char *title = NULL;
+    title = pl_str2code8(DELAY_TITLE); if (title) SET_PLAX(rtt, title);
+    title = pl_str2code8(TIME_TITLE);  if (title) SET_PLAX(tim, title);
+    title = pl_str2code8(HOPS_TITLE);  if (title) SET_PLAX(ttl, title);
+  }
+  nls_titles_set = true;
+}
+
 
 static void area_init(GtkGLArea *area, t_plot_res *res) {
   if (!GTK_IS_GL_AREA(area) || !res) return;
@@ -479,7 +558,7 @@ static void area_init(GtkGLArea *area, t_plot_res *res) {
       char *mesg = g_strdup_printf("GL: %s %d.%d (%s %d.%d)",
         INCOMPATV_HDR, gl_ver     / 10, gl_ver     % 10,
         MIN_HDR,       MIN_GL_VER / 10, MIN_GL_VER % 10);
-      WARN("%s", mesg); LOG("%s", mesg); g_free(mesg);
+      WARNLOG("%s", mesg); g_free(mesg);
     }
   }
   { GError *error = NULL;
@@ -489,8 +568,10 @@ static void area_init(GtkGLArea *area, t_plot_res *res) {
   }}
   if (!gtk_gl_area_get_has_depth_buffer(area)) gtk_gl_area_set_has_depth_buffer(area, true);
   glEnable(GL_DEPTH_TEST); glEnable(GL_BLEND); glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-  plot_init_char_tables();
-  plot_res_ready = true;
+  // NLS
+  gboolean nls = STR_NEQ(ABETKA, ABETKA_NLS);
+  init_char_table(nls ? ABETKA_NLS : NULL);
+  if (nls) pl_set_nls_titles();
 }
 
 static void area_free(GtkWidget *self G_GNUC_UNUSED, t_plot_res *res) { plot_res_free(res); }
@@ -531,9 +612,9 @@ static bool plot_draw_text(t_plot_res *res, const char *text, int len,
   float x = crd[0] + plot_mark_shift(cw, cw, len, pad[0], shift[0]);
   float y = crd[1] + plot_mark_shift(ch, cw, 1,   pad[1], shift[1]);
   if (rect) CENTER_TEXT(*rect, x, y, (len + 1) * cw, ch);
-  int cnt = 0;
-  for (const char *p = text; *p && (cnt < MARKMAXLEN); p++, cnt++) {
-    unsigned tid = char_table[(unsigned char)*p].tid;
+  int i = 0;
+  for (const char *p = text; *p && (i < MARKMAXLEN); p++, i++) {
+    unsigned tid = char_table[(uint8_t)*p].tid;
     if (tid) plot_pango_drawtex(tid, vbo, typ, x, y, cw, ch);
     x += cw;
   }
@@ -601,9 +682,9 @@ static inline gboolean plot_cache_overlapping(int rno, vec4 curr, vec4 prev, vec
 
 static void glsl_draw_axis(t_plot_res *res, vec4 color, gboolean name_only, t_plot_axis_params *axis) {
 #define PLOT_DRAW_MARK(rect)  plot_draw_text(res, mark[i].text, mark[i].len,     \
-    color, axis->crd[i], axis->shift, plot_mrk_pad, rect)
+  color, axis->crd[i], axis->shift, plot_mrk_pad, rect)
 #define PLOT_DRAW_TITLE(rect) plot_draw_text(res, axis->title,  axis->title_len, \
-    color, axis->at,     axis->shift, axis->pad,    rect)
+  color, axis->at,     axis->shift, axis->pad,    rect)
   if (name_only) { PLOT_DRAW_TITLE(NULL); return; }
   vec4 trec; gboolean cached = axis->overlap.cached;
   if (!PLOT_DRAW_TITLE(cached ? NULL : &trec)) return;
@@ -701,7 +782,7 @@ static GtkWidget* plot_init_glarea(t_plot_res *res) {
   GtkWidget *area = gtk_gl_area_new();
   g_return_val_if_fail(area, NULL);
   if (!plot_api_set(GTK_GL_AREA(area), plot_api_req)) {
-    WARN("%s: GL API(%d)", ERROR_HDR, plot_api_req);
+    WARN("%s: GL-AREA API#%d", ERROR_HDR, plot_api_req);
     g_object_ref_sink(area);
     return NULL;
   }
@@ -829,6 +910,21 @@ static void plottab_on_opts(unsigned flags) {
   if (flags & PL_PARAM_FOV) pl_post_rotation();
 }
 
+static gboolean pl_init_layers() {
+#define PL_INIT_LAYER(widget, descr) do {  \
+  (widget) = plot_init_glarea(descr);      \
+  g_return_val_if_fail(widget, false);     \
+  layers = g_slist_append(layers, widget); \
+} while (0)
+  GSList *layers = NULL;
+  PL_INIT_LAYER(plot_base_area, &plot_base_res);
+  PL_INIT_LAYER(plot_dyn_area,  &plot_dyna_res);
+  gboolean re = drawtab_init(&plottab, CSS_PLOT_BG, layers, NT_ROTOR_NDX);
+  g_slist_free(layers);
+  return re;
+#undef PL_INIT_LAYER
+}
+
 
 // pub
 //
@@ -836,34 +932,44 @@ static void plottab_on_opts(unsigned flags) {
 t_tab* plottab_init(void) {
   plottab.tag = PLOT_TAB_TAG;
   plottab.tip = PLOT_TAB_TIP;
-#define SET_AXIS_TITLE(axis, str) do {                      \
-  plparam.axes.axis.title_len = strlen((str) ? (str) : ""); \
-  plparam.axes.axis.title     = (str) ? (str) : "";         \
-} while (0);
-  SET_AXIS_TITLE(rtt, "Delay"/*DELAY_TITLE*/);
-  SET_AXIS_TITLE(tim, "Time"/*TIME_TITLE*/);
-  SET_AXIS_TITLE(ttl, "Hops"/*HOPS_TITLE*/);
-#undef SET_AXIS_TITLE
-#define PL_INIT_LAYER(widget, descr) { (widget) = plot_init_glarea(descr); \
-    g_return_val_if_fail(widget, NULL); layers = g_slist_append(layers, widget); }
   { int units = 1; glGetIntegerv(GL_MAX_VERTEX_TEXTURE_IMAGE_UNITS, &units);
-    if (!units) { WARN("%s: %s", ERROR_HDR, SHADER_LOOKUP_HDR); return NULL; }}
-  { glm_scale(scaled, SCALE3);
-    pl_init_orientation();
-    plottab_on_opts(PL_PARAM_ALL);
-    plot_glsl_reset(&plot_base_res, true);
-    plot_glsl_reset(&plot_dyna_res, true); }
-  { GSList *layers = NULL;
-    PL_INIT_LAYER(plot_base_area, &plot_base_res);
-    PL_INIT_LAYER(plot_dyn_area,  &plot_dyna_res);
-    if (!drawtab_init(&plottab, CSS_PLOT_BG, layers, NT_ROTOR_NDX)) return NULL;
-    g_slist_free(layers); }
-  { series_reg_on_scale(plot_base_area); series_min_no(PLOT_TIME_RANGE); }
+    if (!units) { g_warning("%s: %s", ERROR_HDR, SHADER_LOOKUP_HDR); return NULL; }}
+  //
+  glm_scale(scaled, SCALE3);
+  pl_init_orientation();
+  plottab_on_opts(PL_PARAM_ALL);
+  plot_glsl_reset(&plot_base_res, true);
+  plot_glsl_reset(&plot_dyna_res, true);
+  //
+  if (!pl_init_layers()) return NULL;
+  series_reg_on_scale(plot_base_area);
+  series_min_no(PLOT_TIME_RANGE);
+  //
+  SET_PLAX(rtt, g_strdup(NONLS_DELAY));
+  SET_PLAX(tim, g_strdup(NONLS_TIME));
+  SET_PLAX(ttl, g_strdup(NONLS_HOPS))
+  //
   return &plottab;
-#undef PL_INIT_LAYER
 }
 
-void plottab_free(void) { plot_res_free(&plot_dyna_res); plot_res_free(&plot_base_res); plot_aux_free(); }
+static void pl_params_free(void) {
+#define PLAX_FREE(axis) do {       \
+  g_free(plparam.axes.axis.title); \
+  plparam.axes.axis.title = NULL;  \
+  plparam.axes.axis.title_len = 0; \
+} while (0)
+  PLAX_FREE(rtt);
+  PLAX_FREE(tim);
+  PLAX_FREE(ttl);
+#undef PLAX_FREE
+}
+
+void plottab_free(void) {
+  plot_res_free(&plot_dyna_res);
+  plot_res_free(&plot_base_res);
+  plot_aux_free();
+  pl_params_free();
+}
 
 void plottab_update(void) {
   plot_aux_update(&plot_dyna_res.vo[VO_SURF]);

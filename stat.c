@@ -490,7 +490,7 @@ void stat_whois_enabler(void) {
       enable = true; break; }
   if (enable != opts.whois) {
     opts.whois = enable;
-    LOG("%s %s", LOG_WHOIS_HDR, enable ? ON_HDR : OFF_HDR);
+    LOG("%s %s", WHOIS_HDR, enable ? ON_HDR : OFF_HDR);
   }
 }
 

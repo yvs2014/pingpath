@@ -12,14 +12,10 @@
 #define MIN_GTK_RUNTIME(major, minor, micro) (!gtk_check_version(major, minor, micro))
 
 #define APPNAME "pingpath"
-#define VERSION "0.3.55"
+#define VERSION "0.3.56"
 #define APPVER  APPNAME "-" VERSION
 
 extern locale_t locale, localeC;
-
-enum { X_RES = 1024, Y_RES = 720 };
-enum { MAXADDR = 10 };
-enum { MINTTL = 1, MAXTTL = 30 };
 
 #define REF_MAX         MAXTTL
 #define DNS_QUERY_MAX   MAXTTL
@@ -27,15 +23,22 @@ enum { MINTTL = 1, MAXTTL = 30 };
 #define WHOIS_QUERY_MAX MAXTTL
 #define WHOIS_CACHE_MAX MAXTTL
 
-enum { DEF_LOGMAX = 500 }; // max lines in log-tab
-
-enum { MAIN_TIMING_SEC = 1 };
-enum { AUTOHIDE_IN     = 2 };  // popup notifications, in seconds
-
-enum { MAXHOSTNAME   =   63 }; // in chars: must 63, should 255
-enum { NET_BUFF_SIZE = 4096 };  // suppose it's enough (dns or whois data is usually 200-300 bytes)
-enum { BUFF_SIZE     = 1024 };
-enum { PAD_SIZE      =   48 };
+enum {
+  X_RES  = 1024, Y_RES = 720,
+  MINTTL = 1,   MAXTTL = 30,
+  MAXADDR         = 10,
+  DEF_LOGMAX      =  500, // max lines in log-tab
+  MAIN_TIMING_SEC =    1,
+  AUTOHIDE_IN     =    2, // popup notifications, in seconds
+  MAXHOSTNAME     =   63, // in chars: must 63, should 255
+  NET_BUFF_SIZE   = 4096, // suppose it's enough (dns or whois data is usually 200-300 bytes)
+  BUFF_SIZE       = 1024,
+  PAD_SIZE        =   48,
+  MAX_ICONS       =    5,
+  PP_MARK_MAXLEN  =   16,
+  MARGIN          =    8,
+  ACT_DOT         =    4, // beyond of "app." or "win."
+};
 
 #define UNKN_FIELD "" /* "?" "???" */
 
@@ -75,7 +78,6 @@ enum { RECAP_TEXT = 't', RECAP_CSV = 'c', RECAP_JSON_NUM = 'j', RECAP_JSON_PRETT
 #define EV_PLOT_DRAW   "render"
 #endif
 
-enum { MAX_ICONS = 5 };
 #define ICON_PROP      "icon-name"
 #define ACT_MENU_ICON  "open-menu-symbolic"
 #define ACT_MENU_ICOA  "view-more-symbolic"
@@ -118,17 +120,13 @@ enum { MAX_ICONS = 5 };
 #define LOG_TAB_ICOA   "edit-find-symbolic"
 
 #define PP_FONT_FAMILY "monospace"
-enum { PP_RTT0 = 1000 };   // 1msec
+#define PP_RTT0      1000  // 1msec
 #define PP_RTT_SCALE 1000. // usec to msec
 #define PP_RTT_FMT_LT10  "%.1f"
 #define PP_RTT_FMT_GE10  "%.0f"
 #define PP_TIME_FMT "%02d:%02d"
 #define PP_FMT_LT10(val) (((val) < 1e-3f) ? PP_RTT_FMT_GE10 : PP_RTT_FMT_LT10)
 #define PP_FMT10(val) (((val) < 10) ? PP_FMT_LT10(val) : PP_RTT_FMT_GE10)
-enum { PP_MARK_MAXLEN = 16 };
-
-enum { MARGIN = 8 };
-enum { ACT_DOT = 4 }; // beyond of "app." or "win."
 
 typedef struct verbose {
   unsigned
@@ -143,10 +141,19 @@ extern t_verbose verbose;
 
 #define NOOP ((void)0)
 
-#define LOG(fmt, ...) do {                                      \
-  VERBOSE(fmt, __VA_ARGS__);                                    \
+#define LOG_WITH_STAMP(fmt, ...) do {                           \
   char ts[64];                                                  \
   log_add("[%s] " fmt, timestamp(ts, sizeof(ts)), __VA_ARGS__); \
+} while (0)
+
+#define LOG(fmt, ...) do {          \
+  VERBOSE(fmt, __VA_ARGS__);        \
+  LOG_WITH_STAMP(fmt, __VA_ARGS__); \
+} while (0)
+
+#define WARNLOG(fmt, ...) do {      \
+  g_warning(fmt, __VA_ARGS__);      \
+  LOG_WITH_STAMP(fmt, __VA_ARGS__); \
 } while (0)
 
 #define VERB_LEVEL(level, fmt, ...) do {    \
@@ -155,9 +162,9 @@ extern t_verbose verbose;
 
 #define VERBOSE(fmt, ...)     VERB_LEVEL(verbose, (fmt), __VA_ARGS__)
 #define DEBUG(fmt, ...)       VERB_LEVEL(debug,   (fmt), __VA_ARGS__)
-#define DNS_DEBUG(fmt, ...)   VERB_LEVEL(dns,     "%s " fmt, LOG_DNS_HDR, __VA_ARGS__)
-#define WHOIS_DEBUG(fmt, ...) VERB_LEVEL(whois,   "%s " fmt, LOG_WHOIS_HDR, __VA_ARGS__)
-#define CONF_DEBUG(fmt, ...)  VERB_LEVEL(config,  "%s " fmt, LOG_CONF_HDR, __VA_ARGS__)
+#define DNS_DEBUG(fmt, ...)   VERB_LEVEL(dns,     "%s " fmt, DNS_HDR,    __VA_ARGS__)
+#define WHOIS_DEBUG(fmt, ...) VERB_LEVEL(whois,   "%s " fmt, WHOIS_HDR,  __VA_ARGS__)
+#define CONF_DEBUG(fmt, ...)  VERB_LEVEL(config,  "%s " fmt, CONFIG_HDR, __VA_ARGS__)
 #define DNDORD(fmt, ...)      VERB_LEVEL(dnd,     (fmt), __VA_ARGS__)
 
 #if (__GNUC__ >= 8) || (__clang_major__ >= 6) || (__STDC_VERSION__ >= 202311L)
@@ -172,29 +179,58 @@ extern t_verbose verbose;
     g_error_free(error);                                      \
   } else WARN("%s: %s", what, UNKN_ERR);                      \
 } while (0)
-#define FAIL(what) WARN("%s failed", what)
-#define FAILX(what, extra) WARN("%s: %s failed", what, extra)
 
-#define STR_EQ(a, b) (!g_strcmp0(a, b))
-#define STR_NEQ(a, b) (g_strcmp0(a, b))
-#define CLR_STR(str) { if (str) { g_free(str); (str) = NULL; }}
-#define UPD_STR(str, val) { g_free(str); (str) = g_strdup(val); }
-#define UPD_NSTR(str, val, max) { g_free(str); (str) = g_strndup(val, max); }
-#define SET_SA(desc, ndx, cond) { if (G_IS_SIMPLE_ACTION((desc)[ndx].sa)) \
-  g_simple_action_set_enabled((desc)[ndx].sa, cond); }
+#define FAIL(what) do {                        \
+  WARN("%s: %s", ERROR_HDR, (what));           \
+  LOG_WITH_STAMP("%s: %s", ERROR_HDR, (what)); \
+} while (0)
 
-enum { CYCLES_MIN = 1,  CYCLES_MAX = 999999 };
-enum { IVAL_MIN   = 1,  IVAL_MAX   = 9999 };
-enum { PSIZE_MIN  = 16, PSIZE_MAX  = (9000 - 20 - 8) };
-enum { QOS_MAX    = 255 };
-enum { LOGMAX_MAX = 999 };
+#define FAILX(what, extra) do {                             \
+  WARN("%s: %s: %s", ERROR_HDR, (what), (extra));           \
+  LOG_WITH_STAMP("%s: %s: %s", ERROR_HDR, (what), (extra)); \
+} while (0)
 
-enum { GRAPH_LEFT = 60, GRAPH_TOP = 50, GRAPH_RIGHT = 40, GRAPH_BOTTOM = 40 };
+#define STR_EQ(a, b) (!g_strcmp0((a), (b)))
+#define STR_NEQ(a, b) g_strcmp0((a), (b))
+#define CLR_STR(str) do { if (str) { g_free(str); (str) = NULL; }} while (0)
+#define UPD_STR(str, val) do { g_free(str); (str) = g_strdup(val); } while (0)
+#define UPD_NSTR(str, val, max) do { g_free(str); (str) = g_strndup(val, max); } while (0)
+#define SET_SA(desc, ndx, cond) do { if (G_IS_SIMPLE_ACTION((desc)[ndx].sa)) \
+  g_simple_action_set_enabled((desc)[ndx].sa, cond); } while (0)
+
+enum {
+  DEF_CYCLES = 100,
+  CYCLES_MIN = 1,  CYCLES_MAX = 999999,
+  //
+  DEF_TOUT   = 1,
+  IVAL_MIN   = 1,  IVAL_MAX   = 9999,
+  //
+  DEF_PSIZE  = 56,
+  PSIZE_MIN  = 16, PSIZE_MAX  = (9000 - 20 - 8),
+  //
+  DEF_QOS      = 0,
+  QOS_MAX      = 255,
+  //
+  GRAPH_LEFT   = 60,
+  GRAPH_TOP    = 50,
+  GRAPH_RIGHT  = 40,
+  GRAPH_BOTTOM = 40,
+  //
+#ifdef WITH_PLOT
+  DEF_RCOL_FROM =  80, DEF_RCOL_TO =  80,
+  DEF_GCOL_FROM = 230, DEF_GCOL_TO =  80,
+  DEF_BCOL_FROM =  80, DEF_BCOL_TO = 230,
+  GL_ANGX = 0, GL_ANGY = -20, GL_ANGZ = 0,
+  DEF_ANGSTEP  = 5,
+  DEF_FOV      = 45,
+#endif
+  //
+  LOGMAX_MAX   = 999,
+};
 
 #define DEF_DNS    true
 #define DEF_WHOIS  true
 #define DEF_PPAD  "00"
-enum { DEF_CYCLES = 100, DEF_TOUT = 1, DEF_QOS = 0, DEF_PSIZE = 56 };
 
 #define DEF_LEGEND     true
 #define DEF_DARK_MAIN  true
@@ -202,14 +238,7 @@ enum { DEF_CYCLES = 100, DEF_TOUT = 1, DEF_QOS = 0, DEF_PSIZE = 56 };
 
 #ifdef WITH_PLOT
 #define DEF_DARK_PLOT false
-
-enum { DEF_RCOL_FROM =  80, DEF_RCOL_TO =  80 };
-enum { DEF_GCOL_FROM = 230, DEF_GCOL_TO =  80 };
-enum { DEF_BCOL_FROM =  80, DEF_BCOL_TO = 230 };
-
 #define DEF_RGLOBAL   true
-enum { GL_ANGX = 0, GL_ANGY = -20, GL_ANGZ = 0, DEF_ANGSTEP = 5 };
-enum { DEF_FOV = 45 };
 #endif
 
 enum { GLIB_STRV, GTK_STRV, CAIRO_STRV, PANGO_STRV };

@@ -25,7 +25,7 @@
 
 #define APPFLAGS G_APPLICATION_NON_UNIQUE
 
-#define APPQUIT(fmt, ...) { WARN(fmt ": %s", __VA_ARGS__, INITFAIL_ERR); \
+#define APPQUIT(fmt, ...) { g_warning(fmt ": %s", __VA_ARGS__, INITFAIL_ERR); \
   g_application_quit(G_APPLICATION(app)); exit_code = EXIT_FAILURE; return; }
 
 static int exit_code = EXIT_SUCCESS;
@@ -101,17 +101,17 @@ static void on_app_activate(GtkApplication* app, gpointer user_data G_GNUC_UNUSE
 #endif
     }
     t_tab *tab = nb_tabs[i];
-    if (!tab || !tab->tab.w || !tab->lab.w) APPQUIT("tab#%d", i);
+    if (!tab || !tab->tab.w || !tab->lab.w) APPQUIT("tab#%d", i + 1);
     tab_setup(tab); tabrefs[i] = tab->tab.w;
     int ndx = gtk_notebook_append_page(GTK_NOTEBOOK(nb), tab->tab.w, tab->lab.w);
-    if (ndx < 0) APPQUIT("tab page#%d", i);
+    if (ndx < 0) APPQUIT("tab#%d %s", i + 1, tab->name ? tab->name : "");
     gtk_notebook_set_tab_reorderable(GTK_NOTEBOOK(nb), tab->tab.w, true);
   }
   tab_reload_theme();
   gtk_notebook_set_current_page(GTK_NOTEBOOK(nb), activetab);
   g_signal_connect(nb, EV_TAB_SWITCH, G_CALLBACK(on_tab_switch), NULL);
   GtkWidget *over = notifier_init(NT_MAIN_NDX, nb);
-  if (!GTK_IS_OVERLAY(over)) APPQUIT("%s", "notification window");
+  if (!GTK_IS_OVERLAY(over)) APPQUIT("%s", "notifications");
   GtkWidget *curr = gtk_notebook_get_nth_page(GTK_NOTEBOOK(nb), gtk_notebook_get_current_page(GTK_NOTEBOOK(nb)));
   tab_dependent(curr ? curr : nb_tabs[activetab]->tab.w);
   gtk_window_set_child(GTK_WINDOW(win), over);

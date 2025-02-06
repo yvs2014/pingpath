@@ -22,9 +22,6 @@
 #define BG_CONTRAST_DARK  "#2c2c2c"
 #define BG_CONTRAST_LIGHT "#f5f5f5"
 
-#define STYLE_GET_DISPLAY(re) GdkDisplay *display = gdk_display_get_default(); \
-  if (!display) { WARN("no default display"); return re; }
-
 typedef struct style_colors {
   const char *def[2], *app[2], *alt[2], *gry[2];
 } t_style_colors;
@@ -120,10 +117,10 @@ static char* style_basetheme(const char *theme) {
 
 static char* style_prefer(gboolean dark) {
   GtkSettings *set = gtk_settings_get_default();
-  if (!set) { WARN("%s: %s", ERROR_HDR, "gtk_settings_get_default()"); return NULL; }
+  if (!set) { g_warning("%s: %s", ERROR_HDR, "gtk_settings_get_default()"); return NULL; }
   g_object_set(G_OBJECT(set), PROP_PREFER_DARK, dark, NULL);
   char *theme = NULL; g_object_get(set, PROP_THEME, &theme, NULL);
-  if (!theme) { WARN("%s: g_object_get(%s)", ERROR_HDR, PROP_THEME); return NULL; }
+  if (!theme) { g_warning("%s: g_object_get(%s)", ERROR_HDR, PROP_THEME); return NULL; }
   char *prefer = style_basetheme(theme); g_free(theme);
   ub_theme = prefer ? (strcasestr(prefer, "Yaru") != NULL) : false; // aux info for icons
   DEBUG("%s: %s", PROP_THEME, prefer);
@@ -148,7 +145,7 @@ static void style_load_extra(GdkDisplay *display) {
   GtkCssProvider *prov = gtk_css_provider_new();
   g_return_if_fail(GTK_IS_CSS_PROVIDER(prov));
   char *data = style_extra_css(css_common);
-  if (!data) { WARN("%s: %s", ERROR_HDR, "style_extra_css()"); g_object_unref(prov); return; }
+  if (!data) { g_warning("%s: %s", ERROR_HDR, "style_extra_css()"); g_object_unref(prov); return; }
   style_css_load(prov, data); g_free(data);
   if (prov_extra) gtk_style_context_remove_provider_for_display(display, GTK_STYLE_PROVIDER(prov_extra));
   prov_extra = prov;
@@ -163,7 +160,8 @@ static void style_load_extra(GdkDisplay *display) {
 
 const char* is_sysicon(const char **icon) {
   static GtkIconTheme *icon_theme;
-  STYLE_GET_DISPLAY(NULL);
+  GdkDisplay *display = gdk_display_get_default();
+  g_return_val_if_fail(display, NULL);
   if (!icon_theme && display) icon_theme = gtk_icon_theme_get_for_display(display);
   if (GTK_IS_ICON_THEME(icon_theme) && icon)
     for (int i = 0; (i < MAX_ICONS) && *icon; i++, icon++)
@@ -172,7 +170,8 @@ const char* is_sysicon(const char **icon) {
 }
 
 void style_set(void) {
-  STYLE_GET_DISPLAY();
+  GdkDisplay *display = gdk_display_get_default();
+  g_return_if_fail(display);
   char *prefer = style_prefer(opts.darktheme);
   if (prefer) { style_load_theme(display, prefer, opts.darktheme ? DARK_SFFX : NULL); g_free(prefer); }
   style_load_extra(display);

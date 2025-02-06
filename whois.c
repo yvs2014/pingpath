@@ -29,8 +29,8 @@ static GSList *whois_query;
 static GSList *whois_cache;
 
 #if WHOIS_EXTRA_DEBUG
-#define PR_WHOIS_Q do { LOG("%s: %s %c", LOG_WHOIS_HDR, __func__, 'q'); _pr_whois_qlist(whois_query); } while (0)
-#define PR_WHOIS_C do { LOG("%s: %s %c", LOG_WHOIS_HDR, __func__, 'c'); _pr_whois_clist(whois_cache); } while (0)
+#define PR_WHOIS_Q do { LOG("%s: %s %c", WHOIS_HDR, __func__, 'q'); _pr_whois_qlist(whois_query); } while (0)
+#define PR_WHOIS_C do { LOG("%s: %s %c", WHOIS_HDR, __func__, 'c'); _pr_whois_clist(whois_cache); } while (0)
 void _pr_whois_qlist(GSList *qlist) {
   int i = 0;
   for (GSList *p = qlist; p; p = p->next, i++) {
@@ -42,7 +42,7 @@ void _pr_whois_qlist(GSList *qlist) {
       ELEM_CC_HDR,   mnemo(w->elem[WHOIS_CC_NDX]),
       ELEM_RT_HDR,   mnemo(w->elem[WHOIS_RT_NDX]),
       ELEM_DESC_HDR, mnemo(w->elem[WHOIS_DESC_NDX]));
-    print_refs(q->refs, LOG_WHOIS_HDR);
+    print_refs(q->refs, WHOIS_HDR);
   }
 }
 void _pr_whois_clist(GSList *clist) {
@@ -130,7 +130,7 @@ static void whois_query_complete(t_ref *ref, t_wq_elem *elem) {
     if (STR_EQ(orig, addr))
       whois_copy_elems(&elem->data.whois, &hop->whois[ndx], hop->wcached, hop->wcached_nl);
     else
-      LOG("%s: %s: %s -> %s", LOG_WHOIS_HDR, ORIG_CHNG_HDR, orig, addr);
+      LOG("%s: %s: %s -> %s", WHOIS_HDR, ORIG_CHNG_HDR, orig, addr);
   }
 }
 
@@ -229,7 +229,7 @@ static gboolean whois_reset_read(GObject *stream, ssize_t size, t_wq_elem *elem)
     g_input_stream_read_async(G_INPUT_STREAM(stream), off, left, G_PRIORITY_DEFAULT, NULL,
       (GAsyncReadyCallback)on_whois_read, elem);
   } else {
-    WARN("%s: %d", NOBUFF_ERR, NET_BUFF_SIZE);
+    g_warning("%s: %s: %d", WHOIS_HDR, NOBUFF_ERR, NET_BUFF_SIZE);
     elem->buff[NET_BUFF_SIZE - 1] = 0;
   }
   return reset_read;
@@ -288,8 +288,8 @@ static void on_whois_connect(GObject* source, GAsyncResult *result, t_wq_elem *e
       }
     } else FAILX(elem->input ? "output" : "input", "get stream");
   } else {
-    if (error) LOG("%s %s: rc=%d, %s", LOG_WHOIS_HDR, NOCONN_ERR, error->code, error->message);
-    else       LOG("%s %s: %s", LOG_WHOIS_HDR, NOCONN_ERR, UNKN_ERR);
+    if (error) LOG("%s %s: rc=%d, %s", WHOIS_HDR, NOCONN_ERR, error->code, error->message);
+    else       LOG("%s %s: %s", WHOIS_HDR, NOCONN_ERR, UNKN_ERR);
   }
   g_error_free(error);
   whois_query_close(elem);

@@ -14,15 +14,15 @@ static GSList *dns_query;
 static GSList *dns_cache;
 
 #if DNS_EXTRA_DEBUG
-#define PR_DNS_Q do { LOG("%s: %s %c", LOG_DNS_HDR, __func__, 'q'); _pr_dns_qlist(dns_query); } while (0)
-#define PR_DNS_C do { LOG("%s: %s %c", LOG_DNS_HDR, __func__, 'c'); _pr_dns_clist(dns_cache); } while (0)
+#define PR_DNS_Q do { LOG("%s: %s %c", DNS_HDR, __func__, 'q'); _pr_dns_qlist(dns_query); } while (0)
+#define PR_DNS_C do { LOG("%s: %s %c", DNS_HDR, __func__, 'c'); _pr_dns_clist(dns_cache); } while (0)
 static void _pr_dns_qlist(GSList *qlist) {
   int i = 0;
   for (GSList *p = qlist; p; p = p->next, i++) {
     t_dns_elem *data = p->data; if (!data) continue;
     DNS_DEBUG("%c[%d]: %s=%s %s=%s", 'q', i,
       ADDR_HDR, data->host.addr, NAME_HDR, mnemo(data->host.name));
-    print_refs(data->refs, LOG_DNS_HDR);
+    print_refs(data->refs, DNS_HDR);
   }
 }
 static void _pr_dns_clist(GSList *clist) {
@@ -76,7 +76,7 @@ static void dns_query_complete(t_ref *ref, t_dns_elem *elem) {
         if (hop->cached_nl) hop->cached_nl = false;
         DNS_DEBUG("%s [%d,%d]: %s=%s %s=%s", DONE_HDR, hop->at, ndx,
           ADDR_HDR, orig->addr, NAME_HDR, mnemo(orig->name));
-      } else LOG("%s: %s: %s -> %s", LOG_DNS_HDR, ORIG_CHNG_HDR,
+      } else LOG("%s: %s: %s -> %s", DNS_HDR, ORIG_CHNG_HDR,
         orig->addr, elem->host.addr);
     }
   }

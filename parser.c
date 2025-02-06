@@ -87,8 +87,8 @@ static GRegex* compile_regex(const char *pattern, GRegexCompileFlags flags) {
   GError *err = NULL;
   GRegex *regex = g_regex_new(pattern, flags, 0, &err);
   if (err) {
-    WARN("%s: %s: %s", REGEX_HDR, PATT_HDR,  pattern);
-    WARN("%s: %s: %s", REGEX_HDR, ERROR_HDR, err->message);
+    g_warning("%s: %s: %s", REGEX_HDR, PATT_HDR,  pattern);
+    g_warning("%s: %s: %s", REGEX_HDR, ERROR_HDR, err->message);
     g_error_free(err);
   }
   return regex;
@@ -327,10 +327,10 @@ char* parser_str(const char *str, const char *option, unsigned cat) {
       if (val) {
         gboolean valid = g_regex_match(str_rx[cat].regex, val, 0, NULL);
         if (valid) return val;
-      } else WARN("g_strdup()");
+      } else WARN("%s: %s", ERROR_HDR, "g_strdup()");
       PARSER_MESG("%s: %s: %s", option, RENOMATCH_ERR, str_rx[cat].pattern);
-    } else WARN("g_strndup()");
-  } else WARN("%s: %d", WRONGCAT_ERR, cat);
+    } else WARN("%s: %s", ERROR_HDR, "g_strndup()");
+  } else g_warning("%s: %s: %d", ERROR_HDR, WRONGCAT_ERR, cat);
   return NULL;
 }
 
