@@ -1,3 +1,6 @@
+## 0.3.58
+- NLS: set subprocesses' LC_ correctly
+
 ## 0.3.57
 - reverse g_timeout_add_seconds*() to compatibility with older glib versions
 - fix some nls packaging issues

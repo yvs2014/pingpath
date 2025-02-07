@@ -33,8 +33,6 @@
 
 #define CLEAR_G_OBJECT(obj) g_clear_object(obj) // NOLINT(bugprone-sizeof-expression)
 
-#define MAX_ARGC 32
-
 #define PINGER_MESG(fmt, ...) do {             \
   if (opts.recap) g_message(fmt, __VA_ARGS__); \
   else notifier_inform(fmt, __VA_ARGS__);      \
@@ -486,58 +484,7 @@ static void on_stderr(GObject *stream, GAsyncResult *result, t_proc *proc) {
   } // else EOF
 }
 
-static gboolean create_ping(int at, t_proc *proc) {
-  if (!proc->out) proc->out = g_malloc0(BUFF_SIZE);
-  if (!proc->err) proc->err = g_malloc0(BUFF_SIZE);
-  if (!proc->out || !proc->err) {
-    WARN("%s: #%d: g_malloc0()", ERROR_HDR, at + 1);
-    return false;
-  }
-  const char* argv[MAX_ARGC] = {0}; int argc = 0;
-  argv[argc++] = BINPING;
-  argv[argc++] = "-OD";
-  if (!opts.dns) argv[argc++] = "-n";
-  char sttl[16]; g_snprintf(sttl, sizeof(sttl), "-t%d", at + 1);       argv[argc++] = sttl;
-  char scls[16]; g_snprintf(scls, sizeof(scls), "-c%d", opts.cycles);  argv[argc++] = scls;
-  char sitm[16]; g_snprintf(sitm, sizeof(sitm), "-i%d", opts.timeout); argv[argc++] = sitm;
-  char sWtm[16]; g_snprintf(sWtm, sizeof(sitm), "-W%d", opts.timeout); argv[argc++] = sWtm;
-  char sqos[16]; if (opts.qos != DEF_QOS) {
-    g_snprintf(sqos, sizeof(sqos), "-Q%d",   opts.qos);  argv[argc++] = sqos; }
-  char spad[64]; if (strncmp(opts.pad, DEF_PPAD, sizeof(opts.pad))) {
-    g_snprintf(spad, sizeof(spad), "-p%s", opts.pad);    argv[argc++] = spad; }
-  char spsz[16]; if (opts.size != DEF_PSIZE) {
-    g_snprintf(spsz, sizeof(spsz), "-s%d",   opts.size); argv[argc++] = spsz; }
-  char sipv[4];  if ((opts.ipv == 4) || (opts.ipv == 6)) {
-    g_snprintf(sipv, sizeof(sipv), "-%d",    opts.ipv);  argv[argc++] = sipv; }
-  argv[argc++] = "--";
-  argv[argc++] = opts.target;
-  GError *error = NULL;
-#ifdef WITH_NLS
-#ifdef HAVE_USELOCALE
-  if (localeC) uselocale(localeC);
-  else         setlocale(LC_ALL, "C");
-#else
-  setlocale(LC_ALL, "C");
-#endif
-#endif
-  proc->proc = g_subprocess_newv(argv, G_SUBPROCESS_FLAGS_STDOUT_PIPE | G_SUBPROCESS_FLAGS_STDERR_PIPE, &error); // ENUMNOLINT
-#ifdef WITH_NLS
-#ifdef HAVE_USELOCALE
-  if (locale) uselocale(locale);
-  else        setlocale(LC_ALL, "");
-#else
-  setlocale(LC_ALL, "");
-#endif
-#endif
-  if (!proc->proc) {
-    if (error && (error->code == 3)) {
-      notifier_set_autohide_sec(10);
-      PINGER_MESG("%s", SNAPBOX_HINT);
-      notifier_set_autohide_sec(0);
-    } else PINGER_MESG("%s", error ? error->message : UNKN_ERR);
-    ERROR("g_subprocess_newv()");
-    return false;
-  }
+static void pinger_init_streams(int at, t_proc *proc, char* argv[]) {
   g_subprocess_wait_check_async(proc->proc, NULL, (GAsyncReadyCallback)process_stopped, proc);
   GInputStream *output = g_subprocess_get_stdout_pipe(proc->proc);
   GInputStream *errput = g_subprocess_get_stderr_pipe(proc->proc);
@@ -546,12 +493,10 @@ static gboolean create_ping(int at, t_proc *proc) {
     RESET_ISTREAM(errput, proc->err, on_stderr, proc);
     proc->active = true;
     proc->ndx = at;
-    if (verbose.debug) {
-      char* deb_argv[MAX_ARGC];
-      memcpy(deb_argv, argv, sizeof(deb_argv)); // BUFFNOLINT
-      char *deb_argv_s = g_strjoinv(" ", deb_argv);
-      DEBUG("%s[%d]: %s", PING_HDR, at + 1, deb_argv_s);
-      g_free(deb_argv_s);
+    if (verbose.debug && argv) {
+      char *str = g_strjoinv(" ", argv);
+      DEBUG("%s[%d]: %s", PING_HDR, at + 1, str);
+      g_free(str);
     }
     LOG("%s[%d]: pid=%s", PING_HDR, at + 1, g_subprocess_get_identifier(proc->proc));
   } else {
@@ -560,8 +505,60 @@ static gboolean create_ping(int at, t_proc *proc) {
     proc->ndx = -1;
     FAIL(INP_FAILED);
   }
+}
+
+static gboolean create_ping(int at, t_proc *proc) {
+#define ARGV_STR(argument) do {        \
+  if ((argc + 1) < G_N_ELEMENTS(argv)) \
+	  argv[argc++] = (argument);   \
+} while (0)
+#define ARGV_FMT(buff, fmt, ...) do {                 \
+  g_snprintf(buff, sizeof(buff), (fmt), __VA_ARGS__); \
+  ARGV_STR(buff);                                     \
+} while (0)
   proc->sig = 0;
+  proc->active = false;
+  unsigned argc = 0; const char* argv[32] = {0};
+  ARGV_STR(BINPING);
+  ARGV_STR("-OD");
+  if (!opts.dns) ARGV_STR("-n");
+  char s_t[16]; ARGV_FMT(s_t, "-t%d", at + 1);
+  char s_c[16]; ARGV_FMT(s_c, "-c%d", opts.cycles);
+  char s_i[16]; ARGV_FMT(s_i, "-i%d", opts.timeout);
+  char s_W[16]; ARGV_FMT(s_W, "-W%d", opts.timeout);
+  char s_Q[16]; if (opts.qos != DEF_QOS)
+    ARGV_FMT(s_Q, "-Q%d", opts.qos);
+  char s_p[64]; if (strncmp(opts.pad, DEF_PPAD, sizeof(opts.pad)))
+    ARGV_FMT(s_p, "-p%s", opts.pad);
+  char s_s[16]; if (opts.size != DEF_PSIZE)
+    ARGV_FMT(s_s, "-s%d", opts.size);
+  char s46[4];  if ((opts.ipv == 4) || (opts.ipv == 6))
+    ARGV_FMT(s46, "-%d", opts.ipv);
+  ARGV_STR("--");
+  ARGV_STR(opts.target);
+  GSubprocessLauncher *launcher = g_subprocess_launcher_new(
+    G_SUBPROCESS_FLAGS_STDOUT_PIPE | G_SUBPROCESS_FLAGS_STDERR_PIPE);
+  if (launcher) {
+    g_subprocess_launcher_setenv(launcher, "LC_ALL", "C", true); // uniform output
+    GError *error = NULL;
+    proc->proc = g_subprocess_launcher_spawnv(launcher, argv, &error);
+    if (proc->proc) {
+      char* copy[G_N_ELEMENTS(argv)] = {0};
+      memcpy(copy, argv, sizeof(argv));
+      pinger_init_streams(at, proc, copy);
+    } else {
+      if (error && (error->code == 3)) {
+        notifier_set_autohide_sec(10);
+        PINGER_MESG("%s", SNAPBOX_HINT);
+        notifier_set_autohide_sec(0);
+      } else PINGER_MESG("%s", error ? error->message : UNKN_ERR);
+      ERROR("g_subprocess_newv()");
+    }
+    g_clear_object(&launcher);
+  } else FAIL("g_subprocess_launcher_new()");
   return proc->active;
+#undef ARGV_STR
+#undef ARGV_FMT
 }
 
 static gboolean pinger_on_expired(gpointer user_data G_GNUC_UNUSED) {
@@ -583,8 +580,14 @@ void pinger_init(void) {
 
 void pinger_start(void) {
   if (!opts.target) return;
-  for (int i = opts.range.min; i < opts.range.max; i++)
-    if (!create_ping(i, &pings[i])) break;
+  for (int i = opts.range.min; i < opts.range.max; i++) {
+    if (!pings[i].out) pings[i].out = g_malloc0(BUFF_SIZE);
+    if (!pings[i].err) pings[i].err = g_malloc0(BUFF_SIZE);
+    if (pings[i].out && pings[i].err) {
+      if (create_ping(i, &pings[i])) continue;
+    } else WARN("%s: #%d: g_malloc0()", ERROR_HDR, i + 1);
+    break;
+  }
   gboolean active = pinger_update_status();
   if (!active) return;
   pinger_clear_data(true);

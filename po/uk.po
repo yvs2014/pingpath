@@ -846,7 +846,7 @@ msgstr "Нема мети"
 
 # cli misc: message18
 msgid "Non-interactive mode with summary at exit"
-msgstr "Неінтерактивний режим із резюме на виході"
+msgstr "Неінтерактивний режим і резюме на виході"
 
 # clipboard prefix
 msgid "Clipboard"
