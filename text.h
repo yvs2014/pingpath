@@ -186,9 +186,9 @@
 #define GREX_AREA_HEADER _("Jitter area")
 
 // 3D-graphics elements
-#define PLEL_BACK_HDR    _("Backside")
-#define PLEL_AXIS_HDR    _("Axis")
-#define PLEL_GRID_HDR    _("Grid")
+#define PLEL_BACK_HDR    _("Backsides")
+#define PLEL_AXIS_HDR    _("Axes")
+#define PLEL_GRID_HDR    _("Grid on surface")
 #define PLEL_ROTR_HDR    _("Rotator")
 
 // spinner fields
@@ -250,7 +250,7 @@
 #define CLI_NOPARSE_HDR _("Cannot parse")
 #define CLI_DUPTAG_HDR  _("Tag duplicate")
 #define CLI_NOPAIR_HDR  _("Wrong pair")
-#define CLI_NDXDIFF_HDR _("Number of indexes are different")
+#define CLI_NDXDIFF_HDR _("Different number of indexes")
 #define CLI_ROPT_T_HDR  _("Text")
 #define CLI_ROPT_C_HDR  _("CSV")
 #define CLI_ROPT_J_HDR  _("JSON")
@@ -258,7 +258,7 @@
 #define CLI_MUT_EXC_HDR _("Mutually exclusive options")
 #define CLI_APPFEAT_HDR _("Build features")
 #define CLI_LIBVER_HDR  _("Runtime lib versions")
-#define CLI_SKIPARG_HDR _("Skipping argument")
+#define CLI_SKIPARG_HDR _("Skipping extra")
 #define CLI_BADOPT_HDR  _("Unknown option")
 #define CLI_NOGOAL_HDR  _("No goal")
 #define CLI_RECAP_HDR   _("Non-interactive mode with summary at exit")
@@ -278,7 +278,7 @@
 #define PROC_EXP_HDR    _("Process is still active after expire time, stopping ...")
 #define PROC_NOSTOP_ERR _("Subprocess has not stopped")
 #define EXPTIME_HDR     _("expiration time")
-#define RUNTIME_EXP     _("runtime expired")
+#define RUNTIME_EXP     _("time's up")
 #define INP_FAILED      _("stdin failed")
 #define RELRES_HDR      _("release resources")
 #define STOPPID_HDR     _("Stop process")

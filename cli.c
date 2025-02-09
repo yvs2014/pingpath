@@ -453,7 +453,7 @@ static gboolean config_opt_not_found(GError *opterr, const char *section, const 
 static void cli_set_opt_dns(gboolean dns, t_opts *opts) {
   if (opts && (opts->dns != dns)) {
     opts->dns = dns;
-    g_message("%s %s", OPT_DNS_HDR, dns ? ON_HDR : OFF_HDR);
+    g_message("%s: %s", OPT_DNS_HDR, dns ? ON_HDR : OFF_HDR);
   }
 }
 

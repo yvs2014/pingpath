@@ -1,25 +1,25 @@
 msgid ""
 msgstr ""
-"Language: uk\n"
+"Language: es\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
 # Tab1.1
 msgid "Trace"
-msgstr "Трасування"
+msgstr "Traza"
 
 # Tab1.2
 msgid "Ping path with stats"
-msgstr "Шлях пінгування зі статистикою"
+msgstr "Ruta de ping con estadísticas"
 
 # Tab2.1
 msgid "Graphs"
-msgstr "Графіки"
+msgstr "Gráficos"
 
 # Tab2.2
 msgid "2D graphs"
-msgstr "2D графіки"
+msgstr "Gráficos 2D"
 
 # Tab3.1
 msgid "3D"
@@ -27,51 +27,51 @@ msgstr "3D"
 
 # Tab3.2
 msgid "3D graphics"
-msgstr "3D графіка"
+msgstr "Gráficos 3D"
 
 # Tab4.1
 msgid "Log"
-msgstr "Журнал"
+msgstr "Registro"
 
 # Tab4.2
 msgid "Auxiliary logs"
-msgstr "Логування"
+msgstr "Registros auxiliares"
 
 #
 msgid "Target"
-msgstr "Ціль"
+msgstr "Objetivo"
 
 # target hint
 msgid "Enter hostname or IP address ..."
-msgstr "Введіть назву або IP адресу ..."
+msgstr "Introduzca el nombre o la dirección IP ..."
 
 #
 msgid "Date"
-msgstr "Дата"
+msgstr "Fecha"
 
 # button
 msgid "Okay"
-msgstr "Гаразд"
+msgstr "Aceptar"
 
 # toggle tip1
 msgid "on"
-msgstr "увімкнено"
+msgstr "ON"
 
 # toggle tip2
 msgid "off"
-msgstr "вимкнено"
+msgstr "OFF"
 
 # unit: seconds
 msgid "sec"
-msgstr "сек"
+msgstr "seg"
 
 # unit: milliseconds
 msgid "msec"
-msgstr "мсек"
+msgstr "mseg"
 
 # unit: microseconds
 msgid "usec"
-msgstr "мксек"
+msgstr "useg"
 
 # hexadecinal
 msgid "0x"
@@ -79,727 +79,727 @@ msgstr "0x"
 
 # ping name
 msgid "Ping"
-msgstr "Пінг"
+msgstr "Ping"
 
 # hop#N header
 msgid "hop"
-msgstr "перехід"
+msgstr "salto"
 
 # extra info
 msgid "Info"
-msgstr "Інфо"
+msgstr "Info"
 
 # done message1
 msgid "Pings completed"
-msgstr "Пінги завершено"
+msgstr "Pings completados"
 
 # done message2
 msgid "completed"
-msgstr "завершено"
+msgstr "completado"
 
 # aux message1
 msgid "No data"
-msgstr "Немає даних"
+msgstr "No hay datos"
 
 # aux message2
 msgid "No data yet"
-msgstr "Даних ще немає"
+msgstr "No hay datos todavía"
 
 # aux message3
 msgid "Not reached"
-msgstr "Не досягнуто"
+msgstr "No alcanzado"
 
 # aux message4
 msgid "Not reached yet"
-msgstr "Ще не досягнуто"
+msgstr "Aún no alcanzado"
 
 # actions header
 msgid "Actions"
-msgstr "Дії"
+msgstr "Acciones"
 
 # options header
 msgid "Options"
-msgstr "Опції"
+msgstr "Opciones"
 
 # command-line-interface header
 msgid "CLI"
-msgstr "Інтерфейс командного рядка"
+msgstr "Interfaz de línea de comandos"
 
 # message: unknown type
 msgid "Unknown type"
-msgstr "Невідомий тип"
+msgstr "Tipo desconocido"
 
 # message: minimum
 msgid "min"
-msgstr "мін"
+msgstr "mín"
 
 # message: maximum
 msgid "max"
-msgstr "макс"
+msgstr "máx"
 
 # graphics time-axis
 msgid "Time"
-msgstr "Час"
+msgstr "Tiempo"
 
 # graphics delay-axis
 msgid "Delay"
-msgstr "Затримка"
+msgstr "Latencia"
 
 # graphics hops-axis
 msgid "Hops"
-msgstr "Переходи"
+msgstr "Saltos"
 
 # help window: theme1
 msgid "Main theme"
-msgstr "Загальна тема"
+msgstr "Tema principal"
 
 # help window: theme2
 msgid "Graph theme"
-msgstr "Тема графіків"
+msgstr "Tema de gráficos 2D"
 
 # help window: theme3
 msgid "3D-plot theme"
-msgstr "Тема 3D-графіки"
+msgstr "Tema de gráficos 3D"
 
 # help window: start/stop ...
 msgid "pinging"
-msgstr "пінгування"
+msgstr "hacer ping"
 
 # help window: pause ...
 msgid "data refreshing"
-msgstr "оновлення даних"
+msgstr "actualización de datos"
 
 # help window: reset ...
 msgid "statistics data"
-msgstr "статистику"
+msgstr "estadística"
 
 # help window: exit
 msgid "stop and quit"
-msgstr "зупинити та вийти"
+msgstr "parar y salir"
 
 # help window: cycles
 msgid "Tracing cycles"
-msgstr "Цикли трасування"
+msgstr "Ciclos de trazado"
 
 # help window: dark theme style
 msgid "Dark style"
-msgstr "Темний стиль"
+msgstr "Estilo oscuro"
 
 # help window: light theme style
 msgid "Light style"
-msgstr "Світлий стиль"
+msgstr "Estilo ligero"
 
 # help window: 3d-surface colors
 msgid "RGB color pairs:"
-msgstr "RGB кольори попарно:"
+msgstr "Pares de colores RGB:"
 
 # help window: 3d-surface parameters
 msgid "Space, Orientation, and Step"
-msgstr "Координати, орієнтація та крок"
+msgstr "Espacio, orientación y paso"
 
 # help window: log-tab max rows
 msgid "Max rows in log-tab"
-msgstr "Максимум рядків у вкладці логування"
+msgstr "Máximo de líneas del registro"
 
 # help window: see too
 msgid "Options are given in pingpath(1) manual page"
-msgstr "Параметри наведені у посібнику pingpath(1)"
+msgstr "Opciones se dan en página de manual de pingpath(1)"
 
 # action menu tooltip
 msgid "Command Menu"
-msgstr "Меню команд"
+msgstr "Menú de comandos"
 
 # option menu tooltip
 msgid "Main Options"
-msgstr "Основні параметри"
+msgstr "Opciones principales"
 
 # aux menu tooltip
 msgid "Auxiliary"
-msgstr "Додатково"
+msgstr "Auxiliar"
 
 # action-menu: 1
 msgid "Start"
-msgstr "Розпочати"
+msgstr "Comenzar"
 
 # action-menu: 2
 msgid "Stop"
-msgstr "Зупинити"
+msgstr "Detener"
 
 # action-menu: 3
 msgid "Pause"
-msgstr "Призупинити"
+msgstr "Pausa"
 
 # action-menu: 4
 msgid "Resume"
-msgstr "Продовжити"
+msgstr "Reanuda"
 
 # action-menu: 5
 msgid "Reset"
-msgstr "Обнулити"
+msgstr "Reseteo"
 
 # action-menu: 6
 msgid "Help"
-msgstr "Довідка"
+msgstr "Ayuda"
 
 # action-menu: 7
 msgid "Exit"
-msgstr "Вихід"
+msgstr "Salida"
 
 # option-menu: 1
 msgid "Cycles"
-msgstr "Кількість циклів"
+msgstr "Ciclos"
 
 # option-menu: 2
 msgid "Interval"
-msgstr "Інтервал"
+msgstr "Intervalo"
 
 # option-menu: 3
 msgid "DNS"
-msgstr "Імена вузлів"
+msgstr "DNS"
 
 # option-menu: 4
 msgid "Hop Info"
-msgstr "Інфо щодо вузлів"
+msgstr "Info sobre saltos"
 
 # option-menu: 5
 msgid "Statistics"
-msgstr "Статистика"
+msgstr "Estadística"
 
 # option-menu: 6
 msgid "TTL"
-msgstr "TTL (кількість переходів)"
+msgstr "TTL (número de saltos)"
 
 # option-menu: 7
 msgid "QoS"
-msgstr "QoS (якість сервісу)"
+msgstr "QoS (calidad de servicio)"
 
 # option-menu: 8
 msgid "Payload"
-msgstr "Вміст"
+msgstr "Carga útil"
 
 # option-menu: 9
 msgid "Size"
-msgstr "Розмір"
+msgstr "Tamaño"
 
 # option-menu: 10
 msgid "IP Version"
-msgstr "IP версія"
+msgstr "IP versión"
 
 # option-menu: 10.1
 msgid "Auto"
-msgstr "Автоматично"
+msgstr "Automático"
 
 # option-menu: 10.2
 msgid "IPv4"
-msgstr "Версія 4"
+msgstr "Versión 4"
 
 # option-menu: 10.3
 msgid "IPv6"
-msgstr "Версія 6"
+msgstr "Versión 6"
 
 # aux-menu: 1
 msgid "Main dark theme"
-msgstr "Загальна темна тема"
+msgstr "Tema oscuro principal"
 
 # aux-menu: 2
 msgid "Graph dark theme"
-msgstr "Темна тема графіків"
+msgstr "Tema oscuro de gráficos 2D"
 
 # aux-menu: 3
 msgid "3D-plot dark theme"
-msgstr "Темна тема 3D-графіки"
+msgstr "Tema oscuro de gráficos 3D"
 
 # aux-menu: 4
 msgid "Graph type"
-msgstr "Тип графіків"
+msgstr "Tipo de gráficos"
 
 # aux-menu: 4.1
 msgid "Dots"
-msgstr "Крапки"
+msgstr "Puntos"
 
 # aux-menu: 4.2
 msgid "Lines"
-msgstr "Лінії"
+msgstr "Líneas"
 
 # aux-menu: 4.3
 msgid "Splines"
-msgstr "Сплайни"
+msgstr "Splines"
 
 # aux-menu: 5
 msgid "Graph legend"
-msgstr "Опис графіків"
+msgstr "Leyenda de gráficos"
 
 # aux-menu: 6
 msgid "Legend fields"
-msgstr "Пункти опису графіків"
+msgstr "Campos de leyenda"
 
 # aux-menu: 7
 msgid "Extra graph elements"
-msgstr "Додаткові елементи на графіках"
+msgstr "Elementos gráficos adicionales"
 
 # aux-menu: 8
 msgid "Plot elements"
-msgstr "Елементи 3D-графіки"
+msgstr "Elementos de gráficos 3D"
 
 # aux-menu: 9
 msgid "Plot gradient"
-msgstr "Градієнт 3D-графіки"
+msgstr "Gradiente de gráficos 3D"
 
 # aux-menu: 10
 msgid "Plot rotation"
-msgstr "Обертання 3D-графіки"
+msgstr "Rotación de gráficos 3D"
 
 # aux-menu: 10.1.0
 msgid "Global space"
-msgstr "Глобальні координати"
+msgstr "Coordenadas globales"
 
 # aux-menu: 10.1.1 (used in cli)
 msgid "Local space"
-msgstr "Локальні координати"
+msgstr "Coordenadas locales"
 
 # aux-menu: 11
 msgid "Plot scale"
-msgstr "Масштабування 3D-графіки"
+msgstr "Escala de gráficos 3D"
 
 # aux-menu: 11.1
 msgid "Field of view"
-msgstr "Поле зору"
+msgstr "Ángulo de visión"
 
 # aux-menu: 12
 msgid "LogTab rows"
-msgstr "Рядків у вкладці логування"
+msgstr "Líneas de registro"
 
 # cli-opt-X
 msgid "Plot parameters"
-msgstr "Параметри 3D-графіки"
+msgstr "Parámetros de gráficos 3D"
 
 # trace-info: 1.1.0
 msgid "Host"
-msgstr "Хост"
+msgstr "Host"
 
 # trace-info: 1.1.1
 msgid "_Host"
-msgstr "Хост"
+msgstr "Host"
 
 # trace-info: 1.1.2
 msgid "Hostname or IP-address"
-msgstr "Назва вузла або IP адреса"
+msgstr "Nombre de host o dirección IP"
 
 # trace-info: 1.2.0
 msgid "AS"
-msgstr "АС"
+msgstr "SA"
 
 # trace-info: 1.2.1
 msgid "AS Number"
-msgstr "Номер АС"
+msgstr "Número de SA"
 
 # trace-info: 1.2.2
 msgid "Autonomous System"
-msgstr "Автономна система"
+msgstr "Sistema autónomo"
 
 # trace-info: 1.3.0
 msgid "CC"
-msgstr "Країна"
+msgstr "País"
 
 # trace-info: 1.3.1
 msgid "Country Code"
-msgstr "Код країни"
+msgstr "Código de país"
 
 # trace-info: 1.3.2
 msgid "Registrant Country Code"
-msgstr "Код країни реєстрації"
+msgstr "Código de país del registrante"
 
 # trace-info: 1.4.0
 msgid "Desc"
-msgstr "Опис"
+msgstr "Desc"
 
 # trace-info: 1.4.1
 msgid "Description"
-msgstr "Опис"
+msgstr "Descripción"
 
 # trace-info: 1.4.2
 msgid "Short description in free form"
-msgstr "Стислий опис у вільній формі"
+msgstr "Breve descripción en formato libre"
 
 # trace-info: 1.5.0
 msgid "Network"
-msgstr "Мережа"
+msgstr "Red"
 
 # trace-info: 1.5.1
 msgid "Network prefix"
-msgstr "Мережевий префікс"
+msgstr "Prefijo de red"
 
 # trace-stat: 1.1.0
 msgid "Loss"
-msgstr "Втрат"
+msgstr "Pérd"
 
 # trace-stat: 1.1.1
 msgid "Lost"
-msgstr "Втрачено"
+msgstr "Pérdido"
 
 # trace-stat: 1.1.2
 msgid "Loss in percentage"
-msgstr "Втрати в процентах"
+msgstr "Pérdida en porcentaje"
 
 # trace-stat: 1.2.0
 msgid "Sent"
-msgstr "Відпр"
+msgstr "Envia"
 
 # trace-stat: 1.2.1
 msgid "_Sent"
-msgstr "Надіслано"
+msgstr "Enviado"
 
 # trace-stat: 1.2.2
 msgid "Number of pings sent"
-msgstr "Кількість надісланих пінгів"
+msgstr "Número de pings enviados"
 
 # trace-stat: 1.3.0
 msgid "Recv"
-msgstr "Отрим"
+msgstr "Recb"
 
 # trace-stat: 1.3.1
 msgid "Received"
-msgstr "Отримано"
+msgstr "Recibido"
 
 # trace-stat: 1.3.2
 msgid "Number of pongs received"
-msgstr "Кількість отриманих відповідей"
+msgstr "Número de pongs recibidos"
 
 # trace-stat: 1.4.0
 msgid "Last"
-msgstr "Остан"
+msgstr "Últ"
 
 # trace-stat: 1.4.1
 msgid "_Last"
-msgstr "Останнє"
+msgstr "Último"
 
 # trace-stat: 1.4.2
 msgid "Last delay in milliseconds"
-msgstr "Остання затримка в мілісекундах"
+msgstr "Última demora en milisegundos"
 
 # trace-stat: 1.5.0
 msgid "Best"
-msgstr "Кращ"
+msgstr "Mejor"
 
 # trace-stat: 1.5.1
 msgid "_Best"
-msgstr "Найкраще"
+msgstr "Mejor"
 
 # trace-stat: 1.5.2
 msgid "Best delay in milliseconds"
-msgstr "Найкраща затримка в мілісекундах"
+msgstr "Mejor demora en milisegundos"
 
 # trace-stat: 1.6.0
 msgid "Wrst"
-msgstr "Гірш"
+msgstr "Peor"
 
 # trace-stat: 1.6.1
 msgid "Worst"
-msgstr "Найгірше"
+msgstr "Peor"
 
 # trace-stat: 1.6.2
 msgid "Worst delay in milliseconds"
-msgstr "Найгірша затримка в мілісекундах"
+msgstr "Peor demora en milisegundos"
 
 # trace-stat: 1.7.0
 msgid "Avrg"
-msgstr "Серед"
+msgstr "Medio"
 
 # trace-stat: 1.7.1
 msgid "Average"
-msgstr "Середнє"
+msgstr "Medio"
 
 # trace-stat: 1.7.2
 msgid "Average delay in milliseconds"
-msgstr "Середня затримка в мілісекундах"
+msgstr "Media demora en milisegundos"
 
 # trace-stat: 1.8.0
 msgid "Jttr"
-msgstr "Джитр"
+msgstr "Desvio"
 
 # trace-stat: 1.8.1
 msgid "Jitter"
-msgstr "Джиттер"
+msgstr "Desvio"
 
 # trace-stat: 1.8.2
 msgid "Jitter (variation in delay)"
-msgstr "Джиттер (варіація затримки)"
+msgstr "Desvio (fluctuación de latencia)"
 
 # spinner: TTL
 msgid "range"
-msgstr "діапазон"
+msgstr "rango"
 
 # spinner: color1
 msgid "red"
-msgstr "червоний"
+msgstr "rojo"
 
 # spinner: color2
 msgid "green"
-msgstr "зелений"
+msgstr "verde"
 
 # spinner: color3
 msgid "blue"
-msgstr "синій"
+msgstr "azul"
 
 # plot loginfo: color1
 msgid "Plot red gradient"
-msgstr "Червоний градієнт 3D-графіки"
+msgstr "Gradiente rojo de gráficos 3D"
 
 # plot loginfo: color2
 msgid "Plot green gradient"
-msgstr "Зелений градієнт 3D-графіки"
+msgstr "Gradiente verde de gráficos 3D"
 
 # plot loginfo: color3
 msgid "Plot blue gradient"
-msgstr "Синій градієнт 3D-графіки"
+msgstr "Gradiente azul de gráficos 3D"
 
 # graphs' legend1.1 [removed from customisation]
 msgid "Color"
-msgstr "Колір"
+msgstr "Color"
 
 # graphs' legend1.2 [removed from customisation]
 msgid "Color dash"
-msgstr "Колір риски"
+msgstr "Color de guion"
 
 # graphs' legend2.1 (help)
 msgid "RTT±Jitter"
-msgstr "Затримка±Джиттер"
+msgstr "Latencia±Desvio"
 
 # graphs' legend2.2 (menu)
 msgid "Average RTT ± Jitter"
-msgstr "Середня затримка ± Джиттер"
+msgstr "Latencia en medio ± Desvio"
 
 # graphs' legend3.1 (help)
 msgid "CC:ASN"
-msgstr "Країна:АC"
+msgstr "País:SA"
 
 # graphs' legend3.2 (menu)
 msgid "Country Code : AS Number"
-msgstr "Код країни : Номер АС"
+msgstr "Código de país : Número de SA"
 
 # graphs' legend4.1 (help)
 msgid "Hopname"
-msgstr "Вузел"
+msgstr "Nodo"
 
 # graphs' legend4.1 (menu)
 msgid "_Hopname"
-msgstr "Назва вузла"
+msgstr "Nombre de nodo"
 
 # graphs' element1.0 (help)
 msgid "Midline"
-msgstr "Усереднення"
+msgstr "Promediando"
 
 # graphs' element1.1 (menu)
 msgid "Average line"
-msgstr "Лінія усереднення"
+msgstr "Línea media"
 
 # graphs' element2.0 (help)
 msgid "Scopes"
-msgstr "Діапазон змін"
+msgstr "Alcance de cambios"
 
 # graphs' element2.1 (menu)
 msgid "Jitter range"
-msgstr "Діапазон змін"
+msgstr "Rango de desvio"
 
 # graphs' element3.0 (help)
 msgid "JArea"
-msgstr "Площа змін"
+msgstr "Área de cambios"
 
 # graphs' element3.1 (menu)
 msgid "Jitter area"
-msgstr "Площа змін"
+msgstr "Área de cambios"
 
 # 3d-plot element1
 msgid "Backsides"
-msgstr "Стінки"
+msgstr "Planos posteriores"
 
 # 3d-plot element2
 msgid "Axes"
-msgstr "Осі"
+msgstr "Ejes"
 
 # 3d-plot element3
 msgid "Grid on surface"
-msgstr "Сітка на поверхні"
+msgstr "Cuadrícula en superficie"
 
 # 3d-plot element4
 msgid "Rotator"
-msgstr "Ротатор"
+msgstr "Rotador"
 
 # 3d-rotation header1 (used in cli)
 msgid "Orientation"
-msgstr "Орієнтація"
+msgstr "Orientación"
 
 # 3d-rotation header2
 msgid "Attitude"
-msgstr "Навігація"
+msgstr "Actitud"
 
 # 3d-rotation header3
 msgid "Roll"
-msgstr "Тангаж"
+msgstr "Alabeo"
 
 # 3d-rotation header4
 msgid "Pitch"
-msgstr "Крен"
+msgstr "Cabeceo"
 
 # 3d-rotation header5
 msgid "Yaw"
-msgstr "Відхилення"
+msgstr "Guiñada"
 
 # 3d-rotation header6
 msgid "Rotation"
-msgstr "Обертання"
+msgstr "Rotación"
 
 # 3d-rotation header7
 msgid "Axis X"
-msgstr "Вісь X"
+msgstr "Eje X"
 
 # 3d-rotation header8
 msgid "Axis Y"
-msgstr "Вісь Y"
+msgstr "Eje Y"
 
 # 3d-rotation header9
 msgid "Axis Z"
-msgstr "Вісь Z"
+msgstr "Eje Z"
 
 # 3d-rotation header10
 msgid "Angular step"
-msgstr "Кутовий крок"
+msgstr "Paso angular"
 
 # cli option help: message1
 msgid "Get options from file"
-msgstr "Отримати параметри з файлу"
+msgstr "Obtener opciones del archivo"
 
 # cli option help: message2
 msgid "IP addresses in numeric form"
-msgstr "IP адреси у числовій формі"
+msgstr "Direcciones IP en formato numérico"
 
 # cli option help: message3
 msgid "Interval between pings"
-msgstr "Інтервал між пінгами"
+msgstr "Intervalo entre pings"
 
 # cli option help: message4
 msgid "TTL range"
-msgstr "Діапазон TTL"
+msgstr "Rango TTL"
 
 # cli option help: message5
 msgid "QoS/ToS byte"
-msgstr "QoS/ToS байт (якість сервісу)"
+msgstr "QoS/ToS byte (calidad de servicio)"
 
 # cli option help: message6
 msgid "ICMP payload size"
-msgstr "Розмір ICMP даних"
+msgstr "Tamaño de datos ICMP"
 
 # cli option help: message7
 msgid "Payload in hex notation"
-msgstr "Вміст в шістнадцятковому форматі"
+msgstr "Carga útil en notación hexadecimal"
 
 # cli option help: message8
 msgid "Statistics fields"
-msgstr "Елементи статистики"
+msgstr "Campos de estadísticas"
 
 # cli option help: message9
 msgid "Toggle dark/light themes"
-msgstr "Перемикання темний/світлий стиль"
+msgstr "Cambio de tema oscuro/claro"
 
 # cli option help: message10.1
 msgid "Summary at exit"
-msgstr "Резюме на виході"
+msgstr "Resumen de salida"
 
 # cli option help: message10.2
 msgid "Text, CSV, or JSON"
-msgstr "Текст, CSV, чи JSON"
+msgstr "Texto, CSV, o JSON"
 
 # cli option help: message10.3
 msgid "Text, CSV"
-msgstr "Текст, CSV"
+msgstr "Texto, CSV"
 
 # cli option help: message11
 msgid "Autostart"
-msgstr "Автозапуск"
+msgstr "Inicio automático"
 
 # cli option help: message12
 msgid "Initial active tab"
-msgstr "Початкова активна вкладка"
+msgstr "Pestaña activa inicial"
 
 # cli option help: message13
 msgid "More detailed messaging"
-msgstr "Детальніші повідомлення"
+msgstr "Mensajes más detallados"
 
 # cli option help: message14
 msgid "Build features and runtime lib versions"
-msgstr "Властивості програми та версіі бібліотек"
+msgstr "Propiedades del programa y versiones de bibliotecas"
 
 # cli option help: message15
 msgid "Without graphics"
-msgstr "Без графіки"
+msgstr "Sin gráficos"
 
 # cli option help: message16
 msgid "Without 3D graphics"
-msgstr "Без 3D графіки"
+msgstr "Sin gráficos 3D"
 
 # cli option hint1
 msgid "<filepath>"
-msgstr "<шлях-до-файлу>"
+msgstr "<ruta-archivo>"
 
 # cli option hint2
 msgid "<number>"
-msgstr "<число>"
+msgstr "<número>"
 
 # cli option hint3
 msgid "<seconds>"
-msgstr "<секунди>"
+msgstr "<segundos>"
 
 # cli option hint4
 msgid "[min][,max]"
-msgstr "[мін][,макс]"
+msgstr "[mín][,máx]"
 
 # cli option hint5
 msgid "<bits>"
-msgstr "<біти>"
+msgstr "<bits>"
 
 # cli option hint6
 msgid "<in-bytes>"
-msgstr "<в-байтах>"
+msgstr "<en-bytes>"
 
 # cli option hint7
 msgid "<upto-16-bytes>"
-msgstr "<до-16ти-байт>"
+msgstr "<hasta-16-bytes>"
 
 # cli option hint8
 msgid "<tag:values>"
-msgstr "<тег:значення>"
+msgstr "<etiqueta:valor>"
 
 # cli option hint9
 msgid "<6bit-level>"
-msgstr "<шестибітний-рівень>"
+msgstr "<nivel-de-6bits>"
 
 # cli misc: message1
 msgid "No value"
-msgstr "Відсутнє значення"
+msgstr "Sin valor"
 
 # cli misc: message2
 msgid "No match"
-msgstr "Не відповідно до"
+msgstr "No hay coincidencia"
 
 # cli misc: message3
 msgid "Cannot parse"
-msgstr "Неможливо розпарсити"
+msgstr "No puede analizar"
 
 # cli misc: message4
 msgid "Tag duplicate"
-msgstr "Тег дублікат"
+msgstr "Etiqueta duplicada"
 
 # cli misc: message5
 msgid "Wrong pair"
-msgstr "Некоректна пара"
+msgstr "Par equivocado"
 
 # cli misc: message6
 msgid "Different number of indexes"
-msgstr "Кількість індексів різна"
+msgstr "Número diferente de índices"
 
 # cli misc: message7
 msgid "Text"
-msgstr "Текст"
+msgstr "Texto"
 
 # cli misc: message8
 msgid "CSV"
@@ -811,171 +811,171 @@ msgstr "JSON"
 
 # cli misc: message10
 msgid "Summary"
-msgstr "Резюме"
+msgstr "Resumen"
 
 # cli misc: message11
 msgid "Theme bits"
-msgstr "Біти теми"
+msgstr "bits de tema"
 
 # cli misc: message12
 msgid "Mutually exclusive options"
-msgstr "Взаємовиключні опції"
+msgstr "Opciones mutuamente excluyentes"
 
 # cli misc: message13
 msgid "Build features"
-msgstr "Властивості програми"
+msgstr "Propiedades del programa"
 
 # cli misc: message14
 msgid "Runtime lib versions"
-msgstr "Версіі бібліотек"
+msgstr "Versiones de bibliotecas"
 
 # cli misc: message15
 msgid "Skipping extra"
-msgstr "Пропускаємо зайве"
+msgstr "Evitando extra"
 
 # cli misc: message16
 msgid "Unknown option"
-msgstr "Невідома опція"
+msgstr "Opción desconocida"
 
 # cli misc: message17
 msgid "No goal"
-msgstr "Нема мети"
+msgstr "Sin objetivo"
 
 # cli misc: message18
 msgid "Non-interactive mode with summary at exit"
-msgstr "Неінтерактивний режим плюс резюме на виході"
+msgstr "Modo no interactivo y resumen de salida"
 
 # clipboard prefix
 msgid "Clipboard"
-msgstr "Буфер обміну"
+msgstr "Portapapeles"
 
 # clipboard menu: message1
 msgid "Copy"
-msgstr "Скопіювати"
+msgstr "Copiar"
 
 # clipboard menu: message2
 msgid "Select all"
-msgstr "Вибрати все"
+msgstr "Seleccionar todo"
 
 # clipboard menu: message3
 msgid "Unselect all"
-msgstr "Скасувати вибір"
+msgstr "Deseleccionar"
 
 # action shortcut header
 msgid "Action"
-msgstr "Дія"
+msgstr "Accion"
 
 # action shortcut1.1
 msgid "Legend"
-msgstr "Опис"
+msgstr "Leyenda"
 
 # action shortcut2.1
 msgid "Rotate Left"
-msgstr "Обертати ліворуч"
+msgstr "Girar a izquierda"
 
 # action shortcut2.2
 msgid "Rotate Right"
-msgstr "Обернути праворуч"
+msgstr "Girar a derecha"
 
 # action shortcut2.3
 msgid "Rotate Up"
-msgstr "Обертати догори"
+msgstr "Girar hacia arriba"
 
 # action shortcut2.4
 msgid "Rotate Down"
-msgstr "Обертати донизу"
+msgstr "Girar hacia abajo"
 
 # action shortcut2.5
 msgid "Rotate Clockwise"
-msgstr "Обертати за годинниковою стрілкою"
+msgstr "Girar en sentido horario"
 
 # action shortcut2.6
 msgid "Rotate AntiClockwise"
-msgstr "Обертати проти годинникової стрілки"
+msgstr "Girar en sentido antihorario"
 
 # action shortcut2.7
 msgid "Scale Up"
-msgstr "Наблизити"
+msgstr "Acercar"
 
 # action shortcut2.8
 msgid "Scale Down"
-msgstr "Віддалити"
+msgstr "Alejar"
 
 # message: unknown
 msgid "unknown"
-msgstr "невідомо"
+msgstr "desconocido"
 
 # error: unknown
 msgid "Unknown error"
-msgstr "Невідома помилка"
+msgstr "Error desconocido"
 
 # error: prefix
 msgid "ERROR"
-msgstr "ПОМИЛКА"
+msgstr "ERROR"
 
 # error: wrong tag
 msgid "Wrong tag"
-msgstr "Некоректний тег"
+msgstr "Etiqueta equivocada"
 
 # error: invalid value
 msgid "Invalid value"
-msgstr "Некоректне значення"
+msgstr "Valor inválido"
 
 # error: proc expired
 msgid "Process is still active after expire time, stopping ..."
-msgstr "Процес вичерпав свій час, зупиняємо ..."
+msgstr "Proceso ha expirado, lo estamos deteniendo ..."
 
 # error: cannot stop proc
 msgid "Subprocess has not stopped"
-msgstr "Підпроцес не зупинився"
+msgstr "Subproceso no se ha detenido"
 
 # message: expiration time
 msgid "expiration time"
-msgstr "час для роботи"
+msgstr "tiempo de expiración"
 
 # error: runtime expired
 msgid "time's up"
-msgstr "час вичерпано"
+msgstr "tiempo se acabó"
 
 # error: input
 msgid "stdin failed"
-msgstr "помилка stdin"
+msgstr "error de stdin"
 
 # misc: free(resources)
 msgid "release resources"
-msgstr "вивільнення ресурсів"
+msgstr "liberar recursos"
 
 # misc: at exit log message
 msgid "at exit"
-msgstr "на виході"
+msgstr "en la salida"
 
 # misc: stop pid=N
 msgid "Stop process"
-msgstr "Зупиняємо процес"
+msgstr "Detener proceso"
 
 # misc: stop with EOF
 msgid "finish"
-msgstr "фініш"
+msgstr "fin"
 
 # misc: stop by request
 msgid "by request"
-msgstr "по запиту"
+msgstr "por petición"
 
 # misc: set visible rows
 msgid "Visible rows"
-msgstr "Видимі рядки"
+msgstr "Líneas visibles"
 
 # misc: upto
 msgid "upto"
-msgstr "до"
+msgstr "hasta"
 
 # misc: sync-forward
 msgid "Sync forward"
-msgstr "Cинхронізація вперед"
+msgstr "Sincronizar hacia adelante"
 
 # misc: sync-backward
 msgid "Sync backward"
-msgstr "Cинхронізація назад"
+msgstr "Sincronizar hacia atrás"
 
 # misc: snap sandnox hint
 msgid ""
@@ -983,257 +983,256 @@ msgid ""
 "if minimal ping's slot (network-observe) is not autoconnected (permission denied),\n"
 "it can be connected with the following command:\n"
 "  snap connect pingpath:network-observe :network-observe"
-msgstr ""
-"Відносно запуску в snap контейнері:\n"
-"якщо мінімально необхідний слот (network-observe) не підключено автоматично (permission denied),\n"
-"його можна підключити наступною командою:\n"
+msgstr "Ejecutando en contenedor Snap:\n"
+"si la ranura mínima (network-observe) no está conectada automáticamente (permiso denegado),\n"
+"se puede conectar con el siguiente comando:\n"
 "  snap connect pingpath:network-observe :network-observe"
 
 # log section1
 msgid "DNS:"
-msgstr "ДНС:"
+msgstr "DNS:"
 
 # log section2
 msgid "WHOIS:"
-msgstr "ХТО:"
+msgstr "QUIEN:"
 
 # log section3
 msgid "CONFIG:"
-msgstr "КОНФІГ:"
+msgstr "CONFIG:"
 
 # parse message1
 msgid "SUCCESS"
-msgstr "ВДАЛО"
+msgstr "ÉXITO"
 
 # parse message2
 msgid "DISCARD"
-msgstr "ВІДКИНУТО"
+msgstr "DESECHAR"
 
 # parse message3
 msgid "TIMEOUT"
-msgstr "ТАЙМАУТ"
+msgstr "EXPIRADO"
 
 # parse message4
 msgid "INFO"
-msgstr "ІНФО"
+msgstr "INFO"
 
 # parse message5
 msgid "UNKNOWN"
-msgstr "НЕВІДОМО"
+msgstr "DESCONOCIDO"
 
 # log: index=
 msgid "ndx"
-msgstr "індекс"
+msgstr "índ"
 
 # log: address=
 msgid "addr"
-msgstr "адреса"
+msgstr "dir"
 
 # log: hostame=
 msgid "name"
-msgstr "ім'я"
+msgstr "nombre"
 
 # log: seq=
 msgid "seq"
-msgstr "номер"
+msgstr "seq"
 
 # log: ttl=
 msgid "ttl"
-msgstr "ттл"
+msgstr "ttl"
 
 # log: delay=
 msgid "delay"
-msgstr "затримка"
+msgstr "latencia"
 
 # log: reason=
 msgid "reason"
-msgstr "причина"
+msgstr "razón"
 
 # log: timestamp=
 msgid "timestamp"
-msgstr "відмітка"
+msgstr "marca"
 
 # log: info=
 msgid "info"
-msgstr "інфо"
+msgstr "info"
 
 # warn: regex
 msgid "regex"
-msgstr "регулярний вираз"
+msgstr "expresión regular"
 
 # warn: pattern
 msgid "PATTERN"
-msgstr "ШАБЛОН"
+msgstr "PATRÓN"
 
 # logging: hostname
 msgid "Hostname"
-msgstr "Хост"
+msgstr "Host"
 
 # warn: overlen
 msgid "Out of length limit"
-msgstr "Перебільшує обмеження по довжині"
+msgstr "Demasiado largo"
 
 # warn: endhyphen char
 msgid "Cannot end with hyphen"
-msgstr "Не може закінчуватися дефісом"
+msgstr "No puede terminar con guión"
 
 # warn: invalid start char
 msgid "Must start with a letter or a digit"
-msgstr "Має починатися з букви чи цифри"
+msgstr "Debe comenzar con una letra o un dígito"
 
 # warn: not allowed chars
 msgid "Contains not allowed characters"
-msgstr "Містить недозволенні символи"
+msgstr "Contiene caracteres no permitidos"
 
 # warn: no re match
 msgid "No regex match"
-msgstr "Не відповідає шаблону"
+msgstr "No coincide con el patrón"
 
 # warn: wrong string category
 msgid "Wrong category"
-msgstr "Некоректна категорія"
+msgstr "Categoría equivocada"
 
 # warn: out of range
 msgid "Out of range"
-msgstr "Поза діапазоном"
+msgstr "Fuera de rango"
 
 # warn: init error
 msgid "Init failed"
-msgstr "Помилка ініціалізації"
+msgstr "Error de inicialización"
 
 # warn: no icon found
 msgid "No icon"
-msgstr "Відсутня іконка"
+msgstr "No hay icono"
 
 # warn: no free slots
 msgid "No free slots"
-msgstr "Немає вільних слотів"
+msgstr "No hay ranuras disponibles"
 
 # log: reason to limit visible rows
 msgid "skip duplicates"
-msgstr "пропуск дублікатів"
+msgstr "omitir duplicados"
 
 # log: dns cache update
 msgid "DNS cache update"
-msgstr "Оновлення DNS кешу"
+msgstr "Actualización de caché DNS"
 
 # log: host cache update
 msgid "Host cache update"
-msgstr "Оновлення кешу хоста"
+msgstr "Actualización de caché Host"
 
 # log: whois cache update
 msgid "Whois cache update"
-msgstr "Оновлення кешу whois"
+msgstr "Actualización de caché Whois"
 
 # log: smth empty
 msgid "<empty>"
-msgstr "<нема>"
+msgstr "<vacío>"
 
 # log: goal is achieved
 msgid "Target is reached"
-msgstr "Ціль досягнута"
+msgstr "Objetivo se alcanza"
 
 # log: behind the target
 msgid "behind the target"
-msgstr "поза цілю"
+msgstr "detrás del objetivo"
 
 # log: unreachable
 msgid "unreachable"
-msgstr "недосяжно"
+msgstr "inalcanzable"
 
 # log: whois origin changed
 msgid "Origin changed"
-msgstr "Зміна походження"
+msgstr "Cambio de origen"
 
 # log: cache hit
 msgid "Cache hit"
-msgstr "Попадання в кеш"
+msgstr "Acierto de caché"
 
 # log: send query
 msgid "Send query"
-msgstr "Надсилаємо запит"
+msgstr "Enviar consulta"
 
 # log: save query
 msgid "Save query"
-msgstr "Зберегти запит"
+msgstr "Guardar consulta"
 
 # deb: lookup
 msgid "Lookup"
-msgstr "Запит"
+msgstr "Búsqueda"
 
 # deb: unresolved
 msgid "Unresolved"
-msgstr "Не знайдено"
+msgstr "Sin resolver"
 
 # log: no buffer
 msgid "No space in buffer"
-msgstr "Немає місця в буфері"
+msgstr "No hay espacio en el buffer"
 
 # log: no connection
 msgid "Connection failed"
-msgstr "Помилка з'єднання"
+msgstr "Error de conexión"
 
 # legend: line toggle
 msgid "show/hide graph"
-msgstr "показати/сховати графік"
+msgstr "mostrar/ocultar gráfico"
 
 # legend: exclusion mask
 msgid "Graph exclusion mask"
-msgstr "Маска виключення графіків"
+msgstr "Máscara de exclusión de gráficos"
 
 # debug: drag-n-drop
 msgid "DND"
-msgstr "ПЕРЕТЯГУВАННЯ"
+msgstr "ARRASTRAR:"
 
 # debug: reorder
 msgid "REORDER"
-msgstr "ЗМІНА-РОЗТАШУВАННЯ"
+msgstr "REORDENAMIENTO"
 
 # misc: array
 msgid "array"
-msgstr "масив"
+msgstr "array"
 
 # misc: group
 msgid "group"
-msgstr "група"
+msgstr "grupo"
 
 # misc: DND partial reordering
 msgid "partial reordering"
-msgstr "часткове переупорядкування"
+msgstr "reordenamiento parcial"
 
 # misc: A before B
 msgid "before"
-msgstr "поперед"
+msgstr "antes"
 
 # misc: A after B
 msgid "after"
-msgstr "після"
+msgstr "tras"
 
 # misc: clipboard
 msgid "clipboard"
-msgstr "буфер обміну"
+msgstr "portapapeles"
 
 # misc: requested A
 msgid "requested"
-msgstr "на запит"
+msgstr "pedido"
 
 # misc: received B
 msgid "received"
-msgstr "отримано"
+msgstr "recibido"
 
 # gl: texture lookups
 msgid "Vertex shader texture lookups"
-msgstr "Пошук текстур для шейдера вершин"
+msgstr "Búsqueda de texturas para el sombreador de vértices"
 
 # misc: incompat version
 msgid "Incompat version"
-msgstr "Несумісна версія"
+msgstr "Versión incompatible"
 
 # misc: table
 msgid "table"
-msgstr "таблиця"
+msgstr "tabla"
 
 # 3D-graphics: alphabet for font textures
 msgid "__abetka__"
-msgstr "АБВГҐДЕЄЖЗИІЇЙКЛМНОПРСТУФХЦЧШЩЬЮЯабвгґдеєжзиіїйклмнопрстуфхцчшщьюя"
+msgstr "AÁBCDEÉFGHIÍJKLMNÑOÓPQRSTUÚÜVWXYZaábcdeéfghiíjklmnñoópqrstuúüvwxyz"
 

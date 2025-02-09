@@ -96,6 +96,7 @@ MOPO   =
 PO_SRC =
 
 ifndef NO_NLS
+PO_SRC += po/es.po
 PO_SRC += po/uk.po
 CFLAGS += -DWITH_NLS -DLOCALEDIR='"$(SHRDIR)/locale"'
 MOPO   += $(PO_SRC:%.po=$(BUILDDIR)/%.mo)

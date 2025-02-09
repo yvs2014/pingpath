@@ -1,3 +1,9 @@
+pingpath (0.3.59) noble; urgency=low
+
+  * NLS: Spanish .po
+
+ -- yvs <VSYakovetsky@gmail.com>  Sun, 09 Feb 2025 08:43:05 +0200
+
 pingpath (0.3.58) noble; urgency=low
 
   * NLS: set subprocesses' LC_ correctly

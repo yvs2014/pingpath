@@ -232,8 +232,8 @@ static gboolean check_bool_val(GtkCheckButton *check, t_ent_bool *en, void (*upd
     if (name && (*name == '_'))
       name++;
     const char *enabled = state ? ON_HDR : OFF_HDR;
-    if (en->prefix) OPT_NOTIFY("%s: %s %s", en->prefix, name, enabled);
-    else            OPT_NOTIFY("%s: %s",                name, enabled);
+    if (en->prefix) OPT_NOTIFY("%s: %s: %s", en->prefix, name, enabled);
+    else            OPT_NOTIFY("%s: %s",                 name, enabled);
   }
   return okay;
 }

@@ -1,3 +1,6 @@
+## 0.3.59
+- NLS: Spanish .po
+
 ## 0.3.58
 - NLS: set subprocesses' LC_ correctly
 

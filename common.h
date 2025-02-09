@@ -12,7 +12,7 @@
 #define MIN_GTK_RUNTIME(major, minor, micro) (!gtk_check_version(major, minor, micro))
 
 #define APPNAME "pingpath"
-#define VERSION "0.3.58"
+#define VERSION "0.3.59"
 #define APPVER  APPNAME "-" VERSION
 
 extern locale_t locale, localeC;
