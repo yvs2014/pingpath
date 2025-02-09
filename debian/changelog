@@ -1,3 +1,11 @@
+pingpath (0.3.60) noble; urgency=low
+
+  * fix plot NULL-ended hash title
+
+  * 2d-graph: better time-title positioning
+
+ -- yvs <VSYakovetsky@gmail.com>  Sun, 09 Feb 2025 23:26:08 +0200
+
 pingpath (0.3.59) noble; urgency=low
 
   * NLS: Spanish .po

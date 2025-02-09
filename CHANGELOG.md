@@ -1,3 +1,7 @@
+## 0.3.60
+- fix plot NULL-ended hash title
+- 2d-graph: better time-title positioning
+
 ## 0.3.59
 - NLS: Spanish .po
 

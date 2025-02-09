@@ -13,23 +13,30 @@
 #include "ui/notifier.h"
 
 enum {
-  CELL_SIZE = 50,
-  TICK_SIZE =  6,
-  DOT_SIZE  =  5,
-  LINE_SIZE =  2,
-  THIN_SIZE =  1,
-  JRNG_MIN  =  4,  // LINE_SIZE * 2
+  CELL_SIZE  = 50,
+  TICK_SIZE  =  6,
+  DOT_SIZE   =  5,
+  LINE_SIZE  =  2,
+  THIN_SIZE  =  1,
+  JRNG_MIN   =  4,  // LINE_SIZE * 2
+  SUBCELLS   =  5,
+  X_FREQ     =  2,
+  SCOPE_TICK =  2,
 };
 
 #define FONT_RATIO 0.28
 static const double LINE_ALPHA = 0.6;
 static const double AREA_ALPHA = 0.2;
 
-enum { SUBCELLS = 5, X_FREQ = 2, SCOPE_TICK = 2 };
+typedef struct gr_title {
+  char *name;
+  double x, y;
+} t_gr_title;
 
 typedef struct graph_geom {
   const int x0, y0;
   int x1, y1, w, h, nw, nh;
+  t_gr_title rtt, time;
 } t_graph_geom;
 
 typedef struct gr_point_desc {
@@ -221,6 +228,27 @@ static void gr_draw_grid(GtkDrawingArea *area, cairo_t *cr,
   series_min_no(grm.w / ((double)CELL_SIZE / SUBCELLS) + 1);
   grm.x1 = grm.x0 + grm.w; grm.y1 = grm.y0 + grm.h;
   cairo_set_line_width(cr, opts.darkgraph ? (LINE_SIZE * 0.6) : LINE_SIZE);
+  // titles and their coordinates
+  g_free(grm.rtt.name);
+  grm.rtt = (t_gr_title){
+    .name = g_strdup_printf("%s [%s]", DELAY_TITLE, UNIT_MSEC),
+    .x = grm.x0 / 4.,
+    .y = grm.y0 - (2 * TICK_SIZE + 1.5 * fs_size),
+  };
+  g_free(grm.time.name);
+  grm.time = (t_gr_title){
+    .name = g_strdup(TIME_TITLE),
+    .x = grm.x1,
+    .y = grm.y1,
+  };
+  unsigned len = g_utf8_strlen(grm.time.name, -1);
+  if (len < 5) {
+    grm.time.x += 2 * TICK_SIZE;
+    grm.time.y -= 0.5 * fs_size;
+  } else {
+    grm.time.x -= len * fs_size / 4;
+    grm.time.y += 2.5 * fs_size;
+  }
   // grid lines
   cairo_set_dash(cr, dash_size, 1, 0);
   GR_SETCOL(dash_col);
@@ -258,16 +286,16 @@ static void gr_draw_grid(GtkDrawingArea *area, cairo_t *cr,
     } else FAIL("pango_cairo_create_layout()");
   }
   if (grid_pango) {
-#define TICK_SIZE2 (TICK_SIZE * 2)
-    cairo_move_to(cr, grm.x1 + TICK_SIZE2, grm.y1 - 0.5 * fs_size);
-    pango_layout_set_text(grid_pango, TIME_TITLE, -1);
-    pango_cairo_show_layout(cr, grid_pango);
-    cairo_move_to(cr, grm.x0 / 4., grm.y0 - (TICK_SIZE2 + 1.5 * fs_size));
-    char *yaxis = g_strdup_printf("%s [%s]", DELAY_TITLE, UNIT_MSEC);
-    pango_layout_set_text(grid_pango, yaxis ? yaxis : DELAY_TITLE, -1);
-    g_free(yaxis);
-    pango_cairo_show_layout(cr, grid_pango);
-#undef TICK_SIZE2
+    if (grm.time.name) {
+      cairo_move_to(cr, grm.time.x, grm.time.y);
+      pango_layout_set_text(grid_pango, grm.time.name, -1);
+      pango_cairo_show_layout(cr, grid_pango);
+    }
+    if (grm.rtt.name) {
+      cairo_move_to(cr, grm.rtt.x, grm.rtt.y);
+      pango_layout_set_text(grid_pango, grm.rtt.name, -1);
+      pango_cairo_show_layout(cr, grid_pango);
+    }
   }
 }
 
@@ -408,6 +436,8 @@ void graphtab_free(void) {
   if (graph_pango) { g_object_unref(graph_pango); graph_pango = NULL; }
   if (graph_font)  { pango_font_description_free(graph_font); graph_font = NULL; }
   pango_cairo_font_map_set_default(NULL); // a bit less
+  g_free(grm.rtt.name);  grm.rtt.name  = NULL;
+  g_free(grm.time.name); grm.time.name = NULL;
 }
 
 void graphtab_update(void) {

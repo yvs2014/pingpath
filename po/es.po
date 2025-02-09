@@ -431,7 +431,7 @@ msgstr "Prefijo de red"
 
 # trace-stat: 1.1.0
 msgid "Loss"
-msgstr "Pérd"
+msgstr "Pérdida"
 
 # trace-stat: 1.1.1
 msgid "Lost"
@@ -467,7 +467,7 @@ msgstr "Número de pongs recibidos"
 
 # trace-stat: 1.4.0
 msgid "Last"
-msgstr "Últ"
+msgstr "Último"
 
 # trace-stat: 1.4.1
 msgid "_Last"

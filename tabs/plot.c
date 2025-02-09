@@ -506,10 +506,10 @@ static uint8_t char_table_lookup(gunichar u) {
   return 0;
 }
 
-#define SET_PL_AXIS_TITLE(axis, str) do {     \
-  if ((axis).title) g_free((axis).title);     \
-  (axis).title     = (str) ? (str) : "";      \
-  (axis).title_len = (str) ? strlen(str) : 0; \
+#define SET_PL_AXIS_TITLE(axis, str) do {                     \
+  g_free((axis).title);                                       \
+  (axis).title = (str) ? (str) : g_strdup("");                \
+  (axis).title_len = (axis).title ? strlen((axis).title) : 0; \
 } while (0);
 #define SET_PLAX(axis, str) SET_PL_AXIS_TITLE(plparam.axes.axis, (str))
 
@@ -517,7 +517,7 @@ static char* pl_str2code8(const char *utf8) {
   char *str8 = NULL;
   if (g_utf8_validate(utf8, -1, 0)) {
     int len = g_utf8_strlen(utf8, -1);
-    str8 = g_malloc0((len > 0) ? len : 1);
+    str8 = g_malloc0(((len > 0) ? len : 0) + 1);
     int i = 0;
     for (const char *u = utf8; *u && (i < len); u = g_utf8_next_char(u)) {
       gunichar c = g_utf8_get_char(u);
