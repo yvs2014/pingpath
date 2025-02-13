@@ -85,8 +85,8 @@
 #define ACT_DOWN_K_HDR   _("Rotate Down")
 #define ACT_PGUP_K_HDR   _("Rotate Clockwise")
 #define ACT_PGDN_K_HDR   _("Rotate AntiClockwise")
-#define ACT_IN_K_HDR     _("Scale Up")
-#define ACT_OUT_K_HDR    _("Scale Down")
+#define ACT_IN_K_HDR     _("Zoom In")
+#define ACT_OUT_K_HDR    _("Zoom Out")
 
 // general headers
 #define TARGET_HDR       _("Target")
@@ -203,7 +203,6 @@
 
 // 3D-rotation parameters
 #define ORIENT_HDR    _("Orientation")
-#define ROT_ATTITUDE  _("Attitude")
 #define ROT_ROLL      _("Roll")
 #define ROT_PITCH     _("Pitch")
 #define ROT_YAW       _("Yaw")

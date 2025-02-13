@@ -55,5 +55,6 @@ parts:
       - usr/share/applications/net.tools.pingpath.desktop
       - usr/share/icons/hicolor/scalable/apps/pingpath.svg
       - usr/share/locale/es/LC_MESSAGES/pingpath.mo
+      - usr/share/locale/it/LC_MESSAGES/pingpath.mo
       - usr/share/locale/uk/LC_MESSAGES/pingpath.mo
 

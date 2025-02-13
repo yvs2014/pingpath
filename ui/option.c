@@ -891,7 +891,7 @@ void init_option_links(void) {
     ENT_SPN_ROT0, ENT_SPN_ROT1, ENT_SPN_ROT2, ENT_SPN_ANGS,
     ROT_ANGLE_X,  ROT_ANGLE_Y,  ROT_ANGLE_Z,  ROT_STEP);
   ent_spn[ENT_SPN_LOCAL ].c.en.name     = OPT_ROTOR_HDR;
-  ent_spn[ENT_SPN_LOCAL ].list[0].title = ROT_ATTITUDE;
+  ent_spn[ENT_SPN_LOCAL ].list[0].title = ORIENT_HDR;
   INIT_SE_SF(ENT_SPN_LOCAL,
     ENT_SPN_ROT0, ENT_SPN_ROT1, ENT_SPN_ROT2, ENT_SPN_ANGS,
     ROT_YAW,      ROT_PITCH,    ROT_ROLL,     ROT_STEP);

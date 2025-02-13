@@ -283,7 +283,7 @@ msgstr "Tamaño"
 
 # option-menu: 10
 msgid "IP Version"
-msgstr "IP versión"
+msgstr "Versión de IP"
 
 # option-menu: 10.1
 msgid "Auto"
@@ -347,7 +347,7 @@ msgstr "Gradiente de gráficos 3D"
 
 # aux-menu: 10
 msgid "Plot rotation"
-msgstr "Rotación de gráficos 3D"
+msgstr "Rotación 3D"
 
 # aux-menu: 10.1.0
 msgid "Global space"
@@ -411,7 +411,7 @@ msgstr "Código de país del registrante"
 
 # trace-info: 1.4.0
 msgid "Desc"
-msgstr "Desc"
+msgstr "Descr"
 
 # trace-info: 1.4.1
 msgid "Description"
@@ -431,7 +431,7 @@ msgstr "Prefijo de red"
 
 # trace-stat: 1.1.0
 msgid "Loss"
-msgstr "Pérdida"
+msgstr "Pérdido"
 
 # trace-stat: 1.1.1
 msgid "Lost"
@@ -625,43 +625,39 @@ msgstr "Cuadrícula en superficie"
 msgid "Rotator"
 msgstr "Rotador"
 
-# 3d-rotation header1 (used in cli)
+# 3d-rotation header1
 msgid "Orientation"
 msgstr "Orientación"
 
 # 3d-rotation header2
-msgid "Attitude"
-msgstr "Actitud"
-
-# 3d-rotation header3
 msgid "Roll"
 msgstr "Alabeo"
 
-# 3d-rotation header4
+# 3d-rotation header3
 msgid "Pitch"
 msgstr "Cabeceo"
 
-# 3d-rotation header5
+# 3d-rotation header4
 msgid "Yaw"
 msgstr "Guiñada"
 
-# 3d-rotation header6
+# 3d-rotation header5
 msgid "Rotation"
 msgstr "Rotación"
 
-# 3d-rotation header7
+# 3d-rotation header6
 msgid "Axis X"
 msgstr "Eje X"
 
-# 3d-rotation header8
+# 3d-rotation header7
 msgid "Axis Y"
 msgstr "Eje Y"
 
-# 3d-rotation header9
+# 3d-rotation header8
 msgid "Axis Z"
 msgstr "Eje Z"
 
-# 3d-rotation header10
+# 3d-rotation header9
 msgid "Angular step"
 msgstr "Paso angular"
 
@@ -695,7 +691,7 @@ msgstr "Carga útil en notación hexadecimal"
 
 # cli option help: message8
 msgid "Statistics fields"
-msgstr "Campos de estadísticas"
+msgstr "Valores estadísticos"
 
 # cli option help: message9
 msgid "Toggle dark/light themes"
@@ -894,11 +890,11 @@ msgid "Rotate AntiClockwise"
 msgstr "Girar en sentido antihorario"
 
 # action shortcut2.7
-msgid "Scale Up"
+msgid "Zoom In"
 msgstr "Acercar"
 
 # action shortcut2.8
-msgid "Scale Down"
+msgid "Zoom Out"
 msgstr "Alejar"
 
 # message: unknown
@@ -1110,7 +1106,7 @@ msgstr "No hay ranuras disponibles"
 
 # log: reason to limit visible rows
 msgid "skip duplicates"
-msgstr "omitir duplicados"
+msgstr "saltar duplicados"
 
 # log: dns cache update
 msgid "DNS cache update"
@@ -1166,7 +1162,7 @@ msgstr "Sin resolver"
 
 # log: no buffer
 msgid "No space in buffer"
-msgstr "No hay espacio en el buffer"
+msgstr "Buffer demasiado pequeño"
 
 # log: no connection
 msgid "Connection failed"
@@ -1182,7 +1178,7 @@ msgstr "Máscara de exclusión de gráficos"
 
 # debug: drag-n-drop
 msgid "DND"
-msgstr "ARRASTRAR:"
+msgstr "ARRASTRAR"
 
 # debug: reorder
 msgid "REORDER"
@@ -1202,11 +1198,11 @@ msgstr "reordenamiento parcial"
 
 # misc: A before B
 msgid "before"
-msgstr "antes"
+msgstr "antes de"
 
 # misc: A after B
 msgid "after"
-msgstr "tras"
+msgstr "después de"
 
 # misc: clipboard
 msgid "clipboard"
@@ -1214,7 +1210,7 @@ msgstr "portapapeles"
 
 # misc: requested A
 msgid "requested"
-msgstr "pedido"
+msgstr "buscado"
 
 # misc: received B
 msgid "received"

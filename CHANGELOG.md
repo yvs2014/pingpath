@@ -1,3 +1,7 @@
+## 0.3.61
+- NLS: Italian .po
+- NLS: update a bit prev .po
+
 ## 0.3.60
 - fix plot NULL-ended hash title
 - 2d-graph: better time-title positioning
