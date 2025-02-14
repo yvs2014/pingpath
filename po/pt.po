@@ -1,17 +1,17 @@
 msgid ""
 msgstr ""
-"Language: es\n"
+"Language: pt\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
 # Tab1.1
 msgid "Trace"
-msgstr "Traza"
+msgstr "Rastreio"
 
 # Tab1.2
 msgid "Ping path with stats"
-msgstr "Ruta de ping con estadísticas"
+msgstr "Rota de ping com estatísticas"
 
 # Tab2.1
 msgid "Graphs"
@@ -31,11 +31,11 @@ msgstr "Gráficos 3D"
 
 # Tab4.1
 msgid "Log"
-msgstr "Registro"
+msgstr "Registo"
 
 # Tab4.2
 msgid "Auxiliary logs"
-msgstr "Registros auxiliares"
+msgstr "Registos auxiliares"
 
 #
 msgid "Target"
@@ -43,15 +43,15 @@ msgstr "Objetivo"
 
 # target hint
 msgid "Enter hostname or IP address ..."
-msgstr "Introduzca el nombre o la dirección IP ..."
+msgstr "Introduza o nome ou endereço IP ..."
 
 #
 msgid "Date"
-msgstr "Fecha"
+msgstr "Data"
 
 # button
 msgid "Okay"
-msgstr "Aceptar"
+msgstr "Aceitar"
 
 # toggle tip1
 msgid "on"
@@ -91,43 +91,43 @@ msgstr "Info"
 
 # done message1
 msgid "Pings completed"
-msgstr "Pings completados"
+msgstr "Pings concluídos"
 
 # done message2
 msgid "completed"
-msgstr "completado"
+msgstr "concluído"
 
 # aux message1
 msgid "No data"
-msgstr "No hay datos"
+msgstr "Não há dados"
 
 # aux message2
 msgid "No data yet"
-msgstr "No hay datos todavía"
+msgstr "Ainda não há dados"
 
 # aux message3
 msgid "Not reached"
-msgstr "No alcanzado"
+msgstr "Não alcançado"
 
 # aux message4
 msgid "Not reached yet"
-msgstr "Aún no alcanzado"
+msgstr "Ainda não alcançado"
 
 # actions header
 msgid "Actions"
-msgstr "Acciones"
+msgstr "Ações"
 
 # options header
 msgid "Options"
-msgstr "Opciones"
+msgstr "Opções"
 
 # command-line-interface header
 msgid "CLI"
-msgstr "Interfaz de línea de comandos"
+msgstr "Interface de linha de comando"
 
 # message: unknown type
 msgid "Unknown type"
-msgstr "Tipo desconocido"
+msgstr "Tipo desconhecido"
 
 # message: minimum
 msgid "min"
@@ -139,11 +139,11 @@ msgstr "máx"
 
 # graphics time-axis
 msgid "Time"
-msgstr "Tiempo"
+msgstr "Tempo"
 
 # graphics delay-axis
 msgid "Delay"
-msgstr "Latencia"
+msgstr "Latência"
 
 # graphics hops-axis
 msgid "Hops"
@@ -163,55 +163,55 @@ msgstr "Tema de gráficos 3D"
 
 # help window: start/stop ...
 msgid "pinging"
-msgstr "hacer ping"
+msgstr "efetuar ping"
 
 # help window: pause ...
 msgid "data refreshing"
-msgstr "actualización de datos"
+msgstr "atualização de dados"
 
 # help window: reset ...
 msgid "statistics data"
-msgstr "estadística"
+msgstr "estatística"
 
 # help window: exit
 msgid "stop and quit"
-msgstr "parar y salir"
+msgstr "parar e sair"
 
 # help window: cycles
 msgid "Tracing cycles"
-msgstr "Ciclos de trazado"
+msgstr "Ciclos de rastreio"
 
 # help window: dark theme style
 msgid "Dark style"
-msgstr "Estilo oscuro"
+msgstr "Estilo escuro"
 
 # help window: light theme style
 msgid "Light style"
-msgstr "Estilo ligero"
+msgstr "Estilo claro"
 
 # help window: 3d-surface colors
 msgid "RGB color pairs:"
-msgstr "Pares de colores RGB:"
+msgstr "Pares de cores RGB:"
 
 # help window: 3d-surface parameters
 msgid "Space, Orientation, and Step"
-msgstr "Espacio, orientación y paso"
+msgstr "Espaço, orientação e passo"
 
 # help window: log-tab max rows
 msgid "Max rows in log-tab"
-msgstr "Máximo de líneas del registro"
+msgstr "Linhas de registo máximas"
 
 # help window: see too
 msgid "Options are given in pingpath(1) manual page"
-msgstr "Opciones se dan en página de manual de pingpath(1)"
+msgstr "Opções estão descritas na página de manual do pingpath(1)"
 
 # action menu tooltip
 msgid "Command Menu"
-msgstr "Menú de comandos"
+msgstr "Menu de comando"
 
 # option menu tooltip
 msgid "Main Options"
-msgstr "Opciones principales"
+msgstr "Opções principais"
 
 # aux menu tooltip
 msgid "Auxiliary"
@@ -219,11 +219,11 @@ msgstr "Auxiliar"
 
 # action-menu: 1
 msgid "Start"
-msgstr "Comenzar"
+msgstr "Iniciar"
 
 # action-menu: 2
 msgid "Stop"
-msgstr "Detener"
+msgstr "Parar"
 
 # action-menu: 3
 msgid "Pause"
@@ -231,19 +231,19 @@ msgstr "Pausa"
 
 # action-menu: 4
 msgid "Resume"
-msgstr "Reanuda"
+msgstr "Retomar"
 
 # action-menu: 5
 msgid "Reset"
-msgstr "Reseteo"
+msgstr "Reset"
 
 # action-menu: 6
 msgid "Help"
-msgstr "Ayuda"
+msgstr "Ajuda"
 
 # action-menu: 7
 msgid "Exit"
-msgstr "Salida"
+msgstr "Saída"
 
 # option-menu: 1
 msgid "Cycles"
@@ -263,7 +263,7 @@ msgstr "Info sobre saltos"
 
 # option-menu: 5
 msgid "Statistics"
-msgstr "Estadística"
+msgstr "Estatística"
 
 # option-menu: 6
 msgid "TTL"
@@ -271,7 +271,7 @@ msgstr "TTL (número de saltos)"
 
 # option-menu: 7
 msgid "QoS"
-msgstr "QoS (calidad de servicio)"
+msgstr "QoS (qualidade de serviço)"
 
 # option-menu: 8
 msgid "Payload"
@@ -279,11 +279,11 @@ msgstr "Carga útil"
 
 # option-menu: 9
 msgid "Size"
-msgstr "Tamaño"
+msgstr "Tamanho"
 
 # option-menu: 10
 msgid "IP Version"
-msgstr "Versión de IP"
+msgstr "Versão IP"
 
 # option-menu: 10.1
 msgid "Auto"
@@ -291,23 +291,23 @@ msgstr "Automático"
 
 # option-menu: 10.2
 msgid "IPv4"
-msgstr "Versión 4"
+msgstr "Versão 4"
 
 # option-menu: 10.3
 msgid "IPv6"
-msgstr "Versión 6"
+msgstr "Versão 6"
 
 # aux-menu: 1
 msgid "Main dark theme"
-msgstr "Tema oscuro principal"
+msgstr "Tema escuro principal"
 
 # aux-menu: 2
 msgid "Graph dark theme"
-msgstr "Tema oscuro de gráficos 2D"
+msgstr "Gráficos 2D tema escuro"
 
 # aux-menu: 3
 msgid "3D-plot dark theme"
-msgstr "Tema oscuro de gráficos 3D"
+msgstr "Gráficos 3D tema escuro"
 
 # aux-menu: 4
 msgid "Graph type"
@@ -315,11 +315,11 @@ msgstr "Tipo de gráficos"
 
 # aux-menu: 4.1
 msgid "Dots"
-msgstr "Puntos"
+msgstr "Pontos"
 
 # aux-menu: 4.2
 msgid "Lines"
-msgstr "Líneas"
+msgstr "Linhas"
 
 # aux-menu: 4.3
 msgid "Splines"
@@ -327,19 +327,19 @@ msgstr "Splines"
 
 # aux-menu: 5
 msgid "Graph legend"
-msgstr "Leyenda de gráficos"
+msgstr "Legenda dos gráficos"
 
 # aux-menu: 6
 msgid "Legend fields"
-msgstr "Campos de leyenda"
+msgstr "Campos de legenda"
 
 # aux-menu: 7
 msgid "Extra graph elements"
-msgstr "Elementos gráficos adicionales"
+msgstr "Elementos gráficos adicionais"
 
 # aux-menu: 8
 msgid "Plot elements"
-msgstr "Elementos de gráficos 3D"
+msgstr "Elementos dos gráficos 3D"
 
 # aux-menu: 9
 msgid "Plot gradient"
@@ -347,15 +347,15 @@ msgstr "Gradiente de gráficos 3D"
 
 # aux-menu: 10
 msgid "Plot rotation"
-msgstr "Rotación 3D"
+msgstr "Rotação 3D"
 
 # aux-menu: 10.1.0
 msgid "Global space"
-msgstr "Coordenadas globales"
+msgstr "Coordenadas globais"
 
 # aux-menu: 10.1.1 (used in cli)
 msgid "Local space"
-msgstr "Coordenadas locales"
+msgstr "Coordenadas locais"
 
 # aux-menu: 11
 msgid "Plot scale"
@@ -363,15 +363,15 @@ msgstr "Escala de gráficos 3D"
 
 # aux-menu: 11.1
 msgid "Field of view"
-msgstr "Ángulo de visión"
+msgstr "Ângulo de visão"
 
 # aux-menu: 12
 msgid "LogTab rows"
-msgstr "Líneas de registro"
+msgstr "Linhas de registo"
 
 # cli-opt-X
 msgid "Plot parameters"
-msgstr "Parámetros de gráficos 3D"
+msgstr "Parâmetros gráficos 3D"
 
 # trace-info: 1.1.0
 msgid "Host"
@@ -383,7 +383,7 @@ msgstr "Host"
 
 # trace-info: 1.1.2
 msgid "Hostname or IP-address"
-msgstr "Nombre de host o dirección IP"
+msgstr "Nome do host ou endereço IP"
 
 # trace-info: 1.2.0
 msgid "AS"
@@ -391,11 +391,11 @@ msgstr "SA"
 
 # trace-info: 1.2.1
 msgid "AS Number"
-msgstr "Número de SA"
+msgstr "Número SA"
 
 # trace-info: 1.2.2
 msgid "Autonomous System"
-msgstr "Sistema autónomo"
+msgstr "Sistema autônomo"
 
 # trace-info: 1.3.0
 msgid "CC"
@@ -403,11 +403,11 @@ msgstr "País"
 
 # trace-info: 1.3.1
 msgid "Country Code"
-msgstr "Código de país"
+msgstr "Código do país"
 
 # trace-info: 1.3.2
 msgid "Registrant Country Code"
-msgstr "Código de país del registrante"
+msgstr "Código do país registo"
 
 # trace-info: 1.4.0
 msgid "Desc"
@@ -415,31 +415,31 @@ msgstr "Descr"
 
 # trace-info: 1.4.1
 msgid "Description"
-msgstr "Descripción"
+msgstr "Descrição"
 
 # trace-info: 1.4.2
 msgid "Short description in free form"
-msgstr "Breve descripción en formato libre"
+msgstr "Breve descrição em formato livre"
 
 # trace-info: 1.5.0
 msgid "Network"
-msgstr "Red"
+msgstr "Rede"
 
 # trace-info: 1.5.1
 msgid "Network prefix"
-msgstr "Prefijo de red"
+msgstr "Prefixo de rede"
 
 # trace-stat: 1.1.0
 msgid "Loss"
-msgstr "Pérdido"
+msgstr "Perda"
 
 # trace-stat: 1.1.1
 msgid "Lost"
-msgstr "Pérdido"
+msgstr "Perdido"
 
 # trace-stat: 1.1.2
 msgid "Loss in percentage"
-msgstr "Pérdida en porcentaje"
+msgstr "Perda em percentagem"
 
 # trace-stat: 1.2.0
 msgid "Sent"
@@ -459,11 +459,11 @@ msgstr "Recb"
 
 # trace-stat: 1.3.1
 msgid "Received"
-msgstr "Recibido"
+msgstr "Recebido"
 
 # trace-stat: 1.3.2
 msgid "Number of pongs received"
-msgstr "Número de pongs recibidos"
+msgstr "Número de pongs recebidos"
 
 # trace-stat: 1.4.0
 msgid "Last"
@@ -475,43 +475,43 @@ msgstr "Último"
 
 # trace-stat: 1.4.2
 msgid "Last delay in milliseconds"
-msgstr "Última demora en milisegundos"
+msgstr "Último atraso em milissegundos"
 
 # trace-stat: 1.5.0
 msgid "Best"
-msgstr "Mejor"
+msgstr "Melhor"
 
 # trace-stat: 1.5.1
 msgid "_Best"
-msgstr "Mejor"
+msgstr "Melhor"
 
 # trace-stat: 1.5.2
 msgid "Best delay in milliseconds"
-msgstr "Mejor demora en milisegundos"
+msgstr "Melhor atraso em milissegundos"
 
 # trace-stat: 1.6.0
 msgid "Wrst"
-msgstr "Peor"
+msgstr "Pior"
 
 # trace-stat: 1.6.1
 msgid "Worst"
-msgstr "Peor"
+msgstr "Pior"
 
 # trace-stat: 1.6.2
 msgid "Worst delay in milliseconds"
-msgstr "Peor demora en milisegundos"
+msgstr "Pior atraso em milissegundos"
 
 # trace-stat: 1.7.0
 msgid "Avrg"
-msgstr "Medio"
+msgstr "Médio"
 
 # trace-stat: 1.7.1
 msgid "Average"
-msgstr "Medio"
+msgstr "Médio"
 
 # trace-stat: 1.7.2
 msgid "Average delay in milliseconds"
-msgstr "Media demora en milisegundos"
+msgstr "Atraso médio em milissegundos"
 
 # trace-stat: 1.8.0
 msgid "Jttr"
@@ -523,15 +523,15 @@ msgstr "Desvio"
 
 # trace-stat: 1.8.2
 msgid "Jitter (variation in delay)"
-msgstr "Desvio (fluctuación de latencia)"
+msgstr "Desvio (flutuação de latência)"
 
 # spinner: TTL
 msgid "range"
-msgstr "rango"
+msgstr "faixa"
 
 # spinner: color1
 msgid "red"
-msgstr "rojo"
+msgstr "vermelho"
 
 # spinner: color2
 msgid "green"
@@ -543,31 +543,31 @@ msgstr "azul"
 
 # plot loginfo: color1
 msgid "Plot red gradient"
-msgstr "Gradiente rojo de gráficos 3D"
+msgstr "Gradiente vermelho dos gráficos 3D"
 
 # plot loginfo: color2
 msgid "Plot green gradient"
-msgstr "Gradiente verde de gráficos 3D"
+msgstr "Gradiente verde dos gráficos 3D"
 
 # plot loginfo: color3
 msgid "Plot blue gradient"
-msgstr "Gradiente azul de gráficos 3D"
+msgstr "Gradiente azul dos gráficos 3D"
 
 # graphs' legend1.1 [removed from customisation]
 msgid "Color"
-msgstr "Color"
+msgstr "Cor"
 
 # graphs' legend1.2 [removed from customisation]
 msgid "Color dash"
-msgstr "Color de guion"
+msgstr "Cor do traço"
 
 # graphs' legend2.1 (help)
 msgid "RTT±Jitter"
-msgstr "Latencia±Desvio"
+msgstr "Latência±Desvio"
 
 # graphs' legend2.2 (menu)
 msgid "Average RTT ± Jitter"
-msgstr "Latencia en medio ± Desvio"
+msgstr "Latência em média ± Desvio"
 
 # graphs' legend3.1 (help)
 msgid "CC:ASN"
@@ -575,7 +575,7 @@ msgstr "País:SA"
 
 # graphs' legend3.2 (menu)
 msgid "Country Code : AS Number"
-msgstr "Código de país : Número de SA"
+msgstr "Código do país : Número SA"
 
 # graphs' legend4.1 (help)
 msgid "Hopname"
@@ -583,43 +583,43 @@ msgstr "Nodo"
 
 # graphs' legend4.1 (menu)
 msgid "_Hopname"
-msgstr "Nombre de nodo"
+msgstr "Nome do nodo"
 
 # graphs' element1.0 (help)
 msgid "Midline"
-msgstr "Promediando"
+msgstr "Linha mediana"
 
 # graphs' element1.1 (menu)
 msgid "Average line"
-msgstr "Línea media"
+msgstr "Linha mediana"
 
 # graphs' element2.0 (help)
 msgid "Scopes"
-msgstr "Alcance de cambios"
+msgstr "Escopos"
 
 # graphs' element2.1 (menu)
 msgid "Jitter range"
-msgstr "Rango de desvio"
+msgstr "Faixa de desvio"
 
 # graphs' element3.0 (help)
 msgid "JArea"
-msgstr "Área de cambios"
+msgstr "Área de alteração"
 
 # graphs' element3.1 (menu)
 msgid "Jitter area"
-msgstr "Área de cambios"
+msgstr "Área de alteração"
 
 # 3d-plot element1
 msgid "Backsides"
-msgstr "Planos posteriores"
+msgstr "Planos traseiros"
 
 # 3d-plot element2
 msgid "Axes"
-msgstr "Ejes"
+msgstr "Eixos"
 
 # 3d-plot element3
 msgid "Grid on surface"
-msgstr "Cuadrícula en superficie"
+msgstr "Grade na superfície"
 
 # 3d-plot element4
 msgid "Rotator"
@@ -627,47 +627,47 @@ msgstr "Rotador"
 
 # 3d-rotation header1
 msgid "Orientation"
-msgstr "Orientación"
+msgstr "Orientação"
 
 # 3d-rotation header2
 msgid "Roll"
-msgstr "Alabeo"
+msgstr "Rolam"
 
 # 3d-rotation header3
 msgid "Pitch"
-msgstr "Cabeceo"
+msgstr "Lançam"
 
 # 3d-rotation header4
 msgid "Yaw"
-msgstr "Guiñada"
+msgstr "Guinada"
 
 # 3d-rotation header5
 msgid "Rotation"
-msgstr "Rotación"
+msgstr "Rotação"
 
 # 3d-rotation header6
 msgid "Axis X"
-msgstr "Eje X"
+msgstr "Eixo X"
 
 # 3d-rotation header7
 msgid "Axis Y"
-msgstr "Eje Y"
+msgstr "Eixo Y"
 
 # 3d-rotation header8
 msgid "Axis Z"
-msgstr "Eje Z"
+msgstr "Eixo Z"
 
 # 3d-rotation header9
 msgid "Angular step"
-msgstr "Paso angular"
+msgstr "Passo angular"
 
 # cli option help: message1
 msgid "Get options from file"
-msgstr "Obtener opciones del archivo"
+msgstr "Obter opções de arquivo"
 
 # cli option help: message2
 msgid "IP addresses in numeric form"
-msgstr "Direcciones IP en formato numérico"
+msgstr "Endereços IP em formato numérico"
 
 # cli option help: message3
 msgid "Interval between pings"
@@ -675,35 +675,35 @@ msgstr "Intervalo entre pings"
 
 # cli option help: message4
 msgid "TTL range"
-msgstr "Rango TTL"
+msgstr "Valores TTL"
 
 # cli option help: message5
 msgid "QoS/ToS byte"
-msgstr "QoS/ToS byte (calidad de servicio)"
+msgstr "QoS/ToS byte (qualidade de serviço)"
 
 # cli option help: message6
 msgid "ICMP payload size"
-msgstr "Tamaño de datos ICMP"
+msgstr "Tamanho dos dados ICMP"
 
 # cli option help: message7
 msgid "Payload in hex notation"
-msgstr "Carga útil en notación hexadecimal"
+msgstr "Carga útil em notação hexadecimal"
 
 # cli option help: message8
 msgid "Statistics fields"
-msgstr "Valores estadísticos"
+msgstr "Valores estatísticos"
 
 # cli option help: message9
 msgid "Toggle dark/light themes"
-msgstr "Cambio de tema oscuro/claro"
+msgstr "Alternar temas escuros/claros"
 
 # cli option help: message10.1
 msgid "Summary at exit"
-msgstr "Resumen de salida"
+msgstr "Resumo de saída"
 
 # cli option help: message10.2
 msgid "Text, CSV, or JSON"
-msgstr "Texto, CSV, o JSON"
+msgstr "Texto, CSV, ou JSON"
 
 # cli option help: message10.3
 msgid "Text, CSV"
@@ -711,31 +711,31 @@ msgstr "Texto, CSV"
 
 # cli option help: message11
 msgid "Autostart"
-msgstr "Inicio automático"
+msgstr "Início automático"
 
 # cli option help: message12
 msgid "Initial active tab"
-msgstr "Pestaña activa inicial"
+msgstr "Aba ativa inicial"
 
 # cli option help: message13
 msgid "More detailed messaging"
-msgstr "Mensajes más detallados"
+msgstr "Mensagens mais detalhadas"
 
 # cli option help: message14
 msgid "Build features and runtime lib versions"
-msgstr "Propiedades del programa y versiones de bibliotecas"
+msgstr "Propriedades do programa e versões de bibliotecas"
 
 # cli option help: message15
 msgid "Without graphics"
-msgstr "Sin gráficos"
+msgstr "Sem gráficos"
 
 # cli option help: message16
 msgid "Without 3D graphics"
-msgstr "Sin gráficos 3D"
+msgstr "Sem gráficos 3D"
 
 # cli option hint1
 msgid "<filepath>"
-msgstr "<ruta-archivo>"
+msgstr "<rota-arquivo>"
 
 # cli option hint2
 msgid "<number>"
@@ -755,11 +755,11 @@ msgstr "<bits>"
 
 # cli option hint6
 msgid "<in-bytes>"
-msgstr "<en-bytes>"
+msgstr "<em-bytes>"
 
 # cli option hint7
 msgid "<upto-16-bytes>"
-msgstr "<hasta-16-bytes>"
+msgstr "<até-16-bytes>"
 
 # cli option hint8
 msgid "<tag:values>"
@@ -767,19 +767,19 @@ msgstr "<etiqueta:valores>"
 
 # cli option hint9
 msgid "<6bit-level>"
-msgstr "<nivel-de-6bits>"
+msgstr "<nível-de-6bits>"
 
 # cli misc: message1
 msgid "No value"
-msgstr "Sin valor"
+msgstr "Sem valor"
 
 # cli misc: message2
 msgid "No match"
-msgstr "Sin correspondencia"
+msgstr "Sem correspondência"
 
 # cli misc: message3
 msgid "Cannot parse"
-msgstr "No puede analizar"
+msgstr "Não pode analisar"
 
 # cli misc: message4
 msgid "Tag duplicate"
@@ -787,7 +787,7 @@ msgstr "Etiqueta duplicada"
 
 # cli misc: message5
 msgid "Wrong pair"
-msgstr "Par equivocado"
+msgstr "Par errado"
 
 # cli misc: message6
 msgid "Different number of indexes"
@@ -807,7 +807,7 @@ msgstr "JSON"
 
 # cli misc: message10
 msgid "Summary"
-msgstr "Resumen"
+msgstr "Resumo"
 
 # cli misc: message11
 msgid "Theme bits"
@@ -815,31 +815,31 @@ msgstr "bits de tema"
 
 # cli misc: message12
 msgid "Mutually exclusive options"
-msgstr "Opciones mutuamente excluyentes"
+msgstr "Opções mutuamente exclusiva"
 
 # cli misc: message13
 msgid "Build features"
-msgstr "Propiedades del programa"
+msgstr "Propriedades do programa"
 
 # cli misc: message14
 msgid "Runtime lib versions"
-msgstr "Versiones de bibliotecas"
+msgstr "Versões de bibliotecas"
 
 # cli misc: message15
 msgid "Skipping extra"
-msgstr "Evitando extra"
+msgstr "Saltar extra"
 
 # cli misc: message16
 msgid "Unknown option"
-msgstr "Opción desconocida"
+msgstr "Opção desconhecida"
 
 # cli misc: message17
 msgid "No goal"
-msgstr "Sin objetivo"
+msgstr "Sem rumo"
 
 # cli misc: message18
 msgid "Non-interactive mode with summary at exit"
-msgstr "Modo no interactivo y resumen de salida"
+msgstr "Modo não interativo com resumo de saída"
 
 # clipboard menu: message1
 msgid "Copy"
@@ -847,67 +847,67 @@ msgstr "Copiar"
 
 # clipboard menu: message2
 msgid "Select all"
-msgstr "Seleccionar todo"
+msgstr "Selecionar tudo"
 
 # clipboard menu: message3
 msgid "Unselect all"
-msgstr "Desmarcar todo"
+msgstr "Desmarcar tudo"
 
 # action shortcut header
 msgid "Action"
-msgstr "Accion"
+msgstr "Ação"
 
 # action shortcut1.1
 msgid "Legend"
-msgstr "Leyenda"
+msgstr "Legenda"
 
 # action shortcut2.1
 msgid "Rotate Left"
-msgstr "Girar a izquierda"
+msgstr "Rodar à esquerda"
 
 # action shortcut2.2
 msgid "Rotate Right"
-msgstr "Girar a derecha"
+msgstr "Rodar a direita"
 
 # action shortcut2.3
 msgid "Rotate Up"
-msgstr "Girar hacia arriba"
+msgstr "Rodar para cima"
 
 # action shortcut2.4
 msgid "Rotate Down"
-msgstr "Girar hacia abajo"
+msgstr "Rodar para baixo"
 
 # action shortcut2.5
 msgid "Rotate Clockwise"
-msgstr "Girar en sentido horario"
+msgstr "Rodar no sentido horário"
 
 # action shortcut2.6
 msgid "Rotate AntiClockwise"
-msgstr "Girar en sentido antihorario"
+msgstr "Rodar no sentido antihorário"
 
 # action shortcut2.7
 msgid "Zoom In"
-msgstr "Acercar"
+msgstr "Ampliar"
 
 # action shortcut2.8
 msgid "Zoom Out"
-msgstr "Alejar"
+msgstr "Reduzir"
 
 # message: unknown
 msgid "unknown"
-msgstr "desconocido"
+msgstr "desconhecido"
 
 # error: unknown
 msgid "Unknown error"
-msgstr "Error desconocido"
+msgstr "Erro desconhecido"
 
 # error: prefix
 msgid "ERROR"
-msgstr "ERROR"
+msgstr "ERRO"
 
 # error: wrong tag
 msgid "Wrong tag"
-msgstr "Etiqueta equivocada"
+msgstr "Etiqueta errada"
 
 # error: invalid value
 msgid "Invalid value"
@@ -915,23 +915,23 @@ msgstr "Valor inválido"
 
 # error: proc expired
 msgid "Process is still active after expire time, stopping ..."
-msgstr "Proceso ha expirado, lo estamos deteniendo ..."
+msgstr "Processo expirou, parar ..."
 
 # error: cannot stop proc
 msgid "Subprocess has not stopped"
-msgstr "Subproceso no se ha detenido"
+msgstr "Subprocesso não parou"
 
 # message: expiration time
 msgid "expiration time"
-msgstr "tiempo de expiración"
+msgstr "tempo de expiração"
 
 # error: runtime expired
 msgid "time's up"
-msgstr "tiempo se acabó"
+msgstr "tempo acabou"
 
 # error: input
 msgid "stdin failed"
-msgstr "error de stdin"
+msgstr "erro stdin"
 
 # misc: free(resources)
 msgid "release resources"
@@ -939,35 +939,35 @@ msgstr "liberar recursos"
 
 # misc: at exit log message
 msgid "at exit"
-msgstr "en la salida"
+msgstr "de saída"
 
 # misc: stop pid=N
 msgid "Stop process"
-msgstr "Detener proceso"
+msgstr "Parar processo"
 
 # misc: stop with EOF
 msgid "finish"
-msgstr "fin"
+msgstr "fim"
 
 # misc: stop by request
 msgid "by request"
-msgstr "por petición"
+msgstr "a pedido"
 
 # misc: set visible rows
 msgid "Visible rows"
-msgstr "Líneas visibles"
+msgstr "Linhas visíveis"
 
 # misc: upto
 msgid "upto"
-msgstr "hasta"
+msgstr "até"
 
 # misc: sync-forward
 msgid "Sync forward"
-msgstr "Sincronizar hacia adelante"
+msgstr "Sincronizar a frente"
 
 # misc: sync-backward
 msgid "Sync backward"
-msgstr "Sincronizar hacia atrás"
+msgstr "Sincronizar para trás"
 
 # misc: snap sandnox hint
 msgid ""
@@ -975,9 +975,9 @@ msgid ""
 "if minimal ping's slot (network-observe) is not autoconnected (permission denied),\n"
 "it can be connected with the following command:\n"
 "  snap connect pingpath:network-observe :network-observe"
-msgstr "Ejecutando en contenedor Snap:\n"
-"si la ranura mínima (network-observe) no está autoconectada (permiso denegado),\n"
-"se puede conectar con el siguiente comando:\n"
+msgstr "Executando no contentor Snap:\n"
+"se o slot do ping mínimo (network-observe) não está autoconectado (permissão negada),\n"
+"pode ser conectado com o seguinte comando:\n"
 "  snap connect pingpath:network-observe :network-observe"
 
 # log section1
@@ -986,7 +986,7 @@ msgstr "DNS:"
 
 # log section2
 msgid "WHOIS:"
-msgstr "QUIEN:"
+msgstr "QUEM:"
 
 # log section3
 msgid "CONFIG:"
@@ -994,11 +994,11 @@ msgstr "CONFIG:"
 
 # parse message1
 msgid "SUCCESS"
-msgstr "ÉXITO"
+msgstr "SUCESSO"
 
 # parse message2
 msgid "DISCARD"
-msgstr "DESECHAR"
+msgstr "DESCARTE"
 
 # parse message3
 msgid "TIMEOUT"
@@ -1010,7 +1010,7 @@ msgstr "INFO"
 
 # parse message5
 msgid "UNKNOWN"
-msgstr "DESCONOCIDO"
+msgstr "DESCONHECIDO"
 
 # log: index=
 msgid "ndx"
@@ -1018,11 +1018,11 @@ msgstr "índ"
 
 # log: address=
 msgid "addr"
-msgstr "dir"
+msgstr "ender"
 
 # log: hostame=
 msgid "name"
-msgstr "nombre"
+msgstr "nome"
 
 # log: seq=
 msgid "seq"
@@ -1034,15 +1034,15 @@ msgstr "ttl"
 
 # log: delay=
 msgid "delay"
-msgstr "latencia"
+msgstr "latência"
 
 # log: reason=
 msgid "reason"
-msgstr "razón"
+msgstr "razão"
 
 # log: timestamp=
 msgid "timestamp"
-msgstr "marca"
+msgstr "carimbo"
 
 # log: info=
 msgid "info"
@@ -1050,11 +1050,11 @@ msgstr "info"
 
 # warn: regex
 msgid "regex"
-msgstr "expresión regular"
+msgstr "expressão regular"
 
 # warn: pattern
 msgid "PATTERN"
-msgstr "PATRÓN"
+msgstr "PADRÃO"
 
 # logging: hostname
 msgid "Hostname"
@@ -1062,83 +1062,83 @@ msgstr "Host"
 
 # warn: overlen
 msgid "Out of length limit"
-msgstr "Demasiado largo"
+msgstr "Muito longo"
 
 # warn: endhyphen char
 msgid "Cannot end with hyphen"
-msgstr "No puede terminar con guión"
+msgstr "Não pode terminar com um hífen"
 
 # warn: invalid start char
 msgid "Must start with a letter or a digit"
-msgstr "Debe comenzar con una letra o un dígito"
+msgstr "Deve começar por uma letra ou um dígito"
 
 # warn: not allowed chars
 msgid "Contains not allowed characters"
-msgstr "Contiene caracteres no permitidos"
+msgstr "Contém caracteres não permitidos"
 
 # warn: no re match
 msgid "No regex match"
-msgstr "No coincide con el patrón"
+msgstr "Não corresponde ao padrão"
 
 # warn: wrong string category
 msgid "Wrong category"
-msgstr "Categoría equivocada"
+msgstr "Categoria errada"
 
 # warn: out of range
 msgid "Out of range"
-msgstr "Fuera de rango"
+msgstr "Fora de alcance"
 
 # warn: init error
 msgid "Init failed"
-msgstr "Error de inicialización"
+msgstr "Erro de inicialização"
 
 # warn: no icon found
 msgid "No icon"
-msgstr "No hay icono"
+msgstr "Não há ícone"
 
 # warn: no free slots
 msgid "No free slots"
-msgstr "No hay ranuras disponibles"
+msgstr "Não há slots livres"
 
 # log: reason to limit visible rows
 msgid "skip duplicates"
-msgstr "saltar duplicados"
+msgstr "saltar duplicatas"
 
 # log: dns cache update
 msgid "DNS cache update"
-msgstr "Actualización de caché DNS"
+msgstr "Atualização do cache DNS"
 
 # log: host cache update
 msgid "Host cache update"
-msgstr "Actualización de caché Host"
+msgstr "Atualização do cache Host"
 
 # log: whois cache update
 msgid "Whois cache update"
-msgstr "Actualización de caché Whois"
+msgstr "Atualização do cache Whois"
 
 # log: smth empty
 msgid "<empty>"
-msgstr "<vacío>"
+msgstr "<vazio>"
 
 # log: goal is achieved
 msgid "Target is reached"
-msgstr "Objetivo se alcanza"
+msgstr "Objetivo alcançado"
 
 # log: behind the target
 msgid "behind the target"
-msgstr "detrás del objetivo"
+msgstr "atrás do alvo"
 
 # log: unreachable
 msgid "unreachable"
-msgstr "inalcanzable"
+msgstr "inalcançável"
 
 # log: whois origin changed
 msgid "Origin changed"
-msgstr "Cambio de origen"
+msgstr "Mudança de origem"
 
 # log: cache hit
 msgid "Cache hit"
-msgstr "Acierto de caché"
+msgstr "Acerto do cache"
 
 # log: send query
 msgid "Send query"
@@ -1146,23 +1146,23 @@ msgstr "Enviar consulta"
 
 # log: save query
 msgid "Save query"
-msgstr "Guardar consulta"
+msgstr "Salvar consulta"
 
 # deb: lookup
 msgid "Lookup"
-msgstr "Búsqueda"
+msgstr "Busca"
 
 # deb: unresolved
 msgid "Unresolved"
-msgstr "Sin resolver"
+msgstr "Não resolvido"
 
 # log: no buffer
 msgid "No space in buffer"
-msgstr "Buffer demasiado pequeño"
+msgstr "Buffer muito pequeno"
 
 # log: no connection
 msgid "Connection failed"
-msgstr "Error de conexión"
+msgstr "Erro de conexão"
 
 # legend: line toggle
 msgid "show/hide graph"
@@ -1170,7 +1170,7 @@ msgstr "mostrar/ocultar gráfico"
 
 # legend: exclusion mask
 msgid "Graph exclusion mask"
-msgstr "Máscara de exclusión de gráficos"
+msgstr "Máscara de exclusão dos gráficos"
 
 # debug: drag-n-drop
 msgid "DND"
@@ -1178,7 +1178,7 @@ msgstr "ARRASTRAR"
 
 # debug: reorder
 msgid "REORDER"
-msgstr "REORDENAMIENTO"
+msgstr "REORDENAÇÃO"
 
 # misc: array
 msgid "array"
@@ -1190,7 +1190,7 @@ msgstr "grupo"
 
 # misc: DND partial reordering
 msgid "partial reordering"
-msgstr "reordenamiento parcial"
+msgstr "reordenação parcial"
 
 # misc: A before B
 msgid "before"
@@ -1198,33 +1198,33 @@ msgstr "antes de"
 
 # misc: A after B
 msgid "after"
-msgstr "después de"
+msgstr "depois de"
 
 # misc: clipboard
 msgid "clipboard"
-msgstr "portapapeles"
+msgstr "clipboard"
 
 # misc: requested A
 msgid "requested"
-msgstr "buscado"
+msgstr "requisitado"
 
 # misc: received B
 msgid "received"
-msgstr "recibido"
+msgstr "recebido"
 
 # gl: texture lookups
 msgid "Vertex shader texture lookups"
-msgstr "Búsqueda de texturas para el sombreador de vértices"
+msgstr "Pesquisas de textura de shader de vértice"
 
 # misc: incompat version
 msgid "Incompat version"
-msgstr "Versión incompatible"
+msgstr "Versão incompatível"
 
 # misc: table
 msgid "table"
-msgstr "tabla"
+msgstr "tabela"
 
 # 3D-graphics: alphabet for font textures
 msgid "__abetka__"
-msgstr "AÁBCDEÉFGHIÍJKLMNÑOÓPQRSTUÚÜVWXYZaábcdeéfghiíjklmnñoópqrstuúüvwxyz"
+msgstr "AÁÃÂÀBCÇChDEÉÊFGHIÍJLLhMNNhOÓÔÕPQRSTUÚVXZaáãâàbcçchdeéêfghiíjllhmnnhoóôõpqrstuúvxz"
 

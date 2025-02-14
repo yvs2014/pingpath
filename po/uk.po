@@ -841,10 +841,6 @@ msgstr "Нема мети"
 msgid "Non-interactive mode with summary at exit"
 msgstr "Неінтерактивний режим плюс резюме на виході"
 
-# clipboard prefix
-msgid "Clipboard"
-msgstr "Буфер обміну"
-
 # clipboard menu: message1
 msgid "Copy"
 msgstr "Скопіювати"

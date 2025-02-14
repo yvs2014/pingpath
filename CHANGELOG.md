@@ -1,3 +1,6 @@
+## 0.3.62
+- NLS: Portuguese .po
+
 ## 0.3.61
 - NLS: Italian .po
 - NLS: update a bit prev .po

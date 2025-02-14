@@ -79,7 +79,7 @@ option(NLS "I18n LC_MESSAGES" ON)
 if(NLS)
   set("WITH_NLS" ON)
   find_package(Gettext REQUIRED)
-  set(LINGUAS es it uk)
+  set(LINGUAS es it pt uk)
   foreach(lang ${LINGUAS})
     GETTEXT_PROCESS_PO_FILES("${lang}" ALL INSTALL_DESTINATION "${LOCALEDIR}/"
       PO_FILES "${CMAKE_CURRENT_SOURCE_DIR}/po/${lang}.po")

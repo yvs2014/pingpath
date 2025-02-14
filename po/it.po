@@ -841,10 +841,6 @@ msgstr "Senza obiettivo"
 msgid "Non-interactive mode with summary at exit"
 msgstr "Modalità non interattiva con riepilogo all'uscita"
 
-# clipboard prefix
-msgid "Clipboard"
-msgstr "Appunti"
-
 # clipboard menu: message1
 msgid "Copy"
 msgstr "Copia"
