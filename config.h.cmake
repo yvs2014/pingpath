@@ -14,5 +14,6 @@
 #cmakedefine HAVE_SECURE_GETENV
 #cmakedefine HAVE_LOCALTIME_R
 #cmakedefine HAVE_USELOCALE
+#cmakedefine WITH_SNAPHINT
 
 #endif

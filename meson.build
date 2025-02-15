@@ -91,6 +91,11 @@ if nls
   subdir('po')
 endif
 
+# optional: WITH_SNAPHINT (default OFF)
+if get_option('WITH_SNAPHINT')
+  config.set('WITH_SNAPHINT', 1)
+endif
+
 if pingdir != ''
   config.set_quoted('PINGDIR', pingdir)
 endif

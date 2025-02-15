@@ -339,7 +339,7 @@ msgstr "Elementos gráficos adicionais"
 
 # aux-menu: 8
 msgid "Plot elements"
-msgstr "Elementos dos gráficos 3D"
+msgstr "Elementos gráficos 3D"
 
 # aux-menu: 9
 msgid "Plot gradient"

@@ -86,6 +86,12 @@ if(NLS)
   endforeach()
 endif()
 
+# optional: WITH_SNAPHINT (default OFF)
+option(WITH_SNAPHINT "With snap connection hint" OFF)
+if(WITH_SNAPHINT)
+  set("WITH_SNAPHINT" ON)
+endif()
+
 option(pingdir "Path to ping" OFF)
 if(pingdir)
   set("PINGDIR" "${pingdir}")

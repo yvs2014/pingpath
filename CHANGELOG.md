@@ -1,3 +1,6 @@
+## 0.3.63
+- optional snap connection hint (enabled in snap build only)
+
 ## 0.3.62
 - NLS: Portuguese .po
 

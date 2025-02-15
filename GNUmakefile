@@ -46,6 +46,10 @@ PKGS += cglm
 PKGS += epoxy
 endif
 
+ifdef WITH_SNAPHINT
+CFLAGS += -DWITH_SNAPHINT
+endif
+
 ifdef PINGDIR
 CFLAGS += -DPINGDIR='"$(PINGDIR)"'
 endif

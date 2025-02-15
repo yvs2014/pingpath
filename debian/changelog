@@ -1,3 +1,9 @@
+pingpath (0.3.63) noble; urgency=low
+
+  * optional snap connection hint (enabled in snap build only)
+
+ -- yvs <VSYakovetsky@gmail.com>  Sat, 15 Feb 2025 20:57:43 +0200
+
 pingpath (0.3.62) noble; urgency=low
 
   * NLS: Portuguese .po

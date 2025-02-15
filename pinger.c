@@ -516,6 +516,11 @@ static gboolean create_ping(int at, t_proc *proc) {
   g_snprintf(buff, sizeof(buff), (fmt), __VA_ARGS__); \
   ARGV_STR(buff);                                     \
 } while (0)
+#define SHOW_SNAPHINT(tout) do {   \
+  notifier_set_autohide_sec(tout); \
+  PINGER_MESG("%s", SNAPBOX_HINT); \
+  notifier_set_autohide_sec(0);    \
+} while (0)
   proc->sig = 0;
   proc->active = false;
   unsigned argc = 0; const char* argv[32] = {0};
@@ -547,11 +552,10 @@ static gboolean create_ping(int at, t_proc *proc) {
       memcpy(copy, argv, sizeof(argv));
       pinger_init_streams(at, proc, copy);
     } else {
-      if (error && (error->code == 3)) {
-        notifier_set_autohide_sec(10);
-        PINGER_MESG("%s", SNAPBOX_HINT);
-        notifier_set_autohide_sec(0);
-      } else PINGER_MESG("%s", error ? error->message : UNKN_ERR);
+#ifdef WITH_SNAPHINT
+      if (error && (error->code == 3)) SHOW_SNAPHINT(10); else
+#endif
+      PINGER_MESG("%s", error ? error->message : UNKN_ERR);
       ERROR("g_subprocess_newv()");
     }
     g_clear_object(&launcher);
@@ -559,6 +563,7 @@ static gboolean create_ping(int at, t_proc *proc) {
   return proc->active;
 #undef ARGV_STR
 #undef ARGV_FMT
+#undef SHOW_SNAPHINT
 }
 
 static gboolean pinger_on_expired(gpointer user_data G_GNUC_UNUSED) {

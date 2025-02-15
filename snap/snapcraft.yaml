@@ -33,6 +33,7 @@ parts:
       - --buildtype=release
       - --prefix=/usr
       - --strip
+      - -DWITH_SNAPHINT=true
     source: https://github.com/yvs2014/pingpath.git
     override-pull: |
       craftctl default
