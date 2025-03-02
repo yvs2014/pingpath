@@ -1,3 +1,7 @@
+## 0.3.64
+- cmake-install: workaround for lack of textdomain
+- misc: pkg optional deps
+
 ## 0.3.63
 - optional snap connection hint (enabled in snap build only)
 

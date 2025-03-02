@@ -13,7 +13,7 @@ Group:      Productivity/Networking/Other
 URL:        https://github.com/yvs2014/%{name}
 
 Requires: iputils
-BuildRequires: meson, git, pkgconf, gtk4-devel, json-glib-devel, libglvnd-devel, libepoxy-devel, cglm-devel
+BuildRequires: meson, git, pkgconf, gettext-runtime, gtk4-devel, json-glib-devel, libglvnd-devel, libepoxy-devel, cglm-devel
 BuildRequires: (gcc or clang)
 
 %description

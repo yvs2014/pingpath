@@ -1,3 +1,11 @@
+pingpath (0.3.64) noble; urgency=low
+
+  * cmake-install: workaround for lack of textdomain
+
+  * misc: pkg optional deps
+
+ -- yvs <VSYakovetsky@gmail.com>  Sun, 02 Mar 2025 13:59:01 +0200
+
 pingpath (0.3.63) noble; urgency=low
 
   * optional snap connection hint (enabled in snap build only)

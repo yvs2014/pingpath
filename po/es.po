@@ -523,7 +523,7 @@ msgstr "Desvio"
 
 # trace-stat: 1.8.2
 msgid "Jitter (variation in delay)"
-msgstr "Desvio (fluctuación de latencia)"
+msgstr "Desvio (fluctuación del retardo)"
 
 # spinner: TTL
 msgid "range"
