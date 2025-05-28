@@ -1,9 +1,7 @@
 
-#include <stdlib.h>
 #include <cglm/cglm.h>
 
 #include "common.h"
-
 #include "plot_aux.h"
 #include "stat.h"
 #include "series.h"
@@ -49,7 +47,7 @@ static void plot_surf_vertex(vec3 *vertex, int xn, int yn) {
   int xn1 = xn + 1, yn1 = yn + 1; // note: xn,yn are mandatory even numbers
   int imin = opts.range.min * 2, imax = SERIES_LIM * 2;
   float x = x0 - imin * dxs;
-  for (int i = 0, n = 0; i < xn1; i++) {
+  for (int i = 0, n = 0; i < xn; i++) {
     GSList *item = SERIES(i / 2);
     gboolean xodd = i % 2, skip = (i < imin) || (i > imax);
     float prev = PLOT_NAN, y = y1;

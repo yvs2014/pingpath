@@ -1,7 +1,4 @@
 
-#include <stdlib.h>
-#include <time.h>
-
 #include "appbar.h"
 #include "common.h"
 #include "style.h"

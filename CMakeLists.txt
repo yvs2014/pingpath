@@ -71,9 +71,6 @@ if(PLOT)
   link_libraries(PkgConfig::EPOXY)
 endif()
 
-set(DATADIR   "${CMAKE_INSTALL_DATADIR}")
-set(LOCALEDIR "${CMAKE_INSTALL_DATADIR}/locale")
-
 # optional: NLS (default ON)
 option(NLS "I18n LC_MESSAGES" ON)
 if(NLS)
@@ -82,7 +79,7 @@ if(NLS)
   set(LINGUAS es it pt uk)
   set(mo_files)
   foreach(lang ${LINGUAS})
-#    GETTEXT_PROCESS_PO_FILES("${lang}" ALL INSTALL_DESTINATION "${LOCALEDIR}/"
+#    GETTEXT_PROCESS_PO_FILES("${lang}" ALL INSTALL_DESTINATION "${CMAKE_INSTALL_LOCALEDIR}/"
 #      PO_FILES "${CMAKE_CURRENT_SOURCE_DIR}/po/${lang}.po")
     set(_po "${CMAKE_CURRENT_SOURCE_DIR}/po/${lang}.po")
     set(_mo "${CMAKE_CURRENT_BINARY_DIR}/${lang}.mo")
@@ -92,11 +89,12 @@ if(NLS)
       DEPENDS "${_po}"
     )
     install(FILES "${_mo}"
-      DESTINATION "${LOCALEDIR}/${lang}/LC_MESSAGES/"
+      DESTINATION "${CMAKE_INSTALL_LOCALEDIR}/${lang}/LC_MESSAGES/"
       RENAME "${PROJECT_NAME}.mo")
     list(APPEND mo_files "${_mo}")
   endforeach()
   add_custom_target(pofiles ALL DEPENDS ${mo_files})
+  set(LOCALEDIR "${CMAKE_INSTALL_FULL_LOCALEDIR}")
 endif()
 
 # optional: WITH_SNAPHINT (default OFF)

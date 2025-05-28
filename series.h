@@ -7,7 +7,8 @@
 #define GRAPH_DATA_GAP   1.1
 
 typedef struct series_list { // keeping len to not calculate it every time
-   GSList* list; int len;
+   GSList* list;
+   int len;
 } t_series_list;
 
 void series_update(void);

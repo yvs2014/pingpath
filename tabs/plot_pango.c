@@ -1,5 +1,4 @@
 
-#include <stdlib.h>
 #include <cglm/cglm.h>
 
 #include "common.h"

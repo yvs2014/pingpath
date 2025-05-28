@@ -1,3 +1,8 @@
+## 0.3.65
+- fix asan(tabs/plot_aux.c): out of 'series' scope
+- clang-tidy: unused includes
+- cmake: simpler LOCALEDIR set
+
 ## 0.3.64
 - cmake-install: workaround for lack of textdomain
 - misc: pkg optional deps

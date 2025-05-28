@@ -1,8 +1,5 @@
 
-#include <stdlib.h>
-
 #include "common.h"
-
 #include "series.h"
 #include "pinger.h"
 #include "stat.h"

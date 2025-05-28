@@ -1,6 +1,4 @@
 
-#include <stdlib.h>
-
 #include "action.h"
 #include "common.h"
 #include "appbar.h"

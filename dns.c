@@ -1,6 +1,4 @@
 
-#include <stdlib.h>
-
 #include "common.h"
 #include "dns.h"
 

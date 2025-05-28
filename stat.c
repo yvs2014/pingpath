@@ -2,7 +2,6 @@
 #include <stdlib.h>
 
 #include "common.h"
-
 #include "stat.h"
 #include "pinger.h"
 #include "dns.h"
