@@ -1,3 +1,6 @@
+## 0.3.66
+- add simple 'justfile'
+
 ## 0.3.65
 - fix asan(tabs/plot_aux.c): out of 'series' scope
 - clang-tidy: unused includes

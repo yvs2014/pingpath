@@ -1,6 +1,11 @@
 
+Just Build
+----------
+
+Just type `just` to build it with `meson`
+
 Basic Build
-------------------
+-----------
 
 Three ways to build: (1) meson [preferable], (2) cmake, (3) pure make [last resort]
 
@@ -20,7 +25,7 @@ make
 
 
 Package Templates
-------------------
+-----------------
 
   Template samples are located in
 

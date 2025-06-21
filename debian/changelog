@@ -1,3 +1,9 @@
+pingpath (0.3.66) noble; urgency=low
+
+  * add simple 'justfile'
+
+ -- yvs <VSYakovetsky@gmail.com>  Sat, 21 Jun 2025 20:51:56 +0300
+
 pingpath (0.3.65) noble; urgency=low
 
   * fix asan(tabs/plot_aux.c): out of 'series' scope
