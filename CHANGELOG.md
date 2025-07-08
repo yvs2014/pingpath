@@ -1,3 +1,6 @@
+## 0.3.68
+- justfile: add packaging recipes
+
 ## 0.3.66
 - add simple 'justfile'
 

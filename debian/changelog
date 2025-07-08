@@ -1,3 +1,9 @@
+pingpath (0.3.68) noble; urgency=low
+
+  * justfile: add packaging recipes
+
+ -- yvs <VSYakovetsky@gmail.com>  Tue, 08 Jul 2025 17:42:32 +0300
+
 pingpath (0.3.66) noble; urgency=low
 
   * add simple 'justfile'
