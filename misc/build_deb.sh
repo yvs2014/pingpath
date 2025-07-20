@@ -28,10 +28,11 @@ ch_file="$nra.changes"
 dpkg-buildpackage --help | grep -q buildinfo-file && \
   BOUT="--buildinfo-file=$bi_file" COUT="--changes-file=$ch_file" || \
   BOUT="--buildinfo-option=-O$bi_file" COUT="--changes-option=-O$ch_file" DH_OPTIONS="--destdir=$DDIR"
+test -n "$DH_OPTIONS" && export DH_OPTIONS
 
 export DEBDIR="--destdir=$DDIR"
 dpkg-buildpackage -b -tc --no-sign \
-  --buildinfo-option="-u$DDIR" $BOUT \
-  --changes-option="-u$DDIR" $COUT && \
-  (echo "\nPackages in $DDIR/:"; ls -l "$DDIR")
+  --buildinfo-option="-u$DDIR" "$BOUT" \
+  --changes-option="-u$DDIR" "$COUT" && \
+  (printf "\nPackages in %s/:\n" "$DDIR"; ls -l "$DDIR")
 

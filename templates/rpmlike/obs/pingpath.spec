@@ -13,7 +13,10 @@ Source0:    %{name}-%{version}.tar.gz
 Requires: iputils
 BuildRequires: meson, git, pkgconf, gettext-runtime, gtk4-devel, json-glib-devel, libglvnd-devel, libepoxy-devel, cglm-devel
 BuildRequires: (gcc or clang)
-%if 0%{?fedora}
+## opensuse16.0 workaround
+%if 0%{?is_opensuse} == 0
+#%if 0%{?fedora}
+##
 BuildRequires: glibc-langpack-en
 %endif
 

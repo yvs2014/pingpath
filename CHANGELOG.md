@@ -1,3 +1,9 @@
+## 0.3.70\n- obs16.0 typo in workaround
+
+## 0.3.69
+- obs: opensuse16.0 'if' workaround
+- take into account shell-lint hints
+
 ## 0.3.68
 - justfile: add packaging recipes
 
