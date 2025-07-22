@@ -1,5 +1,13 @@
+pingpath (0.3.71) plucky; urgency=low
+
+  * small corrections in APKBUILD and version_changelog
+
+ -- yvs <VSYakovetsky@gmail.com>  Wed, 23 Jul 2025 01:22:04 +0300
+
 pingpath (0.3.70) plucky; urgency=low
-\n  * obs16.0 typo in workaround\n
+
+  * obs16.0 typo in workaround
+
  -- yvs <VSYakovetsky@gmail.com>  Sun, 20 Jul 2025 19:30:34 +0300
 
 pingpath (0.3.69) plucky; urgency=low

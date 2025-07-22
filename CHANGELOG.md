@@ -1,4 +1,8 @@
-## 0.3.70\n- obs16.0 typo in workaround
+## 0.3.71
+- small corrections in APKBUILD and version_changelog
+
+## 0.3.70
+- obs16.0 typo in workaround
 
 ## 0.3.69
 - obs: opensuse16.0 'if' workaround

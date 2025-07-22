@@ -35,7 +35,7 @@ sed -i "s/^\($PATT\).*/\1\"$vn\"/" "$FILE"
 ## md format
 [ -n "$BACKUP" ] && cp "$MD_CHANGELOG" "/tmp/$(basename $MD_CHANGELOG).bk"
 _mf="/tmp/$(basename $MD_CHANGELOG).merge"
-printf "## %s.%s%s\n\n" "$VERPRFX" "$next" "$md_comments" | cat - "$MD_CHANGELOG" >"$_mf"
+printf "## %s.%s$md_comments\n\n" "$VERPRFX" "$next" | cat - "$MD_CHANGELOG" >"$_mf"
 mv "$_mf" "$MD_CHANGELOG"
 
 ## deb format
@@ -43,7 +43,7 @@ mv "$_mf" "$MD_CHANGELOG"
 _mntr=$(sed -n 's/^Maintainer: //p' debian/control)
 _tf="/tmp/$(basename $DEB_CHANGELOG).$$"
 cp "$DEB_CHANGELOG" "$_tf"
-printf "%s (%s) plucky; urgency=low\n%s\n -- %s  %s\n\n" "$NAME" "$vn" "$deb_comments" "$_mntr" "$(date -R)"| cat - "$_tf" >"$DEB_CHANGELOG"
+printf "%s (%s) plucky; urgency=low\n$deb_comments\n -- %s  %s\n\n" "$NAME" "$vn" "$_mntr" "$(date -R)"| cat - "$_tf" >"$DEB_CHANGELOG"
 rm -f "$_tf"
 
 echo "Keep in mind:"

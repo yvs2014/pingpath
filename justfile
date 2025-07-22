@@ -84,6 +84,7 @@ aur: (check_dep "makepkg" "it needs 'makepkg'")
 	@ls -l aur
 
 apk: (check_dep "abuild" "apk add abuild")
+	@mkdir -p ~/packages/templates
 	@cd "{{TMPL}}/alpine" && \
 	abuild -rc
 	@cd -
