@@ -1,4 +1,5 @@
 ## 0.3.71
+- bump version to 0.3.71
 - small corrections in APKBUILD and version_changelog
 
 ## 0.3.70
