@@ -49,6 +49,7 @@ clean-make:
 ##
 ## packaging
 ##
+HOME := env('HOME')
 TMPL := "templates"
 alias debian := deb
 alias alp    := apk
@@ -58,37 +59,41 @@ alias arch   := aur
 check_dep dep hint:
 	@command -v {{dep}} >/dev/null || (echo ">>> '{{dep}}' is not found (hint: {{hint}})"; exit 1;)
 
+DEB_DIR := "debs"
 deb: \
 (check_dep "dpkg-buildpackage" "apt install dpkg-dev" ) \
 (check_dep "dh"                "apt install debhelper") \
 (check_dep "pkg-config"        "apt install pkgconf"  )
-	@mkdir -p debs
-	DEBDIR="--destdir=debs"                \
-	dpkg-buildpackage -b -tc --no-sign     \
-	--buildinfo-option="-udebs"            \
-	--buildinfo-file="debs/last.buildinfo" \
-	--changes-option="-udebs"              \
-	--changes-file="debs/last.changes"
-	@ls -lR debs
+	@mkdir -p "{{DEB_DIR}}"
+	DEBDIR="--destdir={{DEB_DIR}}"                \
+	dpkg-buildpackage -b -tc --no-sign            \
+	--buildinfo-option="-u{{DEB_DIR}}"            \
+	--buildinfo-file="{{DEB_DIR}}/last.buildinfo" \
+	--changes-option="-u{{DEB_DIR}}"              \
+	--changes-file="{{DEB_DIR}}/last.changes"
+	@ls -lR "{{DEB_DIR}}"
 
+RPM_DIR := "rpms"
 rpm: (check_dep "rpmbuild" "dnf install rpm-build")
 	@cd "{{TMPL}}/rpmlike" && \
-	rpmbuild -ba --define "_sourcedir ../.." --define "_rpmdir ../../rpms" pingpath.spec
-	@ls -lR rpms
+	rpmbuild -ba --define "_sourcedir ../.." --define "_rpmdir ../../{{RPM_DIR}}" pingpath.spec
+	@ls -lR "{{RPM_DIR}}"
 
+AUR_DIR := "aur"
 aur: (check_dep "makepkg" "it needs 'makepkg'")
-	@mkdir -p "aur"
+	@mkdir -p "{{AUR_DIR}}"
 	@cd "{{TMPL}}/aurlike" && \
 	makepkg -cf
 	@cd -
-	@ls -l aur
+	@ls -l "{{AUR_DIR}}"
 
+APK_TMPL := HOME + "/packages/" + TMPL
 apk: (check_dep "abuild" "apk add abuild")
-	@mkdir -p ~/packages/templates
+	@mkdir -p "{{APK_TMPL}}"
 	@cd "{{TMPL}}/alpine" && \
 	abuild -rc
 	@cd -
-	@ls -lR ~/packages/"{{TMPL}}"
+	@ls -lR "{{APK_TMPL}}"
 
 snap: (check_dep "snapcraft" "snap install snapcraft")
 	snapcraft

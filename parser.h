@@ -13,7 +13,7 @@ enum { OPT_TYPE_INT, OPT_TYPE_PAD, OPT_TYPE_INFO, OPT_TYPE_STAT, OPT_TYPE_GRLG, 
 
 gboolean parser_init(void);
 void parser_parse(int at, char *input);
-char* parser_valid_target(const char *target);
+char* parser_valid_target(const char *target, gboolean *spaced);
 char* parser_str(const char *str, const char *option, unsigned cat);
 void parser_whois(char *buff, t_whois* welem);
 gboolean parser_mmint(const char *str, const char *option, t_minmax minmax, int *value);

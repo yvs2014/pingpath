@@ -9,12 +9,17 @@
 #include "parser.h"
 #include "ui/option.h"
 
-#define CLI_SET_ERR do { if (error) { (value && value[0])  \
-  ? g_set_error(error, g_quark_from_static_string(""), -1, \
-    "%s: %s: %s", name, INVAL_HDR, value)                  \
-  : g_set_error(error, g_quark_from_static_string(""), -1, \
-    "%s: %s",     name, CLI_NOVAL_HDR); }                  \
-} while (0)
+#define PP_DISPMAX 1024
+
+#define PP_CLIERR(...) g_set_error(error, g_quark_from_static_string(""), -1, __VA_ARGS__)
+
+#define CLI_SET_ERR do { if (error) {                    \
+  if (value && value[0]) {                               \
+    (g_utf8_strlen(value, PP_DISPMAX + 1) <= PP_DISPMAX) \
+    ? PP_CLIERR("%s: %s: %s", name, INVAL_HDR, value)    \
+    : PP_CLIERR("%s: %s",     name, INVAL_HDR);          \
+  } else PP_CLIERR("%s: %s",  name, NOVAL_HDR);          \
+}} while (0)
 
 #define CNF_SECTION_MAIN "ping"
 #define CNF_STR_IPV    "ip-version"
@@ -491,7 +496,11 @@ static gboolean cli_opt_f(const char *name, const char *value, t_opts *opts, GEr
   g_autoptr(GKeyFile) file = g_key_file_new();
   g_autoptr(GError) ferr = NULL;
   if (!g_key_file_load_from_file(file, value, G_KEY_FILE_NONE, &ferr)) {
-    g_warning("%s: %s", ferr ? ferr->message : UNKN_ERR, value);
+    const char *emsg = ferr ? ferr->message : UNKN_ERR;
+    if (g_utf8_strlen(value, PP_DISPMAX + 1) > PP_DISPMAX)
+      g_warning("%s", emsg);
+    else
+      g_warning("%s: %s", emsg, value);
     CLI_SET_ERR;
     return false;
   }
@@ -734,11 +743,16 @@ static int cli_init_proc(int *pargc, char ***pargv,
       if (opts.target)
         g_message("%s: %s: %s", TARGET_HDR, CLI_SKIPARG_HDR, arg);
       else {
-        cli = true; char *pinghost = parser_valid_target(arg); cli = false;
+        gboolean spaced = false;
+        cli = true; char *pinghost = parser_valid_target(arg, &spaced); cli = false;
         if (pinghost)
           g_message("%s: %s", TARGET_HDR, pinghost);
         else {
-          g_message("%s: %s: %s", TARGET_HDR, INVAL_HDR, arg);
+          long len = g_utf8_strlen(arg, PP_DISPMAX + 1);
+          if ((len > 0) && (len <= PP_DISPMAX) && !spaced)
+            g_message("%s: %s: %s", TARGET_HDR, INVAL_HDR, arg);
+          else
+            g_message("%s: %s", TARGET_HDR, len ? INVAL_HDR : NOVAL_HDR);
           g_strfreev(target); g_option_context_free(context); return EXIT_FAILURE;
         }
         g_free(opts.target); opts.target = pinghost;

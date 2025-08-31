@@ -40,7 +40,7 @@ static gboolean start_datetime(GtkWidget *bar) {
 
 static void on_target(GtkEntry *entry G_GNUC_UNUSED, gpointer user_data G_GNUC_UNUSED) {
   g_return_if_fail(GTK_IS_EDITABLE(entry));
-  char *target = parser_valid_target(gtk_editable_get_text(GTK_EDITABLE(entry)));
+  char *target = parser_valid_target(gtk_editable_get_text(GTK_EDITABLE(entry)), NULL);
   if (target) {
     g_free(opts.target); opts.target = target;
     action_update();

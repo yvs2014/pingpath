@@ -244,7 +244,6 @@
 #define CLI_VOPT_HINT _("<6bit-level>")
 
 // CLI misc messages
-#define CLI_NOVAL_HDR   _("No value")
 #define CLI_NOMATCH_HDR _("No match")
 #define CLI_NOPARSE_HDR _("Cannot parse")
 #define CLI_DUPTAG_HDR  _("Tag duplicate")
@@ -274,6 +273,7 @@
 #define ERROR_HDR       _("ERROR")
 #define BADTAG_HDR      _("Wrong tag")
 #define INVAL_HDR       _("Invalid value")
+#define NOVAL_HDR       _("No value")
 #define PROC_EXP_HDR    _("Process is still active after expire time, stopping ...")
 #define PROC_NOSTOP_ERR _("Subprocess has not stopped")
 #define EXPTIME_HDR     _("expiration time")

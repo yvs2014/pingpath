@@ -34,7 +34,7 @@
 #define WHOIS_NL       "\n"
 enum { WHOIS_COMMENT = '%', WHOIS_DELIM = ':', WHOIS_CCDEL = ',' };
 
-#define PARSER_MESG(fmt, ...) { if (cli) g_message(fmt, __VA_ARGS__); else notifier_inform(fmt, __VA_ARGS__); }
+#define PARSER_MESG(fmt, ...) do { if (cli) g_message(fmt, __VA_ARGS__); else notifier_inform(fmt, __VA_ARGS__); } while (0)
 
 typedef gboolean parser_cb(int at, GMatchInfo* match, const char *line);
 
@@ -244,22 +244,8 @@ static char* split_pair(char **pstr, int ch, gboolean lazy) {
   return g_strstrip(val);
 }
 
-static inline gboolean parser_valid_char0(char *str) { return g_regex_match(hostname_char0_regex, str, 0, NULL); }
+static inline gboolean parser_valid_char0(char *str) { return g_regex_match(hostname_char0_regex, str,  0, NULL); }
 static inline gboolean parser_valid_host(char *host) { return g_regex_match(hostname_chars_regex, host, 0, NULL); }
-
-static gboolean target_meet_all_conditions(char *str, int len, int max) {
-#define HOSTNAME_ERROR(fmt, ...) do {                 \
-  PARSER_MESG("%s: " fmt, HOSTNAME_HDR, __VA_ARGS__); \
-  return false;                                       \
-} while (0)
-  // rfc1123,rfc952 restrictions
-  if (len > max)                HOSTNAME_ERROR("%s (%d)", OVERLEN_HDR, max);
-  if (str[len - 1] == '-')      HOSTNAME_ERROR("%s", ENDHYPEN_ERR);
-  if (!parser_valid_char0(str)) HOSTNAME_ERROR("%s", STARTCHAR_ERR);
-  if (!parser_valid_host(str))  HOSTNAME_ERROR("%s", INVALCHAR_ERR);
-  return true;
-#undef HOSTNAME_ERROR
-}
 
 static char* parser_valid_int(const char *option, const char *str) {
   char *cpy = g_strdup(str);
@@ -313,8 +299,9 @@ gboolean parser_mmint(const char *str, const char *option, t_minmax minmax, int 
       okay = !errno && MM_OKAY(minmax, len);
       errno = 0; g_free(val);
       if (okay) { if (value) *value = len; }
-      else PARSER_MESG("%s: %s: %d <=> %d", option, OUTRANGE_ERR, minmax.min, minmax.max)
-  }}
+      else PARSER_MESG("%s: %s: %d <=> %d", option, OUTRANGE_ERR, minmax.min, minmax.max);
+    }
+  }
   return okay;
 }
 
@@ -334,13 +321,30 @@ char* parser_str(const char *str, const char *option, unsigned cat) {
   return NULL;
 }
 
-char* parser_valid_target(const char *target) {
-  if (!target || !target[0]) return NULL;
-  char *dup = g_strdup(target);
-  char *hostname = NULL, *str = g_strstrip(dup);
-  int len = str ? g_utf8_strlen(str, MAXHOSTNAME + 1) : 0;
-  if (len && target_meet_all_conditions(str, len, MAXHOSTNAME)) hostname = g_strdup(str);
-  g_free(dup);
+char* parser_valid_target(const char *target, gboolean *spaced) {
+  gboolean notempty = (target && target[0]);
+  char *hostname = NULL;
+  if (notempty) {
+    if (g_utf8_strlen(target, MAXHOSTNAME + 1) <= MAXHOSTNAME) {
+      char *dup = g_strdup(target), *str = g_strstrip(dup);
+      int len = str ? g_utf8_strlen(str, MAXHOSTNAME + 1) : 0;
+      if ((len > 0) && (len <= MAXHOSTNAME)) {
+        const char *emsg = NULL;
+        // rfc1123,rfc952 restrictions
+        if      (str[len - 1] == '-')      emsg = ENDHYPEN_ERR;
+        else if (!parser_valid_char0(str)) emsg = STARTCHAR_ERR;
+        else if (!parser_valid_host(str))  emsg = INVALCHAR_ERR;
+        //
+        if (emsg) PARSER_MESG("%s: %s", HOSTNAME_HDR, emsg);
+        else hostname = g_strdup(str);
+      } else if (!len) {
+        notempty = false;
+        PARSER_MESG("%s: %s", HOSTNAME_HDR, NOVAL_HDR);
+      }
+      g_free(dup);
+    } else PARSER_MESG("%s: %s (%d)", HOSTNAME_HDR, OVERLEN_HDR, MAXHOSTNAME);
+  } else   PARSER_MESG("%s: %s",      HOSTNAME_HDR, NOVAL_HDR);
+  if (spaced) *spaced = !notempty;
   return hostname;
 }
 

@@ -1,3 +1,7 @@
+## 0.3.72
+- warn without too long strings
+- warn on empty targets
+
 ## 0.3.71
 - bump version to 0.3.71
 - small corrections in APKBUILD and version_changelog
