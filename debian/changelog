@@ -1,3 +1,9 @@
+pingpath (0.3.73) plucky; urgency=low
+
+  * deb: testing with iputils99 fork
+
+ -- yvs <VSYakovetsky@gmail.com>  Sun, 16 Nov 2025 21:17:02 +0200
+
 pingpath (0.3.72) plucky; urgency=low
 
   * warn without too long strings

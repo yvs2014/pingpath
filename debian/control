@@ -8,7 +8,7 @@ Standards-Version: 4.6.2
 Homepage: https://github.com/yvs2014/pingpath
 
 Package: pingpath
-Depends: ${shlibs:Depends}, iputils-ping
+Depends: ${shlibs:Depends}, iputils-ping | iputils99-ping
 Architecture: any
 Description: ping wrapper to display IP path
   Network diagnostic tool based on parsing ping output with some functionality of traceroute.
