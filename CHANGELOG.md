@@ -1,3 +1,6 @@
+## 0.3.74
+- enable primary-paste (mouse middle click) by default
+
 ## 0.3.73
 - deb: testing with iputils99 fork
 

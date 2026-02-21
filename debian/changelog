@@ -1,3 +1,9 @@
+pingpath (0.3.74) plucky; urgency=low
+
+  * enable primary-paste (mouse middle click) by default
+
+ -- yvs <VSYakovetsky@gmail.com>  Sat, 21 Feb 2026 02:12:19 +0200
+
 pingpath (0.3.73) plucky; urgency=low
 
   * deb: testing with iputils99 fork

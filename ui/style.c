@@ -17,6 +17,8 @@
 #define SFFX_DIV1 "-"
 #define SFFX_DIV2 ":"
 
+#define PROP_PRIMARY_PASTE "gtk-enable-primary-paste"
+
 #define LEGEND_BORDER     "#515151"
 #define BG_CONTRAST_DARK  "#2c2c2c"
 #define BG_CONTRAST_LIGHT "#f5f5f5"
@@ -110,30 +112,53 @@ static char* style_basetheme(const char *theme) {
     if (is_dark) {
       char *sfx = g_strrstr(dup, SFFX_DIV1 DARK_SFFX);
       if (!sfx) sfx = g_strrstr(dup, SFFX_DIV2 DARK_SFFX);
-      if (sfx) *sfx = 0; }}
+      if (sfx) *sfx = 0;
+    }
+  }
   return dup;
 }
 
-static char* style_prefer(gboolean dark) {
-  GtkSettings *set = gtk_settings_get_default();
-  if (!set) { g_warning("%s: %s", ERROR_HDR, "gtk_settings_get_default()"); return NULL; }
-  g_object_set(G_OBJECT(set), PROP_PREFER_DARK, dark, NULL);
-  char *theme = NULL; g_object_get(set, PROP_THEME, &theme, NULL);
-  if (!theme) { g_warning("%s: g_object_get(%s)", ERROR_HDR, PROP_THEME); return NULL; }
-  char *prefer = style_basetheme(theme); g_free(theme);
-  ub_theme = prefer ? (strcasestr(prefer, "Yaru") != NULL) : false; // aux info for icons
-  DEBUG("%s: %s", PROP_THEME, prefer);
-  DEBUG("%s: %s", PROP_PREFER_DARK, dark ? ON_HDR : OFF_HDR);
+static inline void set_primary_paste(GtkSettings *sets) {
+  gboolean primary_paste = -1;
+  g_object_get(sets, PROP_PRIMARY_PASTE, &primary_paste, NULL);
+  if (!primary_paste) {
+    DEBUG("enabling %s", PROP_PRIMARY_PASTE);
+    g_object_set(G_OBJECT(sets), PROP_PRIMARY_PASTE, 1, NULL);
+  }
+}
+
+static inline char* set_prefer_dark(GtkSettings *sets, gboolean dark) {
+  g_object_set(G_OBJECT(sets), PROP_PREFER_DARK, dark, NULL);
+  char *prefer = NULL, *theme = NULL;
+  g_object_get(sets, PROP_THEME, &theme, NULL);
+  if (theme) {
+    prefer = style_basetheme(theme);
+    g_free(theme);
+    DEBUG("%s: %s", PROP_THEME, prefer);
+    DEBUG("%s: %s", PROP_PREFER_DARK, dark ? ON_HDR : OFF_HDR);
+    // aux info for icons
+    ub_theme = prefer ? (strcasestr(prefer, "Yaru") != NULL) : false;
+  } else
+    g_warning("%s: g_object_get(%s)", ERROR_HDR, PROP_THEME);
   return prefer;
+}
+
+static inline char* preferable_sets(gboolean dark) {
+  GtkSettings *sets = gtk_settings_get_default();
+  g_return_val_if_fail(GTK_IS_SETTINGS(sets), NULL);
+  set_primary_paste(sets);
+  return set_prefer_dark(sets, dark);
 }
 
 static GtkCssProvider *prov_theme, *prov_extra;
 
 static void style_load_theme(GdkDisplay *display, const char *theme, const char *variant) {
   if (!display || !theme) return;
-  GtkCssProvider *prov = gtk_css_provider_new(); g_return_if_fail(GTK_IS_CSS_PROVIDER(prov));
+  GtkCssProvider *prov = gtk_css_provider_new();
+  g_return_if_fail(GTK_IS_CSS_PROVIDER(prov));
   gtk_css_provider_load_named(prov, theme, variant);
-  if (prov_theme) gtk_style_context_remove_provider_for_display(display, GTK_STYLE_PROVIDER(prov_theme));
+  if (prov_theme)
+    gtk_style_context_remove_provider_for_display(display, GTK_STYLE_PROVIDER(prov_theme));
   prov_theme = prov;
   gtk_style_context_add_provider_for_display(display, GTK_STYLE_PROVIDER(prov_theme),
     GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
@@ -144,7 +169,11 @@ static void style_load_extra(GdkDisplay *display) {
   GtkCssProvider *prov = gtk_css_provider_new();
   g_return_if_fail(GTK_IS_CSS_PROVIDER(prov));
   char *data = style_extra_css(css_common);
-  if (!data) { g_warning("%s: %s", ERROR_HDR, "style_extra_css()"); g_object_unref(prov); return; }
+  if (!data) {
+    g_warning("%s: %s", ERROR_HDR, "style_extra_css()");
+    g_object_unref(prov);
+    return;
+  }
   style_css_load(prov, data); g_free(data);
   if (prov_extra) gtk_style_context_remove_provider_for_display(display, GTK_STYLE_PROVIDER(prov_extra));
   prov_extra = prov;
@@ -171,8 +200,11 @@ const char* is_sysicon(const char **icon) {
 void style_set(void) {
   GdkDisplay *display = gdk_display_get_default();
   g_return_if_fail(display);
-  char *prefer = style_prefer(opts.darktheme);
-  if (prefer) { style_load_theme(display, prefer, opts.darktheme ? DARK_SFFX : NULL); g_free(prefer); }
+  char *prefer = preferable_sets(opts.darktheme);
+  if (prefer) {
+    style_load_theme(display, prefer, opts.darktheme ? DARK_SFFX : NULL);
+    g_free(prefer);
+  }
   style_load_extra(display);
 }
 
