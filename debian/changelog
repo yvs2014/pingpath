@@ -1,3 +1,9 @@
+pingpath (0.3.75) plucky; urgency=low
+
+  * using strchr(): follow C23 'Qualifier Preservation'
+
+ -- yvs <VSYakovetsky@gmail.com>  Sun, 22 Feb 2026 21:22:47 +0200
+
 pingpath (0.3.74) plucky; urgency=low
 
   * enable primary-paste (mouse middle click) by default

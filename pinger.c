@@ -43,10 +43,9 @@ enum { CSV_DEL = ';' };
 #define HOP_INDENT g_print("%3s", "")
 
 static void print_text_elem(gboolean csv, const char *str, int len) {
-  if (csv) {
-    char *delim = strchr(str, CSV_DEL);
-    g_print(delim ? "%c\"%s\"" : "%c%s", CSV_DEL, str);
-  } else {
+  if (csv)
+    g_print(strchr(str, CSV_DEL) ? "%c\"%s\"" : "%c%s", CSV_DEL, str);
+  else {
     int w = len - g_utf8_strlen(str, -1);
     g_print(" %s%-*s", (str), (w > 0) ? w : 0, "");
   }

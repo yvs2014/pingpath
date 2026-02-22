@@ -126,7 +126,7 @@ int char2ndx(int cat, gboolean ent, char ch) {
 #ifdef WITH_PLOT
     case PLEL_CHAR:
 #endif
-    { char *found = strchr(char_pattern[cat], ch);
+    { const char *found = strchr(char_pattern[cat], ch);
       if (found) {
         long pos = found - char_pattern[cat];
         if (pos < MAXCHARS_IN_PATTERN) ndx = char_ndxs[cat][pos][ent ? 0 : 1];

@@ -1,3 +1,6 @@
+## 0.3.75
+- using strchr(): follow C23 'Qualifier Preservation'
+
 ## 0.3.74
 - enable primary-paste (mouse middle click) by default
 
