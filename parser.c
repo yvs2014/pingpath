@@ -80,7 +80,7 @@ static t_parser_regex str_rx[] = {
 #ifdef WITH_PLOT
   [OPT_TYPE_PLEL]  = { .pattern = "^" NODUPCHARS "[" PLEL_PATT "]*$" },
 #endif
-  [OPT_TYPE_RECAP] = { .pattern = "^[" RECAP_PATT "]$" },
+  [OPT_TYPE_RECAP] = { .pattern = "^" NODUPCHARS "[" RECAP_PATT "]$" },
 };
 
 static GRegex* compile_regex(const char *pattern, GRegexCompileFlags flags) {

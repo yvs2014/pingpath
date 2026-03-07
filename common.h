@@ -12,7 +12,7 @@
 #define MIN_GTK_RUNTIME(major, minor, micro) (!gtk_check_version(major, minor, micro))
 
 #define APPNAME "pingpath"
-#define VERSION "0.3.75"
+#define VERSION "0.3.76"
 #define APPVER  APPNAME "-" VERSION
 
 extern locale_t locale, localeC;
@@ -51,11 +51,25 @@ enum {
 #endif
 
 #ifdef WITH_JSON
-#define RECAP_PATT   "tcjJ"
+#define _RECAP_J "jJ"
 #else
-#define RECAP_PATT   "tc"
+#define _RECAP_J ""
 #endif
-enum { RECAP_TEXT = 't', RECAP_CSV = 'c', RECAP_JSON_NUM = 'j', RECAP_JSON_PRETTY = 'J' };
+#ifdef WITH_TOON
+#define _RECAP_N "n"
+#else
+#define _RECAP_N ""
+#endif
+#define RECAP_PATT "tc" _RECAP_J _RECAP_N
+
+enum { RECAP_TEXT = 't', RECAP_CSV = 'c',
+#ifdef WITH_JSON
+  RECAP_JSON_NUM = 'j', RECAP_JSON_PRETTY = 'J',
+#endif
+#ifdef WITH_TOON
+  RECAP_TOON = 'n',
+#endif
+};
 
 #define EV_ACTIVE     "activate"
 #define EV_CLOSEQ     "close-request"

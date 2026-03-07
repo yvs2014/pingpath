@@ -378,6 +378,9 @@ static gboolean cli_opt_elem(const char *name, const char *value, GError **error
           case 'j':
           case 'J': type = CLI_ROPT_J_HDR;  break;
 #endif
+#ifdef WITH_TOON
+          case 'n': type = CLI_ROPT_N_HDR;  break;
+#endif
           default:  type = UNKNTYPE_HDR;    break;
         }
         g_message("%s: %s", CLI_SUMM_DESC, type);
@@ -790,7 +793,22 @@ int cli_init(int *pargc, char ***pargv) {
     ['P'] = g_strdup(OPT_PLOT_HDR),
     ['X'] = g_strdup(OPT_PLEX_HDR),
 #endif
-    ['r'] = g_strdup_printf("%s (%s)", CLI_SUMM_DESC, RECAP_TYPE_MESG),
+    ['r'] = g_strdup_printf(
+      "%s (%c=%s, %c=%s"
+#ifdef WITH_JSON
+      ", %c%c=%s"
+#endif
+#ifdef WITH_TOON
+      ", %c=%s"
+#endif
+      ")", CLI_SUMM_DESC, RECAP_TEXT, CLI_ROPT_T_HDR, RECAP_CSV, CLI_ROPT_C_HDR
+#ifdef WITH_JSON
+      , RECAP_JSON_NUM, RECAP_JSON_PRETTY, CLI_ROPT_J_HDR
+#endif
+#ifdef WITH_TOON
+      , RECAP_TOON, CLI_ROPT_N_HDR
+#endif
+    ),
     ['R'] = g_strdup(CLI_ROPT_DESC),
     ['A'] = g_strdup(CLI_AOPT_DESC),
     ['v'] = g_strdup(CLI_VERB_DESC),

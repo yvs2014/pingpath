@@ -1,3 +1,11 @@
+pingpath (0.3.76) plucky; urgency=low
+
+  * recap mode: add TOON format
+
+  * recap mode: update 'info' parts
+
+ -- yvs <VSYakovetsky@gmail.com>  Sat, 07 Mar 2026 16:08:17 +0200
+
 pingpath (0.3.75) plucky; urgency=low
 
   * using strchr(): follow C23 'Qualifier Preservation'

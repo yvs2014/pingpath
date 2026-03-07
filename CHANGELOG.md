@@ -1,3 +1,7 @@
+## 0.3.76
+- recap mode: add TOON format
+- recap mode: update 'info' parts
+
 ## 0.3.75
 - using strchr(): follow C23 'Qualifier Preservation'
 

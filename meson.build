@@ -15,11 +15,12 @@ add_project_arguments('-D_GNU_SOURCE', language: 'c')
 name = meson.project_name()
 dnd  = get_option('DND')
 json = get_option('JSON')
+toon = get_option('TOON')
 plot = get_option('PLOT')
 nls  = get_option('NLS')
 docdir  = get_option('docdir')
 pingdir = get_option('pingdir')
-summary({'DND': dnd, 'JSON': json, 'PLOT': plot, 'NLS': nls}, bool_yn: true)
+summary({'DND': dnd, 'JSON': json, 'TOON': toon, 'PLOT': plot, 'NLS': nls}, bool_yn: true)
 config = configuration_data()
 
 # sources
@@ -73,6 +74,11 @@ endif
 if json
   config.set('WITH_JSON', 1)
   deps += dependency('json-glib-1.0', required: true)
+endif
+
+# optional: TOON (default ON)
+if toon
+  config.set('WITH_TOON', 1)
 endif
 
 # optional: PLOT (default ON)

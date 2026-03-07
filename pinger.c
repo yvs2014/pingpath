@@ -38,16 +38,20 @@
   else notifier_inform(fmt, __VA_ARGS__);      \
 } while (0)
 
-enum { CSV_DEL = ';' };
-#define PRINT_CSV_DIV do { if (csv) g_print("%c\n", CSV_DEL); } while (0)
+enum { CSV_DEL  = ';',
+#ifdef WITH_TOON
+       TOON_DEL = ',',
+#endif
+};
 #define HOP_INDENT g_print("%3s", "")
 
-static void print_text_elem(gboolean csv, const char *str, int len) {
-  if (csv)
-    g_print(strchr(str, CSV_DEL) ? "%c\"%s\"" : "%c%s", CSV_DEL, str);
-  else {
+static void print_tcn(char del, const char *str, int len) {
+  if (del) // CSV or TOON
+    g_print(strchr(str, del) ? "%c\"%s\"" : "%c%s", del, str);
+  else {   // plain text
+    g_print(" %s", str);
     int w = len - g_utf8_strlen(str, -1);
-    g_print(" %s%-*s", (str), (w > 0) ? w : 0, "");
+    if (w > 0) g_print("%-*s", w, "");
   }
 }
 
@@ -88,34 +92,74 @@ static void pinger_error_free(void) { for (int i = 0; i < MAXTTL; i++) pinger_nt
 #define PN_PRMAX(name) { const char *str = name; if (str && str[0]) { \
   int len = g_utf8_strlen(str, MAXHOSTNAME); if (len > maxes[j]) maxes[j] = len; }}
 
-static void pinger_print_text(gboolean csv) {
+static char* strqdup(const char *str, gboolean quote) {
+  return quote ? g_strdup_printf("\"%s\"", str) : g_strdup(str);
+}
+
+static char** info_arr(gboolean csv, gboolean quote) {
+  GPtrArray *garr = g_ptr_array_new();
+  if (info_mesg) {
+    if (csv) g_ptr_array_add(garr, g_strdup_printf("%c", CSV_DEL));
+    g_ptr_array_add(garr, strqdup(info_mesg, quote));
+  }
+  if (!pinger_state.gotdata) {
+    if (csv) g_ptr_array_add(garr, g_strdup_printf("%c", CSV_DEL));
+    g_ptr_array_add(garr, strqdup(pinger_state.run ? NODATAYET_MSG : NODATA_MSG, quote));
+  }
+  g_ptr_array_add(garr, NULL);
+  return (char**)g_ptr_array_free(garr, FALSE);
+}
+
+static void pinger_print_tcn(char del) {
+  gboolean csv = del ==  CSV_DEL;
+#ifdef WITH_TOON
+  gboolean ton = del == TOON_DEL;
+#endif
   { char ts[32]; timestamp(ts, sizeof(ts));
-    csv ? g_print("%s%c%s\n", ts, CSV_DEL, opts.target) : g_print("[%s] %s\n", ts, opts.target); }
-  PRINT_CSV_DIV;
+#ifdef WITH_TOON
+    if (ton) {
+      g_print("%s: %s\n", TARGET_HDR, opts.target);
+      g_print("%s: \"%s\"\n", DATE_HDR, ts);
+    } else
+#endif
+    { csv ?
+      g_print("%s%c%s\n%c\n", ts, CSV_DEL, opts.target, CSV_DEL) :
+      g_print("[%s] %s\n", ts, opts.target); }
+  }
   if (pinger_state.gotdata) {
+    int lim = (tgtat > visibles) ? (visibles + 1) : tgtat;
+#ifdef WITH_TOON
+    if (ton) g_print("%s[%d]{%s", OPT_STAT_HDR, lim - opts.range.min, OPT_TTL_HDR); else
+#endif
     if (csv) g_print("%s", OPT_TTL_HDR); else HOP_INDENT;
     //
     int maxes[PE_MAX] = {0};
     for (int j = 0; j < PE_MAX; j++)
       PN_PRMAX(pingelem[j].name);
-    int lim = (tgtat > visibles) ? (visibles + 1) : tgtat;
     for (int i = opts.range.min; i < lim; i++)
       for (int j = 0; j < PE_MAX; j++)
         PN_PRMAX(stat_str_elem(i, pingelem[j].type));
     //
     for (int j = PE_NO + 1; j < PE_MAX; j++) // header
       if (pingelem[j].enable && (pingelem[j].type != PE_FILL))
-        print_text_elem(csv, pingelem[j].name, maxes[j]);
+        print_tcn(del, pingelem[j].name, maxes[j]);
+#ifdef WITH_TOON
+    if (ton) g_print("}:"); else
+#endif
+    if (csv) g_print("\n%c", CSV_DEL);
     g_print("\n");
-    PRINT_CSV_DIV;
+    //
     for (int i = opts.range.min; i < lim; i++) { // data per hop
       t_ping_column column[G_N_ELEMENTS(pingelem)] = {0};
       int lines = 0;
+#ifdef WITH_TOON
+      if (ton) g_print("  ");
+#endif
       for (unsigned j = 0; j < G_N_ELEMENTS(pingelem); j++) if (pingelem[j].enable) {
         int type = pingelem[j].type;
         switch (type) {
           case PE_NO:
-            csv ? g_print("%d", i + 1) : g_print("%2d.", i + 1); break;
+            del ? g_print("%d", i + 1) : g_print("%2d.", i + 1); break;
           case PE_HOST:
           case PE_AS:
           case PE_CC:
@@ -123,7 +167,7 @@ static void pinger_print_text(gboolean csv) {
           case PE_RT: {
             int max = stat_ping_column(i, type, &column[j]);
             if (lines < max) lines = max;
-            print_text_elem(csv, column[j].cell[0] ? column[j].cell[0] : "", maxes[j]);
+            print_tcn(del, column[j].cell[0] ? column[j].cell[0] : "", maxes[j]);
           } break;
           case PE_LOSS:
           case PE_SENT:
@@ -133,28 +177,45 @@ static void pinger_print_text(gboolean csv) {
           case PE_WRST:
           case PE_AVRG:
           case PE_JTTR:
-            print_text_elem(csv, stat_str_elem(i, type), maxes[j]); break;
+            print_tcn(del, stat_str_elem(i, type), maxes[j]); break;
           default: break;
         }
       }
       g_print("\n");
       for (int k = 1; k < lines; k++) { // multihop
-        if (!csv) HOP_INDENT;
+        if (!del) HOP_INDENT;
         for (int j = PE_HOST; j <= PE_RT; j++)
           if (pingelem[j].enable)
-            print_text_elem(csv, column[j].cell[k] ? column[j].cell[k] : "", maxes[j]);
+            print_tcn(del, column[j].cell[k] ? column[j].cell[k] : "", maxes[j]);
         g_print("\n");
       }
     }
   }
-  if (info_mesg) {
-    PRINT_CSV_DIV;
-    g_print("%s\n", info_mesg);
+  // info part
+  char **arr = info_arr(csv,
+#ifdef WITH_TOON
+    ton
+#else
+    false
+#endif
+  );
+  int n = g_strv_length(arr);
+  if (n > 0) {
+    char *s = NULL;
+#ifdef WITH_TOON
+    if (ton) {
+      char sep[] = {TOON_DEL, ' ', 0};
+      s = g_strjoinv(sep, arr);
+      g_print("%s[%d]: %s\n", INFO_HDR, n, s);
+    } else
+#endif
+    {
+      s = g_strjoinv("\n", arr);
+      g_print("%s\n", s);
+    }
+    g_free(s);
   }
-  if (!pinger_state.gotdata) {
-    PRINT_CSV_DIV;
-    g_print("%s\n", pinger_state.run ? NODATAYET_MSG : NODATA_MSG);
-  }
+  g_strfreev(arr);
 }
 
 #ifdef WITH_JSON
@@ -303,25 +364,23 @@ static void pinger_print_json(gboolean pretty) {
       pinger_json_prop_str(obj, TARGET_HDR, opts.target, pretty);
       { char ts[32];
         pinger_json_prop_str(obj, DATE_HDR, timestamp(ts, sizeof(ts)), pretty); }
-      char *info = NULL;
-      gboolean okay = true;
-      if (pinger_state.gotdata) {
-        okay = pinger_json_mainbody(obj, pretty);
-        if (okay && info_mesg)
-          info = g_strdup(info_mesg);
-      } else info = info_mesg ?
-        g_strdup_printf("%s\n%s", NODATA_MSG, info_mesg) :
-        g_strdup(NODATA_MSG);
-      if (okay) {
-        if (info) pinger_json_prop_str(obj, INFO_HDR, info, pretty);
-        g_object_set(gen, "pretty", pretty, NULL);
-        json_generator_set_root(gen, node);
-        size_t len = 0; char *json = json_generator_to_data(gen, &len);
-        if (json && len) g_print("%s\n", json);
-        else FAIL("json_generator_to_data()");
-        g_free(json);
+      if (pinger_state.gotdata)
+        pinger_json_mainbody(obj, pretty);
+      { // info part
+        char **arr = info_arr(false, false);
+        JsonArray *info = json_array_new();
+        if (arr) for (char **s = arr; *s; s++)
+          json_array_add_string_element(info, *s);
+        if (json_array_get_length(info) > 0)
+          pinger_json_prop_arr(obj, INFO_HDR, info, pretty);
+        g_strfreev(arr);
       }
-      g_free(info);
+      g_object_set(gen, "pretty", pretty, NULL);
+      json_generator_set_root(gen, node);
+      size_t len = 0; char *json = json_generator_to_data(gen, &len);
+      if (json && len) g_print("%s\n", json);
+      else FAIL("json_generator_to_data()");
+      g_free(json);
     } else FAIL("json_object_new()");
     json_node_free(node);
   } else FAIL("json_node_new()");
@@ -332,9 +391,17 @@ static void pinger_print_json(gboolean pretty) {
 
 static void pinger_recap(void) {
   switch (opts.recap) {
+#ifdef WITH_TOON
+    case RECAP_TOON:
+#endif
     case RECAP_TEXT:
-    case RECAP_CSV:
-      pinger_print_text(opts.recap == RECAP_CSV); break;
+    case RECAP_CSV: pinger_print_tcn(
+      opts.recap == RECAP_CSV  ?  CSV_DEL :
+#ifdef WITH_TOON
+      opts.recap == RECAP_TOON ? TOON_DEL :
+#endif
+      0);
+    break;
 #ifdef WITH_JSON
     case RECAP_JSON_NUM:
     case RECAP_JSON_PRETTY:

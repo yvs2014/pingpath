@@ -697,17 +697,9 @@ msgstr "Valores estatísticos"
 msgid "Toggle dark/light themes"
 msgstr "Alternar temas escuros/claros"
 
-# cli option help: message10.1
+# cli option help: message10
 msgid "Summary at exit"
 msgstr "Resumo de saída"
-
-# cli option help: message10.2
-msgid "Text, CSV, or JSON"
-msgstr "Texto, CSV, ou JSON"
-
-# cli option help: message10.3
-msgid "Text, CSV"
-msgstr "Texto, CSV"
 
 # cli option help: message11
 msgid "Autostart"
@@ -806,38 +798,42 @@ msgid "JSON"
 msgstr "JSON"
 
 # cli misc: message10
+msgid "TOON"
+msgstr "TOON"
+
+# cli misc: message11
 msgid "Summary"
 msgstr "Resumo"
 
-# cli misc: message11
+# cli misc: message12
 msgid "Theme bits"
 msgstr "bits de tema"
 
-# cli misc: message12
+# cli misc: message13
 msgid "Mutually exclusive options"
 msgstr "Opções mutuamente exclusiva"
 
-# cli misc: message13
+# cli misc: message14
 msgid "Build features"
 msgstr "Propriedades do programa"
 
-# cli misc: message14
+# cli misc: message15
 msgid "Runtime lib versions"
 msgstr "Versões de bibliotecas"
 
-# cli misc: message15
+# cli misc: message16
 msgid "Skipping extra"
 msgstr "Saltar extra"
 
-# cli misc: message16
+# cli misc: message17
 msgid "Unknown option"
 msgstr "Opção desconhecida"
 
-# cli misc: message17
+# cli misc: message18
 msgid "No goal"
 msgstr "Sem rumo"
 
-# cli misc: message18
+# cli misc: message19
 msgid "Non-interactive mode with summary at exit"
 msgstr "Modo não interativo com resumo de saída"
 
