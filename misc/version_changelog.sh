@@ -4,8 +4,8 @@ set -e
 LANG=C
 
 NAME='pingpath'
-VERPRFX='0.3'
-TAG='d3da356'
+VERPRFX='1.0'
+TAG='d164dab'
 
 BACKUP=
 MD_CHANGELOG='CHANGELOG.md'
@@ -43,7 +43,7 @@ mv "$_mf" "$MD_CHANGELOG"
 _mntr=$(sed -n 's/^Maintainer: //p' debian/control)
 _tf="/tmp/$(basename $DEB_CHANGELOG).$$"
 cp "$DEB_CHANGELOG" "$_tf"
-printf "%s (%s) plucky; urgency=low\n$deb_comments\n -- %s  %s\n\n" "$NAME" "$vn" "$_mntr" "$(date -R)"| cat - "$_tf" >"$DEB_CHANGELOG"
+printf "%s (%s) trixie; urgency=low\n$deb_comments\n -- %s  %s\n\n" "$NAME" "$vn" "$_mntr" "$(date -R)"| cat - "$_tf" >"$DEB_CHANGELOG"
 rm -f "$_tf"
 
 echo "Keep in mind:"

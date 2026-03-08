@@ -1,7 +1,7 @@
 # Maintainer: yvs <VSYakovetsky@gmail.com>
 
-_ver="0.3"
-_tag="d3da356" # to count .N from
+_ver="1.0"
+_tag="d164dab" # to count .N from
 _build="_build"
 
 pkgname=pingpath

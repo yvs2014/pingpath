@@ -1,3 +1,9 @@
+pingpath (1.0.1) trixie; urgency=low
+
+  * bump version to 1.0.1
+
+ -- yvs <VSYakovetsky@gmail.com>  Sun, 08 Mar 2026 23:23:03 +0200
+
 pingpath (0.3.76) plucky; urgency=low
 
   * recap mode: add TOON format

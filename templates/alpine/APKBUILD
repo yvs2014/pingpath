@@ -2,7 +2,7 @@
 
 # sample (replace N and COMMIT correspondently)
 
-_ver='0.3.N'
+_ver='1.0.N'
 _git='COMMIT'
 _build='_build'
 

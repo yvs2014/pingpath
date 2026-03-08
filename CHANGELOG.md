@@ -1,3 +1,6 @@
+## 1.0.1
+- bump version to 1.0.1
+
 ## 0.3.76
 - recap mode: add TOON format
 - recap mode: update 'info' parts

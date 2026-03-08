@@ -5,8 +5,8 @@ project('pingpath', 'c',
     'warning_level=2' ],
   meson_version: '>= 0.53',
   license: 'GPL-2.0-or-later',
-  version: '.'.join(['0', '3', find_program('git', required: false).found() ?
-    run_command('git', 'rev-list', '--count', 'd3da356..HEAD', check: false).stdout().strip() : ''
+  version: '.'.join(['1', '0', find_program('git', required: false).found() ?
+    run_command('git', 'rev-list', '--count', 'd164dab..HEAD', check: false).stdout().strip() : ''
   ]).strip('.'),
 )
 

@@ -1,11 +1,11 @@
 
 # rpmbuild -ba pingpath.spec
 
-%define gtag d3da356
+%define gtag d164dab
 %define gver .%(echo "$(git rev-list --count %{gtag}..HEAD)_$(git rev-parse --short HEAD)")
 
 Name:       pingpath
-Version:    0.3%{gver}
+Version:    1.0%{gver}
 Release:    1
 Summary:    'ping' wrapper to display path
 License:    GPL-2.0-or-later

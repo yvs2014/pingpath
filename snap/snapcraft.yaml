@@ -1,7 +1,7 @@
 
 name: pingpath
 base: core24
-version: 0.3
+version: 1.0
 adopt-info: pingpath
 icon: assets/icons/pingpath.svg
 summary: ping wrapper for network diagnostic
@@ -37,7 +37,7 @@ parts:
     source: https://github.com/yvs2014/pingpath.git
     override-pull: |
       craftctl default
-      craftctl set version="$(craftctl get version).$(git rev-list --count d3da356..HEAD)"
+      craftctl set version="$(craftctl get version).$(git rev-list --count d164dab..HEAD)"
       _ICODIR="/usr/share/icons/hicolor/scalable/apps"
       _SEDEXP="s|Icon=pingpath|Icon=$_ICODIR/pingpath.svg|"
       sed -i "$_SEDEXP" assets/pingpath.desktop
