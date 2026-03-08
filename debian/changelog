@@ -1,3 +1,9 @@
+pingpath (1.0.2) trixie; urgency=low
+
+  * version: display TOON feature
+
+ -- yvs <VSYakovetsky@gmail.com>  Sun, 08 Mar 2026 23:52:26 +0200
+
 pingpath (1.0.1) trixie; urgency=low
 
   * bump version to 1.0.1

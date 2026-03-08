@@ -1,3 +1,6 @@
+## 1.0.2
+- version: display TOON feature
+
 ## 1.0.1
 - bump version to 1.0.1
 

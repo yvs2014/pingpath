@@ -689,13 +689,18 @@ static int cli_init_proc(int *pargc, char ***pargv,
     }
     if (onoff[ONOFF_VERSION]) {
       g_print("%s\n", APPVER);
-      g_print("%s: %cDND %cJSON %cPLOT %cNLS\n", CLI_APPFEAT_HDR,
+      g_print("%s: %cDND %cJSON %cTOON %cPLOT %cNLS\n", CLI_APPFEAT_HDR,
 #ifdef WITH_DND
       '+',
 #else
       '-',
 #endif
 #ifdef WITH_JSON
+      '+',
+#else
+      '-',
+#endif
+#ifdef WITH_TOON
       '+',
 #else
       '-',
