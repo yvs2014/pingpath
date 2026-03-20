@@ -576,11 +576,13 @@ static void pinger_init_streams(int at, t_proc *proc, char* argv[]) {
 static gboolean create_ping(int at, t_proc *proc) {
 #define ARGV_STR(argument) do {        \
   if ((argc + 1) < G_N_ELEMENTS(argv)) \
-	  argv[argc++] = (argument);   \
+    argv[argc++] = (argument);         \
 } while (0)
-#define ARGV_FMT(buff, fmt, ...) do {                 \
-  g_snprintf(buff, sizeof(buff), (fmt), __VA_ARGS__); \
-  ARGV_STR(buff);                                     \
+#define ARGV_FMT(buff, fmt, ...) do {     \
+  int rc = snprintg((buff), sizeof(buff), \
+    (fmt), __VA_ARGS__);                  \
+  if ((rc > 0) && (buff)[0])              \
+    ARGV_STR(buff);                       \
 } while (0)
 #define SHOW_SNAPHINT(tout) do {   \
   notifier_set_autohide_sec(tout); \
@@ -593,17 +595,17 @@ static gboolean create_ping(int at, t_proc *proc) {
   ARGV_STR(BINPING);
   ARGV_STR("-OD");
   if (!opts.dns) ARGV_STR("-n");
-  char s_t[16]; ARGV_FMT(s_t, "-t%d", at + 1);
-  char s_c[16]; ARGV_FMT(s_c, "-c%d", opts.cycles);
-  char s_i[16]; ARGV_FMT(s_i, "-i%d", opts.timeout);
-  char s_W[16]; ARGV_FMT(s_W, "-W%d", opts.timeout);
-  char s_Q[16]; if (opts.qos != DEF_QOS)
+  char s_t[16] = {0}; ARGV_FMT(s_t, "-t%d", at + 1);
+  char s_c[16] = {0}; ARGV_FMT(s_c, "-c%d", opts.cycles);
+  char s_i[16] = {0}; ARGV_FMT(s_i, "-i%d", opts.timeout);
+  char s_W[16] = {0}; ARGV_FMT(s_W, "-W%d", opts.timeout);
+  char s_Q[16] = {0}; if (opts.qos != DEF_QOS)
     ARGV_FMT(s_Q, "-Q%d", opts.qos);
-  char s_p[64]; if (strncmp(opts.pad, DEF_PPAD, sizeof(opts.pad)))
+  char s_p[64] = {0}; if (strncmp(opts.pad, DEF_PPAD, sizeof(opts.pad)))
     ARGV_FMT(s_p, "-p%s", opts.pad);
-  char s_s[16]; if (opts.size != DEF_PSIZE)
+  char s_s[16] = {0}; if (opts.size != DEF_PSIZE)
     ARGV_FMT(s_s, "-s%d", opts.size);
-  char s46[4];  if ((opts.ipv == 4) || (opts.ipv == 6))
+  char s46[4]  = {0}; if ((opts.ipv == 4) || (opts.ipv == 6))
     ARGV_FMT(s46, "-%d", opts.ipv);
   ARGV_STR("--");
   ARGV_STR(opts.target);

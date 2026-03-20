@@ -140,12 +140,16 @@ static const char *info_host(int at) {
   if (host[0].addr) { // as a marker
     if (hop->cached) return hostinfo_cache[at];
     char *str = hostinfo_cache[at];
-    int len = g_snprintf(str, BUFF_SIZE, "%s", addrname(0, host));
-    for (int i = 1; (i < MAXADDR) && (len < BUFF_SIZE); i++) {
-      if (host[i].addr) len += g_snprintf(str + len, BUFF_SIZE - len, "\n%s", addrname(i, host));
-      else break;
+    int len = snprintg(hostinfo_cache[at], BUFF_SIZE, "%s", addrname(0, host));
+    if (len > 0) for (int i = 1; (i < MAXADDR) && (len < BUFF_SIZE); i++) {
+      if (host[i].addr) {
+        int inc = snprintg(str + len, BUFF_SIZE - len, "\n%s", addrname(i, host));
+        if (inc < 0) break;
+        len += inc;
+      } else break;
     }
-    if (hop->info && (len < BUFF_SIZE)) g_snprintf(str + len, BUFF_SIZE - len, "\n%s", hop->info);
+    if (hop->info && (len > 0) && (len < BUFF_SIZE))
+      snprintg(str + len, BUFF_SIZE - len, "\n%s", hop->info);
     hop->cached = true;
     LOG("%s: #%d %s", HOST_CUP_HDR, at + 1, mnemo(str));
     return str;
@@ -160,7 +164,7 @@ static const char *info_host_nl(int at) {
   if (host[0].addr) { // as a marker
     if (hop->cached_nl) return hostinfo_nl_cache[at];
     char *str = hostinfo_nl_cache[at];
-    g_snprintf(str, BUFF_SIZE, "%s", addrname(0, host));
+    snprintg(str, BUFF_SIZE, "%s", addrname(0, host));
     hop->cached_nl = true;
     LOG("%s: #%d %s", HOST_CUP_HDR, at + 1, mnemo(str));
     return str;
@@ -189,11 +193,13 @@ static const char *info_whois(int at, int type) {
   if (elem) { // as a marker
     char *str = whois_cache[at][type];
     if (!hops[at].wcached[type]) {
-      size_t len = g_snprintf(str, BUFF_SIZE, "%s", elem);
-      for (int i = 1; (i < MAXADDR) && (len < BUFF_SIZE); i++) {
+      int len = snprintg(str, BUFF_SIZE, "%s", elem);
+      if (len > 0) for (int i = 1; (i < MAXADDR) && (len < BUFF_SIZE); i++) {
         elem = whois[i].elem[type];
         if (!elem) break;
-        len += g_snprintf(str + len, BUFF_SIZE - len, "\n%s", elem);
+        int inc = snprintg(str + len, BUFF_SIZE - len, "\n%s", elem);
+        if (inc < 0) break;
+        len += inc;
       }
       hops[at].wcached[type] = true;
       LOG("%s: [%d,%d] %s", WHOIS_CUP_HDR, at, type, mnemo(str));
@@ -210,7 +216,7 @@ static const char *info_whois_nl(int at, int type) {
   if (elem) { // as a marker
     char *str = whois_nl_cache[at][type];
     if (!hops[at].wcached_nl[type]) {
-      g_snprintf(str, MAXHOSTNAME, "%s", elem);
+      snprintg(str, MAXHOSTNAME, "%s", elem);
       hops[at].wcached_nl[type] = true;
       LOG("%s: [%d,%d] %s", WHOIS_CUP_HDR, at, type, mnemo(str));
     }
@@ -231,7 +237,7 @@ static int column_whois(int at, int type, t_ping_column *column) {
 static int prec(double val) { return ((val > 0) && (val < 10)) ? ((val < 0.1) ? 2 : 1) : 0; }
 
 static const char* fill_stat_int(int val, char* buff, int size) {
-  if (val >= 0) g_snprintf(buff, size, INT_FMT, val); else buff[0] = 0;
+  if (val >= 0) snprintg(buff, size, INT_FMT, val); else buff[0] = 0;
   return buff;
 }
 
@@ -239,8 +245,10 @@ static const char* fill_stat_dbl(double val, char* buff, int size, const char *s
   if (val < 0) buff[0] = 0; else {
     if (factor) val /= factor;
     int dec = prec(val);
-    if (sfx) g_snprintf(buff, size, DBL_SFX, dec, val, sfx);
-    else g_snprintf(buff, size, DBL_FMT, dec, val);
+    if (sfx)
+      snprintg(buff, size, DBL_SFX, dec, val, sfx);
+    else
+      snprintg(buff, size, DBL_FMT, dec, val);
   }
   return buff;
 }
@@ -248,7 +256,7 @@ static const char* fill_stat_dbl(double val, char* buff, int size, const char *s
 static const char* fill_stat_rtt(int usec, char* buff, int size) {
   if (usec > 0) {
     double val = usec / 1000.;
-    g_snprintf(buff, size, DBL_FMT, prec(val), val);
+    snprintg(buff, size, DBL_FMT, prec(val), val);
   } else buff[0] = 0;
   return buff;
 }

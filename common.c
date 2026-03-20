@@ -307,6 +307,20 @@ const char *timestamp(char *ts, size_t size) {
   return ts;
 }
 
+gint snprintg(gchar *string, gulong n, const gchar *format, ...) {
+  if (!string || !format)
+    return 0;
+  va_list args;
+  va_start(args, format);
+  gint len = g_vsnprintf(string, n, format, args);
+  va_end(args);
+  if (len >= (int)n)
+    len = -1;      // to error truncation
+  if (len < 0)
+    string[0] = 0; // to be sure
+  return len;
+}
+
 inline const char *mnemo(const char *str) { return (str && str[0]) ? str : EMPTY_HDR; }
 
 char* rtver(int ndx) {

@@ -4,7 +4,7 @@ set -e
 
 TMPL="templates"
 cd "$TMPL/alpine"
-abuild -rc
+abuild -c
 cd -
 ls -lR ~/packages/"$TMPL"
 

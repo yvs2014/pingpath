@@ -281,8 +281,8 @@ static GtkWidget* pt_make_dynlist(t_listline *lines, int len, t_type_elem *elems
     if (elems) { // header
       if (!pt_init_line_elems(elems, &lines[i], bodylines, group)) return NULL;
     } else {     // line with number
-      char *str = stat_no_at_buff[i]; g_snprintf(str, ELEM_BUFF_SIZE, "%d.", i + 1);
-      bodyelem[PE_NO].name = str;
+      snprintg(stat_no_at_buff[i], sizeof(stat_no_at_buff[i]), "%d.", i + 1);
+      bodyelem[PE_NO].name = stat_no_at_buff[i];
       if (!pt_init_line_elems(bodyelem, &lines[i], NULL, group)) return NULL;
     }
     gtk_list_box_append(GTK_LIST_BOX(list), GTK_WIDGET(row));

@@ -161,12 +161,8 @@ static void nt_reveal_sets(GtkWidget *reveal, int align, int transition) {
   gtk_revealer_set_transition_type(GTK_REVEALER(reveal), transition);
 }
 
-static char* nb_lgnd_nth_state(int nth, gboolean enable) {
-  static char nb_lgnd_state_buff[80]; nth++;
-  if (enable) g_snprintf(nb_lgnd_state_buff, sizeof(nb_lgnd_state_buff), "%d", nth);
-  else g_snprintf(nb_lgnd_state_buff, sizeof(nb_lgnd_state_buff), LGND_DIS_MARK_FMT, nth);
-  return nb_lgnd_state_buff;
-}
+#define LGND_NTH_STATE(buff, size, nth, enable) \
+  snprintg((buff), (size), (enable) ? "%d" : LGND_DIS_MARK_FMT, (nth) + 1)
 
 static void nt_lgnd_row_cb(GtkListBox *self G_GNUC_UNUSED,
     GtkListBoxRow *row, gpointer user_data G_GNUC_UNUSED)
@@ -182,7 +178,9 @@ static void nt_lgnd_row_cb(GtkListBox *self G_GNUC_UNUSED,
           if ((nth >= opts.range.min) && (nth < opts.range.max)) {
             gboolean sel = !gtk_list_box_row_get_selectable(row);
             if (sel) lgnd_excl_mask &= ~(sel << nth); else lgnd_excl_mask |= (!sel << nth);
-            gtk_label_set_text(GTK_LABEL(lab), nb_lgnd_nth_state(nth, sel));
+            char buff[80] = {0};
+            LGND_NTH_STATE(buff, sizeof(buff), nth, sel);
+            gtk_label_set_text(GTK_LABEL(lab), buff);
             gtk_label_set_use_markup(GTK_LABEL(lab), true);
             gtk_list_box_row_set_selectable(row, sel);
             gtk_widget_set_opacity(GTK_WIDGET(row), sel ? 1 : 0.5);
@@ -244,12 +242,16 @@ static inline void nt_make_leg_row(GtkListBox *box, GtkSizeGroup* group[], int n
     nt_reload_css(GTK_WIDGET(leg->row), CSS_LEGEND_TEXT);
     if (css) nt_reload_css(GTK_WIDGET(leg->row), css);
   }
-  LEG_LABEL(leg->elem[GE_NO], nb_lgnd_nth_state(nth, LGND_ROW_DEF_STATE), GTK_ALIGN_END, true);
+  char buff[80] = {0};
+  LGND_NTH_STATE(buff, sizeof(buff), nth, LGND_ROW_DEF_STATE);
+  LEG_LABEL(leg->elem[GE_NO], buff, GTK_ALIGN_END, true);
   if (GTK_IS_WIDGET(leg->elem[GE_NO])) LEG_GROUP(GE_NO, true);
   { // colored dash
-    char span[100], *col = get_nth_color(nth);
-    if (col) g_snprintf(span, sizeof(span), LGND_DASH_COL_FMT, col, DASH_CHAR);
-    else g_snprintf(span, sizeof(span), LGND_DASH_DEF_FMT, DASH_CHAR);
+    char span[100] = {0}, *col = get_nth_color(nth);
+    if (col)
+      snprintg(span, sizeof(span), LGND_DASH_COL_FMT, col, DASH_CHAR);
+    else
+      snprintg(span, sizeof(span), LGND_DASH_DEF_FMT, DASH_CHAR);
     LEG_LABEL(leg->elem[GE_DASH], span, -1, is_grelem_enabled(GE_DASH));
     if (GTK_IS_WIDGET(leg->elem[GE_DASH]) && col) LEG_GROUP(GE_DASH, true);
     g_free(col);
@@ -292,8 +294,10 @@ static void nt_init_legend(GtkWidget *inbox, GtkWidget *over, t_notifier *nt) {
   for (int i = 0; leg && (i < n); i++, leg++) {
     leg->box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, MARGIN);
     if (leg->box) { // number, color dash, avrg±jttr, cc:as, hopname
-      char span[100]; g_snprintf(span, sizeof(span), "%s #%d", LEGEND_TIP, i + 1);
-      gtk_widget_set_tooltip_text(leg->box, span);
+      char span[100] = {0};
+      int len = snprintg(span, sizeof(span), "%s #%d", LEGEND_TIP, i + 1);
+      if ((len > 0) && span[0])
+        gtk_widget_set_tooltip_text(leg->box, span);
       leg->row = line_row_new(leg->box, false);
       if (leg->row) nt_make_leg_row(GTK_LIST_BOX(inbox), group, i, leg, nt->css.col);
     }

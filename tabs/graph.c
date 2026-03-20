@@ -317,7 +317,8 @@ static void gr_draw_marks(GtkDrawingArea *area, cairo_t *cr,
       double dy = series_datamax / PP_RTT_SCALE / grm.nh;
       for (int j = grm.nh, y = grm.y0 - 0.6 * fs_size; j >= 0; j--, y += CELL_SIZE) {
         double val = dy * j;
-        snprintf(buff, sizeof(buff), PP_FMT10(val), val); // BUFFNOLINT
+        if (snprintg(buff, sizeof(buff), PP_FMT10(val), val) < 0)
+          continue;
         cairo_move_to(cr, 0, y);
         pango_layout_set_text(mark_pango, buff, -1);
         pango_cairo_show_layout(cr, mark_pango);
@@ -384,7 +385,8 @@ static void gr_draw_graph(GtkDrawingArea *area, cairo_t* cr,
     for (int i = 0, x = grm.x1 - graph_tsz / 2, y = grm.y1 + fs_size, t = draw_graph_at;
         i <= grm.nw; i++, x -= CELL_SIZE, t -= dt) if ((i + 1) % X_FREQ) {
       LIMVAL(t, 3600);
-      snprintf(buff, sizeof(buff), PP_TIME_FMT, t / 60, t % 60); // BUFFNOLINT
+      if (snprintg(buff, sizeof(buff), PP_TIME_FMT, t / 60, t % 60) < 0)
+        continue;
       cairo_move_to(cr, x, y);
       pango_layout_set_text(graph_pango, buff, -1);
       pango_cairo_show_layout(cr, graph_pango);

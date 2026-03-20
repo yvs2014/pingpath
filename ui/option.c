@@ -244,7 +244,7 @@ static void set_ed_texthint(t_ent_str *en) {
   char *pstr = en->pstr;
   gtk_editable_delete_text(GTK_EDITABLE(en->input), 0, -1);
   if (pint && (*pint != en->idef)) {
-    g_snprintf(en->buff, sizeof(en->buff), "%d", *pint);
+    snprintg(en->buff, sizeof(en->buff), "%d", *pint);
     gtk_editable_set_text(GTK_EDITABLE(en->input), en->buff);
   } else if (pstr && strncmp(pstr, en->sdef, en->slen)) {
     g_strlcpy(en->buff, pstr, sizeof(en->buff));
@@ -743,7 +743,7 @@ static gboolean create_optmenu(GtkWidget *bar, const char **icons, const char *t
   return okay;
 }
 
-#define EN_PR_FMT(ndx, fmt, arg) { g_snprintf(ent_str[ndx].hint, sizeof(ent_str[ndx].hint), fmt, arg); \
+#define EN_PR_FMT(ndx, fmt, arg) { snprintg(ent_str[ndx].hint, sizeof(ent_str[ndx].hint), fmt, arg); \
   if (!add_opt_enter(list, &ent_str[ndx])) okay = false; }
 #define EN_PR_STR(ndx) EN_PR_FMT(ndx, "%s", ent_str[ndx].sdef)
 #define EN_PR_INT(ndx) EN_PR_FMT(ndx, "%d", ent_str[ndx].idef)

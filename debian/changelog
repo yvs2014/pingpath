@@ -1,3 +1,9 @@
+pingpath (1.0.3) trixie; urgency=low
+
+  * add g_snprintf() additional checks
+
+ -- yvs <VSYakovetsky@gmail.com>  Fri, 20 Mar 2026 18:18:18 +0200
+
 pingpath (1.0.2) trixie; urgency=low
 
   * version: display TOON feature

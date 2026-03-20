@@ -1,3 +1,6 @@
+## 1.0.3
+- add g_snprintf() additional checks
+
 ## 1.0.2
 - version: display TOON feature
 

@@ -12,7 +12,7 @@
 #define MIN_GTK_RUNTIME(major, minor, micro) (!gtk_check_version(major, minor, micro))
 
 #define APPNAME "pingpath"
-#define VERSION "1.0.2"
+#define VERSION "1.0.3"
 #define APPVER  APPNAME "-" VERSION
 
 extern locale_t locale, localeC;
@@ -431,8 +431,9 @@ gboolean is_plelem_enabled(int type);
 #endif
 
 char* rtver(int ndx);
-const char *timestamp(char *ts, size_t size);
 const char *mnemo(const char *str);
+const char *timestamp(char *ts, size_t size);
+gint snprintg(gchar *string, gulong n, const gchar *format, ...);
 GtkListBoxRow* line_row_new(GtkWidget *child, gboolean visible);
 
 void host_free(t_host *host);

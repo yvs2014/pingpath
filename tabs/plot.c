@@ -627,7 +627,8 @@ static void plot_rtt_marks(t_mark_text mark[], int max) {
   float step = (max > 1) ? (val / (max - 1)) : 0;
   val = 0;
   for (int i = 0; i < max; i++) {
-    mark[i].len = snprintf(mark[i].text, sizeof(mark[i].text), PP_FMT10(val), val); // BUFFNOLINT
+    mark[i].len = snprintg(mark[i].text, sizeof(mark[i].text), PP_FMT10(val), val);
+    if (mark[i].len < 0) mark[i].len = 0;
     val += step;
   }
 }
@@ -637,7 +638,8 @@ static void plot_tim_marks(t_mark_text mark[], int max) {
   if (!draw_plot_at || (pinger_state.run && !pinger_state.pause)) draw_plot_at = time(NULL) % 3600;
   for (int i = 0, t = draw_plot_at - PLOT_TIME_RANGE; i < max; i++, t += dt) {
     LIMVAL(t, 3600);
-    mark[i].len = snprintf(mark[i].text, sizeof(mark[i].text), PP_TIME_FMT, t / 60, t % 60); // BUFFNOLINT
+    mark[i].len = snprintg(mark[i].text, sizeof(mark[i].text), PP_TIME_FMT, t / 60, t % 60);
+    if (mark[i].len < 0) mark[i].len = 0;
   }
 }
 
@@ -649,8 +651,9 @@ static void plot_ttl_marks(t_mark_text mark[], int max) {
     else {
       printed = val;
       float r = fmodf(val, 1);
-      mark[i].len = snprintf(mark[i].text, sizeof(mark[i].text),
-        "%.0f%s", val, r ? ((r < 0.5) ? "-" : "+") : ""); // BUFFNOLINT
+      mark[i].len = snprintg(mark[i].text, sizeof(mark[i].text),
+        "%.0f%s", val, r ? ((r < 0.5) ? "-" : "+") : "");
+      if (mark[i].len < 0) mark[i].len = 0;
     }
     val += step;
   }
