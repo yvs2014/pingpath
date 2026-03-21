@@ -1,3 +1,9 @@
+pingpath (1.0.4) trixie; urgency=low
+
+  * small up-to-date in build templates
+
+ -- yvs <VSYakovetsky@gmail.com>  Sat, 21 Mar 2026 18:29:57 +0200
+
 pingpath (1.0.3) trixie; urgency=low
 
   * add g_snprintf() additional checks

@@ -16,7 +16,7 @@ jobs:
     name: Build, pack, install
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 1
           ref: main
@@ -34,7 +34,7 @@ jobs:
         run: |
           pingpath --version
           pingpath --cycles 10 --recap t localhost
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: auto-built-pingpath-deb
           path: debs/pingpath_*_*.deb

@@ -1,3 +1,6 @@
+## 1.0.4
+- small up-to-date in build templates
+
 ## 1.0.3
 - add g_snprintf() additional checks
 

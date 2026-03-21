@@ -3,6 +3,9 @@ name: pingpath
 base: core24
 version: 1.0
 adopt-info: pingpath
+title: ping IP path
+source-code:
+  - https://github.com/yvs2014/pingpath
 icon: assets/icons/pingpath.svg
 summary: ping wrapper for network diagnostic
 description: |

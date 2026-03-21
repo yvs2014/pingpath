@@ -15,6 +15,7 @@ giturl="$url"
 arch='all'
 license='GPL'
 depends='iputils-ping'
+#depends='iputils99' # unless 'iputils-ping or iputils99'
 makedepends='git meson pkgconf gcc gtk4.0-dev json-glib-dev libepoxy-dev cglm-dev'
 options='strip !debug'
 subpackages="$pkgname-doc $pkgname-lang"
@@ -40,7 +41,8 @@ prepare() {
 
 build() {
   cd "$srcdir/$pkgname"
-  abuild-meson "$_build" .
+  # note: busybox-ping in /bin, iputils-ping in /usr/bin
+  abuild-meson -Dpingdir=/usr/bin "$_build" .
   meson compile -C "$_build"
 }
 
