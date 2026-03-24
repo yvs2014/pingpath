@@ -127,7 +127,7 @@ static void cb_collect_maxes(GtkWidget *box, int *maxes) {
 }
 
 static inline char* ustr_dup(int len, const char *str) {
-  int w = (len > 0) ? (len - g_utf8_strlen(str, -1)) : 0;
+  int w = (len > 0) ? (len - g_utf8_strlen(str, INT16_MAX)) : 0;
   if (w > 0) return g_strdup_printf("%s%-*s", str, w, "");
   return g_strdup(str);
 }
@@ -228,7 +228,7 @@ gboolean clipboard_init(GtkWidget *win, t_tab *tab) {
   return true;
 }
 
-void cb_on_copy_l1(GSimpleAction *self G_GNUC_UNUSED, GVariant *parameter G_GNUC_UNUSED, gpointer data) {
+void cb_on_copy_l1(GSimpleAction *action G_GNUC_UNUSED, GVariant *var G_GNUC_UNUSED, void *data) {
   t_tab *tab = data;
   if (!tab || !GTK_IS_LIST_BOX(tab->dyn.w)) return;
   GdkClipboard *clipboard = gtk_widget_get_clipboard(GTK_WIDGET(tab->tab.w));
@@ -239,7 +239,7 @@ void cb_on_copy_l1(GSimpleAction *self G_GNUC_UNUSED, GVariant *parameter G_GNUC
   }
 }
 
-void cb_on_copy_l2(GSimpleAction *self G_GNUC_UNUSED, GVariant *parameter G_GNUC_UNUSED, gpointer data) {
+void cb_on_copy_l2(GSimpleAction *action G_GNUC_UNUSED, GVariant *var G_GNUC_UNUSED, void *data) {
   t_tab *tab = data;
   if (!tab || !GTK_IS_LIST_BOX(tab->dyn.w)) return;
   GdkClipboard *clipboard = gtk_widget_get_clipboard(GTK_WIDGET(tab->tab.w));
@@ -272,7 +272,7 @@ void cb_tab_unsel(t_tab *tab) {
   }
 }
 
-void cb_on_sall(GSimpleAction *self G_GNUC_UNUSED, GVariant *parameter G_GNUC_UNUSED, gpointer data) {
+void cb_on_sall(GSimpleAction *action G_GNUC_UNUSED, GVariant *var G_GNUC_UNUSED, void *data) {
   t_tab *tab = data;
   if (!tab || !GTK_IS_LIST_BOX(tab->dyn.w)) return;
   VERBOSE("%s (%s): %s", ACT_ACTION_HDR, tab->name, cb_menu_label(tab->sel));

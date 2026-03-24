@@ -9,7 +9,7 @@
 #include "parser.h"
 #include "ui/option.h"
 
-#define PP_DISPMAX 1024
+enum { PP_DISPMAX = 1024 };
 
 #define PP_CLIERR(...) g_set_error(error, g_quark_from_static_string(""), -1, __VA_ARGS__)
 
@@ -279,7 +279,7 @@ static gboolean cli_opt_X(const char *name, const char *value, t_opts *opts, GEr
 
 static char* cli_opt_charelem(char *str, const char *patt, int ch) {
   if (str && patt && (ch >= 0)) for (const char *pchar = str; *pchar; pchar++) {
-    int ndx = char2ndx(ch, true, *pchar);
+    int ndx = char2ndx(ch, CAT_ENT_NDX, *pchar);
     if (ndx < 0) continue;
     t_ent_bool *en = strchr(patt, *pchar) ? &ent_bool[ndx] : NULL;
     if (!en) continue;
@@ -315,8 +315,8 @@ static void reorder_elems(const char *str, t_elem_desc *desc) {
     memmove(newelems, elems, sizeof(newelems)); // BUFFNOLINT
     int n = 0;
     for (const char *p = order; *p; p++, n++) {
-      int ndx = char2ndx(desc->cat, true, *p);
-      int type = char2ndx(desc->cat, false, *p);
+      int ndx  = char2ndx(desc->cat, CAT_ENT_NDX,  *p);
+      int type = char2ndx(desc->cat, CAT_ENT_TYPE, *p);
       if ((type < 0) || (ndx < 0)) g_warning("%s: [%d] %d", INVAL_HDR, ndx, type);
       else {
         ndx = type2ndx(type);
@@ -418,22 +418,31 @@ static gboolean cli_opt_P(const char *name, const char *value, t_opts *opts G_GN
 }
 #endif
 
+#define OPT_MASK_DARKTHEME 0x1U
+#define OPT_MASK_DARKGRAPH 0x2U
+#define OPT_MASK_LEGEND    0x4U
+#define OPT_MASK_DARKPLOT  0x8U
 static gboolean cli_opt_T(const char *name, const char *value, t_opts *opts, GError **error) {
   if (!opts) return false;
-  int mask = opts->darktheme | (opts->darkgraph << 1) | (opts->legend << 2)
+  unsigned mask = 0;
+  if (opts->darktheme) mask |= OPT_MASK_DARKTHEME;
+  if (opts->darkgraph) mask |= OPT_MASK_DARKGRAPH;
+  if (opts->legend)    mask |= OPT_MASK_LEGEND;
 #ifdef WITH_PLOT
-    | (opts->darkplot << 3), max = 0xf;
-#else
-    , max = 0x7;
+  if (opts->darkplot)  mask |= OPT_MASK_DARKPLOT;
 #endif
-
-  gboolean okay = cli_int_opt(name, value, error, CLI_TOPT_HDR, 0, max, &mask);
-  if (okay) {
-    opts->darktheme = (mask & 0x1) ? true : false;
-    opts->darkgraph = (mask & 0x2) ? true : false;
-    opts->legend    = (mask & 0x4) ? true : false;
+  int max =
 #ifdef WITH_PLOT
-    opts->darkplot  = (mask & 0x8) ? true : false;
+    OPT_MASK_DARKPLOT |
+#endif
+    OPT_MASK_LEGEND | OPT_MASK_DARKGRAPH | OPT_MASK_DARKTHEME;
+  gboolean okay = cli_int_opt(name, value, error, CLI_TOPT_HDR, 0, max, (int*)&mask);
+  if (okay) {
+    opts->darktheme = (mask & OPT_MASK_DARKTHEME) ? true : false;
+    opts->darkgraph = (mask & OPT_MASK_DARKGRAPH) ? true : false;
+    opts->legend    = (mask & OPT_MASK_LEGEND)    ? true : false;
+#ifdef WITH_PLOT
+    opts->darkplot  = (mask & OPT_MASK_DARKPLOT)  ? true : false;
 #endif
   }
   return okay;

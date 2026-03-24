@@ -18,7 +18,7 @@ typedef struct wc_elem { // whois cache element
 typedef struct wq_data {  // whois query element
   GSList *refs;           // hops requested whois resolv
   t_wc_elem data;         // copy of origin addr and resulting resolved whois fields
-  char *buff; int size;   // data buffer and its actual size
+  char *buff; ssize_t size; // data buffer and its actual size
   GSocketConnection *conn;
   GInputStream *input;
   GOutputStream *output;
@@ -183,7 +183,8 @@ static t_wq_elem* whois_query_save(const char *addr, t_hop *hop, int ndx) {
   if (!hop || !addr) return NULL;
   t_wq_elem *elem = g_malloc0(sizeof(t_wq_elem));
   if (!elem) return NULL;
-  elem->buff = g_malloc0(NET_BUFF_SIZE); elem->size = 0;
+  elem->buff = g_malloc0(NET_BUFF_SIZE);
+  elem->size = 0;
   if (elem->buff) {
     elem->data.addr = g_strndup(addr, MAXHOSTNAME);
     if (elem->data.addr) {

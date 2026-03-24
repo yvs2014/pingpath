@@ -601,7 +601,7 @@ static GtkWidget* add_opt_expand(GtkWidget* list, t_ent_exp *en) {
 #define SPN_MM_OR_DEF(aux, inc) ((aux).pval ? (*((aux).pval) + (inc)) : (aux).def)
 #define SPN_MM_NDX(mm_ndx, inc) ((ndx == (mm_ndx)) ? (en->aux[mm_ndx].def) : SPN_MM_OR_DEF(en->aux[mm_ndx], inc))
 
-static gboolean add_minmax(GtkWidget *box, t_ent_spn_elem *en, int ndx, const int *step, gboolean wrap) {
+static gboolean add_minmax(GtkWidget *box, t_ent_spn_elem *en, unsigned ndx, const int *step, gboolean wrap) {
   gboolean okay = false;
   if (GTK_IS_BOX(box) && en) {
     const t_minmax *mm0 = en->aux[en->bond ? 0 : ndx].mm;

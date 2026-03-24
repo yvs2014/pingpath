@@ -174,8 +174,10 @@ static void nt_lgnd_row_cb(GtkListBox *self G_GNUC_UNUSED,
       if (GTK_IS_LABEL(lab)) {
         const char *txt = gtk_label_get_text(GTK_LABEL(lab));
         if (txt) {
-          int nth = atoi(txt); nth--;
-          if ((nth >= opts.range.min) && (nth < opts.range.max)) {
+          errno = 0; long n = strtol(txt, NULL, 0);
+          if (errno) errno = 0;
+          else if ((opts.range.min < n) && (n <= opts.range.max)) { // MINTTL-1 .. MAXTTL
+            int nth = n - 1;
             gboolean sel = !gtk_list_box_row_get_selectable(row);
             if (sel) lgnd_excl_mask &= ~(sel << nth); else lgnd_excl_mask |= (!sel << nth);
             char buff[80] = {0};

@@ -13,7 +13,9 @@
 #define DBL_SFX DBL_FMT "%s"
 
 enum { ELEM_LEN = 5, NUM_BUFF_SZ = 16 };
-enum { NONE = 0, RX = 1, TX = 2, RXTX = 3 };
+#define NONE 0U
+#define RX   1U
+#define TX   2U
 
 int tgtat = MAXTTL;
 int visibles = -1;
@@ -92,7 +94,7 @@ static void uniq_unreach(int at) {
 
 enum { PREV, CURR };
 
-static void update_stat(int at, int rtt, t_tseq *mark, int rxtx) {
+static void update_stat(int at, int rtt, t_tseq *mark, unsigned rxtx) {
   if (rxtx & RX) hops[at].recv++;
   if (rxtx & TX) hops[at].sent++;
   if (rxtx && hops[at].sent) hops[at].loss = (hops[at].sent - hops[at].recv) * 100. / hops[at].sent;
@@ -339,7 +341,7 @@ static void stat_up_info(int at, const char *info) {
 
 void stat_save_success(int at, t_ping_success *data) {
   update_addrname(at, &data->host);
-  update_stat(at, data->time, &data->mark, RXTX);
+  update_stat(at, data->time, &data->mark, RX | TX);
   if (!hops[at].reach) hops[at].reach = true;
   // management
   int ttl = at + 1;
@@ -355,7 +357,7 @@ void stat_save_success(int at, t_ping_success *data) {
 void stat_save_discard(int at, t_ping_discard *data) {
   update_addrname(at, &data->host);
   if ((data->mark.seq - hops[at].mark.seq) != 1) update_stat(at, -1, NULL, RX);
-  else update_stat(at, calc_rtt(at, &data->mark), &data->mark, RXTX);
+  else update_stat(at, calc_rtt(at, &data->mark), &data->mark, RX | TX);
   // 'unreach' management
   if (data->reason) {
     int ttl = at + 1;
@@ -377,7 +379,7 @@ void stat_save_timeout(int at, t_ping_timeout *data) {
 
 void stat_save_info(int at, t_ping_info *data) {
   update_addrname(at, &data->host);
-//  update_stat(at, -1, &data->mark, seq_accord(hops[at].mark.seq, data->mark.seq) ? RXTX : NONE);
+//  update_stat(at, -1, &data->mark, seq_accord(hops[at].mark.seq, data->mark.seq) ? (RX | TX) : NONE);
   stat_up_info(at, data->info);
 }
 

@@ -1,3 +1,6 @@
+## 1.0.5
+- following some clang-tidy hints
+
 ## 1.0.4
 - small up-to-date in build templates
 

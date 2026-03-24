@@ -55,7 +55,8 @@ enum { PLANE_XN = 8, PLANE_YN = 10, PLANE_ZN = 10 };
 #define RTT_GRADIENT "4.0"
 #define TTL_GRADIENT "2.0"
 
-enum { MIN_ASCII_CHAR = 0x20, MAX_ASCII_CHAR = 0x7e };
+#define MIN_ASCII_CHAR 0x20
+#define MAX_ASCII_CHAR 0x7e
 
 #define FONT_HEIGHT_PERCENT 1.5
 
@@ -114,7 +115,7 @@ typedef struct plparams {
 
 typedef struct v3s { float a, b, c; } t_v3s;
 
-mat4 rmat = GLM_MAT4_IDENTITY_INIT; // rotation_matrix
+static mat4 rmat = GLM_MAT4_IDENTITY_INIT; // rotation_matrix
 
 //
 
@@ -196,7 +197,7 @@ static vec4 surf_colo2;
 
 static t_plot_char char_table[UINT8_MAX];
 
-static int draw_plot_at;
+static time_t draw_plot_at;
 
 static void plot_rtt_marks(t_mark_text mark[], int max);
 static void plot_tim_marks(t_mark_text mark[], int max);
@@ -277,7 +278,7 @@ static inline void init_char_table(const char *abetka) {
 }
 
 static void plot_free_char_table(void) {
-  for (uint8_t i = 0; i < G_N_ELEMENTS(char_table); i++) if (char_table[i].tid) {
+  for (uint8_t i = 0; i < (uint8_t)G_N_ELEMENTS(char_table); i++) if (char_table[i].tid) {
     glDeleteTextures(1, &char_table[i].tid); char_table[i].tid = 0; }
 }
 
@@ -500,7 +501,7 @@ static void plot_res_free(t_plot_res *res) {
 
 
 static uint8_t char_table_lookup(gunichar u) {
-  for (uint8_t i = 0; i < G_N_ELEMENTS(char_table); i++)
+  for (uint8_t i = 0; i < (uint8_t)G_N_ELEMENTS(char_table); i++)
     if (char_table[i].ch == u) return i;
   return 0;
 }
@@ -515,9 +516,9 @@ static uint8_t char_table_lookup(gunichar u) {
 static char* pl_str2code8(const char *utf8) {
   char *str8 = NULL;
   if (g_utf8_validate(utf8, -1, 0)) {
-    int len = g_utf8_strlen(utf8, -1);
+    long len = g_utf8_strlen(utf8, -1);
     str8 = g_malloc0(((len > 0) ? len : 0) + 1);
-    int i = 0;
+    long i = 0;
     for (const char *u = utf8; *u && (i < len); u = g_utf8_next_char(u)) {
       gunichar c = g_utf8_get_char(u);
       uint8_t code8 = char_table_lookup(c);
@@ -634,9 +635,10 @@ static void plot_rtt_marks(t_mark_text mark[], int max) {
 }
 
 static void plot_tim_marks(t_mark_text mark[], int max) {
-  int dt = PLOT_TIME_RANGE * 2 / PLANE_YN; if (opts.timeout > 0) dt *= opts.timeout;
+  time_t dt = PLOT_TIME_RANGE * 2 / PLANE_YN; if (opts.timeout > 0) dt *= opts.timeout;
   if (!draw_plot_at || (pinger_state.run && !pinger_state.pause)) draw_plot_at = time(NULL) % 3600;
-  for (int i = 0, t = draw_plot_at - PLOT_TIME_RANGE; i < max; i++, t += dt) {
+  time_t t = draw_plot_at - PLOT_TIME_RANGE;
+  for (int i = 0; i < max; i++, t += dt) {
     LIMVAL(t, 3600);
     mark[i].len = snprintg(mark[i].text, sizeof(mark[i].text), PP_TIME_FMT, t / 60, t % 60);
     if (mark[i].len < 0) mark[i].len = 0;
@@ -983,7 +985,9 @@ void plottab_redraw(void) {
   if (plot_dyn_area)  gtk_gl_area_queue_render(GTK_GL_AREA(plot_dyn_area));
 }
 
-void plottab_refresh(gboolean flags) { if (flags) plottab_on_opts(flags); plottab_redraw(); }
-
+void plottab_refresh(unsigned flags) {
+  if (flags != PL_PARAM_NONE) plottab_on_opts(flags);
+  plottab_redraw();
+}
 inline void plottab_on_trans_opts(int quat[4]) { pl_on_rotation(quat); pl_post_rotation(); }
 

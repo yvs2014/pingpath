@@ -102,7 +102,7 @@ t_plot_vo plot_pango_vo_init(GLuint loc) {
   glGenBuffers(1, &vo.vbo.id);
   if (vo.vbo.id) {
     glBindBuffer(vo.vbo.typ, vo.vbo.id);
-    glBufferData(vo.vbo.typ, vo.vbo.stride * vo.vbo.count, NULL, GL_DYNAMIC_DRAW);
+    glBufferData(vo.vbo.typ, (GLsizeiptr)vo.vbo.stride * vo.vbo.count, NULL, GL_DYNAMIC_DRAW);
     glGenVertexArrays(1, &vo.vao);
     if (vo.vao) {
       glBindVertexArray(vo.vao);

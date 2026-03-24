@@ -144,7 +144,7 @@ static inline double distance(int x0, int y0, int x1, int y1) {
   return sqrt(dx1 * dx1 + dy1 * dy1);
 }
 
-static inline int centripetal(double d1, double q1, double d2, double q2, int p0, int p1, int p2) {
+static int centripetal(double d1, double q1, double d2, double q2, int p0, int p1, int p2) {
   return (d1 * p0 - d2 * p1 + (2 * d1 + 3 * q1 * q2 + d2) * p2) / (3 * q1 * (q1 + q2)) + 0.5;
 }
 

@@ -102,13 +102,23 @@ static char* fetch_named_str(GMatchInfo* match, char *prop) {
 
 static int fetch_named_int(GMatchInfo* match, char *prop) {
   char *str = g_match_info_fetch_named(match, prop);
-  int val = (str && str[0]) ? atoi(str) : -1;
+  int val = -1;
+  if (str && str[0]) {
+    errno = 0; long n = strtol(str, NULL, 0);
+    if (!errno && (INT_MIN <= n) && (n <= INT_MAX)) val = n;
+    errno = 0;
+  }
   g_free(str); return val;
 }
 
 static long long fetch_named_ll(GMatchInfo* match, char *prop) {
   char *str = g_match_info_fetch_named(match, prop);
-  long long val = (str && str[0]) ? atoll(str) : -1;
+  long long val = -1;
+  if (str && str[0]) {
+    errno = 0; long long n = strtoll(str, NULL, 0);
+    if (!errno && (LLONG_MIN <= n) && (n <= LLONG_MAX)) val = n;
+    errno = 0;
+  }
   g_free(str); return val;
 }
 
@@ -124,8 +134,8 @@ static int fetch_named_rtt(GMatchInfo* match, char *prop) {
 }
 
 static gboolean valid_mark(GMatchInfo* match, t_tseq *mark) {
-  mark->seq = fetch_named_int(match, REN_SEQ); if (mark->seq < 0) return false;
-  mark->sec = fetch_named_ll(match, REN_TS_S); if (mark->sec < 0) return false;
+  mark->seq  = fetch_named_int(match, REN_SEQ);  if (mark->seq  < 0) return false;
+  mark->sec  = fetch_named_ll (match, REN_TS_S); if (mark->sec  < 0) return false;
   mark->usec = fetch_named_int(match, REN_TS_U); if (mark->usec < 0) mark->usec = 0;
   return true;
 }
@@ -295,10 +305,10 @@ gboolean parser_mmint(const char *str, const char *option, t_minmax minmax, int 
   if (str) {
     char *val = parser_valid_int(option, str);
     if (val) {
-      errno = 0; int len = strtol(val, NULL, 0);
+      errno = 0; long len = strtol(val, NULL, 0);
       okay = !errno && MM_OKAY(minmax, len);
       errno = 0; g_free(val);
-      if (okay) { if (value) *value = len; }
+      if (okay && value) *value = len;
       else PARSER_MESG("%s: %s: %d <=> %d", option, OUTRANGE_ERR, minmax.min, minmax.max);
     }
   }
@@ -394,10 +404,12 @@ static gboolean parser_valint(const char* inp, int* outp, const char *option) {
   if (inp && inp[0]) {
     char *valid = parser_valid_int(option, inp);
     if (valid) {
-      errno = 0; *outp = strtol(valid, NULL, 0);
-      okay &= !errno; errno = 0;
-      g_free(valid);
+      errno = 0; long n = strtol(valid, NULL, 0);
+      okay = (!errno && (INT_MIN <= n) && (n <= INT_MAX));
+      errno = 0;
+      if (okay && outp) *outp = n;
     } else okay = false;
+    g_free(valid);
   }
   return okay;
 }
@@ -408,8 +420,8 @@ gboolean parser_range(char *range, char delim, const char *option, t_minmax *min
   char *max = split_pair(&min, delim, LAZY);
   t_minmax val = {INT_MIN, INT_MIN};
   gboolean okay = true;
-  okay &= parser_valint(min, &val.min, option);
-  okay &= parser_valint(max, &val.max, option);
+  if (!parser_valint(min, &val.min, option)) okay = false;
+  if (!parser_valint(max, &val.max, option)) okay = false;
   if (okay) *minmax = val;
   return okay;
 }
@@ -421,10 +433,13 @@ gboolean parser_ivec(char *range, char delim, const char *option, int *dest, uns
   char **abcs = g_strsplit(range, delims, max);
   int val[max]; for (unsigned i = 0; i < max; i++) val[i] = INT_MIN;
   gboolean okay = true;
-  if (abcs) for (unsigned i = 0; abcs[i] && (i < G_N_ELEMENTS(val)); i++)
-    okay &= parser_valint(abcs[i], &val[i], option);
+  if (abcs)
+    for (unsigned i = 0; abcs[i] && (i < max); i++)
+      if (!parser_valint(abcs[i], &val[i], option))
+        okay = false;
   g_strfreev(abcs);
-  if (okay) for (unsigned i = 0; i < max; i++) dest[i] = val[i];
+  if (okay)
+    for (unsigned i = 0; i < max; i++) dest[i] = val[i];
   return okay;
 }
 #endif

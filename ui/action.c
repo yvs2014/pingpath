@@ -130,7 +130,7 @@ static GActionEntry accl_sa_entries[ACCL_SA_MAX] = {
 
 static GMenu *action_menu;
 
-static const char* menu_sa_label(int ndx) {
+static const char* menu_sa_label(unsigned ndx) {
   switch (ndx) {
     case MENU_SA_START:
       return pinger_state.run   ? ACT_STOP_HDR   : ACT_START_HDR;
@@ -210,7 +210,7 @@ static gboolean show_help_dialog(GtkWidget *win) {
 }
 
 static inline GtkWidget* get_help_content(void) {
-#define UNSCORE(item) (((item) && (*(item) == '_')) ? (item + 1) : item)
+#define UNSCORE(item) (((item) && (*(item) == '_')) ? ((item) + 1) : (item))
   GtkWidget *list = gtk_list_box_new();
   g_return_val_if_fail(GTK_IS_LIST_BOX(list), NULL);
   //

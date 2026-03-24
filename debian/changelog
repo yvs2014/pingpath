@@ -1,3 +1,9 @@
+pingpath (1.0.5) trixie; urgency=low
+
+  * following some clang-tidy hints
+
+ -- yvs <VSYakovetsky@gmail.com>  Tue, 24 Mar 2026 02:09:00 +0200
+
 pingpath (1.0.4) trixie; urgency=low
 
   * small up-to-date in build templates

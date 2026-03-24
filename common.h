@@ -12,7 +12,7 @@
 #define MIN_GTK_RUNTIME(major, minor, micro) (!gtk_check_version(major, minor, micro))
 
 #define APPNAME "pingpath"
-#define VERSION "1.0.4"
+#define VERSION "1.0.5"
 #define APPVER  APPNAME "-" VERSION
 
 extern locale_t locale, localeC;
@@ -51,16 +51,16 @@ enum {
 #endif
 
 #ifdef WITH_JSON
-#define _RECAP_J "jJ"
+#define RECAP_J "jJ"
 #else
-#define _RECAP_J ""
+#define RECAP_J ""
 #endif
 #ifdef WITH_TOON
-#define _RECAP_N "n"
+#define RECAP_N "n"
 #else
-#define _RECAP_N ""
+#define RECAP_N ""
 #endif
-#define RECAP_PATT "tc" _RECAP_J _RECAP_N
+#define RECAP_PATT "tc" RECAP_J RECAP_N
 
 enum { RECAP_TEXT = 't', RECAP_CSV = 'c',
 #ifdef WITH_JSON
@@ -384,7 +384,7 @@ typedef struct t_type_elem {
 
 typedef struct t_legend { const char *name, *as, *cc, *av, *jt; } t_legend;
 
-typedef unsigned (*type2ndx_fn)(int);
+typedef int (*type2ndx_fn)(int);
 typedef int (*type2ent_fn)(int);
 
 typedef struct elem_desc {
@@ -417,18 +417,27 @@ char* get_nth_color(int nth);
 
 void init_elem_links(void);
 
-int char2ndx(int cat, gboolean ent, char ch);
+enum char2ndx_e { CAT_ENT_NDX = true, CAT_ENT_TYPE = false };
+int char2ndx(int cat, enum char2ndx_e ent, char ch);
+//
 gboolean*  pingelem_enabler(int type);
 gboolean* graphelem_enabler(int type);
-unsigned  pingelem_type2ndx(int type);
-unsigned graphelem_type2ndx(int type);
-gboolean is_grelem_enabled(int type);
-void clean_elems(int type);
 #ifdef WITH_PLOT
-gboolean* plotelem_enabler(int type);
-unsigned plotelem_type2ndx(int type);
+gboolean*  plotelem_enabler(int type);
+#endif
+//
+int  pingelem_type2ndx(int type);
+int graphelem_type2ndx(int type);
+#ifdef WITH_PLOT
+int  plotelem_type2ndx(int type);
+#endif
+//
+gboolean is_grelem_enabled(int type);
+#ifdef WITH_PLOT
 gboolean is_plelem_enabled(int type);
 #endif
+//
+void clean_elems(int type);
 
 char* rtver(int ndx);
 const char *mnemo(const char *str);

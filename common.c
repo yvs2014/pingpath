@@ -60,14 +60,14 @@ const int n_colors = G_N_ELEMENTS(colors);
 
 //
 
-static unsigned elem_type2ndx(int type, t_type_elem *elem, unsigned max) {
-  for (unsigned i = 0; i < max; i++) if (type == elem[i].type) return i;
+static int elem_type2ndx(int type, t_type_elem *elem, unsigned max) {
+  for (int i = 0; i < (int)max; i++) if (type == elem[i].type) return i;
   return -1;
 }
-unsigned  pingelem_type2ndx(int type) { return elem_type2ndx(type, pingelem,  G_N_ELEMENTS(pingelem));  }
-unsigned graphelem_type2ndx(int type) { return elem_type2ndx(type, graphelem, G_N_ELEMENTS(graphelem)); }
+int  pingelem_type2ndx(int type) { return elem_type2ndx(type, pingelem,  G_N_ELEMENTS(pingelem));  }
+int graphelem_type2ndx(int type) { return elem_type2ndx(type, graphelem, G_N_ELEMENTS(graphelem)); }
 #ifdef WITH_PLOT
-unsigned  plotelem_type2ndx(int type) { return elem_type2ndx(type, plotelem,  G_N_ELEMENTS(plotelem));  }
+int  plotelem_type2ndx(int type) { return elem_type2ndx(type, plotelem,  G_N_ELEMENTS(plotelem));  }
 #endif
 
 static const char* char_pattern[] = { [INFO_CHAR] = INFO_PATT, [STAT_CHAR] = STAT_PATT,
@@ -116,7 +116,7 @@ static int char_ndxs[][MAXCHARS_IN_PATTERN][2] = { // max pattern is 8 chars
 #endif
 };
 
-int char2ndx(int cat, gboolean ent, char ch) {
+int char2ndx(int cat, enum char2ndx_e ent, char ch) {
   int ndx = -1, len = G_N_ELEMENTS(char_ndxs);
   if ((cat >= 0) && (cat < len)) switch (cat) {
     case INFO_CHAR:
@@ -129,7 +129,7 @@ int char2ndx(int cat, gboolean ent, char ch) {
     { const char *found = strchr(char_pattern[cat], ch);
       if (found) {
         long pos = found - char_pattern[cat];
-        if (pos < MAXCHARS_IN_PATTERN) ndx = char_ndxs[cat][pos][ent ? 0 : 1];
+        if (pos < MAXCHARS_IN_PATTERN) ndx = char_ndxs[cat][pos][(ent == CAT_ENT_NDX) ? 0 : 1];
     }} break;
     default: break;
   }
@@ -301,7 +301,9 @@ const char *timestamp(char *ts, size_t size) {
 #else
       struct tm *tm = localtime(&now);
 #endif
-      if (tm) strftime(ts, size, "%F %T", tm);
+      if (tm)
+        if (!strftime(ts, size, "%F %T", tm))
+          ts[0] = 0;
     }
   }
   return ts;

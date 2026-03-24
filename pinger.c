@@ -45,13 +45,13 @@ enum { CSV_DEL  = ';',
 };
 #define HOP_INDENT g_print("%3s", "")
 
-static void print_tcn(char del, const char *str, int len) {
+static void print_tcn(char del, const char *str, long len) {
   if (del) // CSV or TOON
     g_print(strchr(str, del) ? "%c\"%s\"" : "%c%s", del, str);
   else {   // plain text
     g_print(" %s", str);
-    int w = len - g_utf8_strlen(str, -1);
-    if (w > 0) g_print("%-*s", w, "");
+    long w = len - g_utf8_strlen(str, INT16_MAX);
+    if (w > 0) g_print("%-*s", (int)w, "");
   }
 }
 
@@ -64,7 +64,8 @@ typedef struct proc {
 } t_proc;
 
 t_pinger_state pinger_state;
-unsigned stat_timer, exp_timer;
+unsigned stat_timer;
+static unsigned exp_timer;
 gboolean atquit;
 
 //
@@ -131,7 +132,7 @@ static void pinger_print_tcn(char del) {
 #ifdef WITH_TOON
     if (ton) g_print("%s[%d]{%s", OPT_STAT_HDR, lim - opts.range.min, OPT_TTL_HDR); else
 #endif
-    if (csv) g_print("%s", OPT_TTL_HDR); else HOP_INDENT;
+    { if (csv) g_print("%s", OPT_TTL_HDR); else HOP_INDENT; }
     //
     int maxes[PE_MAX] = {0};
     for (int j = 0; j < PE_MAX; j++)
@@ -146,7 +147,7 @@ static void pinger_print_tcn(char del) {
 #ifdef WITH_TOON
     if (ton) g_print("}:"); else
 #endif
-    if (csv) g_print("\n%c", CSV_DEL);
+    { if (csv) g_print("\n%c", CSV_DEL); }
     g_print("\n");
     //
     for (int i = opts.range.min; i < lim; i++) { // data per hop
@@ -199,7 +200,7 @@ static void pinger_print_tcn(char del) {
     false
 #endif
   );
-  int n = g_strv_length(arr);
+  unsigned n = g_strv_length(arr);
   if (n > 0) {
     char *s = NULL;
 #ifdef WITH_TOON
@@ -683,10 +684,11 @@ void pinger_nth_stop(int nth, const char* reason) {
       proc->sig = SIGTERM;
       g_subprocess_send_signal(proc->proc, proc->sig);
       id = g_subprocess_get_identifier(proc->proc);
-      if (id) { g_usleep(20 * 1000); id = g_subprocess_get_identifier(proc->proc); } // wait a bit
+      const gulong wait = 20000; // 20 msec in usec
+      if (id) { g_usleep(wait); id = g_subprocess_get_identifier(proc->proc); } // wait a bit
       if (id) {
         g_subprocess_force_exit(proc->proc);
-        g_usleep(20 * 1000);
+        g_usleep(wait);
         id = g_subprocess_get_identifier(proc->proc);
         if (id) { g_warning("%s: pid=%s", PROC_NOSTOP_ERR, id); return; }
       }

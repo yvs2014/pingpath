@@ -18,8 +18,8 @@ static t_series_list stat_series_kept[MAXTTL];
   ((t_rseq*)CURR_SERIES(i)->data)->seq : 0)
 
 static gboolean grm_lock;
-static int series_no = MIN_SERIES_RANGE + 1;
-GSList *on_scale_list;
+static unsigned series_no = MIN_SERIES_RANGE + 1;
+static GSList *on_scale_list;
 
 //
 
@@ -121,7 +121,10 @@ void series_unlock(void) {
   grm_lock = false;
 }
 
-inline void series_min_no(int number) { if (number > series_no) series_no = number; }
+inline void series_min_no(int number) {
+  if ((number > 0) && ((unsigned)number > series_no))
+    series_no = number;
+}
 
 void series_reg_on_scale(GtkWidget *widget) {
   if (GTK_IS_WIDGET(widget)) on_scale_list = g_slist_append(on_scale_list, widget);
