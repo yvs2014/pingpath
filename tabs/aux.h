@@ -27,13 +27,13 @@ typedef struct tab {
 } t_tab;
 
 gboolean basetab_init(t_tab *tab, GtkWidget* (*make_dyn)(void), GtkWidget* (*make_extra)(void));
-gboolean drawtab_init(t_tab *tab, const char *color, GSList *layers, unsigned ndx);
+gboolean drawtab_init(t_tab *tab, const char *color, GSList *layers, guint ndx);
 void tab_setup(t_tab *tab);
 void tab_color(t_tab *tab);
 void tab_reload_theme(void);
 void tab_dependent(GtkWidget *tab);
 #ifdef WITH_PLOT
-gboolean is_tab_that(unsigned ndx);
+gboolean is_tab_that(guint ndx);
 #endif
 
 extern t_tab* nb_tabs[TAB_NDX_MAX];

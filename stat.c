@@ -31,7 +31,8 @@ static void update_addrname(int at, t_host *b) { // addr is mandatory, name not
   t_hop *hop = &hops[at];
   for (int i = 0; i < MAXADDR; i++) {
     t_host *a = &hop->host[i];
-    if ((vacant < 0) && !(a->addr)) vacant = i;
+    if ((vacant < 0) && !a->addr)
+      vacant = i;
     done = STR_EQ(a->addr, b->addr);
     if (done) {
       if (!a->name) {
@@ -94,7 +95,7 @@ static void uniq_unreach(int at) {
 
 enum { PREV, CURR };
 
-static void update_stat(int at, int rtt, t_tseq *mark, unsigned rxtx) {
+static void update_stat(int at, int rtt, t_tseq *mark, guint rxtx) {
   if (rxtx & RX) hops[at].recv++;
   if (rxtx & TX) hops[at].sent++;
   if (rxtx && hops[at].sent) hops[at].loss = (hops[at].sent - hops[at].recv) * 100. / hops[at].sent;
@@ -494,7 +495,7 @@ void stat_legend(int at, t_legend *data) {
 
 void stat_whois_enabler(void) {
   gboolean enable = false;
-  for (unsigned i = 0; i < G_N_ELEMENTS(pingelem); i++)
+  for (guint i = 0; i < G_N_ELEMENTS(pingelem); i++)
     if (IS_WHOIS_NDX(pingelem[i].type) && pingelem[i].enable) {
       enable = true; break; }
   if (enable != opts.whois) {

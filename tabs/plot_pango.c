@@ -19,13 +19,13 @@ static cairo_t* plot_create_cairo(void) {
 }
 
 static cairo_t* plot_create_cairo_from_buff(int size[2], cairo_format_t format,
-    cairo_surface_t **psurf, unsigned char **pbuff) {
+    cairo_surface_t **psurf, guchar **pbuff) {
   if (!pbuff || !psurf) return NULL;
   int stride = cairo_format_stride_for_width(format, size[0]);
   *pbuff = g_malloc0_n(size[1], stride);
   g_return_val_if_fail(*pbuff, NULL);
   *psurf = cairo_image_surface_create_for_data(*pbuff, CAIRO_FORMAT_ARGB32, size[0], size[1], stride);
-  unsigned status = *psurf ? cairo_surface_status(*psurf) : CAIRO_STATUS_NO_MEMORY;
+  guint status = *psurf ? cairo_surface_status(*psurf) : CAIRO_STATUS_NO_MEMORY;
   if (status == CAIRO_STATUS_SUCCESS) return cairo_create(*psurf);
   g_warning("%s: %s: %s", ERROR_HDR, "cairo_image_surface_create_for_data()",
     cairo_status_to_string(status));
@@ -80,7 +80,7 @@ GLuint plot_pango_text(const char *str, int size[2]) {
       pango_layout_set_font_description(layout, plot_font);
       pango_layout_get_size(layout, &size[0], &size[1]);
       size[0] /= PANGO_SCALE; size[1] /= PANGO_SCALE;
-      cairo_surface_t *surface = NULL; unsigned char *data = NULL;
+      cairo_surface_t *surface = NULL; guchar *data = NULL;
       cairo_t *render = plot_create_cairo_from_buff(size, CAIRO_FORMAT_ARGB32, &surface, &data);
       if (render) {
         cairo_set_source_rgba(render, 1, 1, 1, 1);

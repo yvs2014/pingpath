@@ -219,8 +219,9 @@ gboolean clipboard_init(GtkWidget *win, t_tab *tab) {
   gtk_widget_set_parent(tab->pop, tab->tab.w);
   g_signal_connect(gest, EV_PRESS, G_CALLBACK(cb_on_press), tab->pop);
   GtkWidget* list[] = {tab->hdr.w, tab->dyn.w, tab->info.w};
-  for (unsigned i = 0; i < G_N_ELEMENTS(list); i++) if (GTK_IS_LIST_BOX(list[i]))
-    g_signal_connect(list[i], EV_ROW_CHANGE, G_CALLBACK(cb_on_sel), tab);
+  for (guint i = 0; i < G_N_ELEMENTS(list); i++)
+    if (GTK_IS_LIST_BOX(list[i]))
+      g_signal_connect(list[i], EV_ROW_CHANGE, G_CALLBACK(cb_on_sel), tab);
   gtk_gesture_single_set_button(GTK_GESTURE_SINGLE(gest), 0);
   gtk_gesture_single_set_exclusive(GTK_GESTURE_SINGLE(gest), true);
   gtk_widget_add_controller(GTK_WIDGET(tab->tab.w), GTK_EVENT_CONTROLLER(gest));

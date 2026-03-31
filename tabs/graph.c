@@ -207,7 +207,7 @@ static void gr_draw_smth(cairo_t *cr, double width, double alpha,
   if (width >= 0) cairo_set_line_width(cr, width);
   int lim = SERIES_LIM;
   for (int i = opts.range.min; i < lim; i++) {
-    unsigned n = i % n_colors;
+    guint n = i % n_colors;
     SKIP_EXCLUDED;
     if (alpha < 0) cairo_set_source_rgb(cr, colors[n][0], colors[n][1], colors[n][2]);
     else cairo_set_source_rgba(cr, colors[n][0], colors[n][1], colors[n][2], alpha);
@@ -240,7 +240,7 @@ static void gr_draw_grid(GtkDrawingArea *area, cairo_t *cr,
     .x = grm.x1,
     .y = grm.y1,
   };
-  unsigned len = g_utf8_strlen(grm.time.name, -1);
+  guint len = g_utf8_strlen(grm.time.name, -1);
   if (len < 5) {
     grm.time.x += 2 * TICK_SIZE;
     grm.time.y -= 0.5 * fs_size;
@@ -331,7 +331,7 @@ static void gr_draw_mean(cairo_t *cr, gboolean mean, gboolean area) {
   if (!cr) return;
   int lim = SERIES_LIM;
   for (int i = opts.range.min; i < lim; i++) {
-    unsigned n = i % n_colors;
+    guint n = i % n_colors;
     SKIP_EXCLUDED;
     double y = stat_dbl_elem(i, PE_AVRG); if (y <= 0) continue;
     y = rtt2y(y);

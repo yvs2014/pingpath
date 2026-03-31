@@ -15,7 +15,7 @@ void plottab_free(void);
 void plottab_update(void);
 void plottab_redraw(void);
 
-void plottab_refresh(unsigned flags);
+void plottab_refresh(guint flags);
 void plottab_on_trans_opts(int quat[4]);
 
 #endif

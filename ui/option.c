@@ -35,8 +35,8 @@ t_opts opts = { .target = NULL, .range = {.min = MINTTL - 1, .max = MAXTTL},
 };
 
 typedef struct ent_rad_map {
-  unsigned ndx;
-  int val;
+  guint ndx;
+  int   val;
   char *str;
 } t_ent_rad_map;
 
@@ -331,13 +331,13 @@ static void toggle_cb(GtkCheckButton *check, t_ent_bool *en) {
 
 static void radio_cb(GtkCheckButton *check, t_ent_rad_map *map) {
   if (!GTK_IS_CHECK_BUTTON(check) || !map) return;
-  unsigned ndx = map->ndx; if (ndx >= G_N_ELEMENTS(ent_rad)) return;
+  guint ndx = map->ndx; if (ndx >= G_N_ELEMENTS(ent_rad)) return;
   t_ent_rad *en = &ent_rad[ndx];
   int *pval = en->pval, type = en->c.en.type;
   if (pval && ((type == ENT_RAD_IPV) || (type == ENT_RAD_GRAPH))) {
     gboolean selected = gtk_check_button_get_active(check);
     if (selected && (map->val != *pval)) {
-      *(en->pval) = map->val;
+      *en->pval = map->val;
       if (en->cb) en->cb();
       if (map->str) OPT_NOTIFY("%s: %s", en->c.en.name, map->str);
       else          OPT_NOTIFY("%s: %d", en->c.en.name, map->val);
@@ -601,7 +601,7 @@ static GtkWidget* add_opt_expand(GtkWidget* list, t_ent_exp *en) {
 #define SPN_MM_OR_DEF(aux, inc) ((aux).pval ? (*((aux).pval) + (inc)) : (aux).def)
 #define SPN_MM_NDX(mm_ndx, inc) ((ndx == (mm_ndx)) ? (en->aux[mm_ndx].def) : SPN_MM_OR_DEF(en->aux[mm_ndx], inc))
 
-static gboolean add_minmax(GtkWidget *box, t_ent_spn_elem *en, unsigned ndx, const int *step, gboolean wrap) {
+static gboolean add_minmax(GtkWidget *box, t_ent_spn_elem *en, guint ndx, const int *step, gboolean wrap) {
   gboolean okay = false;
   if (GTK_IS_BOX(box) && en) {
     const t_minmax *mm0 = en->aux[en->bond ? 0 : ndx].mm;
@@ -642,7 +642,7 @@ static GtkWidget* add_opt_range(GtkWidget* listbox, t_ent_spn *en) {
   GtkWidget *box = add_expand_common(listbox, &en->c);
   if (GTK_IS_BOX(box) && en->c.sub) {
     t_ent_spn_elem *elem = en->list;
-    for (unsigned n = 0; (n < G_N_ELEMENTS(en->list)) && elem && elem->title; n++, elem++) {
+    for (guint n = 0; (n < G_N_ELEMENTS(en->list)) && elem && elem->title; n++, elem++) {
       GtkWidget *subbox = NULL;
       switch (elem->kind) {
 #ifdef WITH_PLOT
@@ -663,7 +663,7 @@ static GtkWidget* add_opt_range(GtkWidget* listbox, t_ent_spn *en) {
 #ifdef WITH_PLOT
         case ROTOR_COLUMN:
           add_opt_check(subbox, &ent_bool[ENT_BOOL_GLOB]);
-          for (unsigned i = 0; i < ENT_SPN_ROT_MAX; i++) if (elem->aux[i].prfx) {
+          for (guint i = 0; i < ENT_SPN_ROT_MAX; i++) if (elem->aux[i].prfx) {
             GtkWidget *row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, MARGIN);
             if (!row) continue;
             grey_into_box(row, gtk_label_new(elem->aux[i].prfx), true, true);
@@ -693,13 +693,13 @@ static GtkWidget* add_opt_radio(GtkWidget* list, t_ent_rad *en) {
   if (GTK_IS_BOX(box) && en->c.sub) {
     GtkWidget *group = NULL;
     t_ent_rad_map *map = en->map;
-    for (unsigned i = 0; (i < G_N_ELEMENTS(en->map)) && map && map->str; i++, map++) {
+    for (guint i = 0; (i < G_N_ELEMENTS(en->map)) && map && map->str; i++, map++) {
       GtkWidget *button = gtk_check_button_new_with_label(map->str);
       g_return_val_if_fail(GTK_CHECK_BUTTON(button), box);
       if (style_loaded) gtk_widget_add_css_class(button, CSS_PAD);
       if (group) gtk_check_button_set_group(GTK_CHECK_BUTTON(button), GTK_CHECK_BUTTON(group));
       else group = button;
-      if (en->pval) gtk_check_button_set_active(GTK_CHECK_BUTTON(button), *(en->pval) == map->val);
+      if (en->pval) gtk_check_button_set_active(GTK_CHECK_BUTTON(button), *en->pval == map->val);
       g_signal_connect(button, EV_TOGGLE, G_CALLBACK(radio_cb), map);
       gtk_list_box_append(GTK_LIST_BOX(en->c.sub), button);
     }
@@ -931,11 +931,21 @@ gboolean option_init(GtkWidget* bar) {
   return true;
 }
 
-#define ENT_LOOP_SET(row) { if (GTK_IS_WIDGET(row)) gtk_widget_set_sensitive(row, notrun); }
-#define ENT_LOOP_STR(arr) { for (unsigned i = 0; i < G_N_ELEMENTS(arr); i++) ENT_LOOP_SET((arr)[i].box); }
-#define ENT_LOOP_EXP(arr) { for (unsigned i = 0; i < G_N_ELEMENTS(arr); i++) if (!(arr)[i].c.atrun) { \
-  ENT_LOOP_SET((arr)[i].c.box); if (GTK_IS_TOGGLE_BUTTON((arr)[i].c.arrow)) \
-    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON((arr)[i].c.arrow), false); }}
+#define ENT_LOOP_SET(row) do {                                   \
+  if (GTK_IS_WIDGET(row)) gtk_widget_set_sensitive(row, notrun); \
+} while (0)
+#define ENT_LOOP_STR(arr) do {                  \
+  for (guint i = 0; i < G_N_ELEMENTS(arr); i++) \
+    ENT_LOOP_SET((arr)[i].box);                 \
+} while (0)
+#define ENT_LOOP_EXP(arr) do {                    \
+  for (guint i = 0; i < G_N_ELEMENTS(arr); i++)   \
+    if (!(arr)[i].c.atrun) {                      \
+      ENT_LOOP_SET((arr)[i].c.box);               \
+      if (GTK_IS_TOGGLE_BUTTON((arr)[i].c.arrow)) \
+        gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON((arr)[i].c.arrow), false); \
+    } \
+} while (0)
 
 void option_update(void) {
   gboolean notrun = !pinger_state.run;

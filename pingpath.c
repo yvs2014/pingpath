@@ -30,19 +30,16 @@
 
 static int exit_code = EXIT_SUCCESS;
 static GtkWidget *currtabref, *tabrefs[TAB_NDX_MAX];
-#ifdef WITH_PLOT
-static GtkNotebook *nb_ref;
-#endif
 
-static gboolean on_win_close(GtkWindow *self G_GNUC_UNUSED, gpointer user_data G_GNUC_UNUSED) {
+static gboolean on_win_close(GtkWindow *self G_GNUC_UNUSED, gpointer notebook) {
   // workarounds to exit gracefully
   cb_tab_unsel(nb_tabs[TAB_PING_NDX]);
   cb_tab_unsel(nb_tabs[TAB_LOG_NDX]);
-#ifdef WITH_PLOT
-  if (GTK_IS_NOTEBOOK(nb_ref))
-    for (int i = gtk_notebook_get_n_pages(nb_ref) - 1; i >= 0; i--)
-      gtk_notebook_remove_page(nb_ref, i);
-#endif
+  if (GTK_IS_NOTEBOOK(notebook)) {
+    int n = gtk_notebook_get_n_pages(notebook);
+    for (int i = 0; i < n; i++)
+      gtk_notebook_remove_page(notebook, -1);
+  }
   atquit = true;
   return false;
 }
@@ -83,9 +80,6 @@ static void on_app_activate(GtkApplication* app, gpointer user_data G_GNUC_UNUSE
   if (!appbar_init(app, win)) APPQUIT("%s", "appbar");
   GtkWidget *nb = gtk_notebook_new();
   if (!GTK_IS_NOTEBOOK(nb)) APPQUIT("%s", "notebook");
-#ifdef WITH_PLOT
-  nb_ref = GTK_NOTEBOOK(nb);
-#endif
   if (style_loaded) gtk_widget_add_css_class(nb, CSS_BGROUND);
   gtk_notebook_set_tab_pos(GTK_NOTEBOOK(nb), GTK_POS_BOTTOM);
   nb_tabs[TAB_PING_NDX] = pingtab_init(win);
@@ -94,7 +88,7 @@ static void on_app_activate(GtkApplication* app, gpointer user_data G_GNUC_UNUSE
   if (opts.plot) nb_tabs[TAB_PLOT_NDX] = plottab_init();
 #endif
   nb_tabs[TAB_LOG_NDX]  = logtab_init(win);
-  for (unsigned i = 0; i < G_N_ELEMENTS(nb_tabs); i++) {
+  for (guint i = 0; i < G_N_ELEMENTS(nb_tabs); i++) {
     { if (!opts.graph && (i == TAB_GRAPH_NDX)) continue;
 #ifdef WITH_PLOT
       if (!opts.plot  && (i == TAB_PLOT_NDX))  continue;
@@ -116,7 +110,7 @@ static void on_app_activate(GtkApplication* app, gpointer user_data G_GNUC_UNUSE
   tab_dependent(curr ? curr : nb_tabs[activetab]->tab.w);
   gtk_window_set_child(GTK_WINDOW(win), over);
   //
-  g_signal_connect(win, EV_CLOSEQ, G_CALLBACK(on_win_close), NULL);
+  g_signal_connect(win, EV_CLOSEQ, G_CALLBACK(on_win_close), nb);
   gtk_window_present(GTK_WINDOW(win));
   // log runtime versions
   LOG("%c%s: " VERSION, g_ascii_toupper(APPNAME[0]), &APPNAME[1]);
@@ -146,7 +140,9 @@ void tab_dependent(GtkWidget *tab) {
 }
 
 #ifdef WITH_PLOT
-inline gboolean is_tab_that(unsigned ndx) { return (ndx < G_N_ELEMENTS(tabrefs)) ? (currtabref == tabrefs[ndx]) : false; }
+inline gboolean is_tab_that(guint ndx) {
+  return (ndx < G_N_ELEMENTS(tabrefs)) ? (currtabref == tabrefs[ndx]) : false;
+}
 #endif
 
 #ifdef HAVE_SECURE_GETENV
@@ -193,12 +189,12 @@ int main(int argc, char **argv) {
 #endif
   // GSK workarounds
   if (!GETENV("GSK_RENDERER")) {
-    unsigned sure = gtk_get_major_version(), fix = gtk_get_minor_version();
+    guint sure = gtk_get_major_version(), fix = gtk_get_minor_version();
     if (sure == 4) switch (fix) {
       case 14: // renderer workarounds since 4.14
       case 15: putenv("GSK_RENDERER=gl");     break;
       case 16: putenv("GSK_RENDERER=ngl");    break;
-//    case 17: putenv("GSK_RENDERER=vulkan"); break; /* not needed yet */
+//    case 17..: putenv("GSK_RENDERER=???");  break; /* not needed yet */
       default: break;
     }
   }

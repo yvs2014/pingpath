@@ -12,7 +12,7 @@
 #define MIN_GTK_RUNTIME(major, minor, micro) (!gtk_check_version(major, minor, micro))
 
 #define APPNAME "pingpath"
-#define VERSION "1.0.5"
+#define VERSION "1.0.6"
 #define APPVER  APPNAME "-" VERSION
 
 extern locale_t locale, localeC;
@@ -62,14 +62,15 @@ enum {
 #endif
 #define RECAP_PATT "tc" RECAP_J RECAP_N
 
-enum { RECAP_TEXT = 't', RECAP_CSV = 'c',
+#define RECAP_TEXT 't'
+#define RECAP_CSV  'c'
 #ifdef WITH_JSON
-  RECAP_JSON_NUM = 'j', RECAP_JSON_PRETTY = 'J',
+#define RECAP_JSON_NUM    'j'
+#define RECAP_JSON_PRETTY 'J'
 #endif
 #ifdef WITH_TOON
-  RECAP_TOON = 'n',
+#define RECAP_TOON 'n'
 #endif
-};
 
 #define EV_ACTIVE     "activate"
 #define EV_CLOSEQ     "close-request"
@@ -143,7 +144,7 @@ enum { RECAP_TEXT = 't', RECAP_CSV = 'c',
 #define PP_FMT10(val) (((val) < 10) ? PP_FMT_LT10(val) : PP_RTT_FMT_GE10)
 
 typedef struct verbose {
-  unsigned
+  guint
     verbose:1,
     debug  :1,
     dns    :1,
@@ -452,7 +453,7 @@ t_ref* ref_new(t_hop *hop, int ndx);
 #if defined(DNS_EXTRA_DEBUG) || defined(WHOIS_EXTRA_DEBUG)
 void print_refs(GSList *refs, const char *prefix);
 #endif
-GSList* list_add_nodup(GSList **list, void *data, GCompareFunc cmp, unsigned max);
+GSList* list_add_nodup(GSList **list, void *data, GCompareFunc cmp, guint max);
 GSList* list_add_ref(GSList **list, t_hop *hop, int ndx);
 extern void log_add(const char *fmt, ...);
 

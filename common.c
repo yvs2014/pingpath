@@ -60,7 +60,7 @@ const int n_colors = G_N_ELEMENTS(colors);
 
 //
 
-static int elem_type2ndx(int type, t_type_elem *elem, unsigned max) {
+static int elem_type2ndx(int type, t_type_elem *elem, guint max) {
   for (int i = 0; i < (int)max; i++) if (type == elem[i].type) return i;
   return -1;
 }
@@ -202,7 +202,7 @@ t_elem_desc plot_desc = { .elems = plotelem, .mm = { .min = D3_BACK, .max = D3_R
 
 //
 
-static unsigned rgb2x(double c) { int n = c * 255; return n % 256; }
+static guint rgb2x(double c) { int n = c * 255; return n % 256; }
 
 char* get_nth_color(int nth) {
   int n = nth % n_colors;
@@ -261,7 +261,7 @@ gboolean*  pingelem_enabler(int type) { return elem_enabler(type, pingelem,  G_N
 gboolean* graphelem_enabler(int type) { return elem_enabler(type, graphelem, G_N_ELEMENTS(graphelem)); }
 
 gboolean is_grelem_enabled(int type) {
-  unsigned ndx = graphelem_type2ndx(type);
+  guint ndx = graphelem_type2ndx(type);
   return (ndx < G_N_ELEMENTS(graphelem)) ? graphelem[ndx].enable : false;
 }
 
@@ -269,13 +269,16 @@ gboolean is_grelem_enabled(int type) {
 gboolean* plotelem_enabler(int type) { return elem_enabler(type, plotelem, G_N_ELEMENTS(plotelem)); }
 
 gboolean is_plelem_enabled(int type) {
-  unsigned ndx = plotelem_type2ndx(type);
+  guint ndx = plotelem_type2ndx(type);
   return (ndx < G_N_ELEMENTS(plotelem)) ? plotelem[ndx].enable : false;
 }
 #endif
 
-#define CLEAN_ELEM_LOOP(elems, min, max) { for (unsigned i = 0; i < G_N_ELEMENTS(elems); i++) \
-  if (((min) <= (elems)[i].type) && ((elems)[i].type <= (max))) (elems)[i].enable = false; }
+#define CLEAN_ELEM_LOOP(elems, min, max) do {                     \
+  for (guint i = 0; i < G_N_ELEMENTS(elems); i++)                 \
+    if (((min) <= (elems)[i].type) && ((elems)[i].type <= (max))) \
+     (elems)[i].enable = false;                                   \
+} while (0)
 
 void clean_elems(int type) {
   switch (type) {
@@ -380,7 +383,7 @@ void print_refs(GSList *refs, const char *prefix) {
 }
 #endif
 
-GSList* list_add_nodup(GSList **list, void *data, GCompareFunc cmp, unsigned max) {
+GSList* list_add_nodup(GSList **list, void *data, GCompareFunc cmp, guint max) {
   if (!list || !data || !cmp) return NULL;
   GSList *elem = g_slist_find_custom(*list, data, cmp);
   if (elem) { g_free(data); return elem; }

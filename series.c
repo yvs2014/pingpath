@@ -18,7 +18,7 @@ static t_series_list stat_series_kept[MAXTTL];
   ((t_rseq*)CURR_SERIES(i)->data)->seq : 0)
 
 static gboolean grm_lock;
-static unsigned series_no = MIN_SERIES_RANGE + 1;
+static guint series_no = MIN_SERIES_RANGE + 1;
 static GSList *on_scale_list;
 
 //
@@ -122,7 +122,7 @@ void series_unlock(void) {
 }
 
 inline void series_min_no(int number) {
-  if ((number > 0) && ((unsigned)number > series_no))
+  if ((number > 0) && ((guint)number > series_no))
     series_no = number;
 }
 

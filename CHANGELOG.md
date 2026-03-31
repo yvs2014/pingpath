@@ -1,3 +1,6 @@
+## 1.0.6
+- cleanup
+
 ## 1.0.5
 - following some clang-tidy hints
 

@@ -38,11 +38,11 @@
   else notifier_inform(fmt, __VA_ARGS__);      \
 } while (0)
 
-enum { CSV_DEL  = ';',
+#define CSV_DEL  ';'
 #ifdef WITH_TOON
-       TOON_DEL = ',',
+#define TOON_DEL ','
 #endif
-};
+
 #define HOP_INDENT g_print("%3s", "")
 
 static void print_tcn(char del, const char *str, long len) {
@@ -64,9 +64,10 @@ typedef struct proc {
 } t_proc;
 
 t_pinger_state pinger_state;
-unsigned stat_timer;
-static unsigned exp_timer;
 gboolean atquit;
+
+       guint stat_timer;
+static guint  exp_timer;
 
 //
 
@@ -156,7 +157,7 @@ static void pinger_print_tcn(char del) {
 #ifdef WITH_TOON
       if (ton) g_print("  ");
 #endif
-      for (unsigned j = 0; j < G_N_ELEMENTS(pingelem); j++) if (pingelem[j].enable) {
+      for (guint j = 0; j < G_N_ELEMENTS(pingelem); j++) if (pingelem[j].enable) {
         int type = pingelem[j].type;
         switch (type) {
           case PE_NO:
@@ -200,7 +201,7 @@ static void pinger_print_tcn(char del) {
     false
 #endif
   );
-  unsigned n = g_strv_length(arr);
+  guint n = g_strv_length(arr);
   if (n > 0) {
     char *s = NULL;
 #ifdef WITH_TOON
@@ -393,16 +394,10 @@ static void pinger_print_json(gboolean pretty) {
 static void pinger_recap(void) {
   switch (opts.recap) {
 #ifdef WITH_TOON
-    case RECAP_TOON:
+    case RECAP_TOON: pinger_print_tcn(TOON_DEL); break;
 #endif
-    case RECAP_TEXT:
-    case RECAP_CSV: pinger_print_tcn(
-      opts.recap == RECAP_CSV  ?  CSV_DEL :
-#ifdef WITH_TOON
-      opts.recap == RECAP_TOON ? TOON_DEL :
-#endif
-      0);
-    break;
+    case RECAP_TEXT: pinger_print_tcn(0);        break;
+    case RECAP_CSV:  pinger_print_tcn(CSV_DEL);  break;
 #ifdef WITH_JSON
     case RECAP_JSON_NUM:
     case RECAP_JSON_PRETTY:
@@ -551,7 +546,7 @@ static void on_stderr(GObject *stream, GAsyncResult *result, t_proc *proc) {
   } // else EOF
 }
 
-static void pinger_init_streams(int at, t_proc *proc, char* argv[]) {
+static void pinger_init_streams(int at, t_proc *proc, const char* argv[]) {
   g_subprocess_wait_check_async(proc->proc, NULL, (GAsyncReadyCallback)process_stopped, proc);
   GInputStream *output = g_subprocess_get_stdout_pipe(proc->proc);
   GInputStream *errput = g_subprocess_get_stderr_pipe(proc->proc);
@@ -560,8 +555,8 @@ static void pinger_init_streams(int at, t_proc *proc, char* argv[]) {
     RESET_ISTREAM(errput, proc->err, on_stderr, proc);
     proc->active = true;
     proc->ndx = at;
-    if (verbose.debug && argv) {
-      char *str = g_strjoinv(" ", argv);
+    if (argv) {
+      char *str = g_strjoinv(" ", (char**)argv);
       DEBUG("%s[%d]: %s", PING_HDR, at + 1, str);
       g_free(str);
     }
@@ -592,7 +587,8 @@ static gboolean create_ping(int at, t_proc *proc) {
 } while (0)
   proc->sig = 0;
   proc->active = false;
-  unsigned argc = 0; const char* argv[32] = {0};
+  guint argc = 0;
+  const char* argv[32] = {0};
   ARGV_STR(BINPING);
   ARGV_STR("-OD");
   if (!opts.dns) ARGV_STR("-n");
@@ -616,11 +612,9 @@ static gboolean create_ping(int at, t_proc *proc) {
     g_subprocess_launcher_setenv(launcher, "LC_ALL", "C", true); // uniform output
     GError *error = NULL;
     proc->proc = g_subprocess_launcher_spawnv(launcher, argv, &error);
-    if (proc->proc) {
-      char* copy[G_N_ELEMENTS(argv)] = {0};
-      memcpy(copy, argv, sizeof(argv));
-      pinger_init_streams(at, proc, copy);
-    } else {
+    if (proc->proc)
+      pinger_init_streams(at, proc, verbose.debug ? argv : NULL);
+    else {
 #ifdef WITH_SNAPHINT
       if (error && (error->code == 3)) SHOW_SNAPHINT(10); else
 #endif
@@ -670,7 +664,7 @@ void pinger_start(void) {
   // schedule expiration check out
   if (exp_timer) { g_source_remove(exp_timer); exp_timer = 0; }
   // max pingtime resolution in tests: ~24msec
-  unsigned exp_in = round(opts.cycles * (opts.timeout * 1.024)) + opts.timeout * 2;
+  guint exp_in = round(opts.cycles * (opts.timeout * 1.024)) + opts.timeout * 2;
   exp_timer = g_timeout_add_seconds(exp_in, pinger_on_expired, NULL);
   LOG("%s: %d, %s: %d %s", OPT_CYCLES_HDR, opts.cycles, EXPTIME_HDR, exp_in, UNIT_SEC);
 }

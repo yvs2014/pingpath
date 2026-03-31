@@ -28,9 +28,9 @@ typedef struct nt_leg {
 typedef struct ntcss { const char *def, *col; } t_ntcss;
 
 typedef struct autohide {
-  unsigned timer; // timer id
-  unsigned sec;   // seconds before auto-hiding
-                  //   0 corresponds to AUTOHIDE_IN
+  guint timer; // timer id
+  guint sec;   // seconds before auto-hiding
+               //   0 corresponds to AUTOHIDE_IN
 } t_autohide;
 
 typedef struct notifier {
@@ -52,7 +52,7 @@ typedef struct rotor_arrow { const char *alt; const char *ico[MAX_ICONS]; } t_ro
 #endif
 
 gboolean nt_dark;
-unsigned lgnd_excl_mask; // enough for MAXTTL(30) bitmask
+guint lgnd_excl_mask; // enough for MAXTTL(30) bitmask
 
 //
 
@@ -290,7 +290,7 @@ static void nt_init_legend(GtkWidget *inbox, GtkWidget *over, t_notifier *nt) {
   g_signal_connect(inbox, EV_ROW_ACTIVE, G_CALLBACK(nt_lgnd_row_cb), NULL);
   if (style_loaded) nt_reload_css(inbox, CSS_GRAPH_BG);
   GtkSizeGroup* group[GE_MAX];
-  for (unsigned i = 0; i < G_N_ELEMENTS(group); i++)
+  for (guint i = 0; i < G_N_ELEMENTS(group); i++)
     group[i] = gtk_size_group_new(GTK_SIZE_GROUP_HORIZONTAL);
   t_nt_leg *leg = nt->content ? nt->content : NULL; int n = nt->content_n;
   for (int i = 0; leg && (i < n); i++, leg++) {
@@ -304,7 +304,7 @@ static void nt_init_legend(GtkWidget *inbox, GtkWidget *over, t_notifier *nt) {
       if (leg->row) nt_make_leg_row(GTK_LIST_BOX(inbox), group, i, leg, nt->css.col);
     }
   }
-  for (unsigned i = 0; i < G_N_ELEMENTS(group); i++) if (group[i]) g_object_unref(group[i]);
+  for (guint i = 0; i < G_N_ELEMENTS(group); i++) if (group[i]) g_object_unref(group[i]);
 #ifdef WITH_DND
   nt_init_dnd_over(inbox, over, nt);
 #endif
@@ -333,13 +333,13 @@ static void nt_init_rotor(GtkWidget *inbox, GtkWidget *over, t_notifier *nt) {
     {&kb_plot_aux[ACCL_SA_PGDN], &kb_plot_aux[ACCL_SA_DOWN], &kb_plot_aux[ACCL_SA_PGUP] },
   };
   GtkSizeGroup* group[G_N_ELEMENTS(rotor_cntrl[0])];
-  for (unsigned i = 0; i < G_N_ELEMENTS(group); i++)
+  for (guint i = 0; i < G_N_ELEMENTS(group); i++)
     group[i] = gtk_size_group_new(GTK_SIZE_GROUP_HORIZONTAL);
-  for (unsigned i = 0; i < G_N_ELEMENTS(rotor_cntrl); i++) {
+  for (guint i = 0; i < G_N_ELEMENTS(rotor_cntrl); i++) {
     GtkWidget *row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     if (row) {
       gtk_box_append(GTK_BOX(inbox), row);
-      for (unsigned j = 0; j < G_N_ELEMENTS(rotor_cntrl[j]); j++) {
+      for (guint j = 0; j < G_N_ELEMENTS(rotor_cntrl[j]); j++) {
         t_rotor_arrow *arrow = rotor_cntrl[i][j]; GtkWidget *elem = NULL;
         if (arrow) {
           const char *ico = is_sysicon(arrow->ico);
@@ -355,7 +355,9 @@ static void nt_init_rotor(GtkWidget *inbox, GtkWidget *over, t_notifier *nt) {
       }
     }
   }
-  for (unsigned i = 0; i < G_N_ELEMENTS(group); i++) if (group[i]) g_object_unref(group[i]);
+  for (guint i = 0; i < G_N_ELEMENTS(group); i++)
+    if (group[i])
+      g_object_unref(group[i]);
 #ifdef WITH_DND
   nt_init_dnd_over(inbox, over, nt);
 #endif
@@ -434,10 +436,11 @@ static void nt_fill_legend_elem(GtkWidget* label, const char *f1, const char *f2
 // pub
 //
 
-inline GtkWidget* notifier_init(unsigned ndx, GtkWidget *base) {
-  return (ndx < G_N_ELEMENTS(notifier)) ? nt_init(base, &notifier[ndx]) : NULL; }
+inline GtkWidget* notifier_init(guint ndx, GtkWidget *base) {
+  return (ndx < G_N_ELEMENTS(notifier)) ? nt_init(base, &notifier[ndx]) : NULL;
+}
 
-void notifier_set_autohide_sec(unsigned seconds) {
+void notifier_set_autohide_sec(guint seconds) {
   t_autohide *au = notifier[NT_MAIN_NDX].autohide;
   if (au) au->sec = seconds;
 }
@@ -450,9 +453,9 @@ void notifier_inform(const char *fmt, ...) {
   va_end(ap);
 }
 
-inline gboolean notifier_get_visible(unsigned ndx) {
+inline gboolean notifier_get_visible(guint ndx) {
   return (ndx < G_N_ELEMENTS(notifier)) ? notifier[ndx].visible : false; }
-inline void notifier_set_visible(unsigned ndx, gboolean visible) {
+inline void notifier_set_visible(guint ndx, gboolean visible) {
   if (ndx < G_N_ELEMENTS(notifier)) nt_set_visible(&notifier[ndx], visible); }
 
 void notifier_legend_vis_rows(int upto) {

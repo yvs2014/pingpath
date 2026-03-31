@@ -312,13 +312,17 @@ static GtkWidget* pt_make_info(void) {
 
 static GtkWidget* pt_make_dyn(void) {
   GtkSizeGroup* group[PE_MAX];
-  for (unsigned i = 0; i < G_N_ELEMENTS(group); i++) {
-    group[i] = gtk_size_group_new(GTK_SIZE_GROUP_HORIZONTAL); g_return_val_if_fail(group[i], NULL); }
+  for (guint i = 0; i < G_N_ELEMENTS(group); i++) {
+    group[i] = gtk_size_group_new(GTK_SIZE_GROUP_HORIZONTAL);
+    g_return_val_if_fail(group[i], NULL);
+  }
   TAB_ELEM_WITH(pingtab.hdr, pt_make_dynlist(listbox.hdrlines, HDRLINES, pingelem, listbox.bodylines, group),
     NULL, CSS_BGROUND, NULL);
   gtk_box_append(GTK_BOX(pingtab.tab.w), pingtab.hdr.w);
   GtkWidget *dyn = pt_make_dynlist(listbox.bodylines, MAXTTL, NULL, NULL, group);
-  for (unsigned i = 0; i < G_N_ELEMENTS(group); i++) if (group[i]) g_object_unref(group[i]);
+  for (guint i = 0; i < G_N_ELEMENTS(group); i++)
+    if (group[i])
+      g_object_unref(group[i]);
   return dyn;
 }
 

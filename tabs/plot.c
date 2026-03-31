@@ -83,8 +83,8 @@ typedef struct plot_res {
 } t_plot_res;
 
 typedef struct plot_char {
-  gunichar ch;  // char itself
-  unsigned tid; // texture id
+  gunichar ch; // char itself
+  guint tid;   // texture id
   vec2 size;
 } t_plot_char;
 
@@ -236,10 +236,10 @@ static inline void init_char_table(const char *abetka) {
   if (!plot_chars_ready) {
     plot_chars_ready = true;
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    for (uint8_t i = MIN_ASCII_CHAR; i <= MAX_ASCII_CHAR; i++) {
+    for (guint8 i = MIN_ASCII_CHAR; i <= MAX_ASCII_CHAR; i++) {
       int size[2] = {0};
       const char text[] = {i, 0};
-      unsigned tid = plot_pango_text(text, size);
+      guint tid = plot_pango_text(text, size);
       if (!tid) {
         plot_chars_ready = false;
         WARNLOG("%s: ASCII %s: '%c'", ERROR_HDR, TABLE_HDR, i);
@@ -257,13 +257,13 @@ static inline void init_char_table(const char *abetka) {
       WARNLOG("UTF8 %s: %s: %s=%d", TABLE_HDR, NOBUFF_ERR, MAX_HDR, INT8_MAX);
     else {
       plot_unichars_ready = true;
-      uint8_t i = INT8_MAX + 1;
+      guint8 i = INT8_MAX + 1;
       for (const char *u = abetka; *u && i; u = g_utf8_next_char(u), i++) {
         gunichar c = g_utf8_get_char(u);
         char utf8[6] = {0};
         g_unichar_to_utf8(c, utf8);
         int size[2] = {0};
-        unsigned tid = plot_pango_text(utf8, size);
+        guint tid = plot_pango_text(utf8, size);
         if (!tid) {
           plot_unichars_ready = false;
           WARNLOG("%s: UTF8 %s: '%s'", ERROR_HDR, TABLE_HDR, utf8);
@@ -278,7 +278,7 @@ static inline void init_char_table(const char *abetka) {
 }
 
 static void plot_free_char_table(void) {
-  for (uint8_t i = 0; i < (uint8_t)G_N_ELEMENTS(char_table); i++) if (char_table[i].tid) {
+  for (guint8 i = 0; i < (guint8)G_N_ELEMENTS(char_table); i++) if (char_table[i].tid) {
     glDeleteTextures(1, &char_table[i].tid); char_table[i].tid = 0; }
 }
 
@@ -332,19 +332,22 @@ static GLuint plot_compile_shader(const GLchar* src, GLenum type, GError **err) 
 }
 
 static void plot_del_res_vao(t_plot_res *res) {
-  if (res) for (unsigned i = 0; i < G_N_ELEMENTS(res->vo); i++) {
-    GLuint *pvao = &(res->vo[i].vao);
-    if (*pvao > 0) { glDeleteVertexArrays(1, pvao); *pvao = 0; }
+  if (res) for (guint i = 0; i < G_N_ELEMENTS(res->vo); i++) {
+    GLuint *pvao = &res->vo[i].vao;
+    if (*pvao > 0) {
+      glDeleteVertexArrays(1, pvao);
+      *pvao = 0;
+    }
   }
 }
 
 static void plot_del_vbo(GLuint *pid) { if (pid && *pid) { glDeleteBuffers(1, pid); *pid = 0; }}
 
 static void plot_del_res_vbo_dbo(t_plot_res *res) {
-  if (res) for (unsigned i = 0; i < G_N_ELEMENTS(res->vo); i++) {
-    plot_del_vbo(&(res->vo[i].vbo.id));
-    plot_del_vbo(&(res->vo[i].dbo.main.id));
-    plot_del_vbo(&(res->vo[i].dbo.ext.id));
+  if (res) for (guint i = 0; i < G_N_ELEMENTS(res->vo); i++) {
+    plot_del_vbo(&res->vo[i].vbo.id);
+    plot_del_vbo(&res->vo[i].dbo.main.id);
+    plot_del_vbo(&res->vo[i].dbo.ext.id);
   }
 }
 
@@ -438,8 +441,8 @@ static gboolean plot_res_init(t_plot_res *res, GError **err) {
 } while (0)
   if (!res) return false;
   if (!plot_compile_res(res, err)) return false;
-  for (unsigned i = 0; i < G_N_ELEMENTS(res->vo); i++) {
-    GLuint *pvao = &(res->vo[i].vao);
+  for (guint i = 0; i < G_N_ELEMENTS(res->vo); i++) {
+    GLuint *pvao = &res->vo[i].vao;
     glGenVertexArrays(1, pvao);
     if (*pvao) continue;
     WARNLOG("%s: %s", ERROR_HDR, "glGenVertexArrays()");
@@ -489,7 +492,7 @@ static gboolean plot_res_init(t_plot_res *res, GError **err) {
 
 static void plot_res_free(t_plot_res *res) {
   if (res) {
-    plot_del_prog_glsl(&(res->plot));
+    plot_del_prog_glsl(&res->plot);
     plot_del_res_vao(res);
     plot_del_res_vbo_dbo(res);
     plot_glsl_reset(res, false);
@@ -500,8 +503,8 @@ static void plot_res_free(t_plot_res *res) {
 }
 
 
-static uint8_t char_table_lookup(gunichar u) {
-  for (uint8_t i = 0; i < (uint8_t)G_N_ELEMENTS(char_table); i++)
+static guint8 char_table_lookup(gunichar u) {
+  for (guint8 i = 0; i < (guint8)G_N_ELEMENTS(char_table); i++)
     if (char_table[i].ch == u) return i;
   return 0;
 }
@@ -521,7 +524,7 @@ static char* pl_str2code8(const char *utf8) {
     long i = 0;
     for (const char *u = utf8; *u && (i < len); u = g_utf8_next_char(u)) {
       gunichar c = g_utf8_get_char(u);
-      uint8_t code8 = char_table_lookup(c);
+      guint8 code8 = char_table_lookup(c);
       if (code8) str8[i++] = code8;
       else {
         char buff[6] = {0};
@@ -614,7 +617,7 @@ static bool plot_draw_text(t_plot_res *res, const char *text, int len,
   if (rect) CENTER_TEXT(*rect, x, y, (len + 1) * cw, ch);
   int i = 0;
   for (const char *p = text; *p && (i < MARKMAXLEN); p++, i++) {
-    unsigned tid = char_table[(uint8_t)*p].tid;
+    guint tid = char_table[(guint8)*p].tid;
     if (tid) plot_pango_drawtex(tid, vbo, typ, x, y, cw, ch);
     x += cw;
   }
@@ -908,7 +911,7 @@ static inline void pl_init_orientation(void) {
   pl_post_rotation();
 }
 
-static void plottab_on_opts(unsigned flags) {
+static void plottab_on_opts(guint flags) {
   if (flags & PL_PARAM_COLOR) plottab_on_color_opts();
   if (flags & PL_PARAM_AT) { draw_plot_at = 0; plot_aux_reset(&plot_dyna_res.vo[VO_SURF]); }
   if (flags & PL_PARAM_FOV) pl_post_rotation();
@@ -985,7 +988,7 @@ void plottab_redraw(void) {
   if (plot_dyn_area)  gtk_gl_area_queue_render(GTK_GL_AREA(plot_dyn_area));
 }
 
-void plottab_refresh(unsigned flags) {
+void plottab_refresh(guint flags) {
   if (flags != PL_PARAM_NONE) plottab_on_opts(flags);
   plottab_redraw();
 }

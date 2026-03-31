@@ -8,7 +8,7 @@ typedef struct pinger_state {
 } t_pinger_state;
 
 extern t_pinger_state pinger_state;
-extern unsigned stat_timer; // thread ID of stat-view-area updater
+extern guint stat_timer; // thread ID of stat-view-area updater
 extern gboolean atquit;  // got 'destroy' event
 
 void pinger_init(void);
