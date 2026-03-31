@@ -13,17 +13,20 @@ defaults:
 
 jobs:
   build_deb_and_run_once:
-    name: Build, pack, install
-    runs-on: ubuntu-latest
+    name: Build-Pack-Install on ${{matrix.os}} with ${{matrix.compiler}}
+    runs-on: ${{matrix.os}}
+    strategy:
+      matrix:
+        os: [ubuntu-22.04, ubuntu-24.04, ubuntu-slim]
+        compiler: [gcc, clang]
     steps:
       - uses: actions/checkout@v6
         with:
-          fetch-depth: 1
           ref: main
       - name: Install dependencies
         run: |
           sudo apt update
-          sudo apt install -y build-essential
+          sudo apt install -y build-essential gcc clang
           sudo apt install -y dpkg-dev debhelper meson git pkg-config gettext
           sudo apt install -y libgtk-4-dev libjson-glib-dev libgl-dev libepoxy-dev libcglm-dev
       - name: Create .deb package

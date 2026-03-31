@@ -1,3 +1,6 @@
+## 1.0.7
+- add a couple of gh-runners
+
 ## 1.0.6
 - cleanup
 
