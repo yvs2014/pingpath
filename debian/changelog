@@ -1,3 +1,9 @@
+pingpath (1.0.8) trixie; urgency=low
+
+  * exclude conflicted gh artifacts
+
+ -- yvs <VSYakovetsky@gmail.com>  Tue, 31 Mar 2026 23:45:03 +0300
+
 pingpath (1.0.7) trixie; urgency=low
 
   * add a couple of gh-runners

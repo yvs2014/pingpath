@@ -1,3 +1,6 @@
+## 1.0.8
+- exclude conflicted gh artifacts
+
 ## 1.0.7
 - add a couple of gh-runners
 
