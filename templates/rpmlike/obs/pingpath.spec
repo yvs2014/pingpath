@@ -11,13 +11,19 @@ URL:        https://github.com/yvs2014/%{name}
 Source0:    %{name}-%{version}.tar.gz
 
 Requires: iputils
-BuildRequires: meson, git, pkgconf, gettext-runtime, gtk4-devel, json-glib-devel, libglvnd-devel, libepoxy-devel, cglm-devel
+BuildRequires: meson, git, pkgconf, gtk4-devel, json-glib-devel, libepoxy-devel, cglm-devel
+BuildRequires: (gettext-runtime or gettext)
+BuildRequires: (libglvnd-devel or lib64glvnd-devel)
 BuildRequires: (gcc or clang)
+%if 0%{?mageia} || 0%{?is_mageia}
+BuildRequires: locales-en
+%else
 ## opensuse16.0 workaround
 %if 0%{?is_opensuse} == 0
 #%if 0%{?fedora}
 ##
 BuildRequires: glibc-langpack-en
+%endif
 %endif
 
 %description

@@ -1,3 +1,9 @@
+pingpath (1.0.9) trixie; urgency=low
+
+  * obs spec: trying build on mageia
+
+ -- yvs <VSYakovetsky@gmail.com>  Sun, 14 Jun 2026 16:07:48 +0300
+
 pingpath (1.0.8) trixie; urgency=low
 
   * exclude conflicted gh artifacts

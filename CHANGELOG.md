@@ -1,3 +1,6 @@
+## 1.0.9
+- obs spec: trying build on mageia
+
 ## 1.0.8
 - exclude conflicted gh artifacts
 
