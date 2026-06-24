@@ -293,6 +293,16 @@ void clean_elems(int type) {
   }
 }
 
+void cleanup_whois(t_whois *whois) { // NONNULL(1)
+  for (uint i = 0; i < G_N_ELEMENTS(whois->m); i++) {
+    t_mwhois *m = &whois->m[i];
+    CLR_STR(m->view);
+    for (uint j = 0; j < G_N_ELEMENTS(m->elem); j++)
+      CLR_STR(m->elem[j]);
+  }
+  *whois = (t_whois){0};
+}
+
 const char *timestamp(char *ts, size_t size) {
   if (ts) {
     ts[0] = 0;

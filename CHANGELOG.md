@@ -1,3 +1,6 @@
+## 1.0.10
+- prepare support of whois multi records
+
 ## 1.0.9
 - obs spec: trying build on mageia
 

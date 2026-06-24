@@ -38,26 +38,26 @@ static void update_addrname(int at, t_host *b) { // addr is mandatory, name not
       if (!a->name) {
         if (b->name) { // add first resolved hostname to not change it back-n-forth
           UPD_STR(a->name, b->name);
-          hops[at].cached = hops[at].cached_nl = false;
+          hops[at].dns_cached = hops[at].dns_cached_nl = false;
           LOG("%s[%d]: %s=%s", HOSTNAME_HDR, at + 1, NAME_HDR, b->name);
-        } else if (opts.dns) dns_lookup(hop, i); // otherwise run dns lookup
+        } else if (opts.dns)
+          dns_lookup(hop, i); // otherwise run dns lookup
       }
       break;
     }
   }
   if (!done) { // add addrname
-    if (vacant < 0) LOG("%s: %s=%d %s=%s", NOSLOTS_ERR, HOP_HDR, at, ADDR_HDR, b->addr);
+    if (vacant < 0)
+      LOG("%s: %s=%d %s=%s", NOSLOTS_ERR, HOP_HDR, at, ADDR_HDR, b->addr);
     else {
       t_host *a = &hop->host[vacant];
       UPD_STR(a->addr, b->addr);
       UPD_STR(a->name, b->name);
-      hops[at].cached = hops[at].cached_nl = false;
-      for (int j = 0; j < WHOIS_NDX_MAX; j++) {
-        CLR_STR(hop->whois[vacant].elem[j]);
-        hops[at].wcached[j] = hops[at].wcached_nl[j] = false;
-      }
-      LOG("%s[%d]: %s=%s %s=%s", HOSTNAME_HDR, at + 1,
-        ADDR_HDR, b->addr, NAME_HDR, mnemo(b->name));
+      cleanup_whois(&hop->whois[vacant]);
+      hops[at].dns_cached = hops[at].dns_cached_nl = false;
+      memset(hops[at].whois_cached, false, sizeof(hops[at].whois_cached));
+      memset(hops[at].whois_cached_nl, false, sizeof(hops[at].whois_cached_nl));
+      LOG("%s[%d]: %s=%s %s=%s", HOSTNAME_HDR, at + 1, ADDR_HDR, b->addr, NAME_HDR, mnemo(b->name));
       if (!b->name && opts.dns)
         dns_lookup(hop, vacant);   // make dns query
       if (opts.whois)
@@ -133,7 +133,10 @@ static inline const char* addrname(int ndx, t_host *host) {
   return opts.dns ? ADDRNAME(host[ndx].addr, host[ndx].name) : ADDRONLY(host[ndx].addr);
 }
 static inline const char* addr_or_name(int ndx, t_host *host, gboolean num) {
-  return num ? host[ndx].addr : (STR_EQ(host[ndx].addr, host[ndx].name) ? NULL : host[ndx].name);
+  return
+    num ? host[ndx].addr :
+    STR_EQ(host[ndx].addr, host[ndx].name) ? NULL :
+    host[ndx].name;
 }
 
 static const char *info_host(int at) {
@@ -141,7 +144,8 @@ static const char *info_host(int at) {
   t_hop *hop = &hops[at];
   t_host *host = hop->host;
   if (host[0].addr) { // as a marker
-    if (hop->cached) return hostinfo_cache[at];
+    if (hop->dns_cached)
+      return hostinfo_cache[at];
     char *str = hostinfo_cache[at];
     int len = snprintg(hostinfo_cache[at], BUFF_SIZE, "%s", addrname(0, host));
     if (len > 0) for (int i = 1; (i < MAXADDR) && (len < BUFF_SIZE); i++) {
@@ -153,7 +157,7 @@ static const char *info_host(int at) {
     }
     if (hop->info && (len > 0) && (len < BUFF_SIZE))
       snprintg(str + len, BUFF_SIZE - len, "\n%s", hop->info);
-    hop->cached = true;
+    hop->dns_cached = true;
     LOG("%s: #%d %s", HOST_CUP_HDR, at + 1, mnemo(str));
     return str;
   }
@@ -165,62 +169,73 @@ static const char *info_host_nl(int at) {
   t_hop *hop = &hops[at];
   t_host *host = hop->host;
   if (host[0].addr) { // as a marker
-    if (hop->cached_nl) return hostinfo_nl_cache[at];
+    if (hop->dns_cached_nl)
+      return hostinfo_nl_cache[at];
     char *str = hostinfo_nl_cache[at];
     snprintg(str, BUFF_SIZE, "%s", addrname(0, host));
-    hop->cached_nl = true;
+    hop->dns_cached_nl = true;
     LOG("%s: #%d %s", HOST_CUP_HDR, at + 1, mnemo(str));
     return str;
   }
   return NULL;
 }
 
-static int column_host(int at, t_ping_column *column) {
-  t_host *host = hops[at].host; int nth = 0;
-  if (column) for (; nth < MAXADDR; nth++) {
-    if (host[nth].addr) column->cell[nth] = addrname(nth, host); else break; }
-  return nth;
+static uint column_host(int at, t_ping_column *column) { // NONNULL(2)
+  t_host *host = hops[at].host;
+  uint n = 0;
+  for (; n < MIN(G_N_ELEMENTS(hops->host), G_N_ELEMENTS(column->cell)); n++) {
+    if (!host[n].addr)
+      break;
+   column->cell[n] = addrname(n, host);
+  }
+  return n;
 }
 
-static int column_addrhost(int at, t_ping_column* column, gboolean num) {
-  t_host *host = hops[at].host; int nth = 0;
-  if (column) for (; nth < MAXADDR; nth++) {
-    if (host[nth].addr) column->cell[nth] = addr_or_name(nth, host, num); else break; }
-  return nth;
+static uint column_addrhost(int at, t_ping_column* column, gboolean num) { // NONNULL(2)
+  t_host *host = hops[at].host;
+  uint n = 0;
+  for (; n < MIN(G_N_ELEMENTS(hops->host), G_N_ELEMENTS(column->cell)); n++) {
+    if (!host[n].addr)
+      break;
+    column->cell[n] = addr_or_name(n, host, num);
+  }
+  return n;
 }
 
 static const char *info_whois(int at, int type) {
   static char whois_cache[MAXTTL][WHOIS_NDX_MAX][BUFF_SIZE];
   t_whois *whois = hops[at].whois;
-  char *elem = whois[0].elem[type];
-  if (elem) { // as a marker
-    char *str = whois_cache[at][type];
-    if (!hops[at].wcached[type]) {
-      int len = snprintg(str, BUFF_SIZE, "%s", elem);
-      if (len > 0) for (int i = 1; (i < MAXADDR) && (len < BUFF_SIZE); i++) {
-        elem = whois[i].elem[type];
-        if (!elem) break;
-        int inc = snprintg(str + len, BUFF_SIZE - len, "\n%s", elem);
-        if (inc < 0) break;
-        len += inc;
-      }
-      hops[at].wcached[type] = true;
-      LOG("%s: [%d,%d] %s", WHOIS_CUP_HDR, at, type, mnemo(str));
+  char *view = T_WHOIS_VIEW(whois, type);
+  if (!view)
+    return NULL;
+  char *str = whois_cache[at][type];
+  // TODO: reset hops[at].whois_cached[] with changing 'whois_multi'
+  if (!hops[at].whois_cached[type]) {
+    int len = snprintg(str, BUFF_SIZE, "%s", view);
+    if (len > 0) for (uint i = 1; (i < MAXADDR) && (len < BUFF_SIZE); i++) {
+      view = T_WHOIS_VIEW(&whois[i], type);
+      if (!view)
+        break;
+      int inc = snprintg(str + len, BUFF_SIZE - len, "\n%s", view);
+      if (inc < 0)
+        break;
+      len += inc;
     }
-    return str;
+    hops[at].whois_cached[type] = true;
+    LOG("%s: [%d,%d] %s", WHOIS_CUP_HDR, at, type, mnemo(str));
   }
-  return NULL;
+  return str;
 }
 
 static const char *info_whois_nl(int at, int type) {
   static char whois_nl_cache[MAXTTL][WHOIS_NDX_MAX][MAXHOSTNAME];
   t_whois *whois = hops[at].whois;
-  char *elem = whois[0].elem[type];
-  if (elem) { // as a marker
+  char *view = T_WHOIS_VIEW(whois, type);
+  if (view) { // as a marker
     char *str = whois_nl_cache[at][type];
-    if (!hops[at].wcached_nl[type]) {
-      snprintg(str, MAXHOSTNAME, "%s", elem);
-      hops[at].wcached_nl[type] = true;
+    if (!hops[at].whois_cached_nl[type]) {
+      snprintg(str, MAXHOSTNAME, "%s", view);
+      hops[at].whois_cached_nl[type] = true;
       LOG("%s: [%d,%d] %s", WHOIS_CUP_HDR, at, type, mnemo(str));
     }
     return str;
@@ -228,13 +243,16 @@ static const char *info_whois_nl(int at, int type) {
   return NULL;
 }
 
-static int column_whois(int at, int type, t_ping_column *column) {
-  t_whois *whois = hops[at].whois; int nth = 0;
-  if (column) for (; nth < MAXADDR; nth++) {
-    char *str = whois[nth].elem[type];
-    if (str) column->cell[nth] = str; else break;
+static uint column_whois(int at, t_ping_column *column, int type) { // NONNULL(2)
+  t_whois *whois = hops[at].whois;
+  uint n = 0;
+  for (; n < MIN(G_N_ELEMENTS(hops->whois->m), G_N_ELEMENTS(column->cell)); n++) {
+    const char *str = T_WHOIS_VIEW(&whois[n], type);
+    if (!str)
+      break;
+    column->cell[n] = str;
   }
-  return nth;
+  return n;
 }
 
 static int prec(double val) { return ((val > 0) && (val < 10)) ? ((val < 0.1) ? 2 : 1) : 0; }
@@ -315,15 +333,15 @@ void stat_init(gboolean clean) { // clean start or on reset
 }
 
 void stat_free(void) {
-  for (int at = 0; at < MAXTTL; at++) { // clear all except of mark and tout
+  for (uint at = 0; at < G_N_ELEMENTS(hops); at++) { // clear all except of mark and tout
     t_hop *hop = &hops[at];
     // clear statdata
     hop->sent = hop->recv = hop->known_rtts = hop->known_jttrs = 0;
     stat_nth_hop_NA(hop);
     // clear strings
-    for (int i = 0; i < MAXADDR; i++) {
+    for (uint i = 0; i < G_N_ELEMENTS(hop->host); i++) {
       host_free(&hop->host[i]);
-      for (int j = 0; j < WHOIS_NDX_MAX; j++) CLR_STR(hops[at].whois[i].elem[j]);
+      cleanup_whois(&hops[at].whois[i]);
     }
     CLR_STR(hop->info);
   }
@@ -331,12 +349,15 @@ void stat_free(void) {
 
 void stat_clear(gboolean clean) { stat_free(); stat_init(clean); }
 
-void stat_reset_cache(void) { for (int i = 0; i < MAXTTL; i++) hops[i].cached = hops[i].cached_nl = false; }
+void stat_reset_dns_cache(void) {
+  for (uint i = 0; i < G_N_ELEMENTS(hops); i++)
+    hops[i].dns_cached = hops[i].dns_cached_nl = false;
+}
 
 static void stat_up_info(int at, const char *info) {
   if (STR_EQ(hops[at].info, info)) return;
   UPD_STR(hops[at].info, info);
-  hops[at].cached = false;
+  hops[at].dns_cached = false;
   LOG("%s: #%d %s", INFO_HDR, at + 1, info);
 }
 
@@ -388,9 +409,8 @@ void stat_last_tx(int at) { // update last 'tx' unless done before
   if (hops[at].tout) { update_stat(at, -1, NULL, TX); hops[at].tout = false; }
 }
 
-#define IW_RET(elem, ndx) { return (elem) ? info_whois(at, elem, ndx) : NULL; }
-
 const char *stat_str_elem(int at, int type) {
+  // TODO: map PE_ -> fn calls?
   switch (type) {
     case PE_HOST: return info_host(at);
     case PE_AS:   return info_whois(at, WHOIS_AS_NDX);
@@ -423,22 +443,21 @@ static const char *stat_strnl_elem(int at, int type) {
   return NULL;
 }
 
-int stat_ping_column(int at, int type, t_ping_column *column) {
-  int ndx = 0;
-  if (column)  {
-    memset(column, 0, sizeof(*column)); // BUFFNOLINT
-    switch (type) {
-      case PE_HOST: ndx = column_host(at, column);                  break;
-      case PE_AS:   ndx = column_whois(at, WHOIS_AS_NDX, column);   break;
-      case PE_CC:   ndx = column_whois(at, WHOIS_CC_NDX, column);   break;
-      case PE_DESC: ndx = column_whois(at, WHOIS_DESC_NDX, column); break;
-      case PE_RT:   ndx = column_whois(at, WHOIS_RT_NDX, column);   break;
-      case PX_ADDR: ndx = column_addrhost(at, column, true);        break;
-      case PX_HOST: ndx = column_addrhost(at, column, false);       break;
-      default: break;
-    }
+uint stat_ping_column(int at, int type, t_ping_column *column) { // NONNULL(3)
+  uint n = 0;
+  *column = (t_ping_column){0};
+  switch (type) {
+// TODO: map 'type -> callback[type]'
+    case PE_HOST: n = column_host(at, column);                  break;
+    case PE_AS:   n = column_whois(at, column, WHOIS_AS_NDX);   break;
+    case PE_CC:   n = column_whois(at, column, WHOIS_CC_NDX);   break;
+    case PE_DESC: n = column_whois(at, column, WHOIS_DESC_NDX); break;
+    case PE_RT:   n = column_whois(at, column, WHOIS_RT_NDX);   break;
+    case PX_ADDR: n = column_addrhost(at, column, true);        break;
+    case PX_HOST: n = column_addrhost(at, column, false);       break;
+    default: break;
   }
-  return ndx;
+  return n;
 }
 
 double stat_dbl_elem(int at, int type) {
@@ -484,20 +503,23 @@ void stat_rseq(int at, t_rseq *data) { // assert('at' within range)
   }
 }
 
-void stat_legend(int at, t_legend *data) {
-  if (!data) return;
-  data->name = stat_strnl_elem(at, PE_HOST);
-  data->as = stat_strnl_elem(at, PE_AS);
-  data->cc = stat_strnl_elem(at, PE_CC);
-  data->av = stat_str_elem(at, PE_AVRG);
-  data->jt = stat_str_elem(at, PE_JTTR);
+inline t_legend stat_legend(int at) {
+  return (t_legend){
+    .name = stat_strnl_elem(at, PE_HOST),
+    .as   = stat_strnl_elem(at, PE_AS),
+    .cc   = stat_strnl_elem(at, PE_CC),
+    .av   = stat_str_elem(at, PE_AVRG),
+    .jt   = stat_str_elem(at, PE_JTTR),
+  };
 }
 
 void stat_whois_enabler(void) {
   gboolean enable = false;
-  for (guint i = 0; i < G_N_ELEMENTS(pingelem); i++)
+  for (uint i = 0; i < G_N_ELEMENTS(pingelem); i++)
     if (IS_WHOIS_NDX(pingelem[i].type) && pingelem[i].enable) {
-      enable = true; break; }
+      enable = true;
+      break;
+    }
   if (enable != opts.whois) {
     opts.whois = enable;
     LOG("%s: %s", WHOIS_HDR, enable ? ON_HDR : OFF_HDR);

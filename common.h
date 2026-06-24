@@ -12,7 +12,7 @@
 #define MIN_GTK_RUNTIME(major, minor, micro) (!gtk_check_version(major, minor, micro))
 
 #define APPNAME "pingpath"
-#define VERSION "1.0.9"
+#define VERSION "1.0.10"
 #define APPVER  APPNAME "-" VERSION
 
 extern locale_t locale, localeC;
@@ -243,9 +243,12 @@ enum {
   LOGMAX_MAX   = 999,
 };
 
-#define DEF_DNS    true
-#define DEF_WHOIS  true
-#define DEF_PPAD  "00"
+#define DEF_DNS         true
+#define DEF_WHOIS       true
+//#define DEF_WHOIS_MULTI false
+#define DEF_WHOIS_MULTI true
+
+#define DEF_PPAD "00"
 
 #define DEF_LEGEND     true
 #define DEF_DARK_MAIN  true
@@ -318,7 +321,7 @@ typedef struct minmax { int min, max; } t_minmax;
 typedef struct opts {
   char *target;
   t_minmax range;     // TTL range
-  gboolean dns, whois, legend, darktheme, darkgraph;
+  gboolean dns, whois, whois_multi, legend, darktheme, darkgraph;
   int cycles, timeout, qos, size, ipv, graph;
   char pad[PAD_SIZE]; // 16 x "00."
   char recap;         // type of summary at exit
@@ -339,8 +342,17 @@ typedef struct host {
   char *addr, *name;
 } t_host;
 
+#define AST '*'
+#define T_WHOIS_VIEW(whois, type) ((whois)->m[type].view ? (whois)->m[type].view : (whois)->m[type].elem[0])
+#define WHOIS_ELEMS_PER_ADDR 10
+
+typedef struct mwhois {
+  char* elem[WHOIS_ELEMS_PER_ADDR];
+  char* view; // in case of multi records: like 'ASN*' or "ASN1, ASN2, ..."
+} t_mwhois;
+
 typedef struct whois {
-  char* elem[WHOIS_NDX_MAX];
+  t_mwhois m[WHOIS_NDX_MAX];
 } t_whois;
 
 typedef struct whoaddr {
@@ -364,9 +376,9 @@ typedef struct hop {
   // Note: 'jttr' used here is the average distance between consecutive points
   //       which depicts the range in which RTT varies
   t_host host[MAXADDR];
-  gboolean cached, cached_nl;
+  gboolean dns_cached, dns_cached_nl; // cached host addrname
   t_whois whois[MAXADDR];
-  gboolean wcached[WHOIS_NDX_MAX], wcached_nl[WHOIS_NDX_MAX];
+  gboolean whois_cached[WHOIS_NDX_MAX], whois_cached_nl[WHOIS_NDX_MAX]; // cached whois fields
   // internal
   int at, prev, known_rtts, known_jttrs;
   gboolean reach, tout;
@@ -440,6 +452,8 @@ gboolean is_plelem_enabled(int type);
 //
 void clean_elems(int type);
 
+void cleanup_whois(t_whois *whois); // NONNULL(1)
+
 char* rtver(int ndx);
 const char *mnemo(const char *str);
 const char *timestamp(char *ts, size_t size);
@@ -457,8 +471,11 @@ GSList* list_add_nodup(GSList **list, void *data, GCompareFunc cmp, guint max);
 GSList* list_add_ref(GSList **list, t_hop *hop, int ndx);
 extern void log_add(const char *fmt, ...);
 
-#define UPDATE_LABEL(label, str) { const char *txt = gtk_label_get_text(GTK_LABEL(label)); \
-  if (STR_NEQ(txt, str)) gtk_label_set_text(GTK_LABEL(label), str); }
+#define UPDATE_LABEL(label, str) do {                     \
+  const char *txt = gtk_label_get_text(GTK_LABEL(label)); \
+  if (STR_NEQ(txt, str))                                  \
+    gtk_label_set_text(GTK_LABEL(label), str);            \
+} while (0)
 
 #define IS_INFO_NDX(ndx) ((PE_HOST <= (ndx)) && ((ndx) <= PE_RT))
 #define IS_STAT_NDX(ndx) ((PE_LOSS <= (ndx)) && ((ndx) <= PE_JTTR))

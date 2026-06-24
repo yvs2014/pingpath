@@ -142,7 +142,7 @@ static void pinger_print_tcn(char del) {
       for (int j = 0; j < PE_MAX; j++)
         PN_PRMAX(stat_str_elem(i, pingelem[j].type));
     //
-    for (int j = PE_NO + 1; j < PE_MAX; j++) // header
+    for (uint j = PE_NO + 1; j < PE_MAX; j++) // header
       if (pingelem[j].enable && (pingelem[j].type != PE_FILL))
         print_tcn(del, pingelem[j].name, maxes[j]);
 #ifdef WITH_TOON
@@ -153,11 +153,11 @@ static void pinger_print_tcn(char del) {
     //
     for (int i = opts.range.min; i < lim; i++) { // data per hop
       t_ping_column column[G_N_ELEMENTS(pingelem)] = {0};
-      int lines = 0;
+      uint lines = 0;
 #ifdef WITH_TOON
       if (ton) g_print("  ");
 #endif
-      for (guint j = 0; j < G_N_ELEMENTS(pingelem); j++) if (pingelem[j].enable) {
+      for (uint j = 0; j < G_N_ELEMENTS(pingelem); j++) if (pingelem[j].enable) {
         int type = pingelem[j].type;
         switch (type) {
           case PE_NO:
@@ -167,8 +167,9 @@ static void pinger_print_tcn(char del) {
           case PE_CC:
           case PE_DESC:
           case PE_RT: {
-            int max = stat_ping_column(i, type, &column[j]);
-            if (lines < max) lines = max;
+            uint max = stat_ping_column(i, type, &column[j]);
+            if (lines < max)
+              lines = max;
             print_tcn(del, column[j].cell[0] ? column[j].cell[0] : "", maxes[j]);
           } break;
           case PE_LOSS:
@@ -184,9 +185,9 @@ static void pinger_print_tcn(char del) {
         }
       }
       g_print("\n");
-      for (int k = 1; k < lines; k++) { // multihop
+      for (uint k = 1; k < lines; k++) { // multihop
         if (!del) HOP_INDENT;
-        for (int j = PE_HOST; j <= PE_RT; j++)
+        for (uint j = PE_HOST; j <= PE_RT; j++)
           if (pingelem[j].enable)
             print_tcn(del, column[j].cell[k] ? column[j].cell[k] : "", maxes[j]);
         g_print("\n");
@@ -261,20 +262,21 @@ static gboolean pinger_json_hop_info(JsonObject *obj, int nth, gboolean pretty) 
   if (!arr) { FAIL("json_array_new()"); return false; }
   pinger_json_prop_arr(obj, OPT_INFO_HDR, arr, pretty);
   t_ping_column column[PX_MAX] = {0};
-  int lines = 0;
-  for (int ndx = PE_HOST; ndx <= PE_RT; ndx++)
+  uint lines = 0;
+  for (uint ndx = PE_HOST; ndx <= PE_RT; ndx++)
     if (pingelem[ndx].enable) { // collect multihop info
-      int max = stat_ping_column(nth, pingelem[ndx].type, &column[ndx]);
-      if (max > lines) lines = max;
+      uint max = stat_ping_column(nth, pingelem[ndx].type, &column[ndx]);
+      if (max > lines)
+        lines = max;
     }
-  for (int j = 0; j < lines; j++) { // add collected info
+  for (uint j = 0; j < lines; j++) { // add collected info
     JsonObject *info = json_object_new();
     if (!info) {
       FAIL("json_object_new()");
       return false;
     }
     json_array_add_object_element(arr, info);
-    for (int ndx = PE_HOST; ndx <= PE_RT; ndx++) if (pingelem[ndx].enable) {
+    for (uint ndx = PE_HOST; ndx <= PE_RT; ndx++) if (pingelem[ndx].enable) {
       int type = pingelem[ndx].type;
       switch (type) {
         case PE_HOST: {

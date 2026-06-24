@@ -29,18 +29,18 @@ typedef struct ping_info {
 void stat_init(gboolean clean);
 void stat_free(void);
 void stat_clear(gboolean clean);
-void stat_reset_cache(void);
+void stat_reset_dns_cache(void);
 void stat_save_success(int at, t_ping_success *data);
 void stat_save_discard(int at, t_ping_discard *data);
 void stat_save_timeout(int at, t_ping_timeout *data);
 void stat_save_info(int at, t_ping_info *data);
 void stat_last_tx(int at);
 const char *stat_str_elem(int at, int type);
-int stat_ping_column(int at, int type, t_ping_column *column);
+uint stat_ping_column(int at, int type, t_ping_column *column); // NONNULL(3)
 double stat_dbl_elem(int at, int type);
 int stat_int_elem(int at, int type);
 void stat_rseq(int at, t_rseq *data);
-void stat_legend(int at, t_legend *data);
+t_legend stat_legend(int at);
 void stat_whois_enabler(void);
 void stat_run_whois_resolv(void);
 

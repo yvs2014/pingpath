@@ -261,23 +261,82 @@ static char* split_pair(char **pstr, int ch, gboolean lazy) {
 static inline gboolean parser_valid_char0(char *str) { return g_regex_match(hostname_char0_regex, str,  0, NULL); }
 static inline gboolean parser_valid_host(char *host) { return g_regex_match(hostname_chars_regex, host, 0, NULL); }
 
-static char* parser_valid_int(const char *option, const char *str) {
-  char *cpy = g_strdup(str);
-  if (!cpy) return NULL;
-  char *val = g_strstrip(cpy);
-  gboolean valid = g_regex_match(str_rx[OPT_TYPE_INT].regex, val, 0, NULL);
-  if (valid) val = (val && val[0]) ? g_strdup(val) : NULL;
-  else {
+static char* validate_intstr(const char *option, const char *str) {
+  char *copy = g_strdup(str);
+  if (!copy)
+    return NULL;
+  char *value = g_strstrip(copy);
+  gboolean valid = value && value[0] && g_regex_match(str_rx[OPT_TYPE_INT].regex, value, 0, NULL);
+  value = valid ? g_strdup(value) : NULL;
+  if (!valid)
     PARSER_MESG("%s: %s: %s", option, RENOMATCH_ERR, str_rx[OPT_TYPE_INT].pattern);
-    val = NULL;
+  g_free(copy);
+  return value;
+}
+
+static gboolean parser_valid_int(const char* inp, int* outp, const char *option) {
+  gboolean okay = true;
+  if (inp && inp[0]) {
+    char *str = validate_intstr(option, inp);
+    if (str) {
+      errno = 0;
+      long n = strtol(str, NULL, 0);
+      okay = (!errno && (INT_MIN <= n) && (n <= INT_MAX));
+      errno = 0;
+      if (okay && outp)
+       *outp = n;
+      g_free(str);
+    } else
+      okay = false;
   }
-  g_free(cpy);
-  return val;
+  return okay;
+}
+
+static inline int find_vacant_mwhois_slot(char* el[], uint len) { // NONNULL(1)
+  for (uint i = 0; i < len; i++)
+    if (!el[i])
+      return i;
+  return -1;
+}
+
+static gboolean is_mwhois_str_neq(t_mwhois *m, uint last) { // NONNULL(1)
+  const char *first = m->elem[0];
+  for (uint i = 1; i <= last; i++)
+    if (STR_NEQ(first, m->elem[i]))
+      return true;
+  return false;
+}
+
+static void add_mwhois(t_whois *whois, uint ndx, const char *str) {
+  static gboolean mwhois_already_warned[G_N_ELEMENTS(whois->m)]; // to not spam with warnings
+  t_mwhois *m = &whois->m[ndx];
+  int vacant = find_vacant_mwhois_slot(m->elem, G_N_ELEMENTS(m->elem));
+  if (vacant < 0) {
+    if (!mwhois_already_warned[ndx]) { // warn once
+      WARNLOG("No vacant slots for multi-whois field#%u", ndx);
+      mwhois_already_warned[ndx] = true;
+    }
+  } else {
+    UPD_NSTR(m->elem[vacant], str ? str : UNKN_FIELD, MAXHOSTNAME);
+    WHOIS_DEBUG("Add[ndx=%u, vacant=%u]: %s", ndx, vacant, m->elem[vacant]);
+    if ((vacant > 0) && is_mwhois_str_neq(m, vacant)) { // set or update 'view'
+      if (opts.whois_multi) {
+        GString *s = g_string_new(m->elem[0]);
+        for (int i = 1; i <= vacant; i++)
+          g_string_append_printf(s, "%c %s", WHOIS_CCDEL, m->elem[i]);
+        UPD_NSTR(m->view, g_strdup(s->str), MAXHOSTNAME);
+        g_string_free(s, true);
+      } else {
+        UPD_NSTR(m->view, g_strdup_printf("%s%c", m->elem[0], AST), MAXHOSTNAME);
+      }
+    }
+  }
 }
 
 
-// pub
 //
+// pub
+
 gboolean parser_init(void) {
   multiline_regex      = compile_regex("\\n", G_REGEX_MULTILINE);
   hostname_char0_regex = compile_regex("^[" DIGIT_OR_LETTER ":]", 0);
@@ -297,23 +356,28 @@ gboolean parser_init(void) {
 void parser_parse(int at, char *input) {
   if (input) {
     char **lines = g_regex_split(multiline_regex, input, 0);
-    if (lines) {
-      for (char **pstr = lines; *pstr; pstr++) if ((*pstr)[0]) analyze_line(at, *pstr);
-      g_strfreev(lines);
-    }
+    if (lines)
+      for (char **pstr = lines; *pstr; pstr++)
+        if ((*pstr)[0])
+          analyze_line(at, *pstr);
+    g_strfreev(lines);
   }
 }
 
 gboolean parser_mmint(const char *str, const char *option, t_minmax minmax, int *value) {
   gboolean okay = false;
   if (str) {
-    char *val = parser_valid_int(option, str);
+    char *val = validate_intstr(option, str);
     if (val) {
-      errno = 0; long len = strtol(val, NULL, 0);
+      errno = 0;
+      long len = strtol(val, NULL, 0);
       okay = !errno && MM_OKAY(minmax, len);
-      errno = 0; g_free(val);
-      if (okay && value) *value = len;
-      else PARSER_MESG("%s: %s: %d <=> %d", option, OUTRANGE_ERR, minmax.min, minmax.max);
+      errno = 0;
+      g_free(val);
+      if (okay && value)
+        *value = len;
+      else
+        PARSER_MESG("%s: %s: %d <=> %d", option, OUTRANGE_ERR, minmax.min, minmax.max);
     }
   }
   return okay;
@@ -362,27 +426,23 @@ char* parser_valid_target(const char *target, gboolean *spaced) {
   return hostname;
 }
 
-
-void parser_whois(char *buff, t_whois *welem) {
-#define DUP_WITH_MARK(dst, val) do {          \
-  if (dst) {                                  \
-    CLR_STR(dst);                             \
-    (dst) = g_strdup_printf("%s*", val);      \
-  } else (dst) = g_strndup(val, MAXHOSTNAME); \
-} while (0)
-#define SKIP_PREFIX "AS" /* included by server */
-  // if there are multiple sources (despite -m query), take the last tag and mark it with '*'
-  int skip_len = sizeof(SKIP_PREFIX) - 1;
-  if (!buff || !welem) return;
-  memset(welem, 0, sizeof(*welem)); // BUFFNOLINT
+void parser_whois(char *buff, t_whois *whois) {
+#define SKIP_PREFIX "AS"
+  static int skip_len = sizeof(SKIP_PREFIX) - 1;
+  if (!buff || !whois)
+    return;
+  cleanup_whois(whois);
   char *str = NULL;
   while ((str = strsep(&buff, WHOIS_NL))) {
     str = g_strstrip(str);
     if (str && str[0] && (str[0] != WHOIS_COMMENT)) {
+      WHOIS_DEBUG("Parse: %s", str);
       char *val = split_pair(&str, WHOIS_DELIM, LAZY);
-      if (!val) continue;
+      if (!val)
+        continue;
       int ndx = -1;
-      if (STR_EQ(str, WHOIS_RT_TAG)) ndx = WHOIS_RT_NDX;
+      if (STR_EQ(str, WHOIS_RT_TAG))
+        ndx = WHOIS_RT_NDX;
       else if (STR_EQ(str, WHOIS_AS_TAG)) {
         ndx = WHOIS_AS_NDX;
         int len = strnlen(val, MAXHOSTNAME);
@@ -390,43 +450,29 @@ void parser_whois(char *buff, t_whois *welem) {
           val += skip_len;
       } else if (STR_EQ(str, WHOIS_DESC_TAG)) {
         ndx = WHOIS_DESC_NDX;
-        char *cc = split_pair(&val, WHOIS_CCDEL, GREEDY);
-        if (cc) DUP_WITH_MARK(welem->elem[WHOIS_CC_NDX], cc);
+        add_mwhois(whois, WHOIS_CC_NDX, split_pair(&val, WHOIS_CCDEL, GREEDY));
       }
-      if (ndx >= 0) DUP_WITH_MARK(welem->elem[ndx], val);
+      if (ndx >= 0)
+        add_mwhois(whois, ndx, val);
     }
   }
-  for (int i = 0; i < WHOIS_NDX_MAX; i++)
-    if (!welem->elem[i])
-      welem->elem[i] = g_strdup(UNKN_FIELD);
-#undef DUP_WITH_MARK
+  // set unsetted to UNKN_FIELD
+  for (uint i = 0; i < G_N_ELEMENTS(whois->m); i++)
+    if (!whois->m[i].elem[0])
+      whois->m[i].elem[0] = g_strdup(UNKN_FIELD);
 #undef SKIP_PREFIX
 }
 
-static gboolean parser_valint(const char* inp, int* outp, const char *option) {
-  gboolean okay = true;
-  if (inp && inp[0]) {
-    char *valid = parser_valid_int(option, inp);
-    if (valid) {
-      errno = 0; long n = strtol(valid, NULL, 0);
-      okay = (!errno && (INT_MIN <= n) && (n <= INT_MAX));
-      errno = 0;
-      if (okay && outp) *outp = n;
-    } else okay = false;
-    g_free(valid);
-  }
-  return okay;
-}
-
 gboolean parser_range(char *range, char delim, const char *option, t_minmax *minmax) {
-  if (!range || !minmax) return false;
+  if (!range || !minmax)
+    return false;
   char *min = range;
   char *max = split_pair(&min, delim, LAZY);
   t_minmax val = {INT_MIN, INT_MIN};
-  gboolean okay = true;
-  if (!parser_valint(min, &val.min, option)) okay = false;
-  if (!parser_valint(max, &val.max, option)) okay = false;
-  if (okay) *minmax = val;
+  gboolean okay = parser_valid_int(min, &val.min, option) &
+                  parser_valid_int(max, &val.max, option);
+  if (okay)
+    *minmax = val;
   return okay;
 }
 
@@ -439,7 +485,7 @@ gboolean parser_ivec(char *range, char delim, const char *option, int *dest, int
   char **abcs = g_strsplit(range, delims, max);
   if (abcs) {
     for (int i = 0; abcs[i] && (i < max); i++)
-      if (!parser_valint(abcs[i], &val[i], option))
+      if (!parser_valid_int(abcs[i], &val[i], option))
         okay = false;
     g_strfreev(abcs);
   }

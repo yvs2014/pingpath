@@ -1,3 +1,9 @@
+pingpath (1.0.10) trixie; urgency=low
+
+  * prepare support of whois multi records
+
+ -- yvs <VSYakovetsky@gmail.com>  Wed, 24 Jun 2026 14:48:42 +0300
+
 pingpath (1.0.9) trixie; urgency=low
 
   * obs spec: trying build on mageia

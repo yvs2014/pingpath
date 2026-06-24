@@ -478,7 +478,7 @@ void notifier_legend_vis_rows(int upto) {
 void notifier_legend_update(void) {
   t_nt_leg *leg = notifier[NT_LEGEND_NDX].content; int max = notifier[NT_LEGEND_NDX].content_n;
   for (int i = 0; leg && (i < max) && (i < tgtat); i++, leg++) {
-    t_legend legend; stat_legend(i, &legend);
+    t_legend legend = stat_legend(i);
     for (int j = GE_MIN; j < GE_MAX; j++) {
       GtkWidget *widget = leg->elem[j];
       switch (graphelem[j].type) {

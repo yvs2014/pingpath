@@ -354,7 +354,11 @@ void pingtab_update(void) {
       for (int j = 0; *lab && (j < PE_MAX); j++, lab++) {
         if (GTK_IS_LABEL(*lab) && is_statinfo_ndx(j) && pingelem[j].enable) {
           const char *text = stat_str_elem(i, pingelem[j].type);
-          UPDATE_LABEL(*lab, text); }}}}
+          UPDATE_LABEL(*lab, text);
+        }
+      }
+    }
+  }
 }
 
 void pingtab_vis_rows(int upto) {
@@ -372,8 +376,10 @@ void pingtab_vis_rows(int upto) {
 
 void pingtab_vis_cols(void) {
 //  DEBUG("%s: %s", PING_HDR, VISROWS_HDR);
-  for (int i = 0; i < HDRLINES; i++) pt_set_vis_cells(listbox.hdrlines[i].labs);
-  for (int i = 0; i < MAXTTL; i++) pt_set_vis_cells(listbox.bodylines[i].labs);
+  for (uint i = 0; i < G_N_ELEMENTS(listbox.hdrlines); i++)
+    pt_set_vis_cells(listbox.hdrlines[i].labs);
+  for (uint i = 0; i < G_N_ELEMENTS(listbox.bodylines); i++)
+    pt_set_vis_cells(listbox.bodylines[i].labs);
   pingtab_update();
 }
 

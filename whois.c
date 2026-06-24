@@ -72,7 +72,15 @@ static int wq_cmp(const void *a, const void *b) {
 }
 
 static void wc_free(t_wc_elem *elem) {
-  if (elem) { CLR_STR(elem->addr); for (int i = 0; i < WHOIS_NDX_MAX; i++) CLR_STR(elem->whois.elem[i]); }
+  if (elem) {
+    CLR_STR(elem->addr);
+    for (uint i = 0; i < G_N_ELEMENTS(elem->whois.m); i++) {
+      t_mwhois *m = &elem->whois.m[i];
+      CLR_STR(m->view);
+      for (uint j = 0; j < G_N_ELEMENTS(m->elem); j++)
+        CLR_STR(m->elem[j]);
+    }
+  }
 }
 
 static void wq_free(t_wq_elem *elem) {
@@ -97,8 +105,10 @@ static t_wq_elem* wq_find(char* addr) {
 }
 
 static gboolean whois_elems_not_null(t_whois *whois) {
-  if (!whois) return false;
-  for (int i = 0; i < WHOIS_NDX_MAX; i++) if (!whois->elem[i]) return false;
+  if (whois)
+    for (uint i = 0; i < G_N_ELEMENTS(whois->m); i++)
+      if (!whois->m[i].elem[0])
+        return false;
   return true;
 }
 
@@ -110,12 +120,12 @@ static void whois_query_close(t_wq_elem *elem) {
   wq_free(elem); g_free(elem);
 }
 
-static void whois_copy_elems(t_whois *from, t_whois *to, gboolean *wcached, gboolean *wcached_nl) {
-  if (!from || !to) return;
-  for (int i = 0; i < WHOIS_NDX_MAX; i++) {
-    UPD_NSTR(to->elem[i], from->elem[i], MAXHOSTNAME);
-    if (wcached) wcached[i] = false;
-    if (wcached_nl) wcached_nl[i] = false;
+static void whois_copy_elems(t_whois *from, t_whois *to) { // NONNULL(1, 2)
+  for (uint i = 0; i < G_N_ELEMENTS(((t_whois *)0)->m); i++) {
+    t_mwhois *f = &from->m[i], *t = &to->m[i];
+    UPD_NSTR(t->view, f->view, MAXHOSTNAME);
+    for (uint j = 0; j < G_N_ELEMENTS(t->elem); j++)
+      UPD_NSTR(t->elem[j], f->elem[j], MAXHOSTNAME);
   }
 }
 
@@ -126,9 +136,11 @@ static void whois_query_complete(t_ref *ref, t_wq_elem *elem) {
     int ndx = ref->ndx;
     char *orig = hop->host[ndx].addr;
     char *addr = elem->data.addr;
-    if (STR_EQ(orig, addr))
-      whois_copy_elems(&elem->data.whois, &hop->whois[ndx], hop->wcached, hop->wcached_nl);
-    else
+    if (STR_EQ(orig, addr)) {
+      whois_copy_elems(&elem->data.whois, &hop->whois[ndx]);
+      memset(hop->whois_cached, false, sizeof(hop->whois_cached));
+      memset(hop->whois_cached_nl, false, sizeof(hop->whois_cached_nl));
+    } else
       LOG("%s: %s: %s -> %s", WHOIS_HDR, ORIG_CHNG_HDR, orig, addr);
   }
 }
@@ -150,25 +162,31 @@ static GSList* list_add_wc(GSList **list, t_wc_elem *wc) {
 }
 
 static void whois_cache_update(char *addr, t_whois *whois) {
-  if (!addr || !whois) return;
+#define CACHED_VIEW(ndx) T_WHOIS_VIEW(cached, (ndx))
+  if (!addr || !whois)
+    return;
   t_wc_elem *cache = wc_find(addr);
   if (cache) {
-    whois_copy_elems(whois, &cache->whois, NULL, NULL);
+    whois_copy_elems(whois, &cache->whois);
     PR_WHOIS_C; return;
   }
   cache = g_malloc0(sizeof(t_wc_elem));
   if (cache) {
     cache->addr = g_strndup(addr, MAXHOSTNAME);
     t_whois *cached = &cache->whois;
-    for (int i = 0; i < WHOIS_NDX_MAX; i++) UPD_NSTR(cached->elem[i], whois->elem[i], MAXHOSTNAME);
+    for (uint i = 0; i < G_N_ELEMENTS(((t_whois *)0)->m); i++) {
+      t_mwhois *c = &cached->m[i], *w = &whois->m[i];
+      UPD_NSTR(c->view, w->view, MAXHOSTNAME);
+      for (uint j = 0; j < G_N_ELEMENTS(c->elem); j++)
+        UPD_NSTR(c->elem[j], w->elem[j], MAXHOSTNAME);
+    }
     if (cache->addr && whois_elems_not_null(cached)) {
       if (list_add_wc(&whois_cache, cache)) {
-        LOG("%s: %s=%s %s=%s %s=%s %s=%s %s=%s", WHOIS_CUP_HDR,
-          ADDR_HDR,      cache->addr,
-          ELEM_AS_HDR,   mnemo(cached->elem[WHOIS_AS_NDX]),
-          ELEM_CC_HDR,   mnemo(cached->elem[WHOIS_CC_NDX]),
-          ELEM_RT_HDR,   mnemo(cached->elem[WHOIS_RT_NDX]),
-          ELEM_DESC_HDR, mnemo(cached->elem[WHOIS_DESC_NDX]));
+        LOG("%s: %s(%s) %s(%s) %s(%s) %s(%s) %s=(%s)", WHOIS_CUP_HDR, ADDR_HDR, cache->addr,
+          ELEM_AS_HDR,   CACHED_VIEW(WHOIS_AS_NDX),
+          ELEM_CC_HDR,   CACHED_VIEW(WHOIS_CC_NDX),
+          ELEM_RT_HDR,   CACHED_VIEW(WHOIS_RT_NDX),
+          ELEM_DESC_HDR, CACHED_VIEW(WHOIS_DESC_NDX));
         PR_WHOIS_C;
         return;
       }
@@ -177,6 +195,7 @@ static void whois_cache_update(char *addr, t_whois *whois) {
   } else FAILX(addr, "alloc host");
   wc_free(cache);
   g_free(cache);
+#undef CACHED_VIEW
 }
 
 static t_wq_elem* whois_query_save(const char *addr, t_hop *hop, int ndx) {
@@ -236,23 +255,30 @@ static gboolean whois_reset_read(GObject *stream, ssize_t size, t_wq_elem *elem)
 }
 
 static void on_whois_read(GObject *stream, GAsyncResult *result, t_wq_elem *elem) {
-  if (!elem || !G_IS_INPUT_STREAM(stream)) return;
+#define WHOIS_VIEW(ndx) T_WHOIS_VIEW(whois, (ndx))
+  if (!elem || !G_IS_INPUT_STREAM(stream))
+    return;
   GError *error = NULL;
   ssize_t size = g_input_stream_read_finish(G_INPUT_STREAM(stream), result, &error);
-  if (size < 0) { ERROR("g_input_stream_read_finish()"); }
+  if (size < 0)
+    ERROR("g_input_stream_read_finish()");
   else {
-    if (!elem->buff) return; // possible at external exit
-    if (size) { if (whois_reset_read(stream, size, elem)) return; }
-    else { // EOF (size == 0)
+    if (!elem->buff) // possible at external exit
+      return;
+    if (size) {
+      if (whois_reset_read(stream, size, elem))
+        return;
+    } else { // EOF (size == 0)
       t_whois *whois = &elem->data.whois;
       parser_whois(elem->buff, &elem->data.whois);
-      if (whois->elem[WHOIS_AS_NDX] && !whois->elem[WHOIS_AS_NDX][0])
+      if (whois->m[WHOIS_AS_NDX].elem[0])
+        WHOIS_DEBUG("%s: %s(%s) %s(%s) %s(%s) %s(%s)", elem->data.addr,
+          ELEM_AS_HDR,   WHOIS_VIEW(WHOIS_AS_NDX),
+          ELEM_CC_HDR,   WHOIS_VIEW(WHOIS_CC_NDX),
+          ELEM_RT_HDR,   WHOIS_VIEW(WHOIS_RT_NDX),
+          ELEM_DESC_HDR, WHOIS_VIEW(WHOIS_DESC_NDX));
+      else
         WHOIS_DEBUG("%s: %s", UNRES_HDR, elem->data.addr);
-      WHOIS_DEBUG("%s: %s=%s %s=%s %s=%s %s=%s", elem->data.addr,
-        ELEM_AS_HDR,   mnemo(whois->elem[WHOIS_AS_NDX]),
-        ELEM_CC_HDR,   mnemo(whois->elem[WHOIS_CC_NDX]),
-        ELEM_RT_HDR,   mnemo(whois->elem[WHOIS_RT_NDX]),
-        ELEM_DESC_HDR, mnemo(whois->elem[WHOIS_DESC_NDX]));
       PR_WHOIS_Q;
       whois_cache_update(elem->data.addr, whois);
       g_slist_foreach(elem->refs, (GFunc)whois_query_complete, elem);
@@ -260,6 +286,7 @@ static void on_whois_read(GObject *stream, GAsyncResult *result, t_wq_elem *elem
       PR_WHOIS_Q;
     }
   }
+#undef WHOIS_VIEW
 }
 
 static void on_whois_write_all(GObject *stream, GAsyncResult *result, char *request) {
@@ -295,40 +322,51 @@ static void on_whois_connect(GObject* source, GAsyncResult *result, t_wq_elem *e
   whois_query_close(elem);
 }
 
+static void wc_on_free(gpointer data, gpointer user_data G_GNUC_UNUSED) { wc_free(data); }
+static void wq_on_close(gpointer data, gpointer user_data G_GNUC_UNUSED) { whois_query_close(data); }
 
-// pub
-//
-
-void whois_resolv(t_hop *hop, int ndx) {
-  if (!hop) return;
-  char *addr = hop->host[ndx].addr;
-  if (!addr) return;
-  PR_WHOIS_C;
-  t_wc_elem *cached = wc_find(addr);
-  if (cached) { // update with cached data and return
-    whois_copy_elems(&cached->whois, &hop->whois[ndx], hop->wcached, hop->wcached_nl);
-    WHOIS_DEBUG("%s [%d,%d]: %s -> %s=%s %s=%s %s=%s %s=%s",
-      CACHE_HIT_HDR, hop->at, ndx, addr,
-      ELEM_AS_HDR,   mnemo(cached->whois.elem[WHOIS_AS_NDX]),
-      ELEM_CC_HDR,   mnemo(cached->whois.elem[WHOIS_CC_NDX]),
-      ELEM_RT_HDR,   mnemo(cached->whois.elem[WHOIS_RT_NDX]),
-      ELEM_DESC_HDR, mnemo(cached->whois.elem[WHOIS_DESC_NDX]));
-    return;
-  }
-  PR_WHOIS_Q;
-  t_wq_elem *query = whois_query_fill(addr, hop, ndx);
-  if (!query) return;
+static inline void whois_resconn(t_wq_elem *query, const char *addr) { // NONNULL(1, 2)
   GSocketClient *sock = g_socket_client_new();
   if (sock) {
     WHOIS_DEBUG("%s %s:%d %s", SENDQ_HDR, WHOIS_HOST, WHOIS_PORT, addr);
     g_socket_client_connect_to_host_async(sock, WHOIS_HOST, WHOIS_PORT, NULL,
       (GAsyncReadyCallback)on_whois_connect, query);
     g_object_unref(sock);
-  } else FAIL("g_socket_client_new()");
+  } else
+    FAIL("g_socket_client_new()");
 }
 
-static void wc_on_free(gpointer data, gpointer user_data G_GNUC_UNUSED) { wc_free(data); }
-static void wq_on_close(gpointer data, gpointer user_data G_GNUC_UNUSED) { whois_query_close(data); }
+
+// pub
+//
+
+void whois_resolv(t_hop *hop, int ndx) {
+#define CACHEW_VIEW(ndx) T_WHOIS_VIEW(&cached->whois, (ndx))
+  if (!hop)
+    return;
+  char *addr = hop->host[ndx].addr;
+  if (addr) {
+    PR_WHOIS_C;
+    t_wc_elem *cached = wc_find(addr);
+    if (cached) { // update with cached data and return
+      whois_copy_elems(&cached->whois, &hop->whois[ndx]);
+      memset(hop->whois_cached, false, sizeof(hop->whois_cached));
+      memset(hop->whois_cached_nl, false, sizeof(hop->whois_cached_nl));
+      WHOIS_DEBUG("%s [%d,%d]: %s -> %s(%s) %s(%s) %s(%s) %s(%s)",
+        CACHE_HIT_HDR, hop->at, ndx, addr,
+        ELEM_AS_HDR,   CACHEW_VIEW(WHOIS_AS_NDX),
+        ELEM_CC_HDR,   CACHEW_VIEW(WHOIS_CC_NDX),
+        ELEM_RT_HDR,   CACHEW_VIEW(WHOIS_RT_NDX),
+        ELEM_DESC_HDR, CACHEW_VIEW(WHOIS_DESC_NDX));
+      return;
+    }
+    PR_WHOIS_Q;
+    t_wq_elem *query = whois_query_fill(addr, hop, ndx);
+    if (query)
+      whois_resconn(query, addr);
+  }
+#undef CACHEW_VIEW
+}
 
 void whois_cache_free(void) {
   PR_WHOIS_C;

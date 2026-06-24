@@ -18,7 +18,8 @@ enum { MIN_VIEW_ANGLE = -180, MAX_VIEW_ANGLE = 180 };
 #endif
 
 t_opts opts = { .target = NULL, .range = {.min = MINTTL - 1, .max = MAXTTL},
-  .dns = DEF_DNS, .whois = DEF_WHOIS, .cycles = DEF_CYCLES, .qos = DEF_QOS, .size = DEF_PSIZE,
+  .dns = DEF_DNS, .whois = DEF_WHOIS, .whois_multi = DEF_WHOIS_MULTI,
+  .cycles = DEF_CYCLES, .qos = DEF_QOS, .size = DEF_PSIZE,
   .timeout = DEF_TOUT, .tout_usec = DEF_TOUT * G_USEC_PER_SEC, .logmax = DEF_LOGMAX,
   .graph = GRAPH_TYPE_CURVE, .legend = DEF_LEGEND,
   .darktheme = DEF_DARK_MAIN, .darkgraph = DEF_DARK_GRAPH,
@@ -253,7 +254,11 @@ static void set_ed_texthint(t_ent_str *en) {
     gtk_entry_set_placeholder_text(GTK_ENTRY(en->input), en->hint);
 }
 
-static void toggled_dns(void) { stat_reset_cache(); notifier_legend_update(); pinger_update_tabs(NULL); }
+static void toggled_dns(void) {
+  stat_reset_dns_cache();
+  notifier_legend_update();
+  pinger_update_tabs(NULL);
+}
 
 static void toggle_colors(void) {
   tab_dependent(NULL); style_set();

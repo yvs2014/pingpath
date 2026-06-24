@@ -61,6 +61,11 @@ static t_dns_elem* dns_query_find(char* addr) {
   return found ? found->data : NULL;
 }
 
+static inline void dns_setname(char *name, const char *to, t_hop *hop) { // NONNULL(3)
+  UPD_NSTR(name, to, MAXHOSTNAME);
+  hop->dns_cached = hop->dns_cached_nl = false;
+}
+
 static void dns_query_complete(t_ref *ref, t_dns_elem *elem) {
   if (!ref || !elem) return;
   t_hop *hop = ref->hop;
@@ -69,13 +74,10 @@ static void dns_query_complete(t_ref *ref, t_dns_elem *elem) {
     t_host *orig = &hop->host[ndx];
     if (hop && !orig->name) {
       if (STR_EQ(orig->addr, elem->host.addr)) {
-        UPD_NSTR(orig->name, elem->host.name, MAXHOSTNAME);
-        if (hop->cached) hop->cached = false;
-        if (hop->cached_nl) hop->cached_nl = false;
-        DNS_DEBUG("%s [%d,%d]: %s=%s %s=%s", DONE_HDR, hop->at, ndx,
-          ADDR_HDR, orig->addr, NAME_HDR, mnemo(orig->name));
-      } else LOG("%s: %s: %s -> %s", DNS_HDR, ORIG_CHNG_HDR,
-        orig->addr, elem->host.addr);
+        dns_setname(orig->name, elem->host.name, hop);
+        DNS_DEBUG("%s [%d,%d]: %s=%s %s=%s", DONE_HDR, hop->at, ndx, ADDR_HDR, orig->addr, NAME_HDR, mnemo(orig->name));
+      } else
+        LOG("%s: %s: %s -> %s", DNS_HDR, ORIG_CHNG_HDR, orig->addr, elem->host.addr);
     }
   }
 }
@@ -168,11 +170,8 @@ void dns_lookup(t_hop *hop, int ndx) {
   PR_DNS_C;
   t_host *cached = dns_cache_find(addr);
   if (cached) { // update with cached data and return
-    UPD_NSTR(hop->host[ndx].name, cached->name, MAXHOSTNAME);
-    if (hop->cached)    hop->cached    = false;
-    if (hop->cached_nl) hop->cached_nl = false;
-    DNS_DEBUG("%s [%d,%d]: %s -> %s=%s", CACHE_HIT_HDR, hop->at, ndx, addr,
-      NAME_HDR, mnemo(cached->name));
+    dns_setname(hop->host[ndx].name, cached->name, hop);
+    DNS_DEBUG("%s [%d,%d]: %s -> %s=%s", CACHE_HIT_HDR, hop->at, ndx, addr, NAME_HDR, mnemo(cached->name));
     return;
   }
   PR_DNS_Q;
