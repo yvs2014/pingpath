@@ -420,14 +420,21 @@ t_tab* graphtab_init(void) {
 #define GR_INIT_LAYER(widget, drawfunc) { (widget) = gtk_drawing_area_new(); g_return_val_if_fail(widget, NULL); \
     gtk_drawing_area_set_draw_func(GTK_DRAWING_AREA(widget), drawfunc, NULL, NULL); \
     layers = g_slist_append(layers, widget); }
-  { GSList *layers = NULL;
-    GR_INIT_LAYER(graph_grid,  gr_draw_grid);
-    GR_INIT_LAYER(graph_marks, gr_draw_marks);
-    GR_INIT_LAYER(graph_graph, gr_draw_graph);
-    if (!drawtab_init(&graphtab, CSS_GRAPH_BG, layers, NT_LEGEND_NDX)) return NULL;
-    g_slist_free(layers); }
-  { gr_set_font(); series_reg_on_scale(graph_marks); }
-  return &graphtab;
+  //
+  GSList *layers = NULL;
+  GR_INIT_LAYER(graph_grid,  gr_draw_grid);
+  GR_INIT_LAYER(graph_marks, gr_draw_marks);
+  GR_INIT_LAYER(graph_graph, gr_draw_graph);
+  gboolean re = layers != NULL;
+  if (re) {
+    re = drawtab_init(&graphtab, CSS_GRAPH_BG, layers, NT_LEGEND_NDX);
+    g_slist_free(layers);
+    if (re) {
+      gr_set_font();
+      series_reg_on_scale(graph_marks);
+    }
+  }
+  return re ? &graphtab : NULL;
 #undef GR_INIT_LAYER
 }
 

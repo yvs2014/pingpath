@@ -46,9 +46,12 @@ static inline void logtab_set_dyn_props(GtkWidget *widget) {
 //
 
 t_tab* logtab_init(GtkWidget* win) {
-  logtab.tag = LOG_TAB_TAG;
-  logtab.tip = LOG_TAB_TIP;
-  if (!basetab_init(&logtab, gtk_list_box_new, NULL)) return NULL;
+  if (!logtab.tag)
+    logtab.tag = LOG_TAB_TAG;
+  if (!logtab.tip)
+    logtab.tip = LOG_TAB_TIP;
+  if (!basetab_init(&logtab, gtk_list_box_new, NULL))
+    return NULL;
   logtab_set_dyn_props(logtab.dyn.w);
   if (!clipboard_init(win, &logtab)) LOG("%s: %s: %s", ERROR_HDR, logtab.name, CLIPBOARD_HDR);
   return &logtab;

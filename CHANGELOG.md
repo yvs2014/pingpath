@@ -1,3 +1,7 @@
+## 1.0.11
+- pingtab: simplify a bit workarea init()
+- stat: map some if-switch'es to fn() calls
+
 ## 1.0.10
 - prepare support of whois multi records
 

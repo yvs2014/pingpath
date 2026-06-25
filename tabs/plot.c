@@ -926,8 +926,11 @@ static gboolean pl_init_layers() {
   GSList *layers = NULL;
   PL_INIT_LAYER(plot_base_area, &plot_base_res);
   PL_INIT_LAYER(plot_dyn_area,  &plot_dyna_res);
-  gboolean re = drawtab_init(&plottab, CSS_PLOT_BG, layers, NT_ROTOR_NDX);
-  g_slist_free(layers);
+  gboolean re = layers != NULL;
+  if (re) {
+    re = drawtab_init(&plottab, CSS_PLOT_BG, layers, NT_ROTOR_NDX);
+    g_slist_free(layers);
+  }
   return re;
 #undef PL_INIT_LAYER
 }
@@ -939,8 +942,13 @@ static gboolean pl_init_layers() {
 t_tab* plottab_init(void) {
   plottab.tag = PLOT_TAB_TAG;
   plottab.tip = PLOT_TAB_TIP;
-  { int units = 1; glGetIntegerv(GL_MAX_VERTEX_TEXTURE_IMAGE_UNITS, &units);
-    if (!units) { g_warning("%s: %s", ERROR_HDR, SHADER_LOOKUP_HDR); return NULL; }}
+  { int units = 1;
+    glGetIntegerv(GL_MAX_VERTEX_TEXTURE_IMAGE_UNITS, &units);
+    if (!units) {
+      g_warning("%s: %s", ERROR_HDR, SHADER_LOOKUP_HDR);
+      return NULL;
+    }
+  }
   //
   glm_scale(scaled, SCALE3);
   pl_init_orientation();
@@ -948,7 +956,8 @@ t_tab* plottab_init(void) {
   plot_glsl_reset(&plot_base_res, true);
   plot_glsl_reset(&plot_dyna_res, true);
   //
-  if (!pl_init_layers()) return NULL;
+  if (!pl_init_layers())
+    return NULL;
   series_reg_on_scale(plot_base_area);
   series_min_no(PLOT_TIME_RANGE);
   //

@@ -161,7 +161,7 @@ static void pinger_print_tcn(char del) {
         int type = pingelem[j].type;
         switch (type) {
           case PE_NO:
-            del ? g_print("%d", i + 1) : g_print("%2d.", i + 1); break;
+            g_print(del ? "%d" : "%2d.", i + 1); break;
           case PE_HOST:
           case PE_AS:
           case PE_CC:

@@ -49,18 +49,17 @@ t_type_elem plotelem[D3_MAX] = {
 #endif
 
 const double colors[][3] = { // 5x6 is enough for MAXTTL=30
-  {1, 0, 0},     {0, 1, 0},     {0, 0, 1},     {1, 1, 0},         {1, 0, 1},         {0, 1, 1},
-  {0.5, 0, 0},   {0, 0.5, 0},   {0, 0, 0.5},   {0.5, 0.5, 0},     {0.5, 0, 0.5},     {0, 0.5, 0.5},
-  {0.75, 0, 0},  {0, 0.75, 0},  {0, 0, 0.75},  {0.75, 0.75, 0},   {0.75, 0, 0.75},   {0, 0.75, 0.75},
-  {0.25, 0, 0},  {0, 0.25, 0},  {0, 0, 0.25},  {0.25, 0.25, 0},   {0.25, 0, 0.25},   {0, 0.25, 0.25},
-  {0.875, 0, 0}, {0, 0.875, 0}, {0, 0, 0.875}, {0.875, 0.875, 0}, {0.875, 0, 0.875}, {0, 0.875, 0.875},
+  {1,     0, 0}, {0, 1,     0}, {0, 0, 1    }, {1,     1,     0}, {1,     0, 1    }, {0, 1,     1    },
+  {0.5,   0, 0}, {0, 0.5,   0}, {0, 0, 0.5  }, {0.5,   0.5,   0}, {0.5,   0, 0.5  }, {0, 0.5,   0.5  },
+  {0.75,  0, 0}, {0, 0.75,  0}, {0, 0, 0.75 }, {0.75,  0.75,  0}, {0.75,  0, 0.75 }, {0, 0.75,  0.75 },
+  {0.25,  0, 0}, {0, 0.25,  0}, {0, 0, 0.25 }, {0.25,  0.25,  0}, {0.25,  0, 0.25 }, {0, 0.25,  0.25 },
 };
 
 const int n_colors = G_N_ELEMENTS(colors);
 
 //
 
-static int elem_type2ndx(int type, t_type_elem *elem, guint max) {
+static int elem_type2ndx(int type, t_type_elem *elem, uint max) {
   for (int i = 0; i < (int)max; i++) if (type == elem[i].type) return i;
   return -1;
 }
@@ -202,7 +201,7 @@ t_elem_desc plot_desc = { .elems = plotelem, .mm = { .min = D3_BACK, .max = D3_R
 
 //
 
-static guint rgb2x(double c) { int n = c * 255; return n % 256; }
+static uint rgb2x(double c) { int n = c * 255; return n % 256; }
 
 char* get_nth_color(int nth) {
   int n = nth % n_colors;
@@ -257,37 +256,37 @@ static gboolean* elem_enabler(int type, t_type_elem *elem, int max) {
   for (int i = 0; i < max; i++) if (type == elem[i].type) return &elem[i].enable;
   return NULL;
 }
-gboolean*  pingelem_enabler(int type) { return elem_enabler(type, pingelem,  G_N_ELEMENTS(pingelem));  }
-gboolean* graphelem_enabler(int type) { return elem_enabler(type, graphelem, G_N_ELEMENTS(graphelem)); }
+inline gboolean*  pingelem_enabler(int type) { return elem_enabler(type, pingelem,  G_N_ELEMENTS(pingelem));  }
+inline gboolean* graphelem_enabler(int type) { return elem_enabler(type, graphelem, G_N_ELEMENTS(graphelem)); }
 
 gboolean is_grelem_enabled(int type) {
-  guint ndx = graphelem_type2ndx(type);
+  uint ndx = graphelem_type2ndx(type);
   return (ndx < G_N_ELEMENTS(graphelem)) ? graphelem[ndx].enable : false;
 }
 
 #ifdef WITH_PLOT
-gboolean* plotelem_enabler(int type) { return elem_enabler(type, plotelem, G_N_ELEMENTS(plotelem)); }
+inline gboolean* plotelem_enabler(int type) { return elem_enabler(type, plotelem, G_N_ELEMENTS(plotelem)); }
 
 gboolean is_plelem_enabled(int type) {
-  guint ndx = plotelem_type2ndx(type);
+  uint ndx = plotelem_type2ndx(type);
   return (ndx < G_N_ELEMENTS(plotelem)) ? plotelem[ndx].enable : false;
 }
 #endif
 
-#define CLEAN_ELEM_LOOP(elems, min, max) do {                     \
-  for (guint i = 0; i < G_N_ELEMENTS(elems); i++)                 \
-    if (((min) <= (elems)[i].type) && ((elems)[i].type <= (max))) \
-     (elems)[i].enable = false;                                   \
-} while (0)
+static void clean_type_elems(t_type_elem elems[], uint len, int min, int max) {
+  for (uint i = 0; i < len; i++)
+    if ((min <= elems[i].type) && (elems[i].type <= max))
+      elems[i].enable = false;
+}
 
 void clean_elems(int type) {
   switch (type) {
-    case ENT_EXP_INFO: CLEAN_ELEM_LOOP(pingelem,  PE_HOST, PE_RT);   break;
-    case ENT_EXP_STAT: CLEAN_ELEM_LOOP(pingelem,  PE_LOSS, PE_JTTR); break;
-    case ENT_EXP_LGFL: CLEAN_ELEM_LOOP(graphelem, GE_AVJT, GE_LGHN); break;
-    case ENT_EXP_GREX: CLEAN_ELEM_LOOP(graphelem, GX_MEAN, GX_AREA); break;
+    case ENT_EXP_INFO: clean_type_elems(pingelem,  G_N_ELEMENTS(pingelem),  PE_HOST, PE_RT);   break;
+    case ENT_EXP_STAT: clean_type_elems(pingelem,  G_N_ELEMENTS(pingelem),  PE_LOSS, PE_JTTR); break;
+    case ENT_EXP_LGFL: clean_type_elems(graphelem, G_N_ELEMENTS(graphelem), GE_AVJT, GE_LGHN); break;
+    case ENT_EXP_GREX: clean_type_elems(graphelem, G_N_ELEMENTS(graphelem), GX_MEAN, GX_AREA); break;
 #ifdef WITH_PLOT
-    case ENT_EXP_PLEL: CLEAN_ELEM_LOOP(plotelem,  D3_BACK, D3_ROTR); break;
+    case ENT_EXP_PLEL: clean_type_elems(plotelem,  G_N_ELEMENTS(plotelem),  D3_BACK, D3_ROTR); break;
 #endif
     default: break;
   }
@@ -393,7 +392,7 @@ void print_refs(GSList *refs, const char *prefix) {
 }
 #endif
 
-GSList* list_add_nodup(GSList **list, void *data, GCompareFunc cmp, guint max) {
+GSList* list_add_nodup(GSList **list, void *data, GCompareFunc cmp, uint max) {
   if (!list || !data || !cmp) return NULL;
   GSList *elem = g_slist_find_custom(*list, data, cmp);
   if (elem) { g_free(data); return elem; }

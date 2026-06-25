@@ -95,7 +95,7 @@ static void uniq_unreach(int at) {
 
 enum { PREV, CURR };
 
-static void update_stat(int at, int rtt, t_tseq *mark, guint rxtx) {
+static void update_stat(int at, int rtt, t_tseq *mark, uint rxtx) {
   if (rxtx & RX) hops[at].recv++;
   if (rxtx & TX) hops[at].sent++;
   if (rxtx && hops[at].sent) hops[at].loss = (hops[at].sent - hops[at].recv) * 100. / hops[at].sent;
@@ -139,7 +139,7 @@ static inline const char* addr_or_name(int ndx, t_host *host, gboolean num) {
     host[ndx].name;
 }
 
-static const char *info_host(int at) {
+static const char *info_host(int at, int type G_GNUC_UNUSED) {
   static char hostinfo_cache[MAXTTL][BUFF_SIZE];
   t_hop *hop = &hops[at];
   t_host *host = hop->host;
@@ -164,7 +164,7 @@ static const char *info_host(int at) {
   return NULL;
 }
 
-static const char *info_host_nl(int at) {
+static const char *info_host_nl(int at, int type G_GNUC_UNUSED) {
   static char hostinfo_nl_cache[MAXTTL][MAXHOSTNAME];
   t_hop *hop = &hops[at];
   t_host *host = hop->host;
@@ -180,7 +180,7 @@ static const char *info_host_nl(int at) {
   return NULL;
 }
 
-static uint column_host(int at, t_ping_column *column) { // NONNULL(2)
+static uint column_host(int at, t_ping_column *column, int num G_GNUC_UNUSED) { // NONNULL(2)
   t_host *host = hops[at].host;
   uint n = 0;
   for (; n < MIN(G_N_ELEMENTS(hops->host), G_N_ELEMENTS(column->cell)); n++) {
@@ -191,19 +191,33 @@ static uint column_host(int at, t_ping_column *column) { // NONNULL(2)
   return n;
 }
 
-static uint column_addrhost(int at, t_ping_column* column, gboolean num) { // NONNULL(2)
+static uint column_addrhost(int at, t_ping_column* column, int type) { // NONNULL(2)
   t_host *host = hops[at].host;
   uint n = 0;
   for (; n < MIN(G_N_ELEMENTS(hops->host), G_N_ELEMENTS(column->cell)); n++) {
     if (!host[n].addr)
       break;
-    column->cell[n] = addr_or_name(n, host, num);
+    column->cell[n] = addr_or_name(n, host, type == PX_ADDR);
   }
   return n;
 }
 
+static int type2wtype(int type) {
+  switch (type) {
+    case PE_AS:   type = WHOIS_AS_NDX;   break;
+    case PE_CC:   type = WHOIS_CC_NDX;   break;
+    case PE_DESC: type = WHOIS_DESC_NDX; break;
+    case PE_RT:   type = WHOIS_RT_NDX;   break;
+    default:      type = -1;             break;
+  }
+  return type;
+}
+
 static const char *info_whois(int at, int type) {
   static char whois_cache[MAXTTL][WHOIS_NDX_MAX][BUFF_SIZE];
+  type = type2wtype(type);
+  if (type < 0)
+    return NULL;
   t_whois *whois = hops[at].whois;
   char *view = T_WHOIS_VIEW(whois, type);
   if (!view)
@@ -229,6 +243,9 @@ static const char *info_whois(int at, int type) {
 
 static const char *info_whois_nl(int at, int type) {
   static char whois_nl_cache[MAXTTL][WHOIS_NDX_MAX][MAXHOSTNAME];
+  type = type2wtype(type);
+  if (type < 0)
+    return NULL;
   t_whois *whois = hops[at].whois;
   char *view = T_WHOIS_VIEW(whois, type);
   if (view) { // as a marker
@@ -244,6 +261,9 @@ static const char *info_whois_nl(int at, int type) {
 }
 
 static uint column_whois(int at, t_ping_column *column, int type) { // NONNULL(2)
+  type = type2wtype(type);
+  if (type < 0)
+    return 0;
   t_whois *whois = hops[at].whois;
   uint n = 0;
   for (; n < MIN(G_N_ELEMENTS(hops->whois->m), G_N_ELEMENTS(column->cell)); n++) {
@@ -282,7 +302,7 @@ static const char* fill_stat_rtt(int usec, char* buff, int size) {
   return buff;
 }
 
-static const char *stat_hop(int type, t_hop *hop) {
+static const char *stat_hop(int at, int type) {
   static char buff_loss[NUM_BUFF_SZ];
   static char buff_sent[NUM_BUFF_SZ];
   static char buff_recv[NUM_BUFF_SZ];
@@ -292,14 +312,14 @@ static const char *stat_hop(int type, t_hop *hop) {
   static char buff_avrg[NUM_BUFF_SZ];
   static char buff_jttr[NUM_BUFF_SZ];
   switch (type) {
-    case PE_LOSS: return fill_stat_dbl(hop->loss, buff_loss, sizeof(buff_loss), "%", 0);
-    case PE_SENT: return fill_stat_int(hop->sent, buff_sent, sizeof(buff_sent));
-    case PE_RECV: return fill_stat_int(hop->recv, buff_recv, sizeof(buff_recv));
-    case PE_LAST: return fill_stat_rtt(hop->last, buff_last, sizeof(buff_last));
-    case PE_BEST: return fill_stat_rtt(hop->best, buff_best, sizeof(buff_best));
-    case PE_WRST: return fill_stat_rtt(hop->wrst, buff_wrst, sizeof(buff_wrst));
-    case PE_AVRG: return fill_stat_dbl(hop->avrg, buff_avrg, sizeof(buff_avrg), NULL, 1000);
-    case PE_JTTR: return fill_stat_dbl(hop->jttr, buff_jttr, sizeof(buff_jttr), NULL, 1000);
+    case PE_LOSS: return fill_stat_dbl(hops[at].loss, buff_loss, sizeof(buff_loss), "%", 0);
+    case PE_SENT: return fill_stat_int(hops[at].sent, buff_sent, sizeof(buff_sent));
+    case PE_RECV: return fill_stat_int(hops[at].recv, buff_recv, sizeof(buff_recv));
+    case PE_LAST: return fill_stat_rtt(hops[at].last, buff_last, sizeof(buff_last));
+    case PE_BEST: return fill_stat_rtt(hops[at].best, buff_best, sizeof(buff_best));
+    case PE_WRST: return fill_stat_rtt(hops[at].wrst, buff_wrst, sizeof(buff_wrst));
+    case PE_AVRG: return fill_stat_dbl(hops[at].avrg, buff_avrg, sizeof(buff_avrg), NULL, 1000);
+    case PE_JTTR: return fill_stat_dbl(hops[at].jttr, buff_jttr, sizeof(buff_jttr), NULL, 1000);
     default: break;
   }
   return NULL;
@@ -409,57 +429,67 @@ void stat_last_tx(int at) { // update last 'tx' unless done before
   if (hops[at].tout) { update_stat(at, -1, NULL, TX); hops[at].tout = false; }
 }
 
+//
+typedef const char* (*t_stat_str_elem_fn)(int, int);
+
+static t_stat_str_elem_fn stat_str_elem_fn[PE_MAX] = {
+  [PE_HOST] = info_host,
+  [PE_AS]   = info_whois,
+  [PE_CC]   = info_whois,
+  [PE_DESC] = info_whois,
+  [PE_RT]   = info_whois,
+  [PE_LOSS] = stat_hop,
+  [PE_SENT] = stat_hop,
+  [PE_RECV] = stat_hop,
+  [PE_LAST] = stat_hop,
+  [PE_BEST] = stat_hop,
+  [PE_WRST] = stat_hop,
+  [PE_AVRG] = stat_hop,
+  [PE_JTTR] = stat_hop,
+};
+static t_stat_str_elem_fn stat_ln_elem_fn[PE_MAX] = {
+  [PE_HOST] = info_host_nl,
+  [PE_AS]   = info_whois_nl,
+  [PE_CC]   = info_whois_nl,
+  [PE_DESC] = info_whois_nl,
+  [PE_RT]   = info_whois_nl,
+};
+
 const char *stat_str_elem(int at, int type) {
-  // TODO: map PE_ -> fn calls?
-  switch (type) {
-    case PE_HOST: return info_host(at);
-    case PE_AS:   return info_whois(at, WHOIS_AS_NDX);
-    case PE_CC:   return info_whois(at, WHOIS_CC_NDX);
-    case PE_DESC: return info_whois(at, WHOIS_DESC_NDX);
-    case PE_RT:   return info_whois(at, WHOIS_RT_NDX);
-    case PE_LOSS:
-    case PE_SENT:
-    case PE_RECV:
-    case PE_LAST:
-    case PE_BEST:
-    case PE_WRST:
-    case PE_AVRG:
-    case PE_JTTR:
-      return stat_hop(type, &hops[at]);
-    default: break;
-  }
-  return NULL;
+  t_stat_str_elem_fn fn = type < (int)G_N_ELEMENTS(stat_str_elem_fn) ?
+    stat_str_elem_fn[type] : NULL;
+  return fn ? fn(at, type) : NULL;
 }
 
 static const char *stat_strnl_elem(int at, int type) {
-  switch (type) {
-    case PE_HOST: return info_host_nl(at);
-    case PE_AS:   return info_whois_nl(at, WHOIS_AS_NDX);
-    case PE_CC:   return info_whois_nl(at, WHOIS_CC_NDX);
-    case PE_DESC: return info_whois_nl(at, WHOIS_DESC_NDX);
-    case PE_RT:   return info_whois_nl(at, WHOIS_RT_NDX);
-    default: break;
-  }
-  return NULL;
+  t_stat_str_elem_fn fn = type < (int)G_N_ELEMENTS(stat_ln_elem_fn) ?
+    stat_ln_elem_fn[type] : NULL;
+  return fn ? fn(at, type) : NULL;
 }
+//
 
-uint stat_ping_column(int at, int type, t_ping_column *column) { // NONNULL(3)
-  uint n = 0;
-  *column = (t_ping_column){0};
-  switch (type) {
-// TODO: map 'type -> callback[type]'
-    case PE_HOST: n = column_host(at, column);                  break;
-    case PE_AS:   n = column_whois(at, column, WHOIS_AS_NDX);   break;
-    case PE_CC:   n = column_whois(at, column, WHOIS_CC_NDX);   break;
-    case PE_DESC: n = column_whois(at, column, WHOIS_DESC_NDX); break;
-    case PE_RT:   n = column_whois(at, column, WHOIS_RT_NDX);   break;
-    case PX_ADDR: n = column_addrhost(at, column, true);        break;
-    case PX_HOST: n = column_addrhost(at, column, false);       break;
-    default: break;
-  }
-  return n;
+//
+typedef uint (*t_stat_col_elem_fn)(int, t_ping_column*, int);
+
+static t_stat_col_elem_fn stat_col_elem_fn[PX_MAX] = {
+  [PE_HOST] = column_host,
+  [PE_AS]   = column_whois,
+  [PE_CC]   = column_whois,
+  [PE_DESC] = column_whois,
+  [PE_RT]   = column_whois,
+  [PX_ADDR] = column_addrhost,
+  [PX_HOST] = column_addrhost,
+};
+
+uint stat_ping_column(int at, int type, t_ping_column *column) { // NONNULL(2)
+  t_stat_col_elem_fn fn = type < (int)G_N_ELEMENTS(stat_col_elem_fn) ?
+    stat_col_elem_fn[type] : NULL;
+  return fn ? fn(at, column, type) : 0;
 }
+//
 
+//
+// TODO: map switch(type) to fn(type) too?
 double stat_dbl_elem(int at, int type) {
   double val = -1;
   switch (type) {

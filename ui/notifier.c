@@ -269,8 +269,7 @@ static inline void nt_make_leg_row(GtkListBox *box, GtkSizeGroup* group[], int n
 }
 
 #ifdef WITH_DND
-static void nt_init_dnd_over(GtkWidget *inbox, GtkWidget *over, t_notifier *nt) {
-  if (!GTK_IS_WIDGET(inbox) || !GTK_IS_OVERLAY(over) || !nt) return;
+static void nt_init_dnd_over(GtkWidget *inbox, GtkWidget *over, t_notifier *nt) { // NONNULL(1, 2, 3)
   GtkDragSource *src = gtk_drag_source_new();
   if (src) {
     g_signal_connect(src, EV_DND_DRAG, G_CALLBACK(nt_dnd_drag), nt);
@@ -285,14 +284,15 @@ static void nt_init_dnd_over(GtkWidget *inbox, GtkWidget *over, t_notifier *nt) 
 }
 #endif
 
-static void nt_init_legend(GtkWidget *inbox, GtkWidget *over, t_notifier *nt) {
-  if (!GTK_IS_LIST_BOX(inbox) || !nt) return;
+static void nt_init_legend(GtkWidget *inbox, t_notifier *nt) { // NONNULL(1, 2)
   g_signal_connect(inbox, EV_ROW_ACTIVE, G_CALLBACK(nt_lgnd_row_cb), NULL);
-  if (style_loaded) nt_reload_css(inbox, CSS_GRAPH_BG);
-  GtkSizeGroup* group[GE_MAX];
+  if (style_loaded)
+    nt_reload_css(inbox, CSS_GRAPH_BG);
+  GtkSizeGroup* group[GE_MAX] = {0};
   for (guint i = 0; i < G_N_ELEMENTS(group); i++)
     group[i] = gtk_size_group_new(GTK_SIZE_GROUP_HORIZONTAL);
-  t_nt_leg *leg = nt->content ? nt->content : NULL; int n = nt->content_n;
+  t_nt_leg *leg = nt->content ? nt->content : NULL;
+  int n = nt->content_n;
   for (int i = 0; leg && (i < n); i++, leg++) {
     leg->box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, MARGIN);
     if (leg->box) { // number, color dash, avrg±jttr, cc:as, hopname
@@ -301,13 +301,13 @@ static void nt_init_legend(GtkWidget *inbox, GtkWidget *over, t_notifier *nt) {
       if ((len > 0) && span[0])
         gtk_widget_set_tooltip_text(leg->box, span);
       leg->row = line_row_new(leg->box, false);
-      if (leg->row) nt_make_leg_row(GTK_LIST_BOX(inbox), group, i, leg, nt->css.col);
+      if (leg->row)
+        nt_make_leg_row(GTK_LIST_BOX(inbox), group, i, leg, nt->css.col);
     }
   }
-  for (guint i = 0; i < G_N_ELEMENTS(group); i++) if (group[i]) g_object_unref(group[i]);
-#ifdef WITH_DND
-  nt_init_dnd_over(inbox, over, nt);
-#endif
+  for (uint i = 0; i < G_N_ELEMENTS(group); i++)
+    if (group[i])
+      g_object_unref(group[i]);
 }
 
 #ifdef WITH_PLOT
@@ -315,8 +315,7 @@ static void nt_rotor_cb(GtkButton *self G_GNUC_UNUSED, t_kb_plot_aux *aux) {
   if (aux) on_rotation(NULL, NULL, aux);
 }
 
-static void nt_init_rotor(GtkWidget *inbox, GtkWidget *over, t_notifier *nt) {
-  if (!GTK_IS_BOX(inbox)) return;
+static void nt_init_rotor(GtkWidget *inbox) { // NONNULL(1)
   t_rotor_arrow rc01 = {.alt = "↑", .ico = {RTR_UP_ICON,    RTR_UP_ICOA,    RTR_UP_ICOB   }};
   t_rotor_arrow rc10 = {.alt = "←", .ico = {RTR_LEFT_ICON,  RTR_LEFT_ICOA,  RTR_LEFT_ICOB }};
   t_rotor_arrow rc11 = {.alt = "↻", .ico = {RTR_ROLL_ICON,  RTR_ROLL_ICOA,  RTR_ROLL_ICOB }};
@@ -358,14 +357,12 @@ static void nt_init_rotor(GtkWidget *inbox, GtkWidget *over, t_notifier *nt) {
   for (guint i = 0; i < G_N_ELEMENTS(group); i++)
     if (group[i])
       g_object_unref(group[i]);
-#ifdef WITH_DND
-  nt_init_dnd_over(inbox, over, nt);
-#endif
 }
 #endif
 
 static GtkWidget* nt_init(GtkWidget *base, t_notifier *nt) {
-  if (!GTK_IS_WIDGET(base) || !nt) return NULL;
+  if (!GTK_IS_WIDGET(base) || !nt)
+    return NULL;
   GtkWidget *over = gtk_overlay_new();                        g_return_val_if_fail(over, NULL);
   GtkWidget *box  = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0); g_return_val_if_fail(box, NULL);
   GtkWidget *rev  = gtk_revealer_new();                       g_return_val_if_fail(rev, NULL);
@@ -384,13 +381,21 @@ static GtkWidget* nt_init(GtkWidget *base, t_notifier *nt) {
     } break;
     case NT_LEGEND_NDX: {
       inbox = gtk_list_box_new();
-      nt_init_legend(inbox, over, nt);
+      if (inbox) {
+        nt_init_legend(inbox, nt);
+#ifdef WITH_DND
+        nt_init_dnd_over(inbox, over, nt);
+#endif
+      }
     } break;
 #ifdef WITH_PLOT
     case NT_ROTOR_NDX: {
       inbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
       if (inbox) {
-        nt_init_rotor(inbox, over, nt);
+        nt_init_rotor(inbox);
+#ifdef WITH_DND
+        nt_init_dnd_over(inbox, over, nt);
+#endif
         nt->visible = is_plelem_enabled(D3_ROTR);
         gtk_revealer_set_reveal_child(GTK_REVEALER(rev), nt->visible);
       }

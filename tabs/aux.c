@@ -8,6 +8,13 @@
 #include "tabs/plot.h"
 #endif
 
+#define TAB_ELEM_INIT(page, widget, class, color) do { \
+  (page).css = (class);                                \
+  (page).col = (color);                                \
+  (page).w = (widget);                                 \
+  g_return_val_if_fail((widget), false);               \
+} while (0)
+
 static void tab_aux_reload_css(t_tab_widget *tab_widget, const char *color) {
   if (tab_widget->col) gtk_widget_remove_css_class(tab_widget->w, tab_widget->col);
   tab_widget->col = color;
@@ -18,38 +25,44 @@ static void tab_aux_reload_css(t_tab_widget *tab_widget, const char *color) {
 
 t_tab* nb_tabs[TAB_NDX_MAX]; // notebook tabs are reorderable
 
-#define TAB_ELEM_INIT(tabw, maker, cssclass, color) TAB_ELEM_WITH(tabw, maker, cssclass, color, false)
-gboolean basetab_init(t_tab *tab, GtkWidget* (*make_dyn)(void), GtkWidget* (*make_extra)(void)) {
-  if (!tab || !make_dyn) return false;
+
+gboolean basetab_init(t_tab *tab, GtkWidget* (*make_dyn)(void), GtkWidget* (*make_extra)(void)) { // NONNULL(1, 2)
   TAB_ELEM_INIT(tab->lab, gtk_box_new(GTK_ORIENTATION_VERTICAL, 2),      CSS_PAD, NULL);
   TAB_ELEM_INIT(tab->tab, gtk_box_new(GTK_ORIENTATION_VERTICAL, MARGIN), CSS_PAD, CSS_BGROUND);
-  tab->dyn.w = make_dyn(); g_return_val_if_fail(tab->dyn.w, false);
   tab->dyn.col = CSS_BGROUND;
-  GtkWidget *box = gtk_box_new(GTK_ORIENTATION_VERTICAL, MARGIN); g_return_val_if_fail(box, false);
+  tab->dyn.w = make_dyn();
+  g_return_val_if_fail(tab->dyn.w, false);
+  GtkWidget *box = gtk_box_new(GTK_ORIENTATION_VERTICAL, MARGIN);
+  g_return_val_if_fail(box, false);
   gtk_box_append(GTK_BOX(box), tab->dyn.w);
   if (make_extra) {
     GtkWidget *widget = make_extra();
-    if (GTK_IS_WIDGET(widget)) gtk_box_append(GTK_BOX(box), widget);
+    if (GTK_IS_WIDGET(widget))
+      gtk_box_append(GTK_BOX(box), widget);
   }
-  GtkWidget *scroll = gtk_scrolled_window_new(); g_return_val_if_fail(scroll, false);
+  GtkWidget *scroll = gtk_scrolled_window_new();
+  g_return_val_if_fail(scroll, false);
   gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scroll), box);
   gtk_widget_set_vexpand(GTK_WIDGET(scroll), true);
   gtk_box_append(GTK_BOX(tab->tab.w), scroll);
   return true;
 }
 
-gboolean drawtab_init(t_tab *tab, const char *color, GSList *layers, guint ndx) {
-  if (!tab || !layers) return false;
+gboolean drawtab_init(t_tab *tab, const char *color, GSList *layers, uint ndx) { // NONNULL(1, 3)
   TAB_ELEM_INIT(tab->lab, gtk_box_new(GTK_ORIENTATION_VERTICAL, 2), CSS_PAD, NULL);
   TAB_ELEM_INIT(tab->dyn, gtk_box_new(GTK_ORIENTATION_VERTICAL, 0), NULL,    color);
   // add overlay
-  GtkWidget *over = gtk_overlay_new(); g_return_val_if_fail(over, false);
+  GtkWidget *over = gtk_overlay_new();
+  g_return_val_if_fail(over, false);
   for (GSList *list = layers; list; list = list->next)
-    if (list->data) gtk_overlay_add_overlay(GTK_OVERLAY(over), list->data);
+    if (list->data)
+      gtk_overlay_add_overlay(GTK_OVERLAY(over), list->data);
   gtk_overlay_set_child(GTK_OVERLAY(over), tab->dyn.w);
   // wrap scrolling
-  tab->tab.w = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0); g_return_val_if_fail(tab->tab.w, false);
-  GtkWidget *scroll = gtk_scrolled_window_new(); g_return_val_if_fail(scroll, false);
+  tab->tab.w = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+  g_return_val_if_fail(tab->tab.w, false);
+  GtkWidget *scroll = gtk_scrolled_window_new();
+  g_return_val_if_fail(scroll, false);
   gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scroll), over);
   gtk_widget_set_vexpand(GTK_WIDGET(scroll), true);
   // put altogether into tab
@@ -57,7 +70,6 @@ gboolean drawtab_init(t_tab *tab, const char *color, GSList *layers, guint ndx) 
   gtk_box_append(GTK_BOX(tab->tab.w), notify ? notify : scroll);
   return true;
 }
-#undef TAB_ELEM_INIT
 
 void tab_setup(t_tab *tab) {
   if (!tab) return;
