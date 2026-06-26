@@ -42,7 +42,9 @@ const int n_colors = G_N_ELEMENTS(colors);
 //
 
 static int elem_type2ndx(int type, t_type_elem *elem, uint max) {
-  for (int i = 0; i < (int)max; i++) if (type == elem[i].type) return i;
+  for (int i = 0; i < (int)max; i++)
+    if (type == elem[i].type)
+      return i;
   return -1;
 }
 int  pingelem_type2ndx(int type) { return elem_type2ndx(type, pingelem,  G_N_ELEMENTS(pingelem));  }
@@ -110,8 +112,10 @@ int char2ndx(int cat, enum char2ndx_e ent, char ch) {
     { const char *found = strchr(char_pattern[cat], ch);
       if (found) {
         long pos = found - char_pattern[cat];
-        if (pos < MAXCHARS_IN_PATTERN) ndx = char_ndxs[cat][pos][(ent == CAT_ENT_NDX) ? 0 : 1];
-    }} break;
+        if (pos < MAXCHARS_IN_PATTERN)
+          ndx = char_ndxs[cat][pos][(ent == CAT_ENT_NDX) ? 0 : 1];
+      }
+    } break;
     default: break;
   }
   return ndx;
@@ -235,7 +239,9 @@ void init_elem_links(void) {
 //
 
 static gboolean* elem_enabler(int type, t_type_elem *elem, int max) {
-  for (int i = 0; i < max; i++) if (type == elem[i].type) return &elem[i].enable;
+  for (int i = 0; i < max; i++)
+    if (type == elem[i].type)
+      return &elem[i].enable;
   return NULL;
 }
 inline gboolean*  pingelem_enabler(int type) { return elem_enabler(type, pingelem,  G_N_ELEMENTS(pingelem));  }
@@ -342,31 +348,40 @@ GtkListBoxRow* line_row_new(GtkWidget *child, gboolean visible) {
 }
 
 void host_free(t_host *host) {
-  if (host) { CLR_STR(host->addr); CLR_STR(host->name); }
+  if (host) {
+    CLR_STR(host->addr);
+    CLR_STR(host->name);
+  }
 }
 
-int host_cmp(const void *a, const void *b) {
-  if (!a || !b) return -1;
-  return g_strcmp0(((t_host*)a)->addr, ((t_host*)b)->addr);
+int host_cmp(const t_host *a, const t_host *b) {
+  return (a && b) ? g_strcmp0(a->addr, b->addr) : -1;
 }
 
 int ref_cmp(const t_ref *a, const t_ref *b) {
-  if (!a || !b) return -1;
-  return ((a->hop == b->hop) && (a->ndx == b->ndx)) ? 0 : 1;
+  return (a && b) ?
+    (((a->hop == b->hop) && (a->ndx == b->ndx)) ? 0 : 1) :
+    -1;
 }
 
 t_ref* ref_new(t_hop *hop, int ndx) {
   t_ref *ref = g_malloc0(sizeof(t_ref));
-  if (ref) { ref->hop = hop; ref->ndx = ndx; }
+  if (ref) {
+    ref->hop = hop;
+    ref->ndx = ndx;
+  }
   return ref;
 }
 
 #if defined(DNS_EXTRA_DEBUG) || defined(WHOIS_EXTRA_DEBUG)
 void print_refs(GSList *refs, const char *prefix) {
-  if (!(verbose.dns || verbose.whois)) return;
+  if (!(verbose.dns || verbose.whois))
+    return;
   int i = 0;
   for (GSList* list = refs; list; list = list->next, i++) {
-    t_ref *ref = list->data; if (!ref) continue;
+    t_ref *ref = list->data;
+    if (!ref)
+      continue;
     t_host *host = &ref->hop->host[ref->ndx];
     LOG("%s #%d: %s=%d %s=%s %s=%s", prefix ? prefix : "", i,
       NDX_HDR, ref->ndx, ADDR_HDR, host->addr, NAME_HDR, host->name);
@@ -375,9 +390,13 @@ void print_refs(GSList *refs, const char *prefix) {
 #endif
 
 GSList* list_add_nodup(GSList **list, void *data, GCompareFunc cmp, uint max) {
-  if (!list || !data || !cmp) return NULL;
+  if (!list || !data || !cmp)
+    return NULL;
   GSList *elem = g_slist_find_custom(*list, data, cmp);
-  if (elem) { g_free(data); return elem; }
+  if (elem) {
+    g_free(data);
+    return elem;
+  }
   *list = g_slist_prepend(*list, data);
   if ((max > 0) && (g_slist_length(*list) > max))
     *list = g_slist_delete_link(*list, g_slist_last(*list));
@@ -385,11 +404,16 @@ GSList* list_add_nodup(GSList **list, void *data, GCompareFunc cmp, uint max) {
 }
 
 GSList* list_add_ref(GSList **list, t_hop *hop, int ndx) {
-  if (!list) return NULL;
+  if (!list)
+    return NULL;
   t_ref *ref = ref_new(hop, ndx);
-  if (!ref) return NULL;
-  { GSList *elem = g_slist_find_custom(*list, ref, (GCompareFunc)ref_cmp);
-    if (elem) { g_free(ref); return elem; } }
+  if (!ref)
+    return NULL;
+  GSList *elem = g_slist_find_custom(*list, ref, (GCompareFunc)ref_cmp);
+  if (elem) {
+    g_free(ref);
+    return elem;
+  }
   *list = g_slist_prepend(*list, ref);
   if (g_slist_length(*list) > REF_MAX)
     *list = g_slist_delete_link(*list, g_slist_last(*list));

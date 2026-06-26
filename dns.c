@@ -43,21 +43,19 @@ static void dns_query_free(t_dns_elem *elem) {
   }
 }
 
-static int dns_query_cmp(const void *a, const void *b) {
-  return (a && b) ?
-    g_strcmp0(((t_dns_elem*)a)->host.addr, ((t_dns_elem*)b)->host.addr) :
-    -1;
+static int dns_query_cmp(const t_dns_elem *a, const t_dns_elem *b) {
+  return (a && b) ? g_strcmp0(a->host.addr, b->host.addr) : -1;
 }
 
 static t_host* dns_cache_find(char* addr) {
   t_host find = { .addr = addr };
-  GSList *found = g_slist_find_custom(dns_cache, &find, host_cmp);
+  GSList *found = g_slist_find_custom(dns_cache, &find, (GCompareFunc)host_cmp);
   return found ? found->data : NULL;
 }
 
 static t_dns_elem* dns_query_find(char* addr) {
   t_dns_elem find = { .host = { .addr = addr }};
-  GSList *found = g_slist_find_custom(dns_query, &find, dns_query_cmp);
+  GSList *found = g_slist_find_custom(dns_query, &find, (GCompareFunc)dns_query_cmp);
   return found ? found->data : NULL;
 }
 
@@ -95,7 +93,7 @@ static void dns_cache_update(char *addr, char *name) {
     host->addr = g_strndup(addr, MAXHOSTNAME);
     host->name = g_strndup(name ? name : UNKN_FIELD, MAXHOSTNAME);
     if (host->addr && host->name) {
-      if (list_add_nodup(&dns_cache, host, host_cmp, DNS_CACHE_MAX)) {
+      if (list_add_nodup(&dns_cache, host, (GCompareFunc)host_cmp, DNS_CACHE_MAX)) {
         LOG("%s: %s=%s %s=%s", DNS_CUP_HDR,
           ADDR_HDR, host->addr, NAME_HDR, mnemo(host->name));
         PR_DNS_C;
@@ -115,7 +113,7 @@ static t_dns_elem* dns_query_save(const char *addr, t_hop *hop, int ndx) {
   elem->host.addr = g_strndup(addr, MAXHOSTNAME);
   if (elem->host.addr) {
     if (list_add_ref(&elem->refs, hop, ndx)) {
-      GSList *added = list_add_nodup(&dns_query, elem, dns_query_cmp, DNS_QUERY_MAX);
+      GSList *added = list_add_nodup(&dns_query, elem, (GCompareFunc)dns_query_cmp, DNS_QUERY_MAX);
       if (added) {
         DNS_DEBUG("%s: %s %s=%d %s[%d]=%s", SAVEQ_HDR, addr,
           HOP_HDR, hop->at, ADDR_HDR, ndx, hop->host[ndx].addr);

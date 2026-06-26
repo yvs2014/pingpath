@@ -1,3 +1,7 @@
+## 1.0.13
+- reformat a bit oneliners
+- hops[.host,.whois] bounds with G_N_ELEMENTS
+
 ## 1.0.12
 - stat: map view functions to pingelem:statdata
 

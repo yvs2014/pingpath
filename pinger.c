@@ -33,9 +33,11 @@
 
 #define CLEAR_G_OBJECT(obj) g_clear_object(obj) // NOLINT(bugprone-sizeof-expression)
 
-#define PINGER_MESG(fmt, ...) do {             \
-  if (opts.recap) g_message(fmt, __VA_ARGS__); \
-  else notifier_inform(fmt, __VA_ARGS__);      \
+#define PINGER_MESG(fmt, ...) do {     \
+  if (opts.recap)                      \
+    g_message(fmt, __VA_ARGS__);       \
+  else                                 \
+    notifier_inform(fmt, __VA_ARGS__); \
 } while (0)
 
 #define CSV_DEL  ';'
@@ -43,7 +45,7 @@
 #define TOON_DEL ','
 #endif
 
-#define HOP_INDENT g_print("%3s", "")
+#define HOP_INDENT "   "
 
 static void print_tcn(char del, const char *str, long len) {
   if (del) // CSV or TOON
@@ -51,7 +53,8 @@ static void print_tcn(char del, const char *str, long len) {
   else {   // plain text
     g_print(" %s", str);
     long w = len - g_utf8_strlen(str, INT16_MAX);
-    if (w > 0) g_print("%-*s", (int)w, "");
+    if (w > 0)
+      g_print("%-*s", (int)w, "");
   }
 }
 
@@ -66,8 +69,8 @@ typedef struct proc {
 t_pinger_state pinger_state;
 gboolean atquit;
 
-       guint stat_timer;
-static guint  exp_timer;
+       uint stat_timer;
+static uint  exp_timer;
 
 //
 
@@ -89,7 +92,10 @@ static char* last_error(void) {
   return NULL;
 }
 
-static void pinger_error_free(void) { for (int i = 0; i < MAXTTL; i++) pinger_nth_free_error(i); }
+static void pinger_error_free(void) {
+  for (uint i = 0; i < G_N_ELEMENTS(ping_errors); i++)
+    pinger_nth_free_error(i);
+}
 
 #define PN_PRMAX(max, name) do {               \
   const char *str = (name);                    \
@@ -107,11 +113,13 @@ static char* strqdup(const char *str, gboolean quote) {
 static char** info_arr(gboolean csv, gboolean quote) {
   GPtrArray *garr = g_ptr_array_new();
   if (info_mesg) {
-    if (csv) g_ptr_array_add(garr, g_strdup_printf("%c", CSV_DEL));
+    if (csv)
+      g_ptr_array_add(garr, g_strdup_printf("%c", CSV_DEL));
     g_ptr_array_add(garr, strqdup(info_mesg, quote));
   }
   if (!pinger_state.gotdata) {
-    if (csv) g_ptr_array_add(garr, g_strdup_printf("%c", CSV_DEL));
+    if (csv)
+      g_ptr_array_add(garr, g_strdup_printf("%c", CSV_DEL));
     g_ptr_array_add(garr, strqdup(pinger_state.run ? NODATAYET_MSG : NODATA_MSG, quote));
   }
   g_ptr_array_add(garr, NULL);
@@ -139,7 +147,7 @@ static void pinger_print_tcn(char del) {
 #ifdef WITH_TOON
     if (ton) g_print("%s[%d]{%s", OPT_STAT_HDR, lim - opts.range.min, OPT_TTL_HDR); else
 #endif
-    { if (csv) g_print("%s", OPT_TTL_HDR); else HOP_INDENT; }
+    g_print("%s", csv ? OPT_TTL_HDR : HOP_INDENT);
     //
     int maxes[G_N_ELEMENTS(pingelem)] = {0};
     for (uint j = 0; j < G_N_ELEMENTS(pingelem); j++)
@@ -180,7 +188,8 @@ static void pinger_print_tcn(char del) {
       }
       g_print("\n");
       for (uint k = 1; k < lines_per_column; k++) { // multihop
-        if (!del) HOP_INDENT;
+        if (!del)
+          g_print(HOP_INDENT);
         for (uint j = PE_HOST; j <= PE_RT; j++)
           if (pingelem[j].enable)
             print_tcn(del, column[j].cell[k] ? column[j].cell[k] : "", maxes[j]);
@@ -217,16 +226,26 @@ static void pinger_print_tcn(char del) {
 
 #ifdef WITH_JSON
 
-#define PINGER_JSON_LOWER_FN(fn) { \
-  if (!pretty) { char *prop = g_utf8_strdown(name, -1); if (prop) { fn(obj, prop, val); g_free(prop); return; }} \
-  fn(obj, name, val); }
+#define PINGER_JSON_LOWER_FN(fn) do {      \
+  if (!pretty) {                           \
+    char *prop = g_utf8_strdown(name, -1); \
+    if (prop) {                            \
+      fn(obj, prop, val);                  \
+      g_free(prop);                        \
+      return;                              \
+    }                                      \
+  }                                        \
+  fn(obj, name, val);                      \
+} while (0)
 
 static void pinger_json_prop_str(JsonObject *obj, const char *name, const char *val, gboolean pretty) {
-  if (val) PINGER_JSON_LOWER_FN(json_object_set_string_member);
+  if (val)
+    PINGER_JSON_LOWER_FN(json_object_set_string_member);
 }
 
 static void pinger_json_prop_int(JsonObject *obj, const char *name, int val, gboolean pretty) {
-  if (val >= 0) PINGER_JSON_LOWER_FN(json_object_set_int_member);
+  if (val >= 0)
+    PINGER_JSON_LOWER_FN(json_object_set_int_member);
 }
 
 static void pinger_json_prop_arr(JsonObject *obj, const char *name, JsonArray *val, gboolean pretty) {
@@ -257,7 +276,10 @@ static void pinger_json_msec(JsonObject *obj, const char *name, const char *view
 
 static gboolean pinger_json_hop_info(JsonObject *obj, int at, gboolean pretty) {
   JsonArray *arr = json_array_new();
-  if (!arr) { FAIL("json_array_new()"); return false; }
+  if (!arr) {
+    FAIL("json_array_new()");
+    return false;
+  }
   pinger_json_prop_arr(obj, OPT_INFO_HDR, arr, pretty);
   t_ping_column column[PE_MAX] = {0};
   uint lines_per_column = 0;
@@ -349,22 +371,38 @@ static void pinger_json_stat_info(JsonObject *obj, int at, gboolean pretty) {
 }
 
 static gboolean pinger_json_mainbody(JsonObject *obj, gboolean pretty) {
-  if (!obj) return false;
+  if (!obj)
+    return false;
   JsonArray *arr = json_array_new();
-  if (!arr) { FAIL("json_array_new()"); return false; }
+  if (!arr) {
+    FAIL("json_array_new()");
+    return false;
+  }
   pinger_json_prop_arr(obj, OPT_STAT_HDR, arr, pretty);
   gboolean hop_info = false; // marker of hop part of info
-  for (int ndx = PE_HOST; ndx <= PE_RT; ndx++) if (pingelem[ndx].enable) { hop_info = true; break; }
+  for (int ndx = PE_HOST; ndx <= PE_RT; ndx++)
+    if (pingelem[ndx].enable) {
+      hop_info = true;
+      break;
+    }
   int lim = (tgtat > visibles) ? (visibles + 1) : tgtat;
   for (int i = opts.range.min; i < lim; i++) { // data per hop
     JsonObject *line = json_object_new();
-    if (!line) { FAIL("json_object_new()"); return false; }
+    if (!line) {
+      FAIL("json_object_new()");
+      return false;
+    }
     json_array_add_object_element(arr, line);
     if (pretty) {
       char *ttl = g_strdup_printf("%d", i + 1);
-      if (ttl) { json_object_set_string_member(line, OPT_TTL_HDR, ttl); g_free(ttl); }
-    } else pinger_json_prop_int(line, OPT_TTL_HDR, i + 1, pretty);
-    if (hop_info && !pinger_json_hop_info(line, i, pretty)) return false;
+      if (ttl) {
+        json_object_set_string_member(line, OPT_TTL_HDR, ttl);
+	g_free(ttl);
+      }
+    } else
+      pinger_json_prop_int(line, OPT_TTL_HDR, i + 1, pretty);
+    if (hop_info && !pinger_json_hop_info(line, i, pretty))
+      return false;
     pinger_json_stat_info(line, i, pretty);
   }
   return true;
@@ -372,7 +410,10 @@ static gboolean pinger_json_mainbody(JsonObject *obj, gboolean pretty) {
 
 static void pinger_print_json(gboolean pretty) {
   JsonGenerator *gen = json_generator_new();
-  if (!JSON_IS_GENERATOR(gen)) { FAIL("json_generator_new()"); return; }
+  if (!JSON_IS_GENERATOR(gen)) {
+    FAIL("json_generator_new()");
+    return;
+  }
   JsonNode *node = json_node_new(JSON_NODE_OBJECT);
   if (node) {
     JsonObject *obj = json_object_new();
@@ -395,12 +436,16 @@ static void pinger_print_json(gboolean pretty) {
       g_object_set(gen, "pretty", pretty, NULL);
       json_generator_set_root(gen, node);
       size_t len = 0; char *json = json_generator_to_data(gen, &len);
-      if (json && len) g_print("%s\n", json);
-      else FAIL("json_generator_to_data()");
+      if (json && len)
+        g_print("%s\n", json);
+      else
+        FAIL("json_generator_to_data()");
       g_free(json);
-    } else FAIL("json_object_new()");
+    } else
+      FAIL("json_object_new()");
     json_node_free(node);
-  } else FAIL("json_node_new()");
+  } else
+    FAIL("json_node_new()");
   g_object_unref(gen);
 }
 
@@ -424,13 +469,20 @@ static void pinger_recap(void) {
 
 static void tab_updater(gboolean reset) {
   static int ping_seq;
-  if (stat_timer) { g_source_remove(stat_timer); stat_timer = 0; }
-  if (reset) { ping_seq = 0; stat_timer = g_timeout_add_seconds(opts.timeout, (GSourceFunc)pinger_update_tabs, &ping_seq); }
+  if (stat_timer) {
+    g_source_remove(stat_timer);
+    stat_timer = 0;
+  }
+  if (reset) {
+    ping_seq = 0;
+    stat_timer = g_timeout_add_seconds(opts.timeout, (GSourceFunc)pinger_update_tabs, &ping_seq);
+  }
 }
 
 static void pinger_set_info(const char *info) {
   info_mesg = info;
-  if (!opts.recap) pingtab_set_error(info);
+  if (!opts.recap)
+    pingtab_set_error(info);
 }
 
 static inline void pinger_update_info(void) {
@@ -453,13 +505,15 @@ static inline void pinger_update_info(void) {
 }
 
 static void pinger_update(void) {
-  if (!opts.recap) pingtab_update();
+  if (!opts.recap)
+    pingtab_update();
   pinger_update_info();
 }
 
 static gboolean pinger_is_active(void) {
   for (int i = opts.range.min; i < opts.range.max; i++)
-    if (pings[i].active) return true;
+    if (pings[i].active)
+      return true;
   return false;
 }
 
@@ -470,7 +524,8 @@ static gboolean pinger_update_status(void) {
     tab_updater(active);
     if (!opts.recap) {
       appbar_update();
-      if (!active) notifier_inform(PINGS_DONE_HDR);
+      if (!active)
+        notifier_inform(PINGS_DONE_HDR);
     }
   }
   return active;
@@ -490,7 +545,8 @@ static void process_stopped(GObject *process, GAsyncResult *result, t_proc *proc
         error = NULL;
       }
     }
-    if (error) g_error_free(error);
+    if (error)
+      g_error_free(error);
   }
   if (proc) {
     if (G_IS_OBJECT(proc->proc)) {
@@ -524,7 +580,8 @@ static void on_stdout(GObject *stream, GAsyncResult *result, t_proc *proc) {
     ERROR("g_input_stream_read_finish(stdout)");
     pinger_nth_stop(proc->ndx, "stdin error");
   } else if (size) { // data
-    if (!proc->out || atquit) return; // possible at external exit
+    if (!proc->out || atquit) // possible at external exit
+      return;
     ssize_t left = BUFF_SIZE - size;
     proc->out[(left > 0) ? size : size - 1] = 0;
     parser_parse(proc->ndx, proc->out);
@@ -606,7 +663,8 @@ static gboolean create_ping(int at, t_proc *proc) {
   const char* argv[32] = {0};
   ARGV_STR(BINPING);
   ARGV_STR("-OD");
-  if (!opts.dns) ARGV_STR("-n");
+  if (!opts.dns)
+    ARGV_STR("-n");
   char s_t[16] = {0}; ARGV_FMT(s_t, "-t%d", at + 1);
   char s_c[16] = {0}; ARGV_FMT(s_c, "-c%d", opts.cycles);
   char s_i[16] = {0}; ARGV_FMT(s_i, "-i%d", opts.timeout);
@@ -637,7 +695,8 @@ static gboolean create_ping(int at, t_proc *proc) {
       ERROR("g_subprocess_newv()");
     }
     g_clear_object(&launcher);
-  } else FAIL("g_subprocess_launcher_new()");
+  } else
+    FAIL("g_subprocess_launcher_new()");
   return proc->active;
 #undef ARGV_STR
 #undef ARGV_FMT
@@ -645,11 +704,12 @@ static gboolean create_ping(int at, t_proc *proc) {
 }
 
 static gboolean pinger_on_expired(gpointer user_data G_GNUC_UNUSED) {
-  if (!atquit) for (int i = 0; i < MAXTTL; i++) if (pings[i].active) {
+  if (!atquit) for (uint i = 0; i < G_N_ELEMENTS(pings); i++) if (pings[i].active) {
     LOG("%s[%d]: %s", HOP_HDR, i + 1, PROC_EXP_HDR);
     pinger_nth_stop(i, RUNTIME_EXP);
   }
-  exp_timer = 0; return G_SOURCE_REMOVE;
+  exp_timer = 0;
+  return G_SOURCE_REMOVE;
 }
 
 
@@ -657,36 +717,52 @@ static gboolean pinger_on_expired(gpointer user_data G_GNUC_UNUSED) {
 //
 
 void pinger_init(void) {
-  if (!opts.pad[0]) g_strlcpy(opts.pad, DEF_PPAD, sizeof(opts.pad));
-  for (int i = 0; i < MAXTTL; i++) { pings[i].ndx = -1; pings[i].active = false; }
+  if (!opts.pad[0])
+    g_strlcpy(opts.pad, DEF_PPAD, sizeof(opts.pad));
+  for (uint i = 0; i < G_N_ELEMENTS(pings); i++) {
+    pings[i].ndx = -1;
+    pings[i].active = false;
+  }
 }
 
 void pinger_start(void) {
-  if (!opts.target) return;
+  if (!opts.target)
+    return;
   for (int i = opts.range.min; i < opts.range.max; i++) {
-    if (!pings[i].out) pings[i].out = g_malloc0(BUFF_SIZE);
-    if (!pings[i].err) pings[i].err = g_malloc0(BUFF_SIZE);
+    if (!pings[i].out)
+      pings[i].out = g_malloc0(BUFF_SIZE);
+    if (!pings[i].err)
+      pings[i].err = g_malloc0(BUFF_SIZE);
     if (pings[i].out && pings[i].err) {
-      if (create_ping(i, &pings[i])) continue;
-    } else WARN("%s: #%d: g_malloc0()", ERROR_HDR, i + 1);
+      if (create_ping(i, &pings[i]))
+        continue;
+    } else
+      WARN("%s: #%d: g_malloc0()", ERROR_HDR, i + 1);
     break;
   }
   gboolean active = pinger_update_status();
-  if (!active) return;
+  if (!active)
+    return;
   pinger_clear_data(true);
-  if (!opts.recap) { drawtab_refresh(); pinger_vis_rows(0); }
+  if (!opts.recap) {
+    drawtab_refresh();
+    pinger_vis_rows(0);
+  }
   notifier_set_visible(NT_LEGEND_NDX, false);
   // schedule expiration check out
-  if (exp_timer) { g_source_remove(exp_timer); exp_timer = 0; }
+  if (exp_timer) {
+    g_source_remove(exp_timer);
+    exp_timer = 0;
+  }
   // max pingtime resolution in tests: ~24msec
-  guint exp_in = round(opts.cycles * (opts.timeout * 1.024)) + opts.timeout * 2;
+  uint exp_in = round(opts.cycles * (opts.timeout * 1.024)) + opts.timeout * 2;
   exp_timer = g_timeout_add_seconds(exp_in, pinger_on_expired, NULL);
   LOG("%s: %d, %s: %d %s", OPT_CYCLES_HDR, opts.cycles, EXPTIME_HDR, exp_in, UNIT_SEC);
 }
 
-void pinger_nth_stop(int nth, const char* reason) {
-  t_proc *proc = &pings[nth];
-  if (proc->proc) {
+void pinger_nth_stop(int at, const char* reason) {
+  t_proc *proc = ((at >= 0) && ((uint)at < G_N_ELEMENTS(pings))) ? &pings[at] : NULL;
+  if (proc && proc->proc) {
     const char *id = g_subprocess_get_identifier(proc->proc);
     if (id) {
       LOG("%s=%s: %s", STOPPID_HDR, id ? id : UNKN_HDR, reason);
@@ -694,22 +770,30 @@ void pinger_nth_stop(int nth, const char* reason) {
       g_subprocess_send_signal(proc->proc, proc->sig);
       id = g_subprocess_get_identifier(proc->proc);
       const gulong wait = 20000; // 20 msec in usec
-      if (id) { g_usleep(wait); id = g_subprocess_get_identifier(proc->proc); } // wait a bit
+      if (id) {
+        g_usleep(wait); // wait a bit
+	id = g_subprocess_get_identifier(proc->proc);
+      }
       if (id) {
         g_subprocess_force_exit(proc->proc);
         g_usleep(wait);
         id = g_subprocess_get_identifier(proc->proc);
-        if (id) { g_warning("%s: pid=%s", PROC_NOSTOP_ERR, id); return; }
+        if (id) {
+          g_warning("%s: pid=%s", PROC_NOSTOP_ERR, id);
+          return;
+        }
       }
       GError *error = NULL;
       g_subprocess_wait(proc->proc, NULL, &error);
       if (error) {
-        WARN("#%d: pid=%s: %s", nth, id, error->message);
+        WARN("#%d: pid=%s: %s", at, id, error->message);
         g_error_free(error);
-      } else LOG("%s[%d] %s (rc=%d)", PING_HDR,
-        proc->ndx + 1, DONE_HDR, g_subprocess_get_status(proc->proc));
+      } else
+        LOG("%s[%d] %s (rc=%d)", PING_HDR, proc->ndx + 1, DONE_HDR,
+          g_subprocess_get_status(proc->proc));
     }
-    if (!id) process_stopped(NULL, NULL, proc);
+    if (!id)
+      process_stopped(NULL, NULL, proc);
   }
 }
 
@@ -720,28 +804,38 @@ void pinger_stop(const char* reason) {
     pinger_update_status();
 }
 
-inline void pinger_nth_free_error(int nth) { if (ping_errors[nth]) CLR_STR(ping_errors[nth]); }
+inline void pinger_nth_free_error(int at) {
+  if ((at >= 0) && ((uint)at < G_N_ELEMENTS(ping_errors)) && ping_errors[at])
+    CLR_STR(ping_errors[at]);
+}
 
 void pinger_clear_data(gboolean clean) {
   stat_clear(clean);
   pinger_error_free();
   pinger_set_info(NULL);
   tgtat = opts.range.max;
-  if (!opts.recap) { pingtab_clear(); series_free(false); }
+  if (!opts.recap) {
+    pingtab_clear();
+    series_free(false);
+  }
 }
 
 gboolean pinger_within_range(int min, int max, int got) { // 1..MAXTTL
-  if (min > max) return false;
-  if ((min < MINTTL) || (min > MAXTTL)) return false;
-  if ((max < MINTTL) || (max > MAXTTL)) return false;
+  if ((min > max) ||
+      (min < MINTTL) || (min > MAXTTL) ||
+      (max < MINTTL) || (max > MAXTTL))
+    return false;
+  //
   return ((min <= got) && (got <= max));
 }
 
 void pinger_cleanup(void) {
   // stop timers unless it's already done
-  if (exp_timer) { g_source_remove(exp_timer); exp_timer = 0; }
-  if (stat_timer) { g_source_remove(stat_timer); stat_timer = 0; }
-  if (datetime_id) { g_source_remove(datetime_id); datetime_id = 0; }
+  uint* timer[] = { &exp_timer, &stat_timer, &datetime_id };
+  for (uint i = 0; i < G_N_ELEMENTS(timer); i++) if (*timer[i]) {
+    g_source_remove(*timer[i]);
+    *timer[i] = 0; // done
+  }
   // stop pings unless they're finished
   pinger_stop(ATEXIT_HDR);
   // free other resources
@@ -756,29 +850,41 @@ void pinger_cleanup(void) {
 }
 
 int pinger_update_tabs(int *pseq) {
-  if (atquit) { stat_timer = 0; return G_SOURCE_REMOVE; }
-  if (pseq) (*pseq)++;
+  if (atquit) {
+    stat_timer = 0;
+    return G_SOURCE_REMOVE;
+  }
+  if (pseq)
+    (*pseq)++;
   pinger_update();
   if (pinger_state.run && NORECAP_DRAW_REL) {
-    if (pseq) series_update();
+    if (pseq)
+      series_update();
     drawtab_update();
   }
   return G_SOURCE_CONTINUE;
 }
 
-inline void pinger_vis_rows(int upto) { if (!opts.recap) pingtab_vis_rows(upto); notifier_legend_vis_rows(upto); }
+inline void pinger_vis_rows(int upto) {
+  if (!opts.recap)
+    pingtab_vis_rows(upto);
+  notifier_legend_vis_rows(upto);
+}
 
 int pinger_recap_cb(GApplication *app) {
   static int recap_cnt;
   { recap_cnt++; // indicate 'in progress'
     int dec = recap_cnt / 10, rest = recap_cnt % 10;
-    if (rest) fputc('.', stderr);
-    else fprintf(stderr, "%d", dec % 10); // BUFFNOLINT
+    if (rest)
+      fputc('.', stderr);
+    else
+      fprintf(stderr, "%d", dec % 10); // BUFFNOLINT
   }
   if (!pinger_is_active()) {
     fputc('\n', stderr);
     pinger_recap();
-    if (G_IS_APPLICATION(app)) g_application_release(app);
+    if (G_IS_APPLICATION(app))
+      g_application_release(app);
     return G_SOURCE_REMOVE;
   }
   return G_SOURCE_CONTINUE;

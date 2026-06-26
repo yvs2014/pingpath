@@ -61,14 +61,12 @@ void _pr_whois_clist(GSList *clist) {
 #define PR_WHOIS_C NOOP
 #endif
 
-static int wc_cmp(const void *a, const void *b) {
-  if (!a || !b) return -1;
-  return g_strcmp0(((t_wc_elem*)a)->addr, ((t_wc_elem*)b)->addr);
+static int wc_cmp(const t_wc_elem *a, const t_wc_elem *b) {
+  return (a && b) ? g_strcmp0(a->addr, b->addr) : -1;
 }
 
-static int wq_cmp(const void *a, const void *b) {
-  if (!a || !b) return -1;
-  return g_strcmp0(((t_wq_elem*)a)->data.addr, ((t_wq_elem*)b)->data.addr);
+static int wq_cmp(const t_wq_elem *a, const t_wq_elem *b) {
+  return (a && b) ? g_strcmp0(a->data.addr, b->data.addr) : -1;
 }
 
 static void wc_free(t_wc_elem *elem) {
@@ -94,13 +92,13 @@ static void wq_free(t_wq_elem *elem) {
 
 static t_wc_elem* wc_find(char* addr) {
   t_wc_elem find = { .addr = addr };
-  GSList *found = g_slist_find_custom(whois_cache, &find, wc_cmp);
+  GSList *found = g_slist_find_custom(whois_cache, &find, (GCompareFunc)wc_cmp);
   return found ? found->data : NULL;
 }
 
 static t_wq_elem* wq_find(char* addr) {
   t_wq_elem find = { .data = { .addr = addr }};
-  GSList *found = g_slist_find_custom(whois_query, &find, wq_cmp);
+  GSList *found = g_slist_find_custom(whois_query, &find, (GCompareFunc)wq_cmp);
   return found ? found->data : NULL;
 }
 
@@ -147,7 +145,7 @@ static void whois_query_complete(t_ref *ref, t_wq_elem *elem) {
 
 static GSList* list_add_wc(GSList **list, t_wc_elem *wc) {
   if (!list || !wc) return NULL;
-  GSList *elem = g_slist_find_custom(*list, wc, wc_cmp);
+  GSList *elem = g_slist_find_custom(*list, wc, (GCompareFunc)wc_cmp);
   if (elem) { g_free(wc); return elem; }
   *list = g_slist_prepend(*list, wc);
   if (g_slist_length(*list) > WHOIS_CACHE_MAX) {
@@ -208,7 +206,7 @@ static t_wq_elem* whois_query_save(const char *addr, t_hop *hop, int ndx) {
     elem->data.addr = g_strndup(addr, MAXHOSTNAME);
     if (elem->data.addr) {
       if (list_add_ref(&elem->refs, hop, ndx)) {
-        GSList *added = list_add_nodup(&whois_query, elem, wq_cmp, WHOIS_QUERY_MAX);
+        GSList *added = list_add_nodup(&whois_query, elem, (GCompareFunc)wq_cmp, WHOIS_QUERY_MAX);
         if (added) {
           WHOIS_DEBUG("%s: %s %s=%d %s[%d]=%s", SAVEQ_HDR, addr,
             HOP_HDR, hop->at, ADDR_HDR, ndx, hop->host[ndx].addr);
