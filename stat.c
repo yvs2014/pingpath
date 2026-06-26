@@ -10,7 +10,6 @@
 // stat formats
 #define INT_FMT "%d"
 #define DBL_FMT "%.*f"
-#define DBL_SFX DBL_FMT "%s"
 
 enum { ELEM_LEN = 5, NUM_BUFF_SZ = 16 };
 #define NONE 0U
@@ -132,14 +131,8 @@ static int calc_rtt(int at, t_tseq *mark) {
 static inline const char* addrname(int ndx, t_host *host) {
   return opts.dns ? ADDRNAME(host[ndx].addr, host[ndx].name) : ADDRONLY(host[ndx].addr);
 }
-static inline const char* addr_or_name(int ndx, t_host *host, gboolean num) {
-  return
-    num ? host[ndx].addr :
-    STR_EQ(host[ndx].addr, host[ndx].name) ? NULL :
-    host[ndx].name;
-}
 
-static const char *info_host(int at, int type G_GNUC_UNUSED) {
+const char *stat_hop_addrname(int at) {
   static char hostinfo_cache[MAXTTL][BUFF_SIZE];
   t_hop *hop = &hops[at];
   t_host *host = hop->host;
@@ -164,7 +157,7 @@ static const char *info_host(int at, int type G_GNUC_UNUSED) {
   return NULL;
 }
 
-static const char *info_host_nl(int at, int type G_GNUC_UNUSED) {
+static const char *host_legend(int at) {
   static char hostinfo_nl_cache[MAXTTL][MAXHOSTNAME];
   t_hop *hop = &hops[at];
   t_host *host = hop->host;
@@ -191,33 +184,8 @@ static uint column_host(int at, t_ping_column *column, int num G_GNUC_UNUSED) { 
   return n;
 }
 
-static uint column_addrhost(int at, t_ping_column* column, int type) { // NONNULL(2)
-  t_host *host = hops[at].host;
-  uint n = 0;
-  for (; n < MIN(G_N_ELEMENTS(hops->host), G_N_ELEMENTS(column->cell)); n++) {
-    if (!host[n].addr)
-      break;
-    column->cell[n] = addr_or_name(n, host, type == PX_ADDR);
-  }
-  return n;
-}
-
-static int type2wtype(int type) {
-  switch (type) {
-    case PE_AS:   type = WHOIS_AS_NDX;   break;
-    case PE_CC:   type = WHOIS_CC_NDX;   break;
-    case PE_DESC: type = WHOIS_DESC_NDX; break;
-    case PE_RT:   type = WHOIS_RT_NDX;   break;
-    default:      type = -1;             break;
-  }
-  return type;
-}
-
 static const char *info_whois(int at, int type) {
   static char whois_cache[MAXTTL][WHOIS_NDX_MAX][BUFF_SIZE];
-  type = type2wtype(type);
-  if (type < 0)
-    return NULL;
   t_whois *whois = hops[at].whois;
   char *view = T_WHOIS_VIEW(whois, type);
   if (!view)
@@ -241,11 +209,8 @@ static const char *info_whois(int at, int type) {
   return str;
 }
 
-static const char *info_whois_nl(int at, int type) {
+static const char *whois_legend(int at, int type) {
   static char whois_nl_cache[MAXTTL][WHOIS_NDX_MAX][MAXHOSTNAME];
-  type = type2wtype(type);
-  if (type < 0)
-    return NULL;
   t_whois *whois = hops[at].whois;
   char *view = T_WHOIS_VIEW(whois, type);
   if (view) { // as a marker
@@ -261,9 +226,6 @@ static const char *info_whois_nl(int at, int type) {
 }
 
 static uint column_whois(int at, t_ping_column *column, int type) { // NONNULL(2)
-  type = type2wtype(type);
-  if (type < 0)
-    return 0;
   t_whois *whois = hops[at].whois;
   uint n = 0;
   for (; n < MIN(G_N_ELEMENTS(hops->whois->m), G_N_ELEMENTS(column->cell)); n++) {
@@ -275,54 +237,31 @@ static uint column_whois(int at, t_ping_column *column, int type) { // NONNULL(2
   return n;
 }
 
-static int prec(double val) { return ((val > 0) && (val < 10)) ? ((val < 0.1) ? 2 : 1) : 0; }
+static int precision(double val) { return ((val > 0) && (val < 10)) ? ((val < 0.1) ? 2 : 1) : 0; }
 
 static const char* fill_stat_int(int val, char* buff, int size) {
-  if (val >= 0) snprintg(buff, size, INT_FMT, val); else buff[0] = 0;
+  if (val < 0)
+    buff[0] = 0;
+  else
+    snprintg(buff, size, INT_FMT, val);
   return buff;
 }
 
-static const char* fill_stat_dbl(double val, char* buff, int size, const char *sfx, int factor) {
-  if (val < 0) buff[0] = 0; else {
-    if (factor) val /= factor;
-    int dec = prec(val);
-    if (sfx)
-      snprintg(buff, size, DBL_SFX, dec, val, sfx);
-    else
-      snprintg(buff, size, DBL_FMT, dec, val);
-  }
+static inline const char* fill_stat_dbl(double val, char* buff, int size, gboolean percent) {
+  if (val < 0)
+    buff[0] = 0;
+  else
+    snprintg(buff, size, percent ? DBL_FMT "%%" : DBL_FMT, precision(val), val);
   return buff;
 }
 
 static const char* fill_stat_rtt(int usec, char* buff, int size) {
   if (usec > 0) {
     double val = usec / 1000.;
-    snprintg(buff, size, DBL_FMT, prec(val), val);
-  } else buff[0] = 0;
+    snprintg(buff, size, DBL_FMT, precision(val), val);
+  } else
+    buff[0] = 0;
   return buff;
-}
-
-static const char *stat_hop(int at, int type) {
-  static char buff_loss[NUM_BUFF_SZ];
-  static char buff_sent[NUM_BUFF_SZ];
-  static char buff_recv[NUM_BUFF_SZ];
-  static char buff_last[NUM_BUFF_SZ];
-  static char buff_best[NUM_BUFF_SZ];
-  static char buff_wrst[NUM_BUFF_SZ];
-  static char buff_avrg[NUM_BUFF_SZ];
-  static char buff_jttr[NUM_BUFF_SZ];
-  switch (type) {
-    case PE_LOSS: return fill_stat_dbl(hops[at].loss, buff_loss, sizeof(buff_loss), "%", 0);
-    case PE_SENT: return fill_stat_int(hops[at].sent, buff_sent, sizeof(buff_sent));
-    case PE_RECV: return fill_stat_int(hops[at].recv, buff_recv, sizeof(buff_recv));
-    case PE_LAST: return fill_stat_rtt(hops[at].last, buff_last, sizeof(buff_last));
-    case PE_BEST: return fill_stat_rtt(hops[at].best, buff_best, sizeof(buff_best));
-    case PE_WRST: return fill_stat_rtt(hops[at].wrst, buff_wrst, sizeof(buff_wrst));
-    case PE_AVRG: return fill_stat_dbl(hops[at].avrg, buff_avrg, sizeof(buff_avrg), NULL, 1000);
-    case PE_JTTR: return fill_stat_dbl(hops[at].jttr, buff_jttr, sizeof(buff_jttr), NULL, 1000);
-    default: break;
-  }
-  return NULL;
 }
 
 static void stat_nth_hop_NA(t_hop *hop) { // NA(<0)
@@ -332,9 +271,117 @@ static void stat_nth_hop_NA(t_hop *hop) { // NA(<0)
   hop->rseq[PREV].seq = hop->rseq[CURR].seq = 0;
 }
 
+static void stat_up_info(int at, const char *info) {
+  if (STR_EQ(hops[at].info, info)) return;
+  UPD_STR(hops[at].info, info);
+  hops[at].dns_cached = false;
+  LOG("%s: #%d %s", INFO_HDR, at + 1, info);
+}
+
+//
+// map functions
+
+#define PERCENT '%'
+
+static const char* stat_hop_whois_asn(int at) {
+  return info_whois(at, WHOIS_AS_NDX);
+}
+
+static const char* stat_hop_whois_cc(int at) {
+  return info_whois(at, WHOIS_CC_NDX);
+}
+
+static const char* stat_hop_whois_desc(int at) {
+  return info_whois(at, WHOIS_DESC_NDX);
+}
+
+static const char* stat_hop_whois_rt(int at) {
+  return info_whois(at, WHOIS_RT_NDX);
+}
+
+static const char* stat_hop_loss(int at) {
+  static char buff_loss[NUM_BUFF_SZ];
+  return fill_stat_dbl(hops[at].loss, buff_loss, sizeof(buff_loss), PERCENT);
+}
+
+static const char* stat_hop_sent(int at) {
+  static char buff_sent[NUM_BUFF_SZ];
+  return fill_stat_int(hops[at].sent, buff_sent, sizeof(buff_sent));
+}
+
+static const char* stat_hop_recv(int at) {
+  static char buff_recv[NUM_BUFF_SZ];
+  return fill_stat_int(hops[at].recv, buff_recv, sizeof(buff_recv));
+}
+
+static const char* stat_hop_last(int at) {
+  static char buff_last[NUM_BUFF_SZ];
+  return fill_stat_rtt(hops[at].last, buff_last, sizeof(buff_last));
+}
+
+static const char* stat_hop_best(int at) {
+  static char buff_best[NUM_BUFF_SZ];
+  return fill_stat_rtt(hops[at].best, buff_best, sizeof(buff_best));
+}
+
+static const char* stat_hop_wrst(int at) {
+  static char buff_wrst[NUM_BUFF_SZ];
+  return fill_stat_rtt(hops[at].wrst, buff_wrst, sizeof(buff_wrst));
+}
+
+static const char* stat_hop_avrg(int at) {
+  static char buff_avrg[NUM_BUFF_SZ]; // usec -> msec
+  return fill_stat_dbl(hops[at].avrg / 1000, buff_avrg, sizeof(buff_avrg), !PERCENT);
+}
+
+static const char* stat_hop_jttr(int at) {
+  static char buff_jttr[NUM_BUFF_SZ]; // usec -> msec
+  return fill_stat_dbl(hops[at].jttr / 1000, buff_jttr, sizeof(buff_jttr), !PERCENT);
+}
+
+//
+
+static uint stat_ping_col_addrname(int at, t_ping_column *column) { // NONNULL(2)
+  return column_host(at, column, 0);
+}
+
+static uint stat_ping_col_whois_asn(int at, t_ping_column *column) { // NONNULL(2)
+  return column_whois(at, column, WHOIS_AS_NDX);
+}
+
+static uint stat_ping_col_whois_cc(int at, t_ping_column *column) { // NONNULL(2)
+  return column_whois(at, column, WHOIS_CC_NDX);
+}
+
+static uint stat_ping_col_whois_desc(int at, t_ping_column *column) { // NONNULL(2)
+  return column_whois(at, column, WHOIS_DESC_NDX);
+}
+
+static uint stat_ping_col_whois_rt(int at, t_ping_column *column) { // NONNULL(2)
+  return column_whois(at, column, WHOIS_RT_NDX);
+}
+
 
 // pub
 //
+
+t_type_elem pingelem[PE_MAX] = {
+  [PE_NO]   = { .type = PE_NO,   .enable = true, .name = "" },
+  [PE_HOST] = { .type = PE_HOST, .enable = true, .view = stat_hop_addrname,   .multihop = stat_ping_col_addrname   },
+  [PE_AS]   = { .type = PE_AS,   .enable = true, .view = stat_hop_whois_asn,  .multihop = stat_ping_col_whois_asn  },
+  [PE_CC]   = { .type = PE_CC,   .enable = true, .view = stat_hop_whois_cc,   .multihop = stat_ping_col_whois_cc   },
+  [PE_DESC] = { .type = PE_DESC,                 .view = stat_hop_whois_desc, .multihop = stat_ping_col_whois_desc },
+  [PE_RT]   = { .type = PE_RT,                   .view = stat_hop_whois_rt,   .multihop = stat_ping_col_whois_rt   },
+  [PE_FILL] = { .type = PE_FILL, .enable = true, .name = "" },
+  [PE_LOSS] = { .type = PE_LOSS, .enable = true, .view = stat_hop_loss, .statview = stat_hop_loss },
+  [PE_SENT] = { .type = PE_SENT, .enable = true, .view = stat_hop_sent, .statview = stat_hop_sent },
+  [PE_RECV] = { .type = PE_RECV,                 .view = stat_hop_recv, .statview = stat_hop_recv },
+  [PE_LAST] = { .type = PE_LAST, .enable = true, .view = stat_hop_last, .statview = stat_hop_last },
+  [PE_BEST] = { .type = PE_BEST, .enable = true, .view = stat_hop_best, .statview = stat_hop_best },
+  [PE_WRST] = { .type = PE_WRST, .enable = true, .view = stat_hop_wrst, .statview = stat_hop_wrst },
+  [PE_AVRG] = { .type = PE_AVRG, .enable = true, .view = stat_hop_avrg, .statview = stat_hop_avrg },
+  [PE_JTTR] = { .type = PE_JTTR, .enable = true, .view = stat_hop_jttr, .statview = stat_hop_jttr },
+};
 
 void stat_init(gboolean clean) { // clean start or on reset
   if (clean) {
@@ -374,17 +421,11 @@ void stat_reset_dns_cache(void) {
     hops[i].dns_cached = hops[i].dns_cached_nl = false;
 }
 
-static void stat_up_info(int at, const char *info) {
-  if (STR_EQ(hops[at].info, info)) return;
-  UPD_STR(hops[at].info, info);
-  hops[at].dns_cached = false;
-  LOG("%s: #%d %s", INFO_HDR, at + 1, info);
-}
-
 void stat_save_success(int at, t_ping_success *data) {
   update_addrname(at, &data->host);
   update_stat(at, data->time, &data->mark, RX | TX);
-  if (!hops[at].reach) hops[at].reach = true;
+  if (!hops[at].reach)
+    hops[at].reach = true;
   // management
   int ttl = at + 1;
   if (tgtat > ttl) {
@@ -392,8 +433,10 @@ void stat_save_success(int at, t_ping_success *data) {
     set_target_at(ttl, AFTER_TGT_HDR);
   }
   pinger_nth_free_error(at);
-  if (hops[at].info) stat_up_info(at, NULL);
-  if (!pinger_state.reachable) pinger_state.reachable = true;
+  if (hops[at].info)
+    stat_up_info(at, NULL);
+  if (!pinger_state.reachable)
+    pinger_state.reachable = true;
 }
 
 void stat_save_discard(int at, t_ping_discard *data) {
@@ -404,10 +447,14 @@ void stat_save_discard(int at, t_ping_discard *data) {
   if (data->reason) {
     int ttl = at + 1;
     gboolean reach = !g_strrstr(data->reason, "nreachable");
-    if (hops[at].reach != reach) hops[at].reach = reach;
-    if (reach) { if (tgtat < ttl) set_target_at(ttl, UNREACH_HDR); }
-    else {
-      if (tgtat > ttl) uniq_unreach(at);
+    if (hops[at].reach != reach)
+      hops[at].reach = reach;
+    if (reach) {
+      if (tgtat < ttl)
+        set_target_at(ttl, UNREACH_HDR);
+    } else {
+      if (tgtat > ttl)
+        uniq_unreach(at);
       stat_up_info(at, data->reason);
     }
     g_free(data->reason);
@@ -429,84 +476,17 @@ void stat_last_tx(int at) { // update last 'tx' unless done before
   if (hops[at].tout) { update_stat(at, -1, NULL, TX); hops[at].tout = false; }
 }
 
-//
-typedef const char* (*t_stat_str_elem_fn)(int, int);
-
-static t_stat_str_elem_fn stat_str_elem_fn[PE_MAX] = {
-  [PE_HOST] = info_host,
-  [PE_AS]   = info_whois,
-  [PE_CC]   = info_whois,
-  [PE_DESC] = info_whois,
-  [PE_RT]   = info_whois,
-  [PE_LOSS] = stat_hop,
-  [PE_SENT] = stat_hop,
-  [PE_RECV] = stat_hop,
-  [PE_LAST] = stat_hop,
-  [PE_BEST] = stat_hop,
-  [PE_WRST] = stat_hop,
-  [PE_AVRG] = stat_hop,
-  [PE_JTTR] = stat_hop,
-};
-static t_stat_str_elem_fn stat_ln_elem_fn[PE_MAX] = {
-  [PE_HOST] = info_host_nl,
-  [PE_AS]   = info_whois_nl,
-  [PE_CC]   = info_whois_nl,
-  [PE_DESC] = info_whois_nl,
-  [PE_RT]   = info_whois_nl,
-};
-
-const char *stat_str_elem(int at, int type) {
-  t_stat_str_elem_fn fn = type < (int)G_N_ELEMENTS(stat_str_elem_fn) ?
-    stat_str_elem_fn[type] : NULL;
-  return fn ? fn(at, type) : NULL;
-}
-
-static const char *stat_strnl_elem(int at, int type) {
-  t_stat_str_elem_fn fn = type < (int)G_N_ELEMENTS(stat_ln_elem_fn) ?
-    stat_ln_elem_fn[type] : NULL;
-  return fn ? fn(at, type) : NULL;
-}
-//
-
-//
-typedef uint (*t_stat_col_elem_fn)(int, t_ping_column*, int);
-
-static t_stat_col_elem_fn stat_col_elem_fn[PX_MAX] = {
-  [PE_HOST] = column_host,
-  [PE_AS]   = column_whois,
-  [PE_CC]   = column_whois,
-  [PE_DESC] = column_whois,
-  [PE_RT]   = column_whois,
-  [PX_ADDR] = column_addrhost,
-  [PX_HOST] = column_addrhost,
-};
-
-uint stat_ping_column(int at, int type, t_ping_column *column) { // NONNULL(2)
-  t_stat_col_elem_fn fn = type < (int)G_N_ELEMENTS(stat_col_elem_fn) ?
-    stat_col_elem_fn[type] : NULL;
-  return fn ? fn(at, column, type) : 0;
-}
-//
-
-//
-// TODO: map switch(type) to fn(type) too?
-double stat_dbl_elem(int at, int type) {
+double stat_dbl_elem(int at, int type) { // for json (called once)
   double val = -1;
   switch (type) {
     case PE_LOSS: val = hops[at].loss; break;
-    case PE_SENT: val = hops[at].sent; break;
-    case PE_RECV: val = hops[at].recv; break;
-    case PE_LAST: val = hops[at].last; break;
-    case PE_BEST: val = hops[at].best; break;
-    case PE_WRST: val = hops[at].wrst; break;
     case PE_AVRG: val = hops[at].avrg; break;
     case PE_JTTR: val = hops[at].jttr; break;
     default: break;
   }
   return val;
 }
-
-int stat_int_elem(int at, int type) {
+int stat_int_elem(int at, int type) { // for json (called once)
   int val = -1;
   switch (type) {
     case PE_SENT: val = hops[at].sent; break;
@@ -535,11 +515,11 @@ void stat_rseq(int at, t_rseq *data) { // assert('at' within range)
 
 inline t_legend stat_legend(int at) {
   return (t_legend){
-    .name = stat_strnl_elem(at, PE_HOST),
-    .as   = stat_strnl_elem(at, PE_AS),
-    .cc   = stat_strnl_elem(at, PE_CC),
-    .av   = stat_str_elem(at, PE_AVRG),
-    .jt   = stat_str_elem(at, PE_JTTR),
+    .name = host_legend(at),
+    .as   = whois_legend(at, WHOIS_AS_NDX),
+    .cc   = whois_legend(at, WHOIS_CC_NDX),
+    .av   = stat_hop_avrg(at),
+    .jt   = stat_hop_jttr(at),
   };
 }
 
@@ -561,6 +541,17 @@ void stat_run_whois_resolv(void) {
     t_hop *hop = &hops[at];
     for (int i = 0; i < MAXADDR; i++)
       if (hop->host[i].addr) whois_resolv(hop, i);
+  }
+}
+
+void stat_col_addrhost(int at, t_ping_column* column, gboolean num) { // NONNULL(2)
+  t_host *host = hops[at].host;
+  const char **cell = column->cell;
+  for (uint n = 0; host && (n < MIN(G_N_ELEMENTS(hops->host), G_N_ELEMENTS(column->cell))); n++, host++, cell++) {
+    if (!host->addr)
+      break;
+    *cell = num ? host->addr :
+      STR_EQ(host->addr, host->name) ? NULL : host->name;
   }
 }
 

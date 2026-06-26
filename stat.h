@@ -35,14 +35,13 @@ void stat_save_discard(int at, t_ping_discard *data);
 void stat_save_timeout(int at, t_ping_timeout *data);
 void stat_save_info(int at, t_ping_info *data);
 void stat_last_tx(int at);
-const char *stat_str_elem(int at, int type);
-uint stat_ping_column(int at, int type, t_ping_column *column); // NONNULL(3)
 double stat_dbl_elem(int at, int type);
 int stat_int_elem(int at, int type);
 void stat_rseq(int at, t_rseq *data);
 t_legend stat_legend(int at);
 void stat_whois_enabler(void);
 void stat_run_whois_resolv(void);
+void stat_col_addrhost(int at, t_ping_column* column, gboolean num); // NONNULL(2)
 
 extern int tgtat /*target at*/, visibles;
 

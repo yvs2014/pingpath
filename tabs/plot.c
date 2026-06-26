@@ -968,7 +968,7 @@ t_tab* plottab_init(void) {
   return &plottab;
 }
 
-static void pl_params_free(void) {
+static inline void pl_params_free(void) {
 #define PLAX_FREE(axis) do {       \
   g_free(plparam.axes.axis.title); \
   plparam.axes.axis.title = NULL;  \

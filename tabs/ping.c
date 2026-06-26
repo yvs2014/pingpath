@@ -411,17 +411,17 @@ void pingtab_clear(void) {
 }
 
 void pingtab_update(void) {
+#define LABELEM_OK (*label && elem && (j < MIN(G_N_ELEMENTS(pingelem), G_N_ELEMENTS(line->labels))))
   if (!pinger_state.pause) {
     t_listline *line = bbox.list;
-    for (int i = 0; line && (i < tgtat) && (i < (int)bbox.len); i++, line++) {
+    for (int at = 0; line && (at < tgtat) && (at < (int)bbox.len); at++, line++) {
       GtkWidget **label = line->labels;
       t_type_elem *elem = pingelem;
-      for (uint j = 0; *label && elem && (j < MIN(G_N_ELEMENTS(pingelem), G_N_ELEMENTS(line->labels))); j++, label++, elem++) {
-        if (GTK_IS_LABEL(*label) && is_statinfo_ndx(j) && elem->enable) {
-          const char *text = stat_str_elem(i, elem->type);
+      for (uint j = 0; LABELEM_OK; j++, label++, elem++)
+        if (elem->enable && elem->view) {
+          const char *text = elem->view(at);
           UPDATE_LABEL(*label, text);
         }
-      }
     }
   }
 }

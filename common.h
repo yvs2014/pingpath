@@ -12,7 +12,7 @@
 #define MIN_GTK_RUNTIME(major, minor, micro) (!gtk_check_version(major, minor, micro))
 
 #define APPNAME "pingpath"
-#define VERSION "1.0.11"
+#define VERSION "1.0.12"
 #define APPVER  APPNAME "-" VERSION
 
 extern locale_t locale, localeC;
@@ -293,7 +293,7 @@ enum { ENT_BOOL_DNS, ENT_BOOL_HOST, ENT_BOOL_AS, ENT_BOOL_CC, ENT_BOOL_DESC, ENT
 
 enum { PE_NO, PE_HOST, PE_AS, PE_CC, PE_DESC, PE_RT, PE_FILL, // PingElement
   PE_LOSS, PE_SENT, PE_RECV, PE_LAST, PE_BEST, PE_WRST, PE_AVRG, PE_JTTR, PE_MAX,
-  PX_ADDR, PX_HOST, PX_MAX };
+};
 
 enum { GE_NO, GE_DASH, GE_AVJT, GE_CCAS, GE_LGHN, GX_MEAN, GX_JRNG, GX_AREA, GX_MAX };
 #define GE_MIN GE_AVJT
@@ -389,10 +389,18 @@ typedef struct hop {
 
 typedef struct ref { t_hop *hop; int ndx; } t_ref;
 
+typedef struct ping_column { const char* cell[MAXADDR]; } t_ping_column;
+
 typedef struct t_type_elem {
   int type;
   gboolean enable;
   char *name, *tip;
+  // hop-info && stats
+  const char* (*view)(int at);
+  // stats only
+  const char* (*statview)(int at);
+  // hop-info only
+  uint (*multihop)(int at, t_ping_column *column);
 } t_type_elem;
 
 typedef struct t_legend { const char *name, *as, *cc, *av, *jt; } t_legend;
@@ -421,8 +429,6 @@ extern t_elem_desc info_desc, stat_desc, grlg_desc, grex_desc;
 extern t_type_elem plotelem[D3_MAX];
 extern t_elem_desc plot_desc;
 #endif
-
-typedef struct ping_column { const char* cell[MAXADDR]; } t_ping_column;
 
 extern const double colors[][3];
 extern const int n_colors;

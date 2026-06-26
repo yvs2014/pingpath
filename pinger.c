@@ -91,8 +91,14 @@ static char* last_error(void) {
 
 static void pinger_error_free(void) { for (int i = 0; i < MAXTTL; i++) pinger_nth_free_error(i); }
 
-#define PN_PRMAX(name) { const char *str = name; if (str && str[0]) { \
-  int len = g_utf8_strlen(str, MAXHOSTNAME); if (len > maxes[j]) maxes[j] = len; }}
+#define PN_PRMAX(max, name) do {               \
+  const char *str = (name);                    \
+  if (str && str[0]) {                         \
+    int len = g_utf8_strlen(str, MAXHOSTNAME); \
+    if (len > (max))                           \
+      (max) = len;                             \
+  }                                            \
+} while (0)
 
 static char* strqdup(const char *str, gboolean quote) {
   return quote ? g_strdup_printf("\"%s\"", str) : g_strdup(str);
@@ -135,12 +141,15 @@ static void pinger_print_tcn(char del) {
 #endif
     { if (csv) g_print("%s", OPT_TTL_HDR); else HOP_INDENT; }
     //
-    int maxes[PE_MAX] = {0};
-    for (int j = 0; j < PE_MAX; j++)
-      PN_PRMAX(pingelem[j].name);
-    for (int i = opts.range.min; i < lim; i++)
-      for (int j = 0; j < PE_MAX; j++)
-        PN_PRMAX(stat_str_elem(i, pingelem[j].type));
+    int maxes[G_N_ELEMENTS(pingelem)] = {0};
+    for (uint j = 0; j < G_N_ELEMENTS(pingelem); j++)
+      PN_PRMAX(maxes[j], pingelem[j].name);
+    for (int at = opts.range.min; at < lim; at++) {
+      t_type_elem *elem = pingelem;
+      for (uint j = 0; j < G_N_ELEMENTS(pingelem); j++, elem++)
+        if (elem->view)
+          PN_PRMAX(maxes[j], elem->view(at));
+    }
     //
     for (uint j = PE_NO + 1; j < PE_MAX; j++) // header
       if (pingelem[j].enable && (pingelem[j].type != PE_FILL))
@@ -151,41 +160,26 @@ static void pinger_print_tcn(char del) {
     { if (csv) g_print("\n%c", CSV_DEL); }
     g_print("\n");
     //
-    for (int i = opts.range.min; i < lim; i++) { // data per hop
+    for (int at = opts.range.min; at < lim; at++) { // data per hop
       t_ping_column column[G_N_ELEMENTS(pingelem)] = {0};
-      uint lines = 0;
+      uint lines_per_column = 0;
 #ifdef WITH_TOON
       if (ton) g_print("  ");
 #endif
-      for (uint j = 0; j < G_N_ELEMENTS(pingelem); j++) if (pingelem[j].enable) {
-        int type = pingelem[j].type;
-        switch (type) {
-          case PE_NO:
-            g_print(del ? "%d" : "%2d.", i + 1); break;
-          case PE_HOST:
-          case PE_AS:
-          case PE_CC:
-          case PE_DESC:
-          case PE_RT: {
-            uint max = stat_ping_column(i, type, &column[j]);
-            if (lines < max)
-              lines = max;
-            print_tcn(del, column[j].cell[0] ? column[j].cell[0] : "", maxes[j]);
-          } break;
-          case PE_LOSS:
-          case PE_SENT:
-          case PE_RECV:
-          case PE_LAST:
-          case PE_BEST:
-          case PE_WRST:
-          case PE_AVRG:
-          case PE_JTTR:
-            print_tcn(del, stat_str_elem(i, type), maxes[j]); break;
-          default: break;
-        }
+      t_type_elem *elem = pingelem;
+      for (uint j = 0; elem && (j < G_N_ELEMENTS(pingelem)); j++, elem++) if (elem->enable) {
+        if (elem->statview)
+          print_tcn(del, elem->statview(at), maxes[j]);
+        else if (elem->multihop) {
+          uint next = elem->multihop(at, &column[j]);
+          if (lines_per_column < next)
+            lines_per_column = next;
+          print_tcn(del, column[j].cell[0] ? column[j].cell[0] : "", maxes[j]);
+        } else if (elem->type == PE_NO)
+          g_print(del ? "%d" : "%2d.", at + 1);
       }
       g_print("\n");
-      for (uint k = 1; k < lines; k++) { // multihop
+      for (uint k = 1; k < lines_per_column; k++) { // multihop
         if (!del) HOP_INDENT;
         for (uint j = PE_HOST; j <= PE_RT; j++)
           if (pingelem[j].enable)
@@ -241,35 +235,39 @@ static void pinger_json_prop_arr(JsonObject *obj, const char *name, JsonArray *v
 
 static void pinger_json_add_int(JsonObject *obj, int nth, int type, const char *name) {
   int val = stat_int_elem(nth, type);
-  if (val >= 0) json_object_set_int_member(obj, name, val);
+  if (val >= 0)
+    json_object_set_int_member(obj, name, val);
 }
 
 static void pinger_json_add_dbl(JsonObject *obj, int nth, int type, const char *name) {
   double val = stat_dbl_elem(nth, type);
-  if (val >= 0) json_object_set_double_member(obj, name, val);
+  if (val >= 0)
+    json_object_set_double_member(obj, name, val);
 }
 
-static void pinger_json_msec(JsonObject *obj, const char *name, int nth, int type) {
-  const char *elem = stat_str_elem(nth, type);
-  if (name && elem && elem[0]) {
-    char *val = g_strdup_printf("%s %s", elem, UNIT_MSEC);
-    if (val) { json_object_set_string_member(obj, name, val); g_free(val); }
+static void pinger_json_msec(JsonObject *obj, const char *name, const char *view) {
+  if (name && view && view[0]) {
+    char *val = g_strdup_printf("%s %s", view, UNIT_MSEC);
+    if (val) {
+      json_object_set_string_member(obj, name, val);
+      g_free(val);
+    }
   }
 }
 
-static gboolean pinger_json_hop_info(JsonObject *obj, int nth, gboolean pretty) {
+static gboolean pinger_json_hop_info(JsonObject *obj, int at, gboolean pretty) {
   JsonArray *arr = json_array_new();
   if (!arr) { FAIL("json_array_new()"); return false; }
   pinger_json_prop_arr(obj, OPT_INFO_HDR, arr, pretty);
-  t_ping_column column[PX_MAX] = {0};
-  uint lines = 0;
+  t_ping_column column[PE_MAX] = {0};
+  uint lines_per_column = 0;
   for (uint ndx = PE_HOST; ndx <= PE_RT; ndx++)
-    if (pingelem[ndx].enable) { // collect multihop info
-      uint max = stat_ping_column(nth, pingelem[ndx].type, &column[ndx]);
-      if (max > lines)
-        lines = max;
+    if (pingelem[ndx].enable && pingelem[ndx].multihop) { // collect multihop info
+      uint next = pingelem[ndx].multihop(at, &column[ndx]);
+      if (next > lines_per_column)
+        lines_per_column = next;
     }
-  for (uint j = 0; j < lines; j++) { // add collected info
+  for (uint j = 0; j < lines_per_column; j++) { // add collected info
     JsonObject *info = json_object_new();
     if (!info) {
       FAIL("json_object_new()");
@@ -280,7 +278,11 @@ static gboolean pinger_json_hop_info(JsonObject *obj, int nth, gboolean pretty) 
       int type = pingelem[ndx].type;
       switch (type) {
         case PE_HOST: {
-          const char *addr = column[PX_ADDR].cell[j], *name = column[PX_HOST].cell[j];
+          t_ping_column coladdr = {0}, colres = {0};
+#define NUMERICAL true
+          stat_col_addrhost(at, &coladdr, NUMERICAL);
+          stat_col_addrhost(at, &colres, !NUMERICAL);
+          const char *addr = coladdr.cell[j], *name = colres.cell[j];
           if (pretty) {
             char *host = name ? g_strdup_printf("%s (%s)", name, addr) : g_strdup(addr);
             if (host) {
@@ -304,32 +306,43 @@ static gboolean pinger_json_hop_info(JsonObject *obj, int nth, gboolean pretty) 
   return true;
 }
 
-static void pinger_json_stat_info(JsonObject *obj, int nth, gboolean pretty) {
-  for (int ndx = PE_LOSS; ndx < PE_MAX; ndx++) if (pingelem[ndx].enable) {
-    char *name = pretty ? g_strdup(pingelem[ndx].name) : g_utf8_strdown(pingelem[ndx].name, -1);
-    int type = pingelem[ndx].type;
-    switch (type) {
-      case PE_LOSS:
-        if (pretty) json_object_set_string_member(obj, name, stat_str_elem(nth, type));
-        else pinger_json_add_dbl(obj, nth, type, name);
-        break;
-      case PE_SENT:
-      case PE_RECV:
-        if (pretty) json_object_set_string_member(obj, name, stat_str_elem(nth, type));
-        else pinger_json_add_int(obj, nth, type, name);
-        break;
-      case PE_LAST:
-      case PE_BEST:
-      case PE_WRST:
-        if (pretty) pinger_json_msec(obj, name, nth, type);
-        else pinger_json_add_int(obj, nth, type, name);
-        break;
-      case PE_AVRG:
-      case PE_JTTR:
-        if (pretty) pinger_json_msec(obj, name, nth, type);
-        else pinger_json_add_dbl(obj, nth, type, name);
-        break;
-      default: break;
+typedef void (*pinger_json_pretty_view_fn)(JsonObject *obj, const char *name, const char *view);
+static pinger_json_pretty_view_fn pinger_json_pretty_view[PE_MAX] = {
+  [PE_LOSS] = json_object_set_string_member,
+  [PE_SENT] = json_object_set_string_member,
+  [PE_RECV] = json_object_set_string_member,
+  [PE_LAST] = pinger_json_msec,
+  [PE_BEST] = pinger_json_msec,
+  [PE_WRST] = pinger_json_msec,
+  [PE_AVRG] = pinger_json_msec,
+  [PE_JTTR] = pinger_json_msec,
+};
+
+typedef void (*pinger_json_std_view_fn)(JsonObject *obj, int at, int type, const char *name);
+static pinger_json_std_view_fn pinger_json_std_view[PE_MAX] = {
+  [PE_LOSS] = pinger_json_add_dbl,
+  [PE_SENT] = pinger_json_add_int,
+  [PE_RECV] = pinger_json_add_int,
+  [PE_LAST] = pinger_json_add_int,
+  [PE_BEST] = pinger_json_add_int,
+  [PE_WRST] = pinger_json_add_int,
+  [PE_AVRG] = pinger_json_add_dbl,
+  [PE_JTTR] = pinger_json_add_dbl,
+};
+
+static void pinger_json_stat_info(JsonObject *obj, int at, gboolean pretty) {
+  t_type_elem *elem = pingelem;
+  for (uint i = 0; elem && (i < G_N_ELEMENTS(pingelem)); i++, elem++) if (elem->enable) {
+    char *name = pretty ? g_strdup(elem->name) : g_utf8_strdown(elem->name, -1);
+    const char *view = (pretty && elem->view) ? elem->view(at) : NULL;
+    if (view) {
+      pinger_json_pretty_view_fn fn = pinger_json_pretty_view[elem->type];
+      if (fn)
+        fn(obj, name, view);
+    } else {
+      pinger_json_std_view_fn fn = pinger_json_std_view[elem->type];
+      if (fn)
+        fn(obj, at, elem->type, name);
     }
     g_free(name);
   }

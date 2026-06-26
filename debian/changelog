@@ -1,3 +1,9 @@
+pingpath (1.0.12) trixie; urgency=low
+
+  * stat: map view functions to pingelem:statdata
+
+ -- yvs <VSYakovetsky@gmail.com>  Fri, 26 Jun 2026 22:16:05 +0300
+
 pingpath (1.0.11) trixie; urgency=low
 
   * pingtab: simplify a bit workarea init()

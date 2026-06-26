@@ -324,10 +324,12 @@ static void add_mwhois(t_whois *whois, uint ndx, const char *str) {
         GString *s = g_string_new(m->elem[0]);
         for (int i = 1; i <= vacant; i++)
           g_string_append_printf(s, "%c %s", WHOIS_CCDEL, m->elem[i]);
-        UPD_NSTR(m->view, g_strdup(s->str), MAXHOSTNAME);
+        UPD_NSTR(m->view, s->str, MAXHOSTNAME);
         g_string_free(s, true);
       } else {
-        UPD_NSTR(m->view, g_strdup_printf("%s%c", m->elem[0], AST), MAXHOSTNAME);
+        char *str = g_strdup_printf("%s%c", m->elem[0], AST);
+        UPD_NSTR(m->view, str, MAXHOSTNAME);
+        g_free(str);
       }
     }
   }

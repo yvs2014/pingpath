@@ -1,3 +1,6 @@
+## 1.0.12
+- stat: map view functions to pingelem:statdata
+
 ## 1.0.11
 - pingtab: simplify a bit workarea init()
 - stat: map some if-switch'es to fn() calls

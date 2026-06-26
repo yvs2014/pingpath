@@ -10,24 +10,6 @@ int activetab = TAB_PING_NDX;
 
 t_verbose verbose;
 
-t_type_elem pingelem[PE_MAX] = {
-  [PE_NO]   = { .type = PE_NO,   .enable = true, .name = "" },
-  [PE_HOST] = { .type = PE_HOST, .enable = true },
-  [PE_AS]   = { .type = PE_AS,   .enable = true },
-  [PE_CC]   = { .type = PE_CC,   .enable = true },
-  [PE_DESC] = { .type = PE_DESC,                },
-  [PE_RT]   = { .type = PE_RT,                  },
-  [PE_FILL] = { .type = PE_FILL, .enable = true, .name = "" },
-  [PE_LOSS] = { .type = PE_LOSS, .enable = true },
-  [PE_SENT] = { .type = PE_SENT, .enable = true },
-  [PE_RECV] = { .type = PE_RECV,                },
-  [PE_LAST] = { .type = PE_LAST, .enable = true },
-  [PE_BEST] = { .type = PE_BEST, .enable = true },
-  [PE_WRST] = { .type = PE_WRST, .enable = true },
-  [PE_AVRG] = { .type = PE_AVRG, .enable = true },
-  [PE_JTTR] = { .type = PE_JTTR, .enable = true },
-};
-
 t_type_elem graphelem[GX_MAX] = {
   [GE_NO]   = { .type = GE_NO,   .enable = true, .name = "" },
   [GE_DASH] = { .type = GE_DASH, .enable = true },
