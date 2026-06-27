@@ -1,3 +1,7 @@
+## 1.0.14
+- pingtab: fix wrong hop-numbers in correspondent column (appeared in commit #c88e376a)
+- exclude static string-array for hop-numbers
+
 ## 1.0.13
 - reformat a bit oneliners
 - hops[.host,.whois] bounds with G_N_ELEMENTS

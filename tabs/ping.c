@@ -93,8 +93,10 @@ static void pt_set_elem_align(int type, GtkWidget *label) {
 #ifdef WITH_DND
 static void pt_pr_elem_ndxs(const char *pre, const char *dir, const t_type_elem *elems, int len) {
   GString *str = g_string_new(NULL);
-  for (int i = 0; i < len; i++) g_string_append_printf(str, " %d", elems[i].type);
-  g_message("%s: %s: %s %s", DEB_REORDER, pre, dir, str->str); g_string_free(str, true);
+  for (int i = 0; i < len; i++)
+    g_string_append_printf(str, " %d", elems[i].type);
+  g_message("%s: %s: %s %s", DEB_REORDER, pre, dir, str->str);
+  g_string_free(str, true);
 }
 
 #define PT_PRINT_ELEMS(pre, dir, elems, len) do {         \
@@ -232,85 +234,92 @@ static gboolean pt_hdr_on_drop(GtkDropTarget *self G_GNUC_UNUSED, const GValue *
 }
 #endif
 
-static inline gboolean is_statinfo_ndx(uint ndx) {
-  int type = pingelem[ndx].type;
+static inline gboolean is_head_label(uint ndx) {
+  int type = (ndx < G_N_ELEMENTS(pingelem)) ? pingelem[ndx].type : PE_FILL;
   return ((type != PE_NO) && (type != PE_FILL));
 }
 
 #ifdef WITH_DND
-static void set_line_dnd(t_pt_dnd *dnd, t_listline *line, GtkWidget *widget, t_len_listline body,
-  gboolean setdnd, t_elem_desc *desc)
-{
-  *dnd = (t_pt_dnd){
-    .w = widget,
-    .b = line->box,
-    .head = (t_len_listline){.len = 1, .list = line},
-    .body = body,
-    .desc = desc,
-  };
-  if (setdnd) {
-    GtkDragSource *dnd_src = gtk_drag_source_new();
-    if (dnd_src) {
-      g_signal_connect(dnd_src, EV_DND_DRAG, G_CALLBACK(pt_hdr_dnd_drag), dnd);
-      g_signal_connect(dnd_src, EV_DND_ICON, G_CALLBACK(pt_hdr_dnd_icon), dnd);
-      gtk_widget_add_controller(widget, GTK_EVENT_CONTROLLER(dnd_src));
-    }
-    GtkDropTarget *dnd_dst = gtk_drop_target_new(G_TYPE_POINTER, GDK_ACTION_COPY);
-    if (dnd_dst) {
-      gtk_drop_target_set_preload(dnd_dst, true);
-      g_signal_connect(dnd_dst, EV_DND_MOVE, G_CALLBACK(pt_hdr_on_move), dnd);
-      g_signal_connect(dnd_dst, EV_DND_DROP, G_CALLBACK(pt_hdr_on_drop), dnd);
-      gtk_widget_add_controller(widget, GTK_EVENT_CONTROLLER(dnd_dst));
-    }
+static inline void set_line_dnd_src(t_pt_dnd *dnd, GtkWidget *widget) { // NONNULL(1, 2)
+  GtkDragSource *src = gtk_drag_source_new();
+  if (src) {
+    g_signal_connect(src, EV_DND_DRAG, G_CALLBACK(pt_hdr_dnd_drag), dnd);
+    g_signal_connect(src, EV_DND_ICON, G_CALLBACK(pt_hdr_dnd_icon), dnd);
+    gtk_widget_add_controller(widget, GTK_EVENT_CONTROLLER(src));
   }
+}
+static inline void set_line_dnd_dst(t_pt_dnd *dnd, GtkWidget *widget) { // NONNULL(1, 2)
+  GtkDropTarget *dst = gtk_drop_target_new(G_TYPE_POINTER, GDK_ACTION_COPY);
+  if (dst) {
+    gtk_drop_target_set_preload(dst, true);
+    g_signal_connect(dst, EV_DND_MOVE, G_CALLBACK(pt_hdr_on_move), dnd);
+    g_signal_connect(dst, EV_DND_DROP, G_CALLBACK(pt_hdr_on_drop), dnd);
+    gtk_widget_add_controller(widget, GTK_EVENT_CONTROLLER(dst));
+  }
+}
+static void set_line_dnd(t_pt_dnd *dnd, GtkWidget *widget) { // NONNULL(1, 2)
+  set_line_dnd_src(dnd, widget);
+  set_line_dnd_dst(dnd, widget);
 }
 #endif
 
-static gboolean pt_init_line_elems(t_type_elem *elem, t_listline *line,
-  t_len_listline body G_GNUC_UNUSED, GtkSizeGroup* group[], uint glen)
+static gboolean pt_init_line_elems(uint numb, t_listline *line, // NONNULL(2)
+  t_len_listline body, GtkSizeGroup* group[], uint glen)
 {
-  if (!line)
-    return false;
-  gboolean vis_n_dnd = (body.list != NULL);
+  t_type_elem pe[G_N_ELEMENTS(pingelem)];
+  memcpy(pe, pingelem, sizeof(pe)); // BUFFNOLINT
+  if (numb)
+    pe[PE_NO].name = g_strdup_printf("%u.", numb);
+  gboolean is_header = (body.list != NULL);
   for (uint i = 0; i < G_N_ELEMENTS(line->labels); i++) {
-    GtkWidget *label = line->labels[i] = gtk_label_new(elem[i].name);
+    GtkWidget *label = line->labels[i] = gtk_label_new((i < G_N_ELEMENTS(pe)) ? pe[i].name : "");
     g_return_val_if_fail(label, false);
     if ((i < glen) && group[i])
       gtk_size_group_add_widget(group[i], label);
     pt_set_elem_align(pingelem[i].type, label);
-    gtk_widget_set_visible(label, vis_n_dnd && elem[i].enable);
-    gtk_widget_set_tooltip_text(label, elem[i].tip);
+    gboolean visible = is_header && ((i < G_N_ELEMENTS(pe)) ? pe[i].enable : false);
+    gtk_widget_set_visible(label, visible);
+    if (i < G_N_ELEMENTS(pe))
+      gtk_widget_set_tooltip_text(label, pe[i].tip);
     gtk_box_append(GTK_BOX(line->box), label);
 #ifdef WITH_DND
-    set_line_dnd(&line->dnd[i], line, label, body, vis_n_dnd && is_statinfo_ndx(i),
-      IS_INFO_NDX(i) ? &info_desc :
-      IS_STAT_NDX(i) ? &stat_desc :
-      NULL);
+    if (is_header && is_head_label(i)) {
+      line->dnd[i] = (t_pt_dnd) {
+        .w = label,
+        .b = line->box,
+        .head = (t_len_listline){.len = 1, .list = line},
+        .body = body,
+        .desc = IS_INFO_NDX(i) ? &info_desc :
+                IS_STAT_NDX(i) ? &stat_desc :
+                NULL,
+      };
+      set_line_dnd(&line->dnd[i], label);
+    }
 #endif
   }
+  if (numb)
+    g_free(pe[PE_NO].name);
   return true;
 }
 
-static GtkWidget* pt_make_dynlist(t_len_listline lines, gboolean visible, t_type_elem elems[], // NONNULL(3)
-  GtkSizeGroup* group[], uint glen)
-{
+static GtkWidget* pt_make_dynlist(t_len_listline lines, gboolean is_head, GtkSizeGroup* group[], uint glen) {
   GtkWidget *list = gtk_list_box_new();
   g_return_val_if_fail(list, NULL);
   gtk_list_box_set_show_separators(GTK_LIST_BOX(list), true);
   gtk_widget_set_halign(list, GTK_ALIGN_FILL);
   gtk_widget_set_hexpand(list, false);
-  t_len_listline body = visible ? bbox : (t_len_listline){0};
+  t_len_listline body = is_head ? bbox : (t_len_listline){0};
   for (uint i = 0; i < lines.len; i++) {
     GtkWidget *box = lines.list[i].box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, MARGIN);
     g_return_val_if_fail(box, NULL);
     if (style_loaded)
       gtk_widget_add_css_class(box, CSS_RPAD);
-    gtk_widget_set_visible(box, visible);
-    GtkListBoxRow *row = lines.list[i].row = line_row_new(box, visible);
+    gtk_widget_set_visible(box, is_head);
+    GtkListBoxRow *row = lines.list[i].row = line_row_new(box, is_head);
     g_return_val_if_fail(row, NULL);
     gtk_list_box_append(GTK_LIST_BOX(list), GTK_WIDGET(row));
     //
-    if (!pt_init_line_elems(elems, &lines.list[i], body, group, glen))
+    if (!pt_init_line_elems(is_head ? 0 : i + 1, &lines.list[i], body, group, glen))
       return NULL;
   }
   gtk_list_box_set_selection_mode(GTK_LIST_BOX(list), GTK_SELECTION_MULTIPLE);
@@ -353,20 +362,13 @@ static GtkWidget* pt_make_dyn(void) {
     g_return_val_if_fail(group[i], NULL);
   }
   //
+#define HEADBOX true
   pingtab.hdr.css = NULL;
   pingtab.hdr.col = CSS_BGROUND;
-  pingtab.hdr.w = pt_make_dynlist(hbox, true, pingelem, group, G_N_ELEMENTS(group));
+  pingtab.hdr.w = pt_make_dynlist(hbox, HEADBOX, group, G_N_ELEMENTS(group));
   g_return_val_if_fail(pingtab.hdr.w, NULL);
   gtk_box_append(GTK_BOX(pingtab.tab.w), pingtab.hdr.w);
-  //
-  static char stat_no_at_buff[G_N_ELEMENTS(_blist)][ELEM_BUFF_SIZE];
-  t_type_elem bodyline[G_N_ELEMENTS(pingelem)];
-  memcpy(bodyline, pingelem, sizeof(bodyline)); // BUFFNOLINT
-  for (uint i = 0; i < bbox.len; i++) {
-    snprintg(stat_no_at_buff[i], sizeof(stat_no_at_buff[i]), "%d.", i + 1);
-    bodyline[PE_NO].name = stat_no_at_buff[i];
-  }
-  GtkWidget *dyn = pt_make_dynlist(bbox, false, bodyline, group, G_N_ELEMENTS(group));
+  GtkWidget *dyn = pt_make_dynlist(bbox, !HEADBOX, group, G_N_ELEMENTS(group));
   //
   for (uint i = 0; i < G_N_ELEMENTS(group); i++)
     if (group[i])
@@ -385,7 +387,7 @@ static void clear_bbox(void) {
     for (uint j = 0; *label && (j < G_N_ELEMENTS(l->labels)); j++, label++) {
       if (GTK_IS_LABEL(*label)) {
         gtk_widget_set_visible(*label, false);
-        if (is_statinfo_ndx(j))
+        if (is_head_label(j))
           gtk_label_set_text(GTK_LABEL(*label), NULL);
       }
     }

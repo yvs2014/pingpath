@@ -1,3 +1,11 @@
+pingpath (1.0.14) trixie; urgency=low
+
+  * pingtab: fix wrong hop-numbers in correspondent column (appeared in commit #c88e376a)
+
+  * exclude static string-array for hop-numbers
+
+ -- yvs <VSYakovetsky@gmail.com>  Sun, 28 Jun 2026 00:47:11 +0300
+
 pingpath (1.0.13) trixie; urgency=low
 
   * reformat a bit oneliners
