@@ -333,13 +333,16 @@ static void reorder_elems(const char *str, t_elem_desc *desc) {
 static char* cli_char_opts(int type, const char *value, guint cat,
     t_elem_desc *desc, int max, const char *hdr)
 {
-  if (!desc || !desc->elems) return NULL;
+  if (!desc || !desc->elems)
+    return NULL;
   PRINT_REORDER_ELEMS(desc->elems, max);
   clean_elems(type);
   char *str = cli_opt_charelem(parser_str(value, hdr, cat), desc->patt, desc->cat);
   if (str) {
-    if (str[0]) reorder_elems(str, desc);
-    else g_message("%s: %s", hdr, OFF_HDR);
+    if (str[0])
+      reorder_elems(str, desc);
+    else
+      g_message("%s: %s", hdr, OFF_HDR);
   }
   PRINT_REORDER_ELEMS(desc->elems, max);
   return str;
@@ -361,6 +364,8 @@ static gboolean cli_opt_elem(const char *name, const char *value,
     } break;
     case OPT_TYPE_INFO:
       str = cli_char_opts(ENT_EXP_INFO, value, cat, &info_desc, PE_MAX, OPT_INFO_HDR); break;
+// TODO: case OPT_TYPE_WMF:
+//    str = cli_char_opts(ENT_EXP_WMF,  value, cat, &wmf_desc,  WE_MAX, OPT_WMF_HDR); break;
     case OPT_TYPE_STAT:
       str = cli_char_opts(ENT_EXP_STAT, value, cat, &stat_desc, PE_MAX, OPT_STAT_HDR); break;
     case OPT_TYPE_GRLG:

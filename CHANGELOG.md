@@ -1,3 +1,7 @@
+## 1.0.15
+- whois multi-field in GUI: add check button
+- bool toggle callback: if-switch -> fn-map
+
 ## 1.0.14
 - pingtab: fix wrong hop-numbers in correspondent column (appeared in commit #c88e376a)
 - exclude static string-array for hop-numbers

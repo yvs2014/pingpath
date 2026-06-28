@@ -47,10 +47,11 @@ static int elem_type2ndx(int type, t_type_elem *elem, uint max) {
       return i;
   return -1;
 }
-int  pingelem_type2ndx(int type) { return elem_type2ndx(type, pingelem,  G_N_ELEMENTS(pingelem));  }
+static int  pingelem_type2ndx(int type) { return elem_type2ndx(type, pingelem,  G_N_ELEMENTS(pingelem));  }
+static int   wmfelem_type2ndx(int type) { return elem_type2ndx(type, wmfelem,   G_N_ELEMENTS(wmfelem));   }
 int graphelem_type2ndx(int type) { return elem_type2ndx(type, graphelem, G_N_ELEMENTS(graphelem)); }
 #ifdef WITH_PLOT
-int  plotelem_type2ndx(int type) { return elem_type2ndx(type, plotelem,  G_N_ELEMENTS(plotelem));  }
+static int  plotelem_type2ndx(int type) { return elem_type2ndx(type, plotelem,  G_N_ELEMENTS(plotelem));  }
 #endif
 
 static const char* char_pattern[] = { [INFO_CHAR] = INFO_PATT, [STAT_CHAR] = STAT_PATT,
@@ -68,6 +69,7 @@ static int char_ndxs[][MAXCHARS_IN_PATTERN][2] = { // max pattern is 8 chars
     {ENT_BOOL_CC,   PE_CC},   // c
     {ENT_BOOL_DESC, PE_DESC}, // d
     {ENT_BOOL_RT,   PE_RT},   // r
+// TODO: 'm' => {ENT_BOOL_WMF,  WE_MF}, // m
   },
   [STAT_CHAR] = {
     {ENT_BOOL_LOSS, PE_LOSS}, // l
@@ -142,6 +144,10 @@ static int pingelem_type2ent(int type) {
   return ndx;
 }
 
+static int wmfelem_type2ent(int type) { // only one element
+  return (type == WE_MF) ? ENT_BOOL_WMF : -1;
+}
+
 static int graphelem_type2ent(int type) {
   int ndx = -1;
   switch (type) {
@@ -172,6 +178,8 @@ static int plotelem_type2ent(int type) {
 
 t_elem_desc info_desc = { .elems = pingelem, .mm = { .min = PE_HOST, .max = PE_RT },
   .cat = INFO_CHAR, .patt = INFO_PATT, .t2n = pingelem_type2ndx, .t2e = pingelem_type2ent };
+t_elem_desc wmf_desc  = { .elems = wmfelem,  .mm = { .min = WE_MF, .max = WE_MF },
+/*.cat = INFO_CHAR, .patt = INFO_PATT*/.t2n = wmfelem_type2ndx,  .t2e = wmfelem_type2ent  };
 t_elem_desc stat_desc = { .elems = pingelem, .mm = { .min = PE_LOSS, .max = PE_JTTR },
   .cat = STAT_CHAR, .patt = STAT_PATT, .t2n = pingelem_type2ndx, .t2e = pingelem_type2ent };
 
@@ -197,10 +205,12 @@ char* get_nth_color(int nth) {
 //
 
 void init_elem_links(void) {
-#define INIT_PE_NT(ndx, ename, etip) do { \
-  pingelem[ndx].name = (ename);           \
-  pingelem[ndx].tip  = (etip);            \
+#define INIT_XE_NT(elem, ndx, ename, etip) do { \
+  (elem)[ndx].name = (ename);                   \
+  (elem)[ndx].tip  = (etip);                    \
 } while (0)
+#define INIT_PE_NT(ndx, ename, etip) INIT_XE_NT(pingelem, (ndx), (ename), (etip))
+#define INIT_WE_NT(ndx, ename, etip) INIT_XE_NT(wmfelem, (ndx), (ename), (etip))
   //
   INIT_PE_NT(PE_HOST, ELEM_HOST_HDR, ELEM_HOST_TIP);
   INIT_PE_NT(PE_HOST, ELEM_HOST_HDR, ELEM_HOST_TIP);
@@ -208,6 +218,7 @@ void init_elem_links(void) {
   INIT_PE_NT(PE_CC,   ELEM_CC_HDR,   ELEM_CC_TIP);
   INIT_PE_NT(PE_DESC, ELEM_DESC_HDR, ELEM_DESC_TIP);
   INIT_PE_NT(PE_RT,   ELEM_RT_HDR,   ELEM_RT_TIP);
+  INIT_WE_NT(WE_MF,   ELEM_WMF_HDR,  ELEM_WMF_TIP);
   INIT_PE_NT(PE_LOSS, ELEM_LOSS_HDR, ELEM_LOSS_TIP);
   INIT_PE_NT(PE_SENT, ELEM_SENT_HDR, ELEM_SENT_TIP);
   INIT_PE_NT(PE_RECV, ELEM_RECV_HDR, ELEM_RECV_TIP);
@@ -270,6 +281,7 @@ static void clean_type_elems(t_type_elem elems[], uint len, int min, int max) {
 void clean_elems(int type) {
   switch (type) {
     case ENT_EXP_INFO: clean_type_elems(pingelem,  G_N_ELEMENTS(pingelem),  PE_HOST, PE_RT);   break;
+    case ENT_EXP_WMF:  clean_type_elems(wmfelem,   G_N_ELEMENTS(wmfelem),   WE_MF,   WE_MF);   break;
     case ENT_EXP_STAT: clean_type_elems(pingelem,  G_N_ELEMENTS(pingelem),  PE_LOSS, PE_JTTR); break;
     case ENT_EXP_LGFL: clean_type_elems(graphelem, G_N_ELEMENTS(graphelem), GE_AVJT, GE_LGHN); break;
     case ENT_EXP_GREX: clean_type_elems(graphelem, G_N_ELEMENTS(graphelem), GX_MEAN, GX_AREA); break;

@@ -299,6 +299,14 @@ static inline int find_vacant_mwhois_slot(char* el[], uint len) { // NONNULL(1)
   return -1;
 }
 
+static inline uint mwhois_length(char* el[], uint max) { // NONNULL(1)
+  uint n = 0;
+  for (; n < max; n++)
+    if (!el[n])
+      break;
+  return n;
+}
+
 static gboolean is_mwhois_str_neq(t_mwhois *m, uint last) { // NONNULL(1)
   const char *first = m->elem[0];
   for (uint i = 1; i <= last; i++)
@@ -463,6 +471,23 @@ void parser_whois(char *buff, t_whois *whois) {
     if (!whois->m[i].elem[0])
       whois->m[i].elem[0] = g_strdup(UNKN_FIELD);
 #undef SKIP_PREFIX
+}
+
+void parser_review_whois(t_mwhois *m) { // NONNULL(1)
+  uint len = mwhois_length(m->elem, G_N_ELEMENTS(m->elem));
+  if (len) {
+    if (opts.whois_multi) {
+      GString *s = g_string_new(m->elem[0]);
+      for (uint i = 1; i < len; i++)
+        g_string_append_printf(s, "%c %s", WHOIS_CCDEL, m->elem[i]);
+      UPD_NSTR(m->view, s->str, MAXHOSTNAME);
+      g_string_free(s, true);
+    } else {
+      char *str = (len > 1) ? g_strdup_printf("%s%c", m->elem[0], AST) : NULL;
+      UPD_NSTR(m->view, str ? str : m->elem[0], MAXHOSTNAME);
+      g_free(str);
+    }
+  }
 }
 
 gboolean parser_range(char *range, char delim, const char *option, t_minmax *minmax) {

@@ -16,6 +16,7 @@ void parser_parse(int at, char *input);
 char* parser_valid_target(const char *target, gboolean *spaced);
 char* parser_str(const char *str, const char *option, guint cat);
 void parser_whois(char *buff, t_whois* welem);
+void parser_review_whois(t_mwhois *whois); // NONNULL(1)
 gboolean parser_mmint(const char *str, const char *option, t_minmax minmax, int *value);
 gboolean parser_range(char *range, char delim, const char *option, t_minmax *minmax);
 #ifdef WITH_PLOT

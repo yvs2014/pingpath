@@ -143,6 +143,8 @@
 #define ELEM_DESC_TIP    _("Short description in free form")
 #define ELEM_RT_HDR      _("Network")
 #define ELEM_RT_TIP      _("Network prefix")
+#define ELEM_WMF_HDR     _("<multi-field>")
+#define ELEM_WMF_TIP     _("More than one fields")
 #define ELEM_LOSS_HDR    _("Loss")
 #define ELEM_LOSS_HEADER _("Lost")
 #define ELEM_LOSS_TIP    _("Loss in percentage")

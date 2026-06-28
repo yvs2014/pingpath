@@ -42,6 +42,7 @@ t_legend stat_legend(int at);
 void stat_whois_enabler(void);
 void stat_run_whois_resolv(void);
 void stat_col_addrhost(int at, t_ping_column* column, gboolean num); // NONNULL(2)
+void stat_whois_review(void (*reviewer)(t_mwhois*)); // NONNULL(1)
 
 extern int tgtat /*target at*/, visibles;
 

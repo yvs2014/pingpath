@@ -1,3 +1,11 @@
+pingpath (1.0.15) trixie; urgency=low
+
+  * whois multi-field in GUI: add check button
+
+  * bool toggle callback: if-switch -> fn-map
+
+ -- yvs <VSYakovetsky@gmail.com>  Mon, 29 Jun 2026 00:30:36 +0300
+
 pingpath (1.0.14) trixie; urgency=low
 
   * pingtab: fix wrong hop-numbers in correspondent column (appeared in commit #c88e376a)

@@ -221,7 +221,6 @@ static const char *info_whois(int at, int type) {
   if (!view)
     return NULL;
   char *str = whois_cache[at][type];
-  // TODO: reset hops[at].whois_cached[] with changing 'whois_multi'
   if (!hop->whois_cached[type]) {
     int len = snprintg(str, BUFF_SIZE, "%s", view);
     if (len > 0) for (uint i = 1; (i < G_N_ELEMENTS(hop->whois)) && (len < BUFF_SIZE); i++) {
@@ -418,6 +417,10 @@ t_type_elem pingelem[PE_MAX] = {
   [PE_JTTR] = { .type = PE_JTTR, .enable = true, .view = stat_hop_jttr, .statview = stat_hop_jttr },
 };
 
+t_type_elem wmfelem[WE_MAX] = {
+  [WE_MF] = { .type = WE_MF },
+};
+
 void stat_init(gboolean clean) { // clean start or on reset
   if (clean) {
     tgtat = MAXTTL;
@@ -599,6 +602,20 @@ void stat_col_addrhost(int at, t_ping_column* column, gboolean num) { // NONNULL
       break;
     *cell = num ? host->addr :
       STR_EQ(host->addr, host->name) ? NULL : host->name;
+  }
+}
+
+void stat_whois_review(void (*reviewer)(t_mwhois*)) { // NONNULL(1)
+  t_hop *hop = hops;
+  for (int at = opts.range.min; hop && (at < opts.range.max); at++, hop++) {
+    memset(hop->whois_cached, false, sizeof(hop->whois_cached));
+    memset(hop->whois_cached_nl, false, sizeof(hop->whois_cached_nl));
+    t_whois *whois = hop->whois;
+    for (uint i = 0; whois && (i < G_N_ELEMENTS(hop->whois)); i++, whois++) {
+      t_mwhois *m = whois->m;
+      for (uint j = 0; m && j < G_N_ELEMENTS(whois->m); j++, m++)
+        reviewer(m);
+    }
   }
 }
 

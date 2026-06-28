@@ -12,7 +12,7 @@
 #define MIN_GTK_RUNTIME(major, minor, micro) (!gtk_check_version(major, minor, micro))
 
 #define APPNAME "pingpath"
-#define VERSION "1.0.14"
+#define VERSION "1.0.15"
 #define APPVER  APPNAME "-" VERSION
 
 extern locale_t locale, localeC;
@@ -245,8 +245,7 @@ enum {
 
 #define DEF_DNS         true
 #define DEF_WHOIS       true
-//#define DEF_WHOIS_MULTI false
-#define DEF_WHOIS_MULTI true
+#define DEF_WHOIS_MULTI false
 
 #define DEF_PPAD "00"
 
@@ -273,13 +272,14 @@ enum { TAB_PING_NDX, TAB_GRAPH_NDX,
 #define ATAB_MAX TAB_GRAPH_NDX
 #endif
 
-enum { ENT_EXP_INFO, ENT_EXP_STAT, ENT_EXP_LGFL, ENT_EXP_GREX,
+enum { ENT_EXP_INFO, ENT_EXP_WMF, // _WMF adjacent to _INFO
+  ENT_EXP_STAT, ENT_EXP_LGFL, ENT_EXP_GREX,
 #ifdef WITH_PLOT
   ENT_EXP_PLEL,
 #endif
 };
 
-enum { ENT_BOOL_DNS, ENT_BOOL_HOST, ENT_BOOL_AS, ENT_BOOL_CC, ENT_BOOL_DESC, ENT_BOOL_RT,
+enum { ENT_BOOL_DNS, ENT_BOOL_HOST, ENT_BOOL_AS, ENT_BOOL_CC, ENT_BOOL_DESC, ENT_BOOL_RT, ENT_BOOL_WMF,
   ENT_BOOL_LOSS, ENT_BOOL_SENT, ENT_BOOL_RECV, ENT_BOOL_LAST, ENT_BOOL_BEST, ENT_BOOL_WRST, ENT_BOOL_AVRG, ENT_BOOL_JTTR,
   ENT_BOOL_MN_DARK, ENT_BOOL_GR_DARK, ENT_BOOL_LGND,
 #ifdef WITH_PLOT
@@ -289,11 +289,14 @@ enum { ENT_BOOL_DNS, ENT_BOOL_HOST, ENT_BOOL_AS, ENT_BOOL_CC, ENT_BOOL_DESC, ENT
 #ifdef WITH_PLOT
   ENT_BOOL_PLBK, ENT_BOOL_PLAX, ENT_BOOL_PLGR, ENT_BOOL_PLRR, ENT_BOOL_GLOB,
 #endif
+  ENT_BOOL_MAX
 };
 
 enum { PE_NO, PE_HOST, PE_AS, PE_CC, PE_DESC, PE_RT, PE_FILL, // PingElement
   PE_LOSS, PE_SENT, PE_RECV, PE_LAST, PE_BEST, PE_WRST, PE_AVRG, PE_JTTR, PE_MAX,
 };
+
+enum { WE_MF, WE_MAX }; // whois elements: multi-fields
 
 enum { GE_NO, GE_DASH, GE_AVJT, GE_CCAS, GE_LGHN, GX_MEAN, GX_JRNG, GX_AREA, GX_MAX };
 #define GE_MIN GE_AVJT
@@ -423,8 +426,9 @@ extern gboolean cli;
 extern int activetab;
 
 extern t_type_elem pingelem[PE_MAX];
+extern t_type_elem wmfelem[WE_MAX];
 extern t_type_elem graphelem[GX_MAX];
-extern t_elem_desc info_desc, stat_desc, grlg_desc, grex_desc;
+extern t_elem_desc info_desc, wmf_desc, stat_desc, grlg_desc, grex_desc;
 #ifdef WITH_PLOT
 extern t_type_elem plotelem[D3_MAX];
 extern t_elem_desc plot_desc;
@@ -445,11 +449,11 @@ gboolean* graphelem_enabler(int type);
 gboolean*  plotelem_enabler(int type);
 #endif
 //
-int  pingelem_type2ndx(int type);
+//int  pingelem_type2ndx(int type);
 int graphelem_type2ndx(int type);
-#ifdef WITH_PLOT
-int  plotelem_type2ndx(int type);
-#endif
+//#ifdef WITH_PLOT
+//int  plotelem_type2ndx(int type);
+//#endif
 //
 gboolean is_grelem_enabled(int type);
 #ifdef WITH_PLOT
