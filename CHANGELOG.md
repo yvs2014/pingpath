@@ -1,3 +1,6 @@
+## 1.0.17
+- cleanup a bit: oneliners and _MAX enums
+
 ## 1.0.16
 - add multi-source option (-M)
 - naming: multi-field -> multi-source

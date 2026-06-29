@@ -12,7 +12,7 @@
 #define MIN_GTK_RUNTIME(major, minor, micro) (!gtk_check_version(major, minor, micro))
 
 #define APPNAME "pingpath"
-#define VERSION "1.0.16"
+#define VERSION "1.0.17"
 #define APPVER  APPNAME "-" VERSION
 
 extern locale_t locale, localeC;
@@ -144,7 +144,7 @@ enum {
 #define PP_FMT10(val) (((val) < 10) ? PP_FMT_LT10(val) : PP_RTT_FMT_GE10)
 
 typedef struct verbose {
-  guint
+  uint
     verbose:1,
     debug  :1,
     dns    :1,
@@ -289,21 +289,20 @@ enum { ENT_BOOL_DNS, ENT_BOOL_HOST, ENT_BOOL_AS, ENT_BOOL_CC, ENT_BOOL_DESC, ENT
 #ifdef WITH_PLOT
   ENT_BOOL_PLBK, ENT_BOOL_PLAX, ENT_BOOL_PLGR, ENT_BOOL_PLRR, ENT_BOOL_GLOB,
 #endif
-  ENT_BOOL_MAX
 };
 
 enum { PE_NO, PE_HOST, PE_AS, PE_CC, PE_DESC, PE_RT, PE_FILL, // PingElement
   PE_LOSS, PE_SENT, PE_RECV, PE_LAST, PE_BEST, PE_WRST, PE_AVRG, PE_JTTR, PE_MAX,
 };
 
-enum { WR_MS, WR_MAX }; // multi-sources gotten from whois-response
+enum { WR_MS }; // multi-sources gotten from whois-response
 
-enum { GE_NO, GE_DASH, GE_AVJT, GE_CCAS, GE_LGHN, GX_MEAN, GX_JRNG, GX_AREA, GX_MAX };
+enum { GE_NO, GE_DASH, GE_AVJT, GE_CCAS, GE_LGHN, GX_MEAN, GX_JRNG, GX_AREA };
 #define GE_MIN GE_AVJT
 #define GE_MAX (GE_LGHN + 1)
 
 #ifdef WITH_PLOT
-enum { D3_BACK, D3_AXIS, D3_GRID, D3_ROTR, D3_MAX };
+enum { D3_BACK, D3_AXIS, D3_GRID, D3_ROTR };
 #endif
 
 enum { INFO_CHAR, STAT_CHAR, GRLG_CHAR, GREX_CHAR,
@@ -427,11 +426,11 @@ extern gboolean cli;
 extern int activetab;
 
 extern t_type_elem pingelem[PE_MAX];
-extern t_type_elem msrcelem[WR_MAX];
-extern t_type_elem graphelem[GX_MAX];
+extern t_type_elem msrcelem[];
+extern t_type_elem graphelem[];
 extern t_elem_desc info_desc, msrc_desc, stat_desc, grlg_desc, grex_desc;
 #ifdef WITH_PLOT
-extern t_type_elem plotelem[D3_MAX];
+extern t_type_elem plotelem[];
 extern t_elem_desc plot_desc;
 #endif
 
@@ -478,7 +477,7 @@ t_ref* ref_new(t_hop *hop, int ndx);
 #if defined(DNS_EXTRA_DEBUG) || defined(WHOIS_EXTRA_DEBUG)
 void print_refs(GSList *refs, const char *prefix);
 #endif
-GSList* list_add_nodup(GSList **list, void *data, GCompareFunc cmp, guint max);
+GSList* list_add_nodup(GSList **list, void *data, GCompareFunc cmp, uint max);
 GSList* list_add_ref(GSList **list, t_hop *hop, int ndx);
 extern void log_add(const char *fmt, ...);
 

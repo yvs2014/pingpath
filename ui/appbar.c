@@ -8,7 +8,7 @@
 #include "parser.h"
 #include "notifier.h"
 
-guint datetime_id;
+uint datetime_id;
 
 static int update_datetime(void *label) {
   if (atquit) datetime_id = 0;

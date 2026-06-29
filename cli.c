@@ -225,10 +225,10 @@ static gboolean cli_opt_X_f(char *dup, int type, int ndx) {
   return okay;
 }
 
-static gboolean xnth_nodup(guint *mask, guint nth) {
+static gboolean xnth_nodup(uint *mask, uint nth) {
   gboolean okay = true;
   if (mask) {
-    guint flag = 1U << nth;
+    uint flag = 1U << nth;
     if (*mask & flag) { okay = false; *mask |= 1U; }
     else *mask |= flag;
   }
@@ -236,7 +236,7 @@ static gboolean xnth_nodup(guint *mask, guint nth) {
 }
 
 static gboolean cli_opt_X_pair(const char *value, char tag, const char *name, t_opts *opts) {
-  static guint xpairbits;
+  static uint xpairbits;
   gboolean okay = false;
   if (value && opts) {
     char *dup = g_strdup(value);
@@ -445,7 +445,7 @@ static gboolean cli_opt_P(const char *name, const char *value, t_opts *opts G_GN
 #define OPT_MASK_DARKPLOT  0x8U
 static gboolean cli_opt_T(const char *name, const char *value, t_opts *opts, GError **error) {
   if (!opts) return false;
-  guint mask = 0;
+  uint mask = 0;
   if (opts->darktheme) mask |= OPT_MASK_DARKTHEME;
   if (opts->darkgraph) mask |= OPT_MASK_DARKGRAPH;
   if (opts->legend)    mask |= OPT_MASK_LEGEND;
@@ -875,7 +875,7 @@ int cli_init(int *pargc, char ***pargv) {
   };
   char *target_hdr = g_utf8_strup(TARGET_HDR, -1);
   int rc = cli_init_proc(pargc, pargv, desc, target_hdr);
-  for (guint i = 0; i < G_N_ELEMENTS(desc); i++)
+  for (uint i = 0; i < G_N_ELEMENTS(desc); i++)
     g_free(desc[i]);
   g_free(target_hdr);
   return rc;

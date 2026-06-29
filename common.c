@@ -10,11 +10,11 @@ int activetab = TAB_PING_NDX;
 
 t_verbose verbose;
 
-t_type_elem msrcelem[WR_MAX] = {
+t_type_elem msrcelem[] = {
   [WR_MS] = { .type = WR_MS },
 };
 
-t_type_elem graphelem[GX_MAX] = {
+t_type_elem graphelem[] = {
   [GE_NO]   = { .type = GE_NO,   .enable = true, .name = "" },
   [GE_DASH] = { .type = GE_DASH, .enable = true },
   [GE_AVJT] = { .type = GE_AVJT, .enable = true },
@@ -26,7 +26,7 @@ t_type_elem graphelem[GX_MAX] = {
 };
 
 #ifdef WITH_PLOT
-t_type_elem plotelem[D3_MAX] = {
+t_type_elem plotelem[] = {
   [D3_BACK] = { .type = D3_BACK, .enable = true },
   [D3_AXIS] = { .type = D3_AXIS, .enable = true },
   [D3_GRID] = { .type = D3_GRID, .enable = true },

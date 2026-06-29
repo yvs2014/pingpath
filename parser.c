@@ -352,11 +352,11 @@ gboolean parser_init(void) {
   hostname_char0_regex = compile_regex("^[" DIGIT_OR_LETTER ":]", 0);
   hostname_chars_regex = compile_regex("^[" DIGIT_OR_LETTER ":.-]+$", 0);
   gboolean okay = multiline_regex && hostname_char0_regex && hostname_chars_regex;
-  for (guint i = 0; i < G_N_ELEMENTS(regexes); i++) {
+  for (uint i = 0; i < G_N_ELEMENTS(regexes); i++) {
     regexes[i].rx.regex = compile_regex(regexes[i].rx.pattern, 0);
     if (!regexes[i].rx.regex) okay = false;
   }
-  for (guint i = 0; i < G_N_ELEMENTS(str_rx); i++) {
+  for (uint i = 0; i < G_N_ELEMENTS(str_rx); i++) {
     str_rx[i].regex = compile_regex(str_rx[i].pattern, 0);
     if (!str_rx[i].regex) okay = false;
   }
@@ -393,7 +393,7 @@ gboolean parser_mmint(const char *str, const char *option, t_minmax minmax, int 
   return okay;
 }
 
-char* parser_str(const char *str, const char *option, guint cat) {
+char* parser_str(const char *str, const char *option, uint cat) {
   const int PARSE_MAX_CHARS = 128;
   if (cat < G_N_ELEMENTS(str_rx)) {
     char *buff = g_strndup(str, PARSE_MAX_CHARS);

@@ -49,7 +49,7 @@ typedef struct ent_rad {
 } t_ent_rad;
 
 #ifdef WITH_PLOT
-enum { ENT_SPN_ROT0, ENT_SPN_ROT1, ENT_SPN_ROT2, ENT_SPN_ANGS, ENT_SPN_ROT_MAX };
+enum { ENT_SPN_ROT0, ENT_SPN_ROT1, ENT_SPN_ROT2, ENT_SPN_ANGS };
 #endif
 
 t_ent_bool ent_bool[] = {
@@ -764,7 +764,7 @@ static GtkWidget* add_opt_range(GtkWidget* list, t_ent_spn *en) { // NONNULL(1, 
 #ifdef WITH_PLOT
         case ROTOR_COLUMN:
           add_opt_check(subbox, &ent_bool[ENT_BOOL_GLOB]);
-          for (uint i = 0; i < ENT_SPN_ROT_MAX; i++) if (elem->aux[i].prfx) {
+          for (uint i = 0; i < G_N_ELEMENTS(elem->aux); i++) if (elem->aux[i].prfx) {
             GtkWidget *row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, MARGIN);
             if (!row)
               continue;

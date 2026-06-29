@@ -11,11 +11,17 @@ static const char* cb_menu_label(int sel) {
 }
 
 static void cb_menu_update(t_tab *tab) {
-  if (!tab || !G_IS_MENU(tab->menu)) return;
+  if (!tab || !G_IS_MENU(tab->menu))
+    return;
   g_menu_remove_all(tab->menu);
-  for (int i = 0; i < POP_MENU_NDX_MAX; i++) {
-    GMenuItem *item = g_menu_item_new(cb_menu_label((i == POP_MENU_NDX_SALL) ? tab->sel : -1), tab->desc[i].name);
-    if (item) { g_menu_append_item(tab->menu, item); g_object_unref(item); }}
+  for (uint i = 0; i < G_N_ELEMENTS(tab->desc); i++) {
+    int sel = (i == POP_MENU_NDX_SALL) ? tab->sel : -1;
+    GMenuItem *item = g_menu_item_new(cb_menu_label(sel), tab->desc[i].name);
+    if (item) {
+      g_menu_append_item(tab->menu, item);
+      g_object_unref(item);
+    }
+  }
   SET_SA(tab->desc, POP_MENU_NDX_COPY, tab->sel);
 }
 
@@ -25,9 +31,10 @@ static GtkWidget* cb_popover_init(GtkWidget *win, t_tab *tab) {
   g_return_val_if_fail(G_IS_MENU(tab->menu), NULL);
   GtkWidget *popover = gtk_popover_menu_new_from_model(G_MENU_MODEL(tab->menu));
   g_return_val_if_fail(GTK_IS_POPOVER(popover), NULL);
-  for (int i = 0; i < POP_MENU_NDX_MAX; i++) tab->act[i].name = tab->desc[i].name + ACT_DOT;
-  g_action_map_add_action_entries(G_ACTION_MAP(win), tab->act, POP_MENU_NDX_MAX, tab);
-  for (int i = 0; i < POP_MENU_NDX_MAX; i++)
+  for (uint i = 0; i < MIN(G_N_ELEMENTS(tab->act), G_N_ELEMENTS(tab->desc)); i++)
+    tab->act[i].name = tab->desc[i].name + ACT_DOT;
+  g_action_map_add_action_entries(G_ACTION_MAP(win), tab->act, G_N_ELEMENTS(tab->act), tab);
+  for (uint i = 0; i < MIN(G_N_ELEMENTS(tab->act), G_N_ELEMENTS(tab->desc)); i++)
     tab->desc[i].sa = G_SIMPLE_ACTION(g_action_map_lookup_action(G_ACTION_MAP(win), tab->act[i].name));
   gtk_popover_set_position(GTK_POPOVER(popover), GTK_POS_BOTTOM);
   gtk_popover_set_has_arrow(GTK_POPOVER(popover), false);
@@ -37,8 +44,10 @@ static GtkWidget* cb_popover_init(GtkWidget *win, t_tab *tab) {
 }
 
 static void cb_popover_show(GtkWidget *popover, double x, double y) {
-  if (!GTK_IS_POPOVER(popover)) return;
-  if ((x < 0) || (y < 0)) gtk_popover_set_pointing_to(GTK_POPOVER(popover), NULL);
+  if (!GTK_IS_POPOVER(popover))
+    return;
+  if ((x < 0) || (y < 0))
+    gtk_popover_set_pointing_to(GTK_POPOVER(popover), NULL);
   else {
     GdkRectangle rect = {x, y, 1, 1};
     gtk_popover_set_pointing_to(GTK_POPOVER(popover), &rect);
@@ -49,7 +58,8 @@ static void cb_popover_show(GtkWidget *popover, double x, double y) {
 static void cb_on_press(GtkGestureClick *gest, gint n_press G_GNUC_UNUSED,
     gdouble x, gdouble y, GtkWidget *pop)
 {
-  if (!GTK_IS_GESTURE_CLICK(gest) || !GTK_IS_POPOVER(pop)) return;
+  if (!GTK_IS_GESTURE_CLICK(gest) || !GTK_IS_POPOVER(pop))
+    return;
   GdkEvent *ev = gtk_gesture_get_last_event(GTK_GESTURE(gest),
     gtk_gesture_single_get_current_sequence(GTK_GESTURE_SINGLE(gest)));
   if (ev && gdk_event_triggers_context_menu(ev)) {
@@ -61,23 +71,33 @@ static void cb_on_press(GtkGestureClick *gest, gint n_press G_GNUC_UNUSED,
 static gboolean any_list_sel(t_tab *tab) {
   if (tab) {
     GtkWidget* arr[] = {tab->hdr.w, tab->dyn.w, tab->info.w};
-    for (int i = 0, len = G_N_ELEMENTS(arr); i < len; i++) if (GTK_IS_LIST_BOX(arr[i])) {
-      GList *list = gtk_list_box_get_selected_rows(GTK_LIST_BOX(arr[i]));
-      if (list) { g_list_free(list); return true; }
-    }
+    for (int i = 0, len = G_N_ELEMENTS(arr); i < len; i++)
+      if (GTK_IS_LIST_BOX(arr[i])) {
+        GList *list = gtk_list_box_get_selected_rows(GTK_LIST_BOX(arr[i]));
+        if (list) {
+          g_list_free(list);
+	  return true;
+        }
+      }
   }
   return false;
 }
 
 static void cb_on_sel(GtkListBox *self G_GNUC_UNUSED, t_tab *tab) {
-  if (tab) { tab->sel = any_list_sel(tab); cb_menu_update(tab); }
+  if (tab) {
+    tab->sel = any_list_sel(tab);
+    cb_menu_update(tab);
+  }
 }
 
 static char* c_strjoinv(const char delim, const char **array) {
-  if (!array) return NULL;
-  if (!*array) return g_strdup("");
+  if (!array)
+    return NULL;
+  if (!*array)
+    return g_strdup("");
   size_t size = 1;
-  for (const char **ptr = array; *ptr; ptr++) size += strlen(*ptr) + 1;
+  for (const char **ptr = array; *ptr; ptr++)
+    size += strlen(*ptr) + 1;
   char *str = g_malloc0(size);
   char *end = g_stpcpy(str, *array);
   for (const char **ptr = array + 1; *ptr; ptr++) {
@@ -103,17 +123,26 @@ static char* cb_collect_level1(GList *list) {
 
 static void cb_calc_lengths(GList *list, int *maxes) {
   for (GList *item = list; item; item = item->next) {
-    GtkListBoxRow *row = item->data; if (!GTK_IS_LIST_BOX_ROW(row)) continue;
-    GtkWidget *box = gtk_list_box_row_get_child(row); if (!GTK_IS_BOX(box) || !gtk_widget_get_visible(box)) continue;
-    int ndx = 0;
-    for (GtkWidget *lab = gtk_widget_get_first_child(box); GTK_IS_LABEL(lab) && (ndx < PE_MAX);
-         lab = gtk_widget_get_next_sibling(lab)) {
-      if (!gtk_widget_get_visible(lab)) continue;
-      const char *str = gtk_label_get_text(GTK_LABEL(lab));
-      if (!str) continue;
+    GtkListBoxRow *row = item->data;
+    if (!GTK_IS_LIST_BOX_ROW(row))
+      continue;
+    GtkWidget *box = gtk_list_box_row_get_child(row);
+    if (!GTK_IS_BOX(box) || !gtk_widget_get_visible(box))
+      continue;
+    uint ndx = 0;
+    for (GtkWidget *label = gtk_widget_get_first_child(box);
+         GTK_IS_LABEL(label) && (ndx < G_N_ELEMENTS(pingelem));
+         label = gtk_widget_get_next_sibling(label))
+    {
+      if (!gtk_widget_get_visible(label))
+        continue;
+      const char *str = gtk_label_get_text(GTK_LABEL(label));
+      if (!str)
+        continue;
       if (str[0]) {
         int len = g_utf8_strlen(str, MAXHOSTNAME);
-        if (len > maxes[ndx]) maxes[ndx] = len;
+        if (len > maxes[ndx])
+          maxes[ndx] = len;
       }
       ndx++;
     }
@@ -121,14 +150,17 @@ static void cb_calc_lengths(GList *list, int *maxes) {
 }
 
 static void cb_collect_maxes(GtkWidget *box, int *maxes) {
-  if (!GTK_IS_LIST_BOX(box) || !maxes) return;
+  if (!GTK_IS_LIST_BOX(box) || !maxes)
+    return;
   GList *list = gtk_list_box_get_selected_rows(GTK_LIST_BOX(box));
-  if (list) cb_calc_lengths(list, maxes);
+  if (list)
+    cb_calc_lengths(list, maxes);
 }
 
 static inline char* ustr_dup(int len, const char *str) {
   int w = (len > 0) ? (len - g_utf8_strlen(str, INT16_MAX)) : 0;
-  if (w > 0) return g_strdup_printf("%s%-*s", str, w, "");
+  if (w > 0)
+    return g_strdup_printf("%s%-*s", str, w, "");
   return g_strdup(str);
 }
 
@@ -139,16 +171,21 @@ static char* cb_collect_level2(GList *list, const int *maxes) {
   int i = 0;
   for (GList *item = list; item && (i < I_CL2); item = item->next) {
     GtkListBoxRow *row = item->data;
-    if (!GTK_IS_LIST_BOX_ROW(row)) continue;
+    if (!GTK_IS_LIST_BOX_ROW(row))
+      continue;
     GtkWidget *box = gtk_list_box_row_get_child(row);
-    if (!GTK_IS_BOX(box) || !gtk_widget_get_visible(box)) continue;
+    if (!GTK_IS_BOX(box) || !gtk_widget_get_visible(box))
+      continue;
     int j = 0, di = 0;
     for (GtkWidget *lab = gtk_widget_get_first_child(box);
          GTK_IS_LABEL(lab) && (j < (J_CL2 - 1/*last one is NULL*/));
-         lab = gtk_widget_get_next_sibling(lab)) {
-      if (!gtk_widget_get_visible(lab)) continue;
+         lab = gtk_widget_get_next_sibling(lab))
+    {
+      if (!gtk_widget_get_visible(lab))
+        continue;
       const char *str = gtk_label_get_text(GTK_LABEL(lab));
-      if (!str) continue;
+      if (!str)
+        continue;
       int len = maxes ? maxes[j] : 0;
       if (str[0]) {
         char **multi = g_strsplit(str, "\n", MAXADDR);
@@ -157,7 +194,8 @@ static char* cb_collect_level2(GList *list, const int *maxes) {
           for (char **pstr = multi; *pstr && (ii < I_CL2); pstr++)
             elems[ii++][j] = ustr_dup(len, *pstr); // put '\n'-elems ahead
           g_strfreev(multi);
-          if ((ii - i) > di) di = ii - i;
+          if ((ii - i) > di)
+            di = ii - i;
         }
       } else elems[i][j] = (len > 0) ? g_strdup_printf("%-*s", len, "") : g_strdup("");
       j++;
@@ -168,7 +206,10 @@ static char* cb_collect_level2(GList *list, const int *maxes) {
   for (int i = 0; i < I_CL2; i++) {
     gboolean empty = true;
     for (int j = 0; j < J_CL2; j++)
-      if (elems[i][j]) { empty = false; break; }
+      if (elems[i][j]) {
+        empty = false;
+        break;
+      }
     if (!empty && !elems[i][0])
       elems[i][0] = g_strdup_printf("%*s", 3/*NN.*/, "");
   }
@@ -180,7 +221,8 @@ static char* cb_collect_level2(GList *list, const int *maxes) {
   // free elems
   for (int i = 0; i < I_CL2; i++)
     for (int j = 0; j < J_CL2; j++)
-      if (elems[i][j]) g_free(elems[i][j]);
+      if (elems[i][j])
+        g_free(elems[i][j]);
   //
   char *text = g_strjoinv("\n", lines); // combine lines
   for (int i = 0; i < I_CL2; i++)       // free lines
@@ -193,12 +235,14 @@ static char* cb_collect_level2(GList *list, const int *maxes) {
 enum { DATA_AT_LEVEL1, DATA_AT_LEVEL2 };
 
 static char* cb_get_text(GtkWidget* listbox, GdkClipboard *clipboard, int level, int *maxes) {
-  if (!GTK_IS_LIST_BOX(listbox) || !GDK_IS_CLIPBOARD(clipboard)) return NULL;
+  if (!GTK_IS_LIST_BOX(listbox) || !GDK_IS_CLIPBOARD(clipboard))
+    return NULL;
   GList *list = gtk_list_box_get_selected_rows(GTK_LIST_BOX(listbox));
-  if (!list) return NULL;
+  if (!list)
+    return NULL;
   char *text = NULL;
   if (g_list_length(list)) switch (level) {
-    case DATA_AT_LEVEL1: text = cb_collect_level1(list); break;
+    case DATA_AT_LEVEL1: text = cb_collect_level1(list);        break;
     case DATA_AT_LEVEL2: text = cb_collect_level2(list, maxes); break;
     default: break;
   }
@@ -219,7 +263,7 @@ gboolean clipboard_init(GtkWidget *win, t_tab *tab) {
   gtk_widget_set_parent(tab->pop, tab->tab.w);
   g_signal_connect(gest, EV_PRESS, G_CALLBACK(cb_on_press), tab->pop);
   GtkWidget* list[] = {tab->hdr.w, tab->dyn.w, tab->info.w};
-  for (guint i = 0; i < G_N_ELEMENTS(list); i++)
+  for (uint i = 0; i < G_N_ELEMENTS(list); i++)
     if (GTK_IS_LIST_BOX(list[i]))
       g_signal_connect(list[i], EV_ROW_CHANGE, G_CALLBACK(cb_on_sel), tab);
   gtk_gesture_single_set_button(GTK_GESTURE_SINGLE(gest), 0);
@@ -231,38 +275,49 @@ gboolean clipboard_init(GtkWidget *win, t_tab *tab) {
 
 void cb_on_copy_l1(GSimpleAction *action G_GNUC_UNUSED, GVariant *var G_GNUC_UNUSED, void *data) {
   t_tab *tab = data;
-  if (!tab || !GTK_IS_LIST_BOX(tab->dyn.w)) return;
+  if (!tab || !GTK_IS_LIST_BOX(tab->dyn.w))
+    return;
   GdkClipboard *clipboard = gtk_widget_get_clipboard(GTK_WIDGET(tab->tab.w));
   if (GDK_IS_CLIPBOARD(clipboard)) {
     VERBOSE("%s: %s", ACT_CLPBRD_HDR, ACT_COPY_HDR);
     char *text = cb_get_text(tab->dyn.w, clipboard, DATA_AT_LEVEL1, NULL);
-    if (text) { gdk_clipboard_set_text(clipboard, text); g_free(text); }
+    if (text)
+      gdk_clipboard_set_text(clipboard, text);
+    g_free(text);
   }
 }
 
 void cb_on_copy_l2(GSimpleAction *action G_GNUC_UNUSED, GVariant *var G_GNUC_UNUSED, void *data) {
   t_tab *tab = data;
-  if (!tab || !GTK_IS_LIST_BOX(tab->dyn.w)) return;
+  if (!tab || !GTK_IS_LIST_BOX(tab->dyn.w))
+    return;
   GdkClipboard *clipboard = gtk_widget_get_clipboard(GTK_WIDGET(tab->tab.w));
   if (GDK_IS_CLIPBOARD(clipboard)) {
     VERBOSE("%s: %s", ACT_CLPBRD_HDR, ACT_COPY_HDR);
     char* arr[4] = {0};
-    int maxes[PE_MAX] = {0};
+    int maxes[G_N_ELEMENTS(pingelem)] = {0};
     cb_collect_maxes(tab->hdr.w, maxes);
     cb_collect_maxes(tab->dyn.w, maxes);
     int ndx = 0;
     arr[ndx] = cb_get_text(tab->hdr.w,  clipboard, DATA_AT_LEVEL2, maxes); if (arr[ndx]) ndx++;
     arr[ndx] = cb_get_text(tab->dyn.w,  clipboard, DATA_AT_LEVEL2, maxes); if (arr[ndx]) ndx++;
     arr[ndx] = cb_get_text(tab->info.w, clipboard, DATA_AT_LEVEL1, NULL);  if (arr[ndx]) ndx++;
-    if (!ndx) return;
+    if (!ndx)
+      return;
     char *text = g_strjoinv("\n", arr);
-    for (int i = 0, len = G_N_ELEMENTS(arr); i < len; i++) g_free(arr[i]);
-    if (text) { gdk_clipboard_set_text(clipboard, text); g_free(text); }
+    for (int i = 0, len = G_N_ELEMENTS(arr); i < len; i++)
+      g_free(arr[i]);
+    if (text)
+      gdk_clipboard_set_text(clipboard, text);
+    g_free(text);
   }
 }
 
-static void cb_selfn_all(GtkWidget* list[], int len, void (*func)(GtkListBox*)) {
-  for (int i = 0; i < len; i++) if (GTK_IS_LIST_BOX(list[i])) func(GTK_LIST_BOX(list[i]));
+static void cb_selfn_all(GtkWidget* list[], int len, void (*fn)(GtkListBox*)) {
+  if (fn)
+    for (int i = 0; i < len; i++)
+      if (GTK_IS_LIST_BOX(list[i]))
+        fn(GTK_LIST_BOX(list[i]));
 }
 
 void cb_tab_unsel(t_tab *tab) {
@@ -275,7 +330,8 @@ void cb_tab_unsel(t_tab *tab) {
 
 void cb_on_sall(GSimpleAction *action G_GNUC_UNUSED, GVariant *var G_GNUC_UNUSED, void *data) {
   t_tab *tab = data;
-  if (!tab || !GTK_IS_LIST_BOX(tab->dyn.w)) return;
+  if (!tab || !GTK_IS_LIST_BOX(tab->dyn.w))
+    return;
   VERBOSE("%s (%s): %s", ACT_ACTION_HDR, tab->name, cb_menu_label(tab->sel));
   GtkWidget* list[] = {tab->hdr.w, tab->dyn.w, tab->info.w};
   tab->sel = any_list_sel(tab);

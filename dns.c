@@ -81,7 +81,8 @@ static void dns_query_complete(t_ref *ref, t_dns_elem *elem) {
 }
 
 static void dns_cache_update(char *addr, char *name) {
-  if (!addr) return;
+  if (!addr)
+    return;
   t_host *host = dns_cache_find(addr);
   if (host) {
     UPD_NSTR(host->name, name, MAXHOSTNAME);
@@ -100,8 +101,10 @@ static void dns_cache_update(char *addr, char *name) {
         return;
       }
       FAILX(addr, "add cache");
-    } else FAILX(addr, "dup host");
-  } else FAILX(addr, "alloc host");
+    } else
+      FAILX(addr, "dup host");
+  } else
+    FAILX(addr, "alloc host");
   host_free(host);
   g_free(host);
 }

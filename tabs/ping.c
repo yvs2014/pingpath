@@ -32,10 +32,10 @@ typedef struct pt_dnd {
 
 typedef struct listline {
   GtkListBoxRow *row;
-  GtkWidget *box;            // row child
-  GtkWidget* labels[PE_MAX]; // cache of box labels
+  GtkWidget *box; // row child
+  GtkWidget* labels[G_N_ELEMENTS(pingelem)]; // box-label cache
 #ifdef WITH_DND
-  t_pt_dnd dnd[PE_MAX];
+  t_pt_dnd dnd[G_N_ELEMENTS(pingelem)];
 #endif
 } t_listline;
 
@@ -123,10 +123,11 @@ static gboolean pt_reorder_elems(int prev, int next, const t_elem_desc *desc) {
 static GtkWidget* pt_box_nth_label(GtkWidget *box, int n) {
   if (GTK_IS_BOX(box)) {
     GtkWidget *widget = gtk_widget_get_first_child(box);
-    for (int i = 0; widget && (i < PE_MAX); i++) {
-      if (i == n) return widget;
-      widget = gtk_widget_get_next_sibling(widget);
-    }
+    for (int i = 0;
+         widget && (i < (int)G_N_ELEMENTS(pingelem));
+         widget = gtk_widget_get_next_sibling(widget), i++)
+      if (i == n)
+        return widget;
   }
   return NULL;
 }
@@ -134,20 +135,21 @@ static GtkWidget* pt_box_nth_label(GtkWidget *box, int n) {
 static int pt_box_wndx(GtkWidget *box, GtkWidget *widget) {
   if (GTK_IS_BOX(box) && GTK_IS_WIDGET(widget)) {
     GtkWidget *item = gtk_widget_get_first_child(box);
-    for (int i = 0; item && (i < PE_MAX); i++) {
-      if (item == widget) return i;
-      item = gtk_widget_get_next_sibling(item);
-    }
+    for (int i = 0;
+         item && (i < (int)G_N_ELEMENTS(pingelem));
+         item = gtk_widget_get_next_sibling(item), i++)
+      if (item == widget)
+        return i;
   }
   return -1;
 }
 
 static void pt_recache_labels(GtkWidget *box, GtkWidget **cells) {
   GtkWidget *widget = gtk_widget_get_first_child(box);
-  for (int i = 0; widget && (i < PE_MAX); i++) {
+  for (int i = 0;
+       widget && (i < (int)G_N_ELEMENTS(pingelem));
+       widget = gtk_widget_get_next_sibling(widget), i++)
     cells[i] = widget;
-    widget = gtk_widget_get_next_sibling(widget);
-  }
 }
 
 static gboolean pt_reorder_cells(t_len_listline lines, int sn, int dn, gboolean before) {
@@ -208,11 +210,16 @@ static gboolean pt_hdr_on_drop(GtkDropTarget *self G_GNUC_UNUSED, const GValue *
       !ddnd->body.list || !ddnd->body.len)
     return false;
   int sn = pt_box_wndx(ddnd->b, sdnd->w), dn = pt_box_wndx(ddnd->b, ddnd->w);
-  if ((sn < 0) || (dn < 0) || (sn == dn)) return false;
-  if (!GTK_IS_WIDGET(sdnd->w) || !GTK_IS_WIDGET(ddnd->w) || (sdnd->w == ddnd->w)) return false;
-  if (sdnd->desc != ddnd->desc) { DNDORD("%s: %s", DEB_DND, "different groups"); return false; }
+  if ((sn < 0) || (dn < 0) || (sn == dn))
+    return false;
+  if (!GTK_IS_WIDGET(sdnd->w) || !GTK_IS_WIDGET(ddnd->w) || (sdnd->w == ddnd->w))
+    return false;
+  if (sdnd->desc != ddnd->desc) {
+    DNDORD("%s: %s", DEB_DND, "different groups");
+    return false;
+  }
   gboolean before = gtk_widget_contains(ddnd->w, x * 2, y);
-  PT_PRINT_ELEMS(ARRAY_HDR, "<<<", ddnd->desc->elems, PE_MAX);
+  PT_PRINT_ELEMS(ARRAY_HDR, "<<<", ddnd->desc->elems, G_N_ELEMENTS(pingelem));
   PT_PRINT_ELEMS(GROUP_HDR, "<<<", &ddnd->desc->elems[ddnd->desc->mm.min], ddnd->desc->mm.max - ddnd->desc->mm.min + 1);
   if (pt_reorder_elems(sn, before ? dn : dn + 1, ddnd->desc)) { // reorder inplace asserting no further errors
     if (!pt_reorder_cells(ddnd->head, sn, dn, before))
@@ -228,7 +235,7 @@ static gboolean pt_hdr_on_drop(GtkDropTarget *self G_GNUC_UNUSED, const GValue *
     }
   }
   PT_PRINT_ELEMS(GROUP_HDR, ">>>", &ddnd->desc->elems[ddnd->desc->mm.min], ddnd->desc->mm.max - ddnd->desc->mm.min + 1);
-  PT_PRINT_ELEMS(ARRAY_HDR, ">>>", ddnd->desc->elems, PE_MAX);
+  PT_PRINT_ELEMS(ARRAY_HDR, ">>>", ddnd->desc->elems, G_N_ELEMENTS(pingelem));
   option_up_menu_main();
   return true;
 }
@@ -356,7 +363,7 @@ static GtkWidget* pt_make_info(void) {
 }
 
 static GtkWidget* pt_make_dyn(void) {
-  GtkSizeGroup* group[PE_MAX] = {0};
+  GtkSizeGroup* group[G_N_ELEMENTS(pingelem)] = {0};
   for (uint i = 0; i < G_N_ELEMENTS(group); i++) {
     group[i] = gtk_size_group_new(GTK_SIZE_GROUP_HORIZONTAL);
     g_return_val_if_fail(group[i], NULL);

@@ -147,7 +147,7 @@ static void pinger_print_tcn(char del) {
 #ifdef WITH_TOON
     if (ton) g_print("%s[%d]{%s", OPT_STAT_HDR, lim - opts.range.min, OPT_TTL_HDR); else
 #endif
-    g_print("%s", csv ? OPT_TTL_HDR : HOP_INDENT);
+    { g_print("%s", csv ? OPT_TTL_HDR : HOP_INDENT); }
     //
     int maxes[G_N_ELEMENTS(pingelem)] = {0};
     for (uint j = 0; j < G_N_ELEMENTS(pingelem); j++)
@@ -159,9 +159,10 @@ static void pinger_print_tcn(char del) {
           PN_PRMAX(maxes[j], elem->view(at));
     }
     //
-    for (uint j = PE_NO + 1; j < PE_MAX; j++) // header
+    for (uint j = PE_NO + 1; j < G_N_ELEMENTS(pingelem); j++) // header
       if (pingelem[j].enable && (pingelem[j].type != PE_FILL))
         print_tcn(del, pingelem[j].name, maxes[j]);
+    //
 #ifdef WITH_TOON
     if (ton) g_print("}:"); else
 #endif
@@ -205,7 +206,7 @@ static void pinger_print_tcn(char del) {
     false
 #endif
   );
-  guint n = g_strv_length(arr);
+  uint n = g_strv_length(arr);
   if (n > 0) {
     char *s = NULL;
 #ifdef WITH_TOON
@@ -281,7 +282,7 @@ static gboolean pinger_json_hop_info(JsonObject *obj, int at, gboolean pretty) {
     return false;
   }
   pinger_json_prop_arr(obj, OPT_INFO_HDR, arr, pretty);
-  t_ping_column column[PE_MAX] = {0};
+  t_ping_column column[G_N_ELEMENTS(pingelem)] = {0};
   uint lines_per_column = 0;
   for (uint ndx = PE_HOST; ndx <= PE_RT; ndx++)
     if (pingelem[ndx].enable && pingelem[ndx].multihop) { // collect multihop info
@@ -328,8 +329,8 @@ static gboolean pinger_json_hop_info(JsonObject *obj, int at, gboolean pretty) {
   return true;
 }
 
-typedef void (*pinger_json_pretty_view_fn)(JsonObject *obj, const char *name, const char *view);
-static pinger_json_pretty_view_fn pinger_json_pretty_view[PE_MAX] = {
+typedef void (*pinger_jpv_fn)(JsonObject *obj, const char *name, const char *view);
+static pinger_jpv_fn json_pretty_view[] = {
   [PE_LOSS] = json_object_set_string_member,
   [PE_SENT] = json_object_set_string_member,
   [PE_RECV] = json_object_set_string_member,
@@ -340,8 +341,8 @@ static pinger_json_pretty_view_fn pinger_json_pretty_view[PE_MAX] = {
   [PE_JTTR] = pinger_json_msec,
 };
 
-typedef void (*pinger_json_std_view_fn)(JsonObject *obj, int at, int type, const char *name);
-static pinger_json_std_view_fn pinger_json_std_view[PE_MAX] = {
+typedef void (*pinger_jsv_fn)(JsonObject *obj, int at, int type, const char *name);
+static pinger_jsv_fn json_std_view[] = {
   [PE_LOSS] = pinger_json_add_dbl,
   [PE_SENT] = pinger_json_add_int,
   [PE_RECV] = pinger_json_add_int,
@@ -353,21 +354,25 @@ static pinger_json_std_view_fn pinger_json_std_view[PE_MAX] = {
 };
 
 static void pinger_json_stat_info(JsonObject *obj, int at, gboolean pretty) {
+#define WITHIN_RANGE(ndx, arr) (((ndx) >= 0) && ((ndx) < (int)G_N_ELEMENTS(arr)))
   t_type_elem *elem = pingelem;
   for (uint i = 0; elem && (i < G_N_ELEMENTS(pingelem)); i++, elem++) if (elem->enable) {
     char *name = pretty ? g_strdup(elem->name) : g_utf8_strdown(elem->name, -1);
     const char *view = (pretty && elem->view) ? elem->view(at) : NULL;
     if (view) {
-      pinger_json_pretty_view_fn fn = pinger_json_pretty_view[elem->type];
+      pinger_jpv_fn fn = WITHIN_RANGE(elem->type, json_pretty_view) ?
+        json_pretty_view[elem->type] : NULL;
       if (fn)
         fn(obj, name, view);
     } else {
-      pinger_json_std_view_fn fn = pinger_json_std_view[elem->type];
+      pinger_jsv_fn fn = WITHIN_RANGE(elem->type, json_std_view) ?
+        json_std_view[elem->type] : NULL;
       if (fn)
         fn(obj, at, elem->type, name);
     }
     g_free(name);
   }
+#undef WITHIN_RANGE
 }
 
 static gboolean pinger_json_mainbody(JsonObject *obj, gboolean pretty) {
@@ -659,7 +664,7 @@ static gboolean create_ping(int at, t_proc *proc) {
 } while (0)
   proc->sig = 0;
   proc->active = false;
-  guint argc = 0;
+  uint argc = 0;
   const char* argv[32] = {0};
   ARGV_STR(BINPING);
   ARGV_STR("-OD");

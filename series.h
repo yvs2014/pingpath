@@ -8,7 +8,7 @@
 
 typedef struct series_list { // keeping len to not calculate it every time
    GSList *list;
-   guint   len;
+   uint   len;
 } t_series_list;
 
 void series_update(void);

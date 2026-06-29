@@ -34,7 +34,7 @@ void tab_color(t_tab *tab);
 void tab_reload_theme(void);
 void tab_dependent(GtkWidget *tab);
 #ifdef WITH_PLOT
-gboolean is_tab_that(guint ndx);
+gboolean is_tab_that(uint ndx);
 #endif
 
 extern t_tab* nb_tabs[TAB_NDX_MAX];

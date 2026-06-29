@@ -34,10 +34,10 @@ typedef struct help_line_s {
 typedef struct help_section_s {
   char *name;
   help_line_s *lines;
-  guint len;
+  uint len;
 } help_section_s;
 
-enum { MENU_SA_START, MENU_SA_PAUSE, MENU_SA_RESET, MENU_SA_HELP, MENU_SA_QUIT, MENU_SA_MAX };
+enum { MENU_SA_START, MENU_SA_PAUSE, MENU_SA_RESET, MENU_SA_HELP, MENU_SA_QUIT };
 
 static const char* kb_space[]      = {"space",   NULL};
 static const char* kb_ctrl_h[]     = {"<Ctrl>h", NULL};
@@ -73,7 +73,7 @@ t_kb_plot_aux kb_plot_aux[ACCL_SA_MAX] = {
 #undef LGL_SET
 #endif
 
-static t_sa_desc menu_sa_desc[MENU_SA_MAX] = {
+static t_sa_desc menu_sa_desc[] = {
   [MENU_SA_START] = { .name = "app.act_start", .shortcut = kb_ctrl_s },
   [MENU_SA_PAUSE] = { .name = "app.act_pause", .shortcut = kb_space  },
   [MENU_SA_RESET] = { .name = "app.act_reset", .shortcut = kb_ctrl_r },
@@ -106,7 +106,7 @@ static void on_scale      (GSimpleAction*, GVariant*, t_kb_plot_aux*);
 #endif
 typedef void (*ae_sa_fn)  (GSimpleAction*, GVariant*, void*);
 
-static GActionEntry menu_sa_entries[MENU_SA_MAX] = {
+static GActionEntry menu_sa_entries[] = {
   [MENU_SA_START] = { .activate = on_startstop      },
   [MENU_SA_PAUSE] = { .activate = on_pauseresume    },
   [MENU_SA_RESET] = { .activate = on_reset          },
@@ -130,7 +130,7 @@ static GActionEntry accl_sa_entries[ACCL_SA_MAX] = {
 
 static GMenu *action_menu;
 
-static const char* menu_sa_label(guint ndx) {
+static const char* menu_sa_label(uint ndx) {
   switch (ndx) {
     case MENU_SA_START:
       return pinger_state.run   ? ACT_STOP_HDR   : ACT_START_HDR;
@@ -196,7 +196,7 @@ static void on_hide_help(GtkButton *self G_GNUC_UNUSED, GtkWidget *dialog) {
 }
 
 static void help_on_escape(GtkEventControllerKey *self G_GNUC_UNUSED,
-    guint keyval, guint keycode G_GNUC_UNUSED, GdkModifierType state, GtkButton *button)
+    uint keyval, uint keycode G_GNUC_UNUSED, GdkModifierType state, GtkButton *button)
 {
   if ((keyval == GDK_KEY_Escape) && !(state & GDK_MODIFIER_MASK) && GTK_IS_BUTTON(button))
     g_signal_emit_by_name(button, EV_CLICK);
@@ -232,8 +232,8 @@ static inline GtkWidget* get_help_content(void) {
     { .l = g_strdup(OPT_DNS_HDR),
       .r = g_strdup_printf("%s [%s | %s]", CLI_NOPT_DESC, ON_HDR, OFF_HDR) },
     { .l = g_strdup(OPT_INFO_HDR),
-      .r = g_strdup_printf("%s, %s, %s, %s, %s",
-        ELEM_HOST_HDR, ELEM_AS_HDR, ELEM_CC_HDR, ELEM_DESC_HDR, ELEM_RT_HDR) },
+      .r = g_strdup_printf("%s, %s, %s, %s, %s; %s",
+        ELEM_HOST_HDR, ELEM_AS_HDR, ELEM_CC_HDR, ELEM_DESC_HDR, ELEM_RT_HDR, ELEM_MSRC_HDR) },
     { .l = g_strdup(OPT_STAT_HDR),
       .r = g_strdup_printf("%s, %s, %s, %s,\n%s, %s, %s, %s",
         UNSCORE(ELEM_LOSS_HEADER), UNSCORE(ELEM_SENT_HEADER),
@@ -319,7 +319,7 @@ static inline GtkWidget* get_help_content(void) {
 }
   GtkSizeGroup *g0 = gtk_size_group_new(GTK_SIZE_GROUP_HORIZONTAL);
   GtkSizeGroup *g1 = gtk_size_group_new(GTK_SIZE_GROUP_HORIZONTAL);
-  for (guint i = 0; i < G_N_ELEMENTS(sections); i++) {
+  for (uint i = 0; i < G_N_ELEMENTS(sections); i++) {
     GtkWidget *box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, MARGIN);
     if (GTK_IS_BOX(box)) {
       ADD_H_LABEL(0, sections[i].name, NULL);
@@ -332,7 +332,7 @@ static inline GtkWidget* get_help_content(void) {
       gtk_list_box_append(GTK_LIST_BOX(list), box);
     }
     g_free(sections[i].name);
-    for (guint j = 0; j < sections[i].len; j++) {
+    for (uint j = 0; j < sections[i].len; j++) {
       char *l = sections[i].lines[j].l;
       char *r = sections[i].lines[j].r;
       GtkWidget *box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, MARGIN * 2);
@@ -495,8 +495,8 @@ static void map_sa_entries(GActionMap *map, GActionEntry entr[], t_sa_desc desc[
   for (int i = 0; i < n; i++) desc[i].sa = G_SIMPLE_ACTION(g_action_map_lookup_action(map, entr[i].name));
 }
 
-#define LOOP_SET_ACCELS(desc) do {               \
-  for (guint i = 0; i < G_N_ELEMENTS(desc); i++) \
+#define LOOP_SET_ACCELS(desc) do {              \
+  for (uint i = 0; i < G_N_ELEMENTS(desc); i++) \
     gtk_application_set_accels_for_action(app, (desc)[i].name, (desc)[i].shortcut); \
 } while (0)
 
@@ -504,7 +504,7 @@ static gboolean create_action_menu(GtkApplication *app, GtkWidget *win, GtkWidge
   g_return_val_if_fail(GTK_IS_APPLICATION(app) && GTK_IS_WINDOW(win) && GTK_IS_HEADER_BAR(bar), false);
   GActionMap *map = G_ACTION_MAP(app);
   map_sa_entries(map, menu_sa_entries, menu_sa_desc, G_N_ELEMENTS(menu_sa_entries), win);
-  for (guint i = 0; i < G_N_ELEMENTS(accl_sa_entries); i++)
+  for (uint i = 0; i < G_N_ELEMENTS(accl_sa_entries); i++)
     map_sa_entries(map, &accl_sa_entries[i], &accl_sa_desc[i], 1, accl_sa_desc[i].data);
   if (!(action_menu = action_menu_init(bar))) return false;
   LOOP_SET_ACCELS(menu_sa_desc);
@@ -526,7 +526,7 @@ static gboolean create_action_menu(GtkApplication *app, GtkWidget *win, GtkWidge
 static void action_update_internal(GMenu *menu) {
   if (G_IS_MENU(menu)) {
     g_menu_remove_all(menu);
-    for (guint i = 0; i < G_N_ELEMENTS(menu_sa_desc); i++) {
+    for (uint i = 0; i < G_N_ELEMENTS(menu_sa_desc); i++) {
       GMenuItem *item = g_menu_item_new(menu_sa_label(i), menu_sa_desc[i].name);
       if (item) {
         g_menu_append_item(menu, item);

@@ -45,7 +45,7 @@ static gboolean on_win_close(GtkWindow *self G_GNUC_UNUSED, gpointer notebook) {
 }
 
 static void on_tab_switch(GtkNotebook *self G_GNUC_UNUSED, GtkWidget *tab,
-    guint page_num G_GNUC_UNUSED, gpointer user_data G_GNUC_UNUSED)
+    uint page_num G_GNUC_UNUSED, gpointer user_data G_GNUC_UNUSED)
 {
   tab_dependent(tab);
   if (GTK_IS_BOX(tab))
@@ -88,7 +88,7 @@ static void on_app_activate(GtkApplication* app, gpointer user_data G_GNUC_UNUSE
   if (opts.plot) nb_tabs[TAB_PLOT_NDX] = plottab_init();
 #endif
   nb_tabs[TAB_LOG_NDX]  = logtab_init(win);
-  for (guint i = 0; i < G_N_ELEMENTS(nb_tabs); i++) {
+  for (uint i = 0; i < G_N_ELEMENTS(nb_tabs); i++) {
     { if (!opts.graph && (i == TAB_GRAPH_NDX)) continue;
 #ifdef WITH_PLOT
       if (!opts.plot  && (i == TAB_PLOT_NDX))  continue;
@@ -140,7 +140,7 @@ void tab_dependent(GtkWidget *tab) {
 }
 
 #ifdef WITH_PLOT
-inline gboolean is_tab_that(guint ndx) {
+inline gboolean is_tab_that(uint ndx) {
   return (ndx < G_N_ELEMENTS(tabrefs)) ? (currtabref == tabrefs[ndx]) : false;
 }
 #endif
@@ -189,7 +189,7 @@ int main(int argc, char **argv) {
 #endif
   // GSK workarounds
   if (!GETENV("GSK_RENDERER")) {
-    guint sure = gtk_get_major_version(), fix = gtk_get_minor_version();
+    uint sure = gtk_get_major_version(), fix = gtk_get_minor_version();
     if (sure == 4) switch (fix) {
       case 14: // renderer workarounds since 4.14
       case 15: putenv("GSK_RENDERER=gl");     break;

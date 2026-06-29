@@ -64,8 +64,8 @@ enum { PLANE_XN = 8, PLANE_YN = 10, PLANE_ZN = 10 };
 enum { VO_SURF = 0, VO_TEXT, PO_BOT, PO_LOR, PO_FON,
  A1_RTT, A2_RTT, A1_TIM, A2_TIM, A1_TTL, A2_TTL, VO_MAX };
 
-enum { SHIFT_TITLE, SHIFT_MARKS, SHIFT_MAX };    // shifts
-enum { AXIS_RTT, AXIS_TIM, AXIS_TTL, AXIS_MAX }; // axes
+enum { SHIFT_TITLE, SHIFT_MARKS };     // shifts
+enum { AXIS_RTT, AXIS_TIM, AXIS_TTL }; // axes
 
 // lor,fon,bot: left-o-right, far-o-near, bottom-o-top
 typedef struct plot_trans { mat4 data, lor, fon, bot; } t_plot_trans;
@@ -84,7 +84,7 @@ typedef struct plot_res {
 
 typedef struct plot_char {
   gunichar ch; // char itself
-  guint tid;   // texture id
+  uint tid;    // texture id
   vec2 size;
 } t_plot_char;
 
@@ -212,7 +212,7 @@ static t_plparam plparam = { .cube = { 90, 90, 0 }, .axes = {
 }};
 
 static gboolean not_cached_yet = true;
-static vec4 axrect1[RNO_MAX], axrectN[RNO_MAX]; // firs-n-last axis marks
+static vec4 axrect1[RNO_MAX], axrectN[RNO_MAX]; // first-n-last axis marks
 
 static const vec2 plot_mrk_pad = { 2, 3};
 
@@ -236,10 +236,10 @@ static inline void init_char_table(const char *abetka) {
   if (!plot_chars_ready) {
     plot_chars_ready = true;
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    for (guint8 i = MIN_ASCII_CHAR; i <= MAX_ASCII_CHAR; i++) {
+    for (uint8_t i = MIN_ASCII_CHAR; i <= MAX_ASCII_CHAR; i++) {
       int size[2] = {0};
       const char text[] = {i, 0};
-      guint tid = plot_pango_text(text, size);
+      uint tid = plot_pango_text(text, size);
       if (!tid) {
         plot_chars_ready = false;
         WARNLOG("%s: ASCII %s: '%c'", ERROR_HDR, TABLE_HDR, i);
@@ -257,13 +257,13 @@ static inline void init_char_table(const char *abetka) {
       WARNLOG("UTF8 %s: %s: %s=%d", TABLE_HDR, NOBUFF_ERR, MAX_HDR, INT8_MAX);
     else {
       plot_unichars_ready = true;
-      guint8 i = INT8_MAX + 1;
+      uint8_t i = INT8_MAX + 1;
       for (const char *u = abetka; *u && i; u = g_utf8_next_char(u), i++) {
         gunichar c = g_utf8_get_char(u);
         char utf8[6] = {0};
         g_unichar_to_utf8(c, utf8);
         int size[2] = {0};
-        guint tid = plot_pango_text(utf8, size);
+        uint tid = plot_pango_text(utf8, size);
         if (!tid) {
           plot_unichars_ready = false;
           WARNLOG("%s: UTF8 %s: '%s'", ERROR_HDR, TABLE_HDR, utf8);
@@ -278,8 +278,11 @@ static inline void init_char_table(const char *abetka) {
 }
 
 static void plot_free_char_table(void) {
-  for (guint8 i = 0; i < (guint8)G_N_ELEMENTS(char_table); i++) if (char_table[i].tid) {
-    glDeleteTextures(1, &char_table[i].tid); char_table[i].tid = 0; }
+  for (uint8_t i = 0; i < G_N_ELEMENTS(char_table); i++)
+    if (char_table[i].tid) {
+      glDeleteTextures(1, &char_table[i].tid);
+      char_table[i].tid = 0;
+    }
 }
 
 static gboolean plot_api_set(GtkGLArea *area, int req) {
@@ -332,7 +335,7 @@ static GLuint plot_compile_shader(const GLchar* src, GLenum type, GError **err) 
 }
 
 static void plot_del_res_vao(t_plot_res *res) {
-  if (res) for (guint i = 0; i < G_N_ELEMENTS(res->vo); i++) {
+  if (res) for (uint i = 0; i < G_N_ELEMENTS(res->vo); i++) {
     GLuint *pvao = &res->vo[i].vao;
     if (*pvao > 0) {
       glDeleteVertexArrays(1, pvao);
@@ -344,7 +347,7 @@ static void plot_del_res_vao(t_plot_res *res) {
 static void plot_del_vbo(GLuint *pid) { if (pid && *pid) { glDeleteBuffers(1, pid); *pid = 0; }}
 
 static void plot_del_res_vbo_dbo(t_plot_res *res) {
-  if (res) for (guint i = 0; i < G_N_ELEMENTS(res->vo); i++) {
+  if (res) for (uint i = 0; i < G_N_ELEMENTS(res->vo); i++) {
     plot_del_vbo(&res->vo[i].vbo.id);
     plot_del_vbo(&res->vo[i].dbo.main.id);
     plot_del_vbo(&res->vo[i].dbo.ext.id);
@@ -441,7 +444,7 @@ static gboolean plot_res_init(t_plot_res *res, GError **err) {
 } while (0)
   if (!res) return false;
   if (!plot_compile_res(res, err)) return false;
-  for (guint i = 0; i < G_N_ELEMENTS(res->vo); i++) {
+  for (uint i = 0; i < G_N_ELEMENTS(res->vo); i++) {
     GLuint *pvao = &res->vo[i].vao;
     glGenVertexArrays(1, pvao);
     if (*pvao) continue;
@@ -503,9 +506,10 @@ static void plot_res_free(t_plot_res *res) {
 }
 
 
-static guint8 char_table_lookup(gunichar u) {
-  for (guint8 i = 0; i < (guint8)G_N_ELEMENTS(char_table); i++)
-    if (char_table[i].ch == u) return i;
+static uint8_t char_table_lookup(gunichar u) {
+  for (uint8_t i = 0; i < (uint8_t)G_N_ELEMENTS(char_table); i++)
+    if (char_table[i].ch == u)
+      return i;
   return 0;
 }
 
@@ -524,7 +528,7 @@ static char* pl_str2code8(const char *utf8) {
     long i = 0;
     for (const char *u = utf8; *u && (i < len); u = g_utf8_next_char(u)) {
       gunichar c = g_utf8_get_char(u);
-      guint8 code8 = char_table_lookup(c);
+      uint8_t code8 = char_table_lookup(c);
       if (code8) str8[i++] = code8;
       else {
         char buff[6] = {0};
@@ -617,7 +621,7 @@ static bool plot_draw_text(t_plot_res *res, const char *text, int len,
   if (rect) CENTER_TEXT(*rect, x, y, (len + 1) * cw, ch);
   int i = 0;
   for (const char *p = text; *p && (i < MARKMAXLEN); p++, i++) {
-    guint tid = char_table[(guint8)*p].tid;
+    uint tid = char_table[(uint8_t)*p].tid;
     if (tid) plot_pango_drawtex(tid, vbo, typ, x, y, cw, ch);
     x += cw;
   }
@@ -905,16 +909,22 @@ static void pl_post_rotation(void) {
 
 static inline void pl_init_orientation(void) {
   for (int i = 0; i < 3; i++) if (opts.orient[i]) {
-    int quat[4] = {0, 0, 0, opts.orient[i]}; quat[i] = 1;
+    int quat[4] = {0, 0, 0, opts.orient[i]};
+    quat[i] = 1;
     pl_on_rotation(quat);
   }
   pl_post_rotation();
 }
 
-static void plottab_on_opts(guint flags) {
-  if (flags & PL_PARAM_COLOR) plottab_on_color_opts();
-  if (flags & PL_PARAM_AT) { draw_plot_at = 0; plot_aux_reset(&plot_dyna_res.vo[VO_SURF]); }
-  if (flags & PL_PARAM_FOV) pl_post_rotation();
+static void plottab_on_opts(uint flags) {
+  if (flags & PL_PARAM_COLOR)
+    plottab_on_color_opts();
+  if (flags & PL_PARAM_AT) {
+    draw_plot_at = 0;
+    plot_aux_reset(&plot_dyna_res.vo[VO_SURF]);
+  }
+  if (flags & PL_PARAM_FOV)
+    pl_post_rotation();
 }
 
 static gboolean pl_init_layers() {
@@ -997,7 +1007,7 @@ void plottab_redraw(void) {
   if (plot_dyn_area)  gtk_gl_area_queue_render(GTK_GL_AREA(plot_dyn_area));
 }
 
-void plottab_refresh(guint flags) {
+void plottab_refresh(uint flags) {
   if (flags != PL_PARAM_NONE) plottab_on_opts(flags);
   plottab_redraw();
 }
