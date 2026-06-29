@@ -1,3 +1,8 @@
+## 1.0.16
+- add multi-source option (-M)
+- naming: multi-field -> multi-source
+- update pingpath(1)
+
 ## 1.0.15
 - whois multi-field in GUI: add check button
 - bool toggle callback: if-switch -> fn-map

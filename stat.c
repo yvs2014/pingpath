@@ -417,10 +417,6 @@ t_type_elem pingelem[PE_MAX] = {
   [PE_JTTR] = { .type = PE_JTTR, .enable = true, .view = stat_hop_jttr, .statview = stat_hop_jttr },
 };
 
-t_type_elem wmfelem[WE_MAX] = {
-  [WE_MF] = { .type = WE_MF },
-};
-
 void stat_init(gboolean clean) { // clean start or on reset
   if (clean) {
     tgtat = MAXTTL;

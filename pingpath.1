@@ -6,7 +6,7 @@
 .Nd ping wrapper for network diagnostic
 .Sh SYNOPSIS
 .Nm
-.Op Fl AcfgGhiILnpPqrRsStTvVX1246
+.Op Fl AcfgGhiILMnpPqrRsStTvVX1246
 .Sy [ TARGET ]
 .Sh DESCRIPTION
 Network diagnostic tool based on parsing iputils
@@ -108,10 +108,19 @@ Route
 .El
 Default
 .Ar hac
+.sp
+Note: if there are multiple sources, display the first one marked with '*'
 .br
-Note: duplicates in output are marked with '*'
+unless 'multi-field' option enabled
 .El
 .Bl -tag -width Ds
+.It Fl M, Fl -multi-field
+If there are multiple sources for the same address, display all of them;
+.br
+otherwise, display the first one followed by '*' mark.
+.sp
+Default
+.Ar no multi-field
 .It Fl S, Fl -stat Ar KEYS
 Display statistic elements which match
 .Ar lsrmbwaj
@@ -156,7 +165,7 @@ Graphs with legend
 Default
 .Ar 5
 (dark main, light graph, graph legend, light plot)
-.br
+.sp
 Note: bit value 1 corresponds to `dark' or `on'
 .El
 .Bl -tag -width Ds
@@ -237,7 +246,7 @@ Field of view
 .El
 Default
 .Ar r=80:80,g=230:80,b=80:230,o=1:0:-20:0:5,f=45
-.br
+.sp
 Note: \fBrgb\fR colors are in range from 0 to 255
 .br
 .in +.6i
@@ -379,8 +388,6 @@ So that use
 or
 .Sy mtr
 for more accurate measures of transit hops and statistics.
-.sp 1
-On whois data: if there are multiple sources despite -m flag in query, it displays the last tags (marked with '*').
 .El
 .El
 .Sh PROJECT LOCATION

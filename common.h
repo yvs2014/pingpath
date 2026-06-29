@@ -12,7 +12,7 @@
 #define MIN_GTK_RUNTIME(major, minor, micro) (!gtk_check_version(major, minor, micro))
 
 #define APPNAME "pingpath"
-#define VERSION "1.0.15"
+#define VERSION "1.0.16"
 #define APPVER  APPNAME "-" VERSION
 
 extern locale_t locale, localeC;
@@ -243,9 +243,9 @@ enum {
   LOGMAX_MAX   = 999,
 };
 
-#define DEF_DNS         true
-#define DEF_WHOIS       true
-#define DEF_WHOIS_MULTI false
+#define DEF_DNS        true
+#define DEF_WHOIS      true
+#define DEF_WHOIS_MSRC false
 
 #define DEF_PPAD "00"
 
@@ -254,8 +254,8 @@ enum {
 #define DEF_DARK_GRAPH false
 
 #ifdef WITH_PLOT
-#define DEF_DARK_PLOT false
-#define DEF_RGLOBAL   true
+#define DEF_DARK_PLOT  false
+#define DEF_RGLOBAL    true
 #endif
 
 enum { GLIB_STRV, GTK_STRV, CAIRO_STRV, PANGO_STRV };
@@ -272,14 +272,14 @@ enum { TAB_PING_NDX, TAB_GRAPH_NDX,
 #define ATAB_MAX TAB_GRAPH_NDX
 #endif
 
-enum { ENT_EXP_INFO, ENT_EXP_WMF, // _WMF adjacent to _INFO
+enum { ENT_EXP_INFO, ENT_EXP_MSRC, // _MSRC adjacent to _INFO
   ENT_EXP_STAT, ENT_EXP_LGFL, ENT_EXP_GREX,
 #ifdef WITH_PLOT
   ENT_EXP_PLEL,
 #endif
 };
 
-enum { ENT_BOOL_DNS, ENT_BOOL_HOST, ENT_BOOL_AS, ENT_BOOL_CC, ENT_BOOL_DESC, ENT_BOOL_RT, ENT_BOOL_WMF,
+enum { ENT_BOOL_DNS, ENT_BOOL_HOST, ENT_BOOL_AS, ENT_BOOL_CC, ENT_BOOL_DESC, ENT_BOOL_RT, ENT_BOOL_MSRC,
   ENT_BOOL_LOSS, ENT_BOOL_SENT, ENT_BOOL_RECV, ENT_BOOL_LAST, ENT_BOOL_BEST, ENT_BOOL_WRST, ENT_BOOL_AVRG, ENT_BOOL_JTTR,
   ENT_BOOL_MN_DARK, ENT_BOOL_GR_DARK, ENT_BOOL_LGND,
 #ifdef WITH_PLOT
@@ -296,7 +296,7 @@ enum { PE_NO, PE_HOST, PE_AS, PE_CC, PE_DESC, PE_RT, PE_FILL, // PingElement
   PE_LOSS, PE_SENT, PE_RECV, PE_LAST, PE_BEST, PE_WRST, PE_AVRG, PE_JTTR, PE_MAX,
 };
 
-enum { WE_MF, WE_MAX }; // whois elements: multi-fields
+enum { WR_MS, WR_MAX }; // multi-sources gotten from whois-response
 
 enum { GE_NO, GE_DASH, GE_AVJT, GE_CCAS, GE_LGHN, GX_MEAN, GX_JRNG, GX_AREA, GX_MAX };
 #define GE_MIN GE_AVJT
@@ -324,7 +324,7 @@ typedef struct minmax { int min, max; } t_minmax;
 typedef struct opts {
   char *target;
   t_minmax range;     // TTL range
-  gboolean dns, whois, whois_multi, legend, darktheme, darkgraph;
+  gboolean dns, whois, whois_msrc, legend, darktheme, darkgraph;
   int cycles, timeout, qos, size, ipv, graph;
   char pad[PAD_SIZE]; // 16 x "00."
   char recap;         // type of summary at exit
@@ -413,9 +413,10 @@ typedef int (*type2ent_fn)(int);
 
 typedef struct elem_desc {
   t_type_elem *elems;
-  const t_minmax mm;
+  uint len; // elems' length
   const int cat;
   const char *patt;
+  const t_minmax mm;
   type2ndx_fn t2n;
   type2ent_fn t2e;
 } t_elem_desc;
@@ -426,9 +427,9 @@ extern gboolean cli;
 extern int activetab;
 
 extern t_type_elem pingelem[PE_MAX];
-extern t_type_elem wmfelem[WE_MAX];
+extern t_type_elem msrcelem[WR_MAX];
 extern t_type_elem graphelem[GX_MAX];
-extern t_elem_desc info_desc, wmf_desc, stat_desc, grlg_desc, grex_desc;
+extern t_elem_desc info_desc, msrc_desc, stat_desc, grlg_desc, grex_desc;
 #ifdef WITH_PLOT
 extern t_type_elem plotelem[D3_MAX];
 extern t_elem_desc plot_desc;

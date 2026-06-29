@@ -31,6 +31,7 @@ enum { PP_DISPMAX = 1024 };
 #define CNF_STR_SIZE   "size"
 #define CNF_STR_PLOAD  "payload"
 #define CNF_STR_INFO   "info"
+#define CNF_STR_MSRC   "multi-source"
 #define CNF_STR_STAT   "stat"
 #define CNF_STR_TABS   "tabs"
 #define CNF_STR_ATAB   "active-tab"
@@ -46,7 +47,8 @@ enum { PP_DISPMAX = 1024 };
 #define CNF_SECTION_AUX  "aux"
 
 enum { CNF_OPT_IPV, CNF_OPT_NODNS, CNF_OPT_CYCLES, CNF_OPT_IVAL, CNF_OPT_TTL, CNF_OPT_QOS, CNF_OPT_SIZE,
-  CNF_OPT_PLOAD, CNF_OPT_INFO, CNF_OPT_STAT, CNF_OPT_TABS, CNF_OPT_ATAB, CNF_OPT_THEME, CNF_OPT_GRAPH, CNF_OPT_EXTRA, CNF_OPT_LGND,
+  CNF_OPT_PLOAD, CNF_OPT_INFO, CNF_OPT_MSRC, CNF_OPT_STAT, CNF_OPT_TABS, CNF_OPT_ATAB, CNF_OPT_THEME,
+  CNF_OPT_GRAPH, CNF_OPT_EXTRA, CNF_OPT_LGND,
 #ifdef WITH_PLOT
   CNF_OPT_PLEL, CNF_OPT_PLEX,
 #endif
@@ -69,13 +71,14 @@ typedef struct t_config_section {
   t_config_option options[CNF_OPT_MAX];
 } t_config_section;
 
-static void cli_pr_elems(t_type_elem *elems, int max) {
+static void cli_print_desc_elems(t_type_elem elems[], uint len) {
   GString *string = g_string_new(NULL);
-  for (int i = 0; i < max; i++)
+  for (uint i = 0; i < len; i++)
     g_string_append_printf(string, " %c%d", elems[i].enable ? '+' : '-', elems[i].type);
-  g_message("REORDER: elem:%s", string->str); g_string_free(string, true);
+  g_message("REORDER: elem:%s", string->str);
+  g_string_free(string, true);
 }
-#define PRINT_REORDER_ELEMS(elems, max) do { if (verbose.dnd) cli_pr_elems(elems, max); } while (0)
+#define PRINT_DESC_ELEMS(elems, len) do { if (verbose.dnd && len) cli_print_desc_elems(elems, len); } while (0)
 
 #ifdef WITH_PLOT
 #define TABON(mesg) { opts->plot = false; g_message(mesg); }
@@ -281,9 +284,11 @@ static gboolean cli_opt_X(const char *name, const char *value, t_opts *opts, GEr
 static char* cli_opt_charelem(char *str, const char *patt, int ch) {
   if (str && patt && (ch >= 0)) for (const char *pchar = str; *pchar; pchar++) {
     int ndx = char2ndx(ch, CAT_ENT_NDX, *pchar);
-    if (ndx < 0) continue;
+    if (ndx < 0)
+      continue;
     t_ent_bool *en = strchr(patt, *pchar) ? &ent_bool[ndx] : NULL;
-    if (!en) continue;
+    if (!en)
+      continue;
     gboolean *pbool = EN_BOOLPTR(en);
     if (pbool) {
       *pbool = true;
@@ -304,8 +309,9 @@ static char* reorder_patt(const char *str, const char *patt) {
   return order;
 }
 
-static void reorder_elems(const char *str, t_elem_desc *desc) {
-  if (!str || !desc || !desc->elems || !desc->patt) return;
+static void reorder_elems(const char *str, t_elem_desc *desc) { // NONNULL(1, 2)
+  if (!desc->elems || !desc->patt)
+    return;
   char *order = reorder_patt(str, desc->patt);
   int num = desc->mm.max - desc->mm.min + 1;
   size_t len = (num > 0) ? num : 0;
@@ -313,68 +319,69 @@ static void reorder_elems(const char *str, t_elem_desc *desc) {
   if (type2ndx && order && (len > 0) && (strnlen(order, len + 1) == len)) {
     t_type_elem *elems = &desc->elems[desc->mm.min];
     t_type_elem newelems[len];
-    memmove(newelems, elems, sizeof(newelems)); // BUFFNOLINT
+    memcpy(newelems, elems, sizeof(newelems)); // BUFFNOLINT
     int n = 0;
     for (const char *p = order; *p; p++, n++) {
       int ndx  = char2ndx(desc->cat, CAT_ENT_NDX,  *p);
       int type = char2ndx(desc->cat, CAT_ENT_TYPE, *p);
-      if ((type < 0) || (ndx < 0)) g_warning("%s: [%d] %d", INVAL_HDR, ndx, type);
+      if ((type < 0) || (ndx < 0))
+        g_warning("%s: [%d] %d", INVAL_HDR, ndx, type);
       else {
         ndx = type2ndx(type);
-        if (ndx < 0) g_warning("%s: %d", UNKNTYPE_HDR, type);
-        else newelems[n] = desc->elems[ndx];
+        if (ndx < 0)
+          g_warning("%s: %d", UNKNTYPE_HDR, type);
+        else
+          newelems[n] = desc->elems[ndx];
       }
     }
-    memmove(elems, newelems, sizeof(newelems)); // BUFFNOLINT
-  } else g_warning("%s: %s", ERROR_HDR, CLI_NDXDIFF_HDR);
+    memcpy(elems, newelems, sizeof(newelems)); // BUFFNOLINT
+  } else
+    g_warning("%s: %s", ERROR_HDR, CLI_NDXDIFF_HDR);
   g_free(order);
 }
 
-static char* cli_char_opts(int type, const char *value, guint cat,
-    t_elem_desc *desc, int max, const char *hdr)
-{
-  if (!desc || !desc->elems)
-    return NULL;
-  PRINT_REORDER_ELEMS(desc->elems, max);
-  clean_elems(type);
-  char *str = cli_opt_charelem(parser_str(value, hdr, cat), desc->patt, desc->cat);
-  if (str) {
-    if (str[0])
-      reorder_elems(str, desc);
-    else
-      g_message("%s: %s", hdr, OFF_HDR);
+static char* cli_char_opts(int type, const char *value, uint cat, t_elem_desc *desc, const char *hdr) { // NONNULL(2, 4)
+  char *str = NULL;
+  if (desc->elems) {
+    PRINT_DESC_ELEMS(desc->elems, desc->len);
+    clean_elems(type);
+    str = cli_opt_charelem(parser_str(value, hdr, cat), desc->patt, desc->cat);
+    if (str) {
+      if (str[0])
+        reorder_elems(str, desc);
+      else
+        g_message("%s: %s", hdr, OFF_HDR);
+    }
+    PRINT_DESC_ELEMS(desc->elems, desc->len);
   }
-  PRINT_REORDER_ELEMS(desc->elems, max);
   return str;
 }
 
-static gboolean cli_opt_elem(const char *name, const char *value,
-    GError **error, guint cat)
-{
-  if (!value) return false;
+static gboolean cli_opt_elem(const char *name, const char *value, GError **error, uint opt) {
+  if (!value)
+    return false;
   char *str = NULL;
-  switch (cat) {
+  switch (opt) {
     case OPT_TYPE_PAD: {
       t_ent_str *en = &ent_str[ENT_STR_PLOAD];
-      str = parser_str(value, en->en.name, cat);
+      str = parser_str(value, en->en.name, opt);
       if (str) {
-        if (en->pstr) g_strlcpy(en->pstr, str, en->slen);
+        if (en->pstr)
+          g_strlcpy(en->pstr, str, en->slen);
         g_message("%s: %s", en->en.name, str);
       }
     } break;
     case OPT_TYPE_INFO:
-      str = cli_char_opts(ENT_EXP_INFO, value, cat, &info_desc, PE_MAX, OPT_INFO_HDR); break;
-// TODO: case OPT_TYPE_WMF:
-//    str = cli_char_opts(ENT_EXP_WMF,  value, cat, &wmf_desc,  WE_MAX, OPT_WMF_HDR); break;
+      str = cli_char_opts(ENT_EXP_INFO, value, opt, &info_desc, OPT_INFO_HDR); break;
     case OPT_TYPE_STAT:
-      str = cli_char_opts(ENT_EXP_STAT, value, cat, &stat_desc, PE_MAX, OPT_STAT_HDR); break;
+      str = cli_char_opts(ENT_EXP_STAT, value, opt, &stat_desc, OPT_STAT_HDR); break;
     case OPT_TYPE_GRLG:
-      str = cli_char_opts(ENT_EXP_LGFL, value, cat, &grlg_desc, GX_MAX, OPT_GRLG_HDR); break;
+      str = cli_char_opts(ENT_EXP_LGFL, value, opt, &grlg_desc, OPT_GRLG_HDR); break;
     case OPT_TYPE_GREX:
-      str = cli_char_opts(ENT_EXP_GREX, value, cat, &grex_desc, GX_MAX, OPT_GREX_HDR); break;
+      str = cli_char_opts(ENT_EXP_GREX, value, opt, &grex_desc, OPT_GREX_HDR); break;
 #ifdef WITH_PLOT
     case OPT_TYPE_PLEL:
-      str = cli_char_opts(ENT_EXP_PLEL, value, cat, &plot_desc, D3_MAX, OPT_PLOT_HDR); break;
+      str = cli_char_opts(ENT_EXP_PLEL, value, opt, &plot_desc, OPT_PLOT_HDR); break;
 #endif
     case OPT_TYPE_RECAP: {
       str = parser_str(value, CLI_SUMM_DESC, OPT_TYPE_RECAP);
@@ -398,8 +405,12 @@ static gboolean cli_opt_elem(const char *name, const char *value,
     } break;
     default: break;
   }
-  if (str) { g_free(str); return true; }
-  CLI_SET_ERR; return false;
+  if (str) {
+    g_free(str);
+    return true;
+  }
+  CLI_SET_ERR;
+  return false;
 }
 
 static gboolean cli_opt_p(const char *name, const char *value, t_opts *opts G_GNUC_UNUSED, GError **error) {
@@ -484,6 +495,13 @@ static void cli_set_opt_dns(gboolean dns, t_opts *opts) {
   }
 }
 
+static void cli_set_opt_msrc(gboolean multi, t_opts *opts) {
+  if (opts && (opts->whois_msrc != multi)) {
+    opts->whois_msrc = multi;
+    g_message("%s: %s", OPT_MSRC_HDR, multi ? ON_HDR : OFF_HDR);
+  }
+}
+
 static gboolean cli_opt_f(const char *name, const char *value, t_opts *opts, GError **error) {
   const t_config_section config_sections[] = {
     { .name = CNF_SECTION_MAIN, .options = {
@@ -496,6 +514,7 @@ static gboolean cli_opt_f(const char *name, const char *value, t_opts *opts, GEr
       { .opt = CNF_STR_SIZE,   .type = CNF_OPT_SIZE,   .data = cli_opt_s },
       { .opt = CNF_STR_PLOAD,  .type = CNF_OPT_PLOAD,  .data = cli_opt_p },
       { .opt = CNF_STR_INFO,   .type = CNF_OPT_INFO,   .data = cli_opt_I },
+      { .opt = CNF_STR_MSRC,   .type = CNF_OPT_MSRC },
       { .opt = CNF_STR_STAT,   .type = CNF_OPT_STAT,   .data = cli_opt_S },
       {} // trailing 0
     }},
@@ -574,7 +593,13 @@ static gboolean cli_opt_f(const char *name, const char *value, t_opts *opts, GEr
         } break;
         case CNF_OPT_NODNS: {
           gboolean numerical = g_key_file_get_boolean(file, section, optname, &opterr);
-          if (!opterr) cli_set_opt_dns(!numerical, opts);
+          if (!opterr)
+            cli_set_opt_dns(!numerical, opts);
+        } break;
+        case CNF_OPT_MSRC: {
+          gboolean multi = g_key_file_get_boolean(file, section, optname, &opterr);
+          if (!opterr)
+            cli_set_opt_msrc(multi, opts);
         } break;
         case CNF_OPT_CYCLES:
         case CNF_OPT_IVAL:
@@ -649,7 +674,7 @@ static int cli_init_proc(int *pargc, char ***pargv,
   return EXIT_FAILURE;            \
 }
   char** target = NULL;
-  int num = -1;
+  int num = -1, msrc = -1;
   gboolean onoff[ONOFF_MAX + 1] = {0};
   const GOptionEntry options[] = {
     CLI_OPT_CALL('f', "file",         cli_opt_f, CLI_FOPT_HINT),
@@ -661,6 +686,7 @@ static int cli_init_proc(int *pargc, char ***pargv,
     CLI_OPT_CALL('s', CNF_STR_SIZE,   cli_opt_s, CLI_SIZE_HINT),
     CLI_OPT_CALL('p', CNF_STR_PLOAD,  cli_opt_p, CLI_POPT_HINT),
     CLI_OPT_CALL('I', CNF_STR_INFO,   cli_opt_I, "[" INFO_PATT "]"),
+    CLI_OPT_NONE('M', CNF_STR_MSRC,   &msrc),
     CLI_OPT_CALL('S', CNF_STR_STAT,   cli_opt_S, "[" STAT_PATT "]"),
     CLI_OPT_CALL('T', CNF_STR_THEME,  cli_opt_T, CLI_BITS_HINT),
     CLI_OPT_CALL('g', CNF_STR_GRAPH,  cli_opt_g, "[123]"),
@@ -759,6 +785,8 @@ static int cli_init_proc(int *pargc, char ***pargv,
   }
   if (num >= 0)
     cli_set_opt_dns(!num, &opts);
+  if (msrc >= 0)
+    cli_set_opt_msrc(msrc, &opts);
   // arguments
   if (target) {
     for (char **ptr = target; *ptr; ptr++) {
@@ -808,6 +836,7 @@ int cli_init(int *pargc, char ***pargv) {
     ['s'] = g_strdup(CLI_SIZE_DESC),
     ['p'] = g_strdup(CLI_POPT_DESC),
     ['I'] = g_strdup(OPT_INFO_HDR),
+    ['M'] = g_strdup(OPT_MSRC_HDR),
     ['S'] = g_strdup(CLI_STAT_DESC),
     ['T'] = g_strdup(CLI_TOPT_DESC),
     ['g'] = g_strdup(OPT_GRAPH_HDR),

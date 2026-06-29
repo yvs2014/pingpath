@@ -5,6 +5,7 @@
 # interval = 1
 # qos = 0
 # payload = 00
+# multi-field = false
 
 ## NOTE: minTTL,maxTTL
 # ttl = 1,30

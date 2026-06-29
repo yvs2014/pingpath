@@ -321,14 +321,14 @@ static void add_mwhois(t_whois *whois, uint ndx, const char *str) {
   int vacant = find_vacant_mwhois_slot(m->elem, G_N_ELEMENTS(m->elem));
   if (vacant < 0) {
     if (!mwhois_already_warned[ndx]) { // warn once
-      WARNLOG("No vacant slots for multi-whois field#%u", ndx);
+      WARNLOG("#%d, no vacant slots for more sources", ndx);
       mwhois_already_warned[ndx] = true;
     }
   } else {
     UPD_NSTR(m->elem[vacant], str ? str : UNKN_FIELD, MAXHOSTNAME);
     WHOIS_DEBUG("Add[ndx=%u, vacant=%u]: %s", ndx, vacant, m->elem[vacant]);
     if ((vacant > 0) && is_mwhois_str_neq(m, vacant)) { // set or update 'view'
-      if (opts.whois_multi) {
+      if (opts.whois_msrc) {
         GString *s = g_string_new(m->elem[0]);
         for (int i = 1; i <= vacant; i++)
           g_string_append_printf(s, "%c %s", WHOIS_CCDEL, m->elem[i]);
@@ -476,7 +476,7 @@ void parser_whois(char *buff, t_whois *whois) {
 void parser_review_whois(t_mwhois *m) { // NONNULL(1)
   uint len = mwhois_length(m->elem, G_N_ELEMENTS(m->elem));
   if (len) {
-    if (opts.whois_multi) {
+    if (opts.whois_msrc) {
       GString *s = g_string_new(m->elem[0]);
       for (uint i = 1; i < len; i++)
         g_string_append_printf(s, "%c %s", WHOIS_CCDEL, m->elem[i]);

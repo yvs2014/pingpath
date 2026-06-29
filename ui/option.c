@@ -18,7 +18,7 @@ enum { MIN_VIEW_ANGLE = -180, MAX_VIEW_ANGLE = 180 };
 #endif
 
 t_opts opts = { .target = NULL, .range = {.min = MINTTL - 1, .max = MAXTTL},
-  .dns = DEF_DNS, .whois = DEF_WHOIS, .whois_multi = DEF_WHOIS_MULTI,
+  .dns = DEF_DNS, .whois = DEF_WHOIS, .whois_msrc = DEF_WHOIS_MSRC,
   .cycles = DEF_CYCLES, .qos = DEF_QOS, .size = DEF_PSIZE,
   .timeout = DEF_TOUT, .tout_usec = DEF_TOUT * G_USEC_PER_SEC, .logmax = DEF_LOGMAX,
   .graph = GRAPH_TYPE_CURVE, .legend = DEF_LEGEND,
@@ -59,7 +59,7 @@ t_ent_bool ent_bool[] = {
   [ENT_BOOL_CC]   = { .en.type = ENT_BOOL_CC,   .valfn = pingelem_enabler, .valtype = PE_CC   },
   [ENT_BOOL_DESC] = { .en.type = ENT_BOOL_DESC, .valfn = pingelem_enabler, .valtype = PE_DESC },
   [ENT_BOOL_RT]   = { .en.type = ENT_BOOL_RT,   .valfn = pingelem_enabler, .valtype = PE_RT   },
-  [ENT_BOOL_WMF]  = { .en.type = ENT_BOOL_WMF,  .pval = &opts.whois_multi },
+  [ENT_BOOL_MSRC] = { .en.type = ENT_BOOL_MSRC, .pval = &opts.whois_msrc},
   [ENT_BOOL_LOSS] = { .en.type = ENT_BOOL_LOSS, .valfn = pingelem_enabler, .valtype = PE_LOSS },
   [ENT_BOOL_SENT] = { .en.type = ENT_BOOL_SENT, .valfn = pingelem_enabler, .valtype = PE_SENT },
   [ENT_BOOL_RECV] = { .en.type = ENT_BOOL_RECV, .valfn = pingelem_enabler, .valtype = PE_RECV },
@@ -110,7 +110,7 @@ t_ent_str ent_str[] = {
 
 static t_ent_exp ent_exp[] = {
   [ENT_EXP_INFO] = { .c.en.type = ENT_EXP_INFO },
-  [ENT_EXP_WMF]  = { .c.en.type = ENT_EXP_WMF  }, // adjacent to ENT_EXP_INFO
+  [ENT_EXP_MSRC] = { .c.en.type = ENT_EXP_MSRC }, // adjacent to ENT_EXP_INFO
   [ENT_EXP_STAT] = { .c.en.type = ENT_EXP_STAT },
   [ENT_EXP_LGFL] = { .c.en.type = ENT_EXP_LGFL },
   [ENT_EXP_GREX] = { .c.en.type = ENT_EXP_GREX },
@@ -272,7 +272,7 @@ static void toggled_whois(void) {
     stat_run_whois_resolv();
 }
 
-static void toggled_mwhois(void) {
+static void toggled_msrc(void) {
   notifier_legend_vis_rows(-1);
   if (opts.whois) {
     stat_whois_review(parser_review_whois);
@@ -332,7 +332,7 @@ static void toggle_cb(GtkCheckButton *check, t_ent_bool *en) {
     [ENT_BOOL_CC]      = toggled_whois,
     [ENT_BOOL_DESC]    = toggled_whois,
     [ENT_BOOL_RT]      = toggled_whois,
-    [ENT_BOOL_WMF]     = toggled_mwhois,
+    [ENT_BOOL_MSRC]    = toggled_msrc,
     [ENT_BOOL_MN_DARK] = toggled_colors,
     [ENT_BOOL_GR_DARK] = toggled_colors,
 #ifdef WITH_PLOT
@@ -882,7 +882,7 @@ static gboolean create_main_optmenu(GtkWidget *list) {
   EN_PR_INT(ENT_STR_CYCLES);
   EN_PR_INT(ENT_STR_IVAL);
   if (!add_opt_check(list,  &ent_bool[ENT_BOOL_DNS]))   okay = false;
-  // adjacent EXP_INFO and EXP_WMF: len = 2
+  // adjacent EXP_INFO and EXP_MSRC: len = 2
   if (!add_opt_expand(list, &ent_exp[ENT_EXP_INFO], 2)) okay = false;
   //
   if (!add_opt_expand(list, &ent_exp[ENT_EXP_STAT], 1)) okay = false;
@@ -970,7 +970,7 @@ void init_option_links(void) {
   INIT_BE_INFO(ENT_BOOL_CC,   ELEM_CC_HEADER  );
   INIT_BE_INFO(ENT_BOOL_DESC, ELEM_DESC_HEADER);
   INIT_BE_INFO(ENT_BOOL_RT,   ELEM_RT_HDR     );
-  INIT_BE_INFO(ENT_BOOL_WMF,  ELEM_WMF_HDR    );
+  INIT_BE_INFO(ENT_BOOL_MSRC, ELEM_MSRC_HDR   );
   INIT_BE_STAT(ENT_BOOL_LOSS, ELEM_LOSS_HEADER);
   INIT_BE_STAT(ENT_BOOL_SENT, ELEM_SENT_HEADER);
   INIT_BE_STAT(ENT_BOOL_RECV, ELEM_RECV_HEADER);
@@ -1000,7 +1000,7 @@ void init_option_links(void) {
 #endif
   //
   INIT_EE_ND(ENT_EXP_INFO, OPT_INFO_HDR, info_desc); // whois
-  INIT_EE_ND(ENT_EXP_WMF,  OPT_INFO_HDR, wmf_desc);  // whois multifield
+  INIT_EE_ND(ENT_EXP_MSRC, OPT_INFO_HDR, msrc_desc); // whois multi-source
   INIT_EE_ND(ENT_EXP_STAT, OPT_STAT_HDR, stat_desc);
   INIT_EE_ND(ENT_EXP_LGFL, OPT_GRLG_HDR, grlg_desc);
   INIT_EE_ND(ENT_EXP_GREX, OPT_GREX_HDR, grex_desc);
