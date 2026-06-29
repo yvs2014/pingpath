@@ -1,3 +1,6 @@
+## 1.0.18
+- update gettext po: hopinfo multi-source
+
 ## 1.0.17
 - cleanup a bit: oneliners and _MAX enums
 

@@ -1,3 +1,9 @@
+pingpath (1.0.18) trixie; urgency=low
+
+  * update gettext po: hopinfo multi-source
+
+ -- yvs <VSYakovetsky@gmail.com>  Mon, 29 Jun 2026 21:44:50 +0300
+
 pingpath (1.0.17) trixie; urgency=low
 
   * cleanup a bit: oneliners and _MAX enums

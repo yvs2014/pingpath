@@ -262,38 +262,42 @@ msgid "Hop Info"
 msgstr "Info sui salti"
 
 # option-menu: 5
+msgid "Hop Info multi-sources"
+msgstr "Tutte le voci relative al nodo"
+
+# option-menu: 6
 msgid "Statistics"
 msgstr "Statistica"
 
-# option-menu: 6
+# option-menu: 7
 msgid "TTL"
 msgstr "TTL (numero di salti)"
 
-# option-menu: 7
+# option-menu: 8
 msgid "QoS"
 msgstr "QoS (qualità del servizio)"
 
-# option-menu: 8
+# option-menu: 9
 msgid "Payload"
 msgstr "Carico utile"
 
-# option-menu: 9
+# option-menu: 10
 msgid "Size"
 msgstr "Dimensione"
 
-# option-menu: 10
+# option-menu: 11
 msgid "IP Version"
 msgstr "Versione di IP"
 
-# option-menu: 10.1
+# option-menu: 11.1
 msgid "Auto"
 msgstr "Automatico"
 
-# option-menu: 10.2
+# option-menu: 11.2
 msgid "IPv4"
 msgstr "Versione 4"
 
-# option-menu: 10.3
+# option-menu: 11.3
 msgid "IPv6"
 msgstr "Versione 6"
 
@@ -428,6 +432,14 @@ msgstr "Rete"
 # trace-info: 1.5.1
 msgid "Network prefix"
 msgstr "Prefisso di rete"
+
+# trace-info: 1.6.0
+msgid "<multi-source>"
+msgstr "<fonte multipla>"
+
+# trace-info: 1.6.1
+msgid "More than one info-source"
+msgstr "Più di una fonte di informazioni"
 
 # trace-stat: 1.1.0
 msgid "Loss"

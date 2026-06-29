@@ -262,38 +262,42 @@ msgid "Hop Info"
 msgstr "Інфо щодо вузла"
 
 # option-menu: 5
+msgid "Hop Info multi-sources"
+msgstr "Всі записи щодо вузла"
+
+# option-menu: 6
 msgid "Statistics"
 msgstr "Статистика"
 
-# option-menu: 6
+# option-menu: 7
 msgid "TTL"
 msgstr "TTL (кількість переходів)"
 
-# option-menu: 7
+# option-menu: 8
 msgid "QoS"
 msgstr "QoS (якість сервісу)"
 
-# option-menu: 8
+# option-menu: 9
 msgid "Payload"
 msgstr "Вміст"
 
-# option-menu: 9
+# option-menu: 10
 msgid "Size"
 msgstr "Розмір"
 
-# option-menu: 10
+# option-menu: 11
 msgid "IP Version"
 msgstr "IP версія"
 
-# option-menu: 10.1
+# option-menu: 11.1
 msgid "Auto"
 msgstr "Автоматично"
 
-# option-menu: 10.2
+# option-menu: 11.2
 msgid "IPv4"
 msgstr "Версія 4"
 
-# option-menu: 10.3
+# option-menu: 11.3
 msgid "IPv6"
 msgstr "Версія 6"
 
@@ -428,6 +432,14 @@ msgstr "Мережа"
 # trace-info: 1.5.1
 msgid "Network prefix"
 msgstr "Мережевий префікс"
+
+# trace-info: 1.6.0
+msgid "<multi-source>"
+msgstr "<повний список>"
+
+# trace-info: 1.6.1
+msgid "More than one info-source"
+msgstr "Більше одного джерела інформації"
 
 # trace-stat: 1.1.0
 msgid "Loss"
